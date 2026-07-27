@@ -1,0 +1,40 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
+import { Assessment } from './assessment.entity.js';
+
+@Entity('scores')
+export class Score {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'assessment_id', unique: true })
+  assessmentId!: string;
+
+  @OneToOne(() => Assessment, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'assessment_id' })
+  assessment!: Assessment;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
+  value!: number;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  percentile!: number | null;
+
+  @Column({ name: 'bareme_version' })
+  baremeVersion!: string;
+
+  @Column({ name: 'details', type: 'jsonb', nullable: true })
+  details!: Record<string, unknown> | null;
+
+  @Column({ name: 'expires_at', type: 'timestamptz' })
+  expiresAt!: Date;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+}
