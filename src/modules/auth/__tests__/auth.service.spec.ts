@@ -213,10 +213,47 @@ describe('AuthService', () => {
   });
 
   describe('verifyEmail', () => {
+    it('should verify email and activate user', async () => {
+      const unverifiedUser = {
+        ...mockUser,
+        status: UserStatus.PENDING_VERIFICATION,
+        emailVerified: false,
+        emailVerificationToken: 'valid-token',
+        emailVerificationExpires: new Date(Date.now() + 86400000),
+      };
+      refreshTokenRepo['manager'].find.mockResolvedValue([unverifiedUser]);
+      usersService['update'].mockResolvedValue(undefined);
+
+      const result = await service.verifyEmail('valid-token');
+
+      expect(result.message).toContain('verified');
+      expect(usersService['update']).toHaveBeenCalledWith(
+        mockUser.id,
+        expect.objectContaining({
+          emailVerified: true,
+          status: UserStatus.ACTIVE,
+          emailVerificationToken: null,
+        }),
+      );
+    });
+
     it('should throw BadRequestException for invalid token', async () => {
       refreshTokenRepo['manager'].find.mockResolvedValue([]);
 
       await expect(service.verifyEmail('bad-token')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException for expired token', async () => {
+      const expiredUser = {
+        ...mockUser,
+        emailVerificationToken: 'expired-token',
+        emailVerificationExpires: new Date(Date.now() - 86400000),
+      };
+      refreshTokenRepo['manager'].find.mockResolvedValue([expiredUser]);
+
+      await expect(service.verifyEmail('expired-token')).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -271,6 +308,47 @@ describe('AuthService', () => {
       await expect(service.refreshTokens('expired-token')).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+
+    it('should rotate tokens successfully', async () => {
+      const validToken = {
+        id: 'tok-1',
+        tokenHash: 'hash',
+        userId: mockUser.id,
+        user: mockUser,
+        expiresAt: new Date(Date.now() + 86400000),
+        revoked: false,
+        replacedBy: null,
+        createdAt: new Date(),
+      };
+
+      refreshTokenRepo['findOne'].mockResolvedValue(validToken);
+
+      const result = await service.refreshTokens('valid-token');
+
+      expect(result.accessToken).toBeDefined();
+      expect(result.refreshToken).toBeDefined();
+      expect(validToken.revoked).toBe(true);
+      expect(refreshTokenRepo['save']).toHaveBeenCalled();
+    });
+  });
+
+  describe('cleanupExpiredTokens', () => {
+    it('should delete expired tokens and return count', async () => {
+      refreshTokenRepo['delete'] = jest.fn().mockResolvedValue({ affected: 5 });
+
+      const result = await service.cleanupExpiredTokens();
+
+      expect(result).toBe(5);
+      expect(refreshTokenRepo['delete']).toHaveBeenCalled();
+    });
+
+    it('should return 0 when no expired tokens', async () => {
+      refreshTokenRepo['delete'] = jest.fn().mockResolvedValue({ affected: 0 });
+
+      const result = await service.cleanupExpiredTokens();
+
+      expect(result).toBe(0);
     });
   });
 });

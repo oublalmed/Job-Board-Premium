@@ -98,8 +98,21 @@
       "!**/node_modules/**",
       "!**/dist/**",
       "!**/__tests__/**",
-      "!**/database/migrations/**"
+      "!**/database/migrations/**",
+      "!**/entities/**",
+      "!**/*.module.ts",
+      "!main.ts",
+      "!**/config/**",
+      "!**/database/**"
     ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 70,
+        "branches": 50,
+        "functions": 70,
+        "lines": 70
+      }
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
