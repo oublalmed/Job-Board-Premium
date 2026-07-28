@@ -69,6 +69,12 @@ export class CandidateProfile {
   })
   completeness!: number;
 
+  @Column({ name: 'indexed_in_cvtheque', default: false })
+  indexedInCvtheque!: boolean;
+
+  @Column({ default: false })
+  featured!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

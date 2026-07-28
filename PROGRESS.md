@@ -44,7 +44,7 @@ Légende statut : ⬜ À faire · 🟨 En cours · ✅ Terminé · ⏸️ Bloqu�
 |---|---|---|---|---|---|
 | **Lot 0** | Socle : infra, CI/CD, auth JWT, RBAC, modèle de données, ports+stubs, audit, event-tracking KPI, docker-compose | — | ✅ Terminé | 2026-07-28 | 7 commits, 66 tests, 89% coverage |
 | **Lot 1** | Module candidat (profil, CV, liens, complétude 70 %) | Lot 0 | ✅ Terminé | 2026-07-28 | 4 stories, 116 tests, 15 suites |
-| **Lot 2** | Évaluation & scoring (adaptateur API réel + webhook + anti-triche + barème) | Lot 0, 1 | 🟨 En cours | 2026-07-28 | US-EVAL-02 ✅. Fournisseur non choisi → port + stub mock. Anti-triche socle implémenté. |
+| **Lot 2** | Évaluation & scoring (adaptateur API réel + webhook + anti-triche + barème) | Lot 0, 1 | ✅ Terminé | 2026-07-28 | 3 stories, 209 tests (22 suites). Fournisseur non choisi → port + stub mock. Anti-triche socle, score webhook idempotent, seuils indexation/featuring configurables. |
 | **Lot 3** | CVthèque & recherche (indexation selon seuils) | Lot 1, 2 | ⬜ À faire | — | FTS Postgres au MVP |
 | **Lot 4** | Espace recruteur & offres | Lot 0, 3 | ⬜ À faire | — | |
 | **Lot 5** | Messagerie (socle) + quotas de contacts | Lot 1, 4 | ⬜ À faire | — | Décrément quota à l'ouverture du fil |
@@ -103,17 +103,17 @@ Pour chaque story : ses critères Given/When/Then du backlog = la Definition of 
 | 2026-07-28 | Session 1 | Lot 0 complet : NestJS strict, TypeORM Data Mapper, auth JWT+refresh rotation, RBAC 5 rôles cumulatifs, 5 ports+stubs, audit, settings configurable, health check, Docker, CI. 7 commits, 66 tests (10 suites), 89% coverage. | Lot 1 : US-CAND-01 |
 | 2026-07-28 | Session 2 | US-CAND-01 confirmée (couverte par Lot 0 + tests DTO). US-CAND-02 : profil candidat (service + controller + DTOs), calcul complétude pondéré (7 critères CDC §5.1, poids en settings), entités Experience + ProfileLink, firstName/lastName sur profil. 22 tests ajoutés (95 total). | US-CAND-03 |
 | 2026-07-28 | Session 3 | US-CAND-03 : upload CV (POST/GET/DELETE /candidates/cv). Pipeline : validation type (PDF/DOCX) + taille (≤5 Mo configurable) → scan FileScanner (bloquant) → stockage ObjectStorage → Document entity → recalcul complétude. Refactoré ports en @Global PortsModule. US-CAND-08 : export données (JSON portable, sans hash/tokens) + suppression/anonymisation (soft-delete user, suppression profil+docs+storage, email anonymisé). Résilience si storage indispo. Audit journalisé. Recette Lot 1 : ajout tests controllers (isolation user.sub, pas d'accès croisé), tests getCV/deleteCV, couverture 100% stmts/funcs/lines sur les 4 fichiers candidat. 132 tests, 17 suites. Lot 1 validé ✅. | Lot 2 |
-| 2026-07-28 | Session 4 | US-EVAL-02 : passage de test en environnement sécurisé. Anti-triche socle : session unique, timer strict (expiresAt depuis durationMinutes), cooldown 90j configurable (settings `assessment_cooldown_days`), gestion d'incident (resumeToken UUID, reprise sans consommer de tentative). Enrichi Assessment (resumeToken, expiresAt), Score (testVersion, plagiarismVerdict), ScoringProvider port (verifyWebhookSignature, plagiarism). Controller : POST start/resume/incident, RBAC CANDIDATE. 32 tests ajoutés (164 total, 19 suites). US-EVAL-03 : score normalisé 0-100 via webhook. WebhookService : vérification signature, normalisation score, persistance Score (baremeVersion, testVersion, plagiarismVerdict), idempotence (replay safe). WebhookController : POST /assessments/webhook (pas de JWT, signature header). Settings : `score_bareme_version`, `score_validity_days`. 27 tests ajoutés (191 total, 21 suites). | US-EVAL-SEUIL |
+| 2026-07-28 | Session 4 | US-EVAL-02 : passage de test en environnement sécurisé. Anti-triche socle : session unique, timer strict (expiresAt depuis durationMinutes), cooldown 90j configurable (settings `assessment_cooldown_days`), gestion d'incident (resumeToken UUID, reprise sans consommer de tentative). Enrichi Assessment (resumeToken, expiresAt), Score (testVersion, plagiarismVerdict), ScoringProvider port (verifyWebhookSignature, plagiarism). Controller : POST start/resume/incident, RBAC CANDIDATE. 32 tests ajoutés (164 total, 19 suites). US-EVAL-03 : score normalisé 0-100 via webhook. WebhookService : vérification signature, normalisation score, persistance Score (baremeVersion, testVersion, plagiarismVerdict), idempotence (replay safe). WebhookController : POST /assessments/webhook (pas de JWT, signature header). Settings : `score_bareme_version`, `score_validity_days`. 27 tests ajoutés (191 total, 21 suites). US-EVAL-SEUIL : seuils d'indexation et featuring. IndexationService (applyThresholds) : score ≥ 40 OU percentile ≥ P30 → indexedInCvtheque, percentile ≥ P75 → featured. Exclut scores expirés et plagiat confirmé. Seuils configurables via settings. CandidateProfile enrichi (indexedInCvtheque, featured). Câblé dans WebhookService après persistance du score. 18 tests ajoutés (209 total, 22 suites). Lot 2 terminé ✅. | Lot 3 (attente feu vert) |
 
 ---
 
-## Détail du Lot 2 — Évaluation & scoring (🟨 En cours)
+## Détail du Lot 2 — Évaluation & scoring (✅ Terminé)
 
 Stories dans l'ordre :
 
 - [x] `US-EVAL-02` — passage du test en environnement sécurisé (anti-triche socle : session unique, timer strict, cooldown 90j configurable, incident management avec resumeToken)
 - [x] `US-EVAL-03` — score normalisé 0-100 + percentile via webhook (idempotent, signature verification, barème/testVersion historisés)
-- [ ] `US-EVAL-SEUIL` — application des seuils d'indexation et de mise en avant
+- [x] `US-EVAL-SEUIL` — application des seuils d'indexation et de mise en avant (score ≥ 40 OU percentile ≥ P30 → indexation, percentile ≥ P75 → featuring, seuils configurables)
 
 ---
 

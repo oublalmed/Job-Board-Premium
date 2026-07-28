@@ -13,6 +13,7 @@ import { SCORING_PROVIDER } from '../../../ports/scoring.port.js';
 import { SettingsService } from '../../settings/settings.service.js';
 import { AuditService } from '../../audit/audit.service.js';
 import { AuditAction } from '../../../common/enums/audit-action.enum.js';
+import { IndexationService } from '../indexation.service.js';
 
 describe('WebhookService', () => {
   let service: WebhookService;
@@ -22,6 +23,7 @@ describe('WebhookService', () => {
   let scoringProvider: Record<string, jest.Mock>;
   let settingsService: Record<string, jest.Mock>;
   let auditService: Record<string, jest.Mock>;
+  let indexationService: Record<string, jest.Mock>;
 
   const externalId = 'ext-123';
   const assessmentId = 'assessment-1';
@@ -106,6 +108,10 @@ describe('WebhookService', () => {
       log: jest.fn().mockResolvedValue({ id: 'audit-1' }),
     };
 
+    indexationService = {
+      applyThresholds: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WebhookService,
@@ -115,6 +121,7 @@ describe('WebhookService', () => {
         { provide: SCORING_PROVIDER, useValue: scoringProvider },
         { provide: SettingsService, useValue: settingsService },
         { provide: AuditService, useValue: auditService },
+        { provide: IndexationService, useValue: indexationService },
       ],
     }).compile();
 
@@ -285,6 +292,14 @@ describe('WebhookService', () => {
         expect.objectContaining({
           details: { sections: [{ name: 'algo', score: 80 }] },
         }),
+      );
+    });
+
+    it('should apply indexation thresholds after score processing', async () => {
+      await service.processWebhook(validPayload, validSignature);
+
+      expect(indexationService.applyThresholds).toHaveBeenCalledWith(
+        candidateId,
       );
     });
   });

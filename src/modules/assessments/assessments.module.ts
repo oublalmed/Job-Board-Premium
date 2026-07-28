@@ -8,11 +8,21 @@ import { AssessmentService } from './assessment.service.js';
 import { AssessmentController } from './assessment.controller.js';
 import { WebhookService } from './webhook.service.js';
 import { WebhookController } from './webhook.controller.js';
+import { IndexationService } from './indexation.service.js';
+import { CandidatesModule } from '../candidates/candidates.module.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Specialty, Test, Assessment, Score])],
+  imports: [
+    TypeOrmModule.forFeature([Specialty, Test, Assessment, Score]),
+    CandidatesModule,
+  ],
   controllers: [AssessmentController, WebhookController],
-  providers: [AssessmentService, WebhookService],
-  exports: [TypeOrmModule, AssessmentService, WebhookService],
+  providers: [AssessmentService, WebhookService, IndexationService],
+  exports: [
+    TypeOrmModule,
+    AssessmentService,
+    WebhookService,
+    IndexationService,
+  ],
 })
 export class AssessmentsModule {}

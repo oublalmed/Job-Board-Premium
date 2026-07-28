@@ -16,6 +16,7 @@ import { SCORING_PROVIDER } from '../../ports/scoring.port.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
+import { IndexationService } from './indexation.service.js';
 
 const DEFAULT_SCORE_VALIDITY_DAYS = 365;
 const DEFAULT_BAREME_VERSION = '1.0';
@@ -41,6 +42,7 @@ export class WebhookService {
     private readonly scoringProvider: ScoringProvider,
     private readonly settingsService: SettingsService,
     private readonly auditService: AuditService,
+    private readonly indexationService: IndexationService,
   ) {}
 
   async processWebhook(
@@ -149,6 +151,8 @@ export class WebhookService {
         testVersion: test?.version,
       },
     });
+
+    await this.indexationService.applyThresholds(assessment.candidateId);
 
     return { alreadyProcessed: false, scoreId: savedScore.id };
   }
