@@ -31,7 +31,7 @@ export class RefreshToken {
   @Column({ default: false })
   revoked!: boolean;
 
-  @Column({ name: 'replaced_by', nullable: true })
+  @Column({ name: 'replaced_by', type: 'varchar', nullable: true })
   replacedBy!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

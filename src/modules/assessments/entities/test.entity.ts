@@ -24,10 +24,10 @@ export class Test {
   @Column()
   version!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   provider!: string | null;
 
-  @Column({ name: 'external_test_id', nullable: true })
+  @Column({ name: 'external_test_id', type: 'varchar', nullable: true })
   externalTestId!: string | null;
 
   @Column({ name: 'duration_minutes', type: 'integer', default: 60 })

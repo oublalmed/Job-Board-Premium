@@ -30,7 +30,7 @@ export class ProfileSkill {
   @JoinColumn({ name: 'skill_id' })
   skill!: Skill;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   level!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

@@ -33,7 +33,7 @@ export class ProfileLink {
   @Column()
   url!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   label!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

@@ -20,10 +20,10 @@ export class Company {
   @Column()
   name!: string;
 
-  @Column({ name: 'registration_number', nullable: true })
+  @Column({ name: 'registration_number', type: 'varchar', nullable: true })
   registrationNumber!: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   ice!: string | null;
 
   @Column({ default: false })

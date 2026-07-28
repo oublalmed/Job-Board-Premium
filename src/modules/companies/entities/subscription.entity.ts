@@ -46,7 +46,7 @@ export class Subscription {
   })
   status!: SubscriptionStatus;
 
-  @Column({ name: 'external_subscription_id', nullable: true })
+  @Column({ name: 'external_subscription_id', type: 'varchar', nullable: true })
   externalSubscriptionId!: string | null;
 
   @Column({ name: 'starts_at', type: 'timestamptz' })

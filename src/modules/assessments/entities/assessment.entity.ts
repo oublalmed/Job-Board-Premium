@@ -37,7 +37,7 @@ export class Assessment {
   @JoinColumn({ name: 'test_id' })
   test!: Test;
 
-  @Column({ name: 'external_assessment_id', nullable: true })
+  @Column({ name: 'external_assessment_id', type: 'varchar', nullable: true })
   externalAssessmentId!: string | null;
 
   @Column({

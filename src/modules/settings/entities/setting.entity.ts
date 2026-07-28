@@ -19,7 +19,7 @@ export class Setting {
   @Column({ type: 'text' })
   value!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   description!: string | null;
 
   @Column({ name: 'value_type', default: 'string' })

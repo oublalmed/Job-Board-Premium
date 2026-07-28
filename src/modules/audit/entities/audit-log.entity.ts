@@ -12,7 +12,7 @@ export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'actor_id', nullable: true })
+  @Column({ name: 'actor_id', type: 'varchar', nullable: true })
   @Index()
   actorId!: string | null;
 
@@ -20,19 +20,19 @@ export class AuditLog {
   @Index()
   action!: AuditAction;
 
-  @Column({ name: 'entity_type', nullable: true })
+  @Column({ name: 'entity_type', type: 'varchar', nullable: true })
   entityType!: string | null;
 
-  @Column({ name: 'entity_id', nullable: true })
+  @Column({ name: 'entity_id', type: 'varchar', nullable: true })
   entityId!: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata!: Record<string, unknown> | null;
 
-  @Column({ name: 'ip_address', nullable: true })
+  @Column({ name: 'ip_address', type: 'varchar', nullable: true })
   ipAddress!: string | null;
 
-  @Column({ name: 'user_agent', nullable: true })
+  @Column({ name: 'user_agent', type: 'varchar', nullable: true })
   userAgent!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

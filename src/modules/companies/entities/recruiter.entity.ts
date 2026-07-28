@@ -31,7 +31,7 @@ export class Recruiter {
   @JoinColumn({ name: 'company_id' })
   company!: Company;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   position!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

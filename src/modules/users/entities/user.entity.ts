@@ -47,7 +47,7 @@ export class User {
   @Column({ name: 'email_verified', default: false })
   emailVerified!: boolean;
 
-  @Column({ name: 'email_verification_token', nullable: true })
+  @Column({ name: 'email_verification_token', type: 'varchar', nullable: true })
   emailVerificationToken!: string | null;
 
   @Column({
