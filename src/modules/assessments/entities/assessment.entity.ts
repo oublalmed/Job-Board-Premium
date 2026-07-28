@@ -47,6 +47,12 @@ export class Assessment {
   })
   status!: AssessmentStatus;
 
+  @Column({ name: 'resume_token', type: 'uuid', nullable: true })
+  resumeToken!: string | null;
+
+  @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
+  expiresAt!: Date | null;
+
   @Column({ name: 'started_at', type: 'timestamptz', nullable: true })
   startedAt!: Date | null;
 

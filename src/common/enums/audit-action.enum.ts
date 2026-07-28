@@ -12,6 +12,8 @@ export enum AuditAction {
   DOCUMENT_DELETED = 'document.deleted',
   ASSESSMENT_STARTED = 'assessment.started',
   ASSESSMENT_COMPLETED = 'assessment.completed',
+  ASSESSMENT_INCIDENT = 'assessment.incident',
+  ASSESSMENT_RESUMED = 'assessment.resumed',
   SCORE_CALCULATED = 'score.calculated',
   SUBSCRIPTION_CREATED = 'subscription.created',
   SUBSCRIPTION_CANCELLED = 'subscription.cancelled',

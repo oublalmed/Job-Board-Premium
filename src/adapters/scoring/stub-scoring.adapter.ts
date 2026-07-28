@@ -4,6 +4,7 @@ import {
   ScoringProvider,
   CreateAssessmentRequest,
   AssessmentResult,
+  WebhookVerificationResult,
 } from '../../ports/scoring.port.js';
 
 @Injectable()
@@ -25,10 +26,13 @@ export class StubScoringAdapter implements ScoringProvider {
 
   getResult(externalId: string): Promise<AssessmentResult | null> {
     this.logger.log(`[STUB] Fetching result for assessment ${externalId}`);
+    const score = 65;
     return Promise.resolve({
       externalId,
-      score: 65,
+      score,
       maxScore: 100,
+      percentile: 55,
+      plagiarismVerdict: 'clean',
       details: { stub: true },
     });
   }
@@ -36,5 +40,12 @@ export class StubScoringAdapter implements ScoringProvider {
   cancelAssessment(externalId: string): Promise<void> {
     this.logger.log(`[STUB] Assessment ${externalId} cancelled`);
     return Promise.resolve();
+  }
+
+  verifyWebhookSignature(
+    _payload: Buffer,
+    _signature: string,
+  ): Promise<WebhookVerificationResult> {
+    return Promise.resolve({ valid: true, externalId: null });
   }
 }

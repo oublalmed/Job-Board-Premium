@@ -8,6 +8,12 @@ import {
 } from 'typeorm';
 import { Assessment } from './assessment.entity.js';
 
+export enum PlagiarismVerdict {
+  CLEAN = 'clean',
+  SUSPECTED = 'suspected',
+  CONFIRMED = 'confirmed',
+}
+
 @Entity('scores')
 export class Score {
   @PrimaryGeneratedColumn('uuid')
@@ -28,6 +34,17 @@ export class Score {
 
   @Column({ name: 'bareme_version' })
   baremeVersion!: string;
+
+  @Column({ name: 'test_version' })
+  testVersion!: string;
+
+  @Column({
+    name: 'plagiarism_verdict',
+    type: 'enum',
+    enum: PlagiarismVerdict,
+    default: PlagiarismVerdict.CLEAN,
+  })
+  plagiarismVerdict!: PlagiarismVerdict;
 
   @Column({ name: 'details', type: 'jsonb', nullable: true })
   details!: Record<string, unknown> | null;
