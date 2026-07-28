@@ -43,7 +43,7 @@ Légende statut : ⬜ À faire · 🟨 En cours · ✅ Terminé · ⏸️ Bloqu�
 | Lot | Contenu | Dépendances | Statut | Dernière MAJ | Notes |
 |---|---|---|---|---|---|
 | **Lot 0** | Socle : infra, CI/CD, auth JWT, RBAC, modèle de données, ports+stubs, audit, event-tracking KPI, docker-compose | — | ✅ Terminé | 2026-07-28 | 7 commits, 66 tests, 89% coverage |
-| **Lot 1** | Module candidat (profil, CV, liens, complétude 70 %) | Lot 0 | 🟨 En cours | 2026-07-28 | US-CAND-01 à US-CAND-08 |
+| **Lot 1** | Module candidat (profil, CV, liens, complétude 70 %) | Lot 0 | ✅ Terminé | 2026-07-28 | 4 stories, 116 tests, 15 suites |
 | **Lot 2** | Évaluation & scoring (adaptateur API réel + webhook + anti-triche + barème) | Lot 0, 1 | ⬜ À faire | — | ⚠️ Choisir le fournisseur scoring ici. Anti-triche = cœur de crédibilité |
 | **Lot 3** | CVthèque & recherche (indexation selon seuils) | Lot 1, 2 | ⬜ À faire | — | FTS Postgres au MVP |
 | **Lot 4** | Espace recruteur & offres | Lot 0, 3 | ⬜ À faire | — | |
@@ -73,14 +73,14 @@ Périmètre précis :
 
 ---
 
-## Détail du Lot 1 — Module candidat (🟨 En cours)
+## Détail du Lot 1 — Module candidat (✅ Terminé)
 
 Stories dans l'ordre :
 
 - [x] `US-CAND-01` — inscription + vérification email (couvert par Lot 0 + tests DTO ajoutés)
 - [x] `US-CAND-02` — profil + calcul de complétude (seuil 70 %, barème pondéré CDC §5.1)
 - [x] `US-CAND-03` — upload CV (FileScanner + ObjectStorage, PDF/DOCX <= 5 Mo)
-- [ ] `US-CAND-08` — export / suppression des données (droits CNDP/RGPD)
+- [x] `US-CAND-08` — export / suppression des données (droits CNDP/RGPD)
 
 ---
 
@@ -102,7 +102,7 @@ Pour chaque story : ses critères Given/When/Then du backlog = la Definition of 
 | — | — | Initialisation du repo et des specs | Démarrer Lot 0 |
 | 2026-07-28 | Session 1 | Lot 0 complet : NestJS strict, TypeORM Data Mapper, auth JWT+refresh rotation, RBAC 5 rôles cumulatifs, 5 ports+stubs, audit, settings configurable, health check, Docker, CI. 7 commits, 66 tests (10 suites), 89% coverage. | Lot 1 : US-CAND-01 |
 | 2026-07-28 | Session 2 | US-CAND-01 confirmée (couverte par Lot 0 + tests DTO). US-CAND-02 : profil candidat (service + controller + DTOs), calcul complétude pondéré (7 critères CDC §5.1, poids en settings), entités Experience + ProfileLink, firstName/lastName sur profil. 22 tests ajoutés (95 total). | US-CAND-03 |
-| 2026-07-28 | Session 3 | US-CAND-03 : upload CV (POST/GET/DELETE /candidates/cv). Pipeline : validation type (PDF/DOCX) + taille (≤5 Mo configurable) → scan FileScanner (bloquant) → stockage ObjectStorage → Document entity → recalcul complétude. Refactoré ports en @Global PortsModule. 8 tests ajoutés (103 total, 14 suites). | US-CAND-08 |
+| 2026-07-28 | Session 3 | US-CAND-03 : upload CV (POST/GET/DELETE /candidates/cv). Pipeline : validation type (PDF/DOCX) + taille (≤5 Mo configurable) → scan FileScanner (bloquant) → stockage ObjectStorage → Document entity → recalcul complétude. Refactoré ports en @Global PortsModule. 8 tests ajoutés (103 total, 14 suites). US-CAND-08 : export données (JSON portable, sans hash/tokens) + suppression/anonymisation (soft-delete user, suppression profil+docs+storage, email anonymisé). Résilience si storage indispo. Audit journalisé. 13 tests ajoutés (116 total, 15 suites). Lot 1 terminé. | Lot 2 |
 
 ---
 
