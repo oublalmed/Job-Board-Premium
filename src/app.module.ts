@@ -19,16 +19,7 @@ import { AssessmentsModule } from './modules/assessments/assessments.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { HealthModule } from './modules/health/health.module.js';
-import { SCORING_PROVIDER } from './ports/scoring.port.js';
-import { PAYMENT_PROVIDER } from './ports/payment.port.js';
-import { MAIL_PROVIDER } from './ports/mail.port.js';
-import { FILE_SCANNER } from './ports/file-scanner.port.js';
-import { OBJECT_STORAGE } from './ports/object-storage.port.js';
-import { StubScoringAdapter } from './adapters/scoring/stub-scoring.adapter.js';
-import { StubPaymentAdapter } from './adapters/payment/stub-payment.adapter.js';
-import { StubMailAdapter } from './adapters/mail/stub-mail.adapter.js';
-import { StubFileScannerAdapter } from './adapters/file-scanner/stub-file-scanner.adapter.js';
-import { StubObjectStorageAdapter } from './adapters/object-storage/stub-object-storage.adapter.js';
+import { PortsModule } from './ports/ports.module.js';
 
 @Module({
   imports: [
@@ -73,6 +64,7 @@ import { StubObjectStorageAdapter } from './adapters/object-storage/stub-object-
         },
       }),
     }),
+    PortsModule,
     AuthModule,
     UsersModule,
     CandidatesModule,
@@ -81,20 +73,6 @@ import { StubObjectStorageAdapter } from './adapters/object-storage/stub-object-
     AuditModule,
     SettingsModule,
     HealthModule,
-  ],
-  providers: [
-    { provide: SCORING_PROVIDER, useClass: StubScoringAdapter },
-    { provide: PAYMENT_PROVIDER, useClass: StubPaymentAdapter },
-    { provide: MAIL_PROVIDER, useClass: StubMailAdapter },
-    { provide: FILE_SCANNER, useClass: StubFileScannerAdapter },
-    { provide: OBJECT_STORAGE, useClass: StubObjectStorageAdapter },
-  ],
-  exports: [
-    SCORING_PROVIDER,
-    PAYMENT_PROVIDER,
-    MAIL_PROVIDER,
-    FILE_SCANNER,
-    OBJECT_STORAGE,
   ],
 })
 export class AppModule {}

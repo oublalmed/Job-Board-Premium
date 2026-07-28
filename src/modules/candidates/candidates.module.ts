@@ -8,6 +8,8 @@ import { Experience } from './entities/experience.entity.js';
 import { ProfileLink } from './entities/profile-link.entity.js';
 import { CandidateProfileService } from './candidate-profile.service.js';
 import { CandidateProfileController } from './candidate-profile.controller.js';
+import { CandidateDocumentService } from './candidate-document.service.js';
+import { CandidateDocumentController } from './candidate-document.controller.js';
 
 @Module({
   imports: [
@@ -20,8 +22,8 @@ import { CandidateProfileController } from './candidate-profile.controller.js';
       ProfileLink,
     ]),
   ],
-  controllers: [CandidateProfileController],
-  providers: [CandidateProfileService],
-  exports: [CandidateProfileService, TypeOrmModule],
+  controllers: [CandidateProfileController, CandidateDocumentController],
+  providers: [CandidateProfileService, CandidateDocumentService],
+  exports: [CandidateProfileService, CandidateDocumentService, TypeOrmModule],
 })
 export class CandidatesModule {}
