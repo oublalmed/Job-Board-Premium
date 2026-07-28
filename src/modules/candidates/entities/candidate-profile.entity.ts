@@ -27,23 +27,26 @@ export class CandidateProfile {
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
-  @Column({ name: 'first_name', nullable: true })
+  @Column({ name: 'first_name', type: 'varchar', nullable: true })
   firstName!: string | null;
 
-  @Column({ name: 'last_name', nullable: true })
+  @Column({ name: 'last_name', type: 'varchar', nullable: true })
   lastName!: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   headline!: string | null;
 
   @Column({ type: 'text', nullable: true })
   bio!: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   availability!: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   mobility!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  location!: string | null;
 
   @Column({ name: 'salary_min', type: 'integer', nullable: true })
   salaryMin!: number | null;

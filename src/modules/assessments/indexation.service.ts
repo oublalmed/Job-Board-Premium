@@ -9,6 +9,7 @@ import { SettingsService } from '../settings/settings.service.js';
 const DEFAULT_INDEXATION_SCORE_MIN = 40;
 const DEFAULT_INDEXATION_PERCENTILE_MIN = 30;
 const DEFAULT_FEATURING_PERCENTILE_MIN = 75;
+const DEFAULT_COMPLETENESS_THRESHOLD = 70;
 
 @Injectable()
 export class IndexationService {
@@ -58,6 +59,7 @@ export class IndexationService {
       indexationScoreMin,
       indexationPercentileMin,
       featuringPercentileMin,
+      completenessThreshold,
     ] = await Promise.all([
       this.settingsService
         .getNumber('indexation_score_min')
@@ -68,9 +70,15 @@ export class IndexationService {
       this.settingsService
         .getNumber('featuring_percentile_min')
         .then((v) => v ?? DEFAULT_FEATURING_PERCENTILE_MIN),
+      this.settingsService
+        .getNumber('completeness_threshold_publishable')
+        .then((v) => v ?? DEFAULT_COMPLETENESS_THRESHOLD),
     ]);
 
-    let shouldIndex = false;
+    const isCompleteEnough =
+      Number(profile.completeness) >= completenessThreshold;
+
+    let scoreThresholdMet = false;
     let shouldFeature = false;
 
     for (const score of validScores) {
@@ -82,7 +90,7 @@ export class IndexationService {
         value >= indexationScoreMin ||
         (percentile !== null && percentile >= indexationPercentileMin)
       ) {
-        shouldIndex = true;
+        scoreThresholdMet = true;
       }
 
       if (percentile !== null && percentile >= featuringPercentileMin) {
@@ -90,8 +98,8 @@ export class IndexationService {
       }
     }
 
-    profile.indexedInCvtheque = shouldIndex;
-    profile.featured = shouldFeature;
+    profile.indexedInCvtheque = isCompleteEnough && scoreThresholdMet;
+    profile.featured = profile.indexedInCvtheque && shouldFeature;
 
     await this.profileRepo.save(profile);
   }

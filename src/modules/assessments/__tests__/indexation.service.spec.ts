@@ -22,6 +22,7 @@ describe('IndexationService', () => {
       userId: candidateId,
       indexedInCvtheque: false,
       featured: false,
+      completeness: 100,
       ...overrides,
     };
   }
@@ -69,6 +70,8 @@ describe('IndexationService', () => {
         if (key === 'indexation_score_min') return Promise.resolve(40);
         if (key === 'indexation_percentile_min') return Promise.resolve(30);
         if (key === 'featuring_percentile_min') return Promise.resolve(75);
+        if (key === 'completeness_threshold_publishable')
+          return Promise.resolve(70);
         return Promise.resolve(null);
       }),
     };
@@ -162,6 +165,59 @@ describe('IndexationService', () => {
       );
       expect(settingsService.getNumber).toHaveBeenCalledWith(
         'indexation_percentile_min',
+      );
+    });
+  });
+
+  describe('EF-SRCH-01 — Scenario 0: complétude requise (>= 70 %)', () => {
+    it('should NOT index a candidate below completeness threshold even with a qualifying score', async () => {
+      profileRepo.findOne.mockResolvedValue(makeProfile({ completeness: 50 }));
+      scoreRepo.find.mockResolvedValue([
+        makeScore({ value: 90, percentile: 95 }),
+      ]);
+
+      await service.applyThresholds(candidateId);
+
+      expect(profileRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ indexedInCvtheque: false, featured: false }),
+      );
+    });
+
+    it('should index a candidate at exact completeness threshold (70) with a qualifying score', async () => {
+      profileRepo.findOne.mockResolvedValue(makeProfile({ completeness: 70 }));
+      scoreRepo.find.mockResolvedValue([
+        makeScore({ value: 50, percentile: 40 }),
+      ]);
+
+      await service.applyThresholds(candidateId);
+
+      expect(profileRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ indexedInCvtheque: true }),
+      );
+    });
+
+    it('should NOT feature a candidate below completeness threshold even with a top percentile', async () => {
+      profileRepo.findOne.mockResolvedValue(makeProfile({ completeness: 50 }));
+      scoreRepo.find.mockResolvedValue([
+        makeScore({ value: 95, percentile: 90 }),
+      ]);
+
+      await service.applyThresholds(candidateId);
+
+      expect(profileRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ indexedInCvtheque: false, featured: false }),
+      );
+    });
+
+    it('should read the completeness threshold from settings', async () => {
+      scoreRepo.find.mockResolvedValue([
+        makeScore({ value: 50, percentile: 40 }),
+      ]);
+
+      await service.applyThresholds(candidateId);
+
+      expect(settingsService.getNumber).toHaveBeenCalledWith(
+        'completeness_threshold_publishable',
       );
     });
   });

@@ -72,6 +72,7 @@ export class CandidateProfileService {
         | 'bio'
         | 'availability'
         | 'mobility'
+        | 'location'
         | 'salaryMin'
         | 'salaryMax'
         | 'salaryVisible'

@@ -34,6 +34,10 @@ export class UpdateProfileDto {
   mobility?: string;
 
   @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(0)
   salaryMin?: number;

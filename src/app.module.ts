@@ -16,6 +16,7 @@ import { UsersModule } from './modules/users/users.module.js';
 import { CandidatesModule } from './modules/candidates/candidates.module.js';
 import { CompaniesModule } from './modules/companies/companies.module.js';
 import { AssessmentsModule } from './modules/assessments/assessments.module.js';
+import { SearchModule } from './modules/search/search.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { HealthModule } from './modules/health/health.module.js';
@@ -70,6 +71,7 @@ import { PortsModule } from './ports/ports.module.js';
     CandidatesModule,
     CompaniesModule,
     AssessmentsModule,
+    SearchModule,
     AuditModule,
     SettingsModule,
     HealthModule,
