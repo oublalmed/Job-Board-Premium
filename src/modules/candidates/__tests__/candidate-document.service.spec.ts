@@ -220,4 +220,58 @@ describe('CandidateDocumentService', () => {
       expect(documentRepo.remove).toHaveBeenCalledWith(oldDoc);
     });
   });
+
+  describe('getCV', () => {
+    it('should return the CV document for the user', async () => {
+      const existingDoc = {
+        id: 'doc-1',
+        ownerId: userId,
+        type: DocumentType.CV,
+        originalName: 'cv.pdf',
+        scanStatus: ScanStatus.CLEAN,
+      };
+      documentRepo.findOne.mockResolvedValue(existingDoc);
+
+      const result = await service.getCV(userId);
+
+      expect(documentRepo.findOne).toHaveBeenCalledWith({
+        where: { ownerId: userId, type: DocumentType.CV },
+      });
+      expect(result).toEqual(existingDoc);
+    });
+
+    it('should return null when no CV exists', async () => {
+      documentRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.getCV(userId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('deleteCV', () => {
+    it('should delete CV from storage, DB, and recalculate completeness', async () => {
+      const doc = {
+        id: 'doc-1',
+        ownerId: userId,
+        type: DocumentType.CV,
+        storageKey: 'cv/user-1/cv.pdf',
+      };
+      documentRepo.findOne.mockResolvedValue(doc);
+
+      await service.deleteCV(userId);
+
+      expect(objectStorage.delete).toHaveBeenCalledWith('cv/user-1/cv.pdf');
+      expect(documentRepo.remove).toHaveBeenCalledWith(doc);
+      expect(profileService.calculateCompleteness).toHaveBeenCalledWith(
+        profileId,
+      );
+    });
+
+    it('should throw NotFoundException when no CV exists', async () => {
+      documentRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.deleteCV(userId)).rejects.toThrow('CV not found');
+    });
+  });
 });

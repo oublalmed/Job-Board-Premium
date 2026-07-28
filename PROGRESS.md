@@ -102,7 +102,14 @@ Pour chaque story : ses critères Given/When/Then du backlog = la Definition of 
 | — | — | Initialisation du repo et des specs | Démarrer Lot 0 |
 | 2026-07-28 | Session 1 | Lot 0 complet : NestJS strict, TypeORM Data Mapper, auth JWT+refresh rotation, RBAC 5 rôles cumulatifs, 5 ports+stubs, audit, settings configurable, health check, Docker, CI. 7 commits, 66 tests (10 suites), 89% coverage. | Lot 1 : US-CAND-01 |
 | 2026-07-28 | Session 2 | US-CAND-01 confirmée (couverte par Lot 0 + tests DTO). US-CAND-02 : profil candidat (service + controller + DTOs), calcul complétude pondéré (7 critères CDC §5.1, poids en settings), entités Experience + ProfileLink, firstName/lastName sur profil. 22 tests ajoutés (95 total). | US-CAND-03 |
-| 2026-07-28 | Session 3 | US-CAND-03 : upload CV (POST/GET/DELETE /candidates/cv). Pipeline : validation type (PDF/DOCX) + taille (≤5 Mo configurable) → scan FileScanner (bloquant) → stockage ObjectStorage → Document entity → recalcul complétude. Refactoré ports en @Global PortsModule. 8 tests ajoutés (103 total, 14 suites). US-CAND-08 : export données (JSON portable, sans hash/tokens) + suppression/anonymisation (soft-delete user, suppression profil+docs+storage, email anonymisé). Résilience si storage indispo. Audit journalisé. 13 tests ajoutés (116 total, 15 suites). Lot 1 terminé. | Lot 2 |
+| 2026-07-28 | Session 3 | US-CAND-03 : upload CV (POST/GET/DELETE /candidates/cv). Pipeline : validation type (PDF/DOCX) + taille (≤5 Mo configurable) → scan FileScanner (bloquant) → stockage ObjectStorage → Document entity → recalcul complétude. Refactoré ports en @Global PortsModule. US-CAND-08 : export données (JSON portable, sans hash/tokens) + suppression/anonymisation (soft-delete user, suppression profil+docs+storage, email anonymisé). Résilience si storage indispo. Audit journalisé. Recette Lot 1 : ajout tests controllers (isolation user.sub, pas d'accès croisé), tests getCV/deleteCV, couverture 100% stmts/funcs/lines sur les 4 fichiers candidat. 132 tests, 17 suites. Lot 1 validé ✅. | Lot 2 |
+
+---
+
+## Décisions techniques Lot 1
+
+- **Effacement CNDP/RGPD** : suppression immédiate (conforme « sous 30 j »). Fenêtre de grâce (soft-delete différé + scheduler) reportée en V1 si besoin métier.
+- **`completeness_min_skills`** : clé settings déjà lue depuis la table settings (fallback = 5 si absent en DB). Cohérente avec le nommage `completeness_*`.
 
 ---
 
