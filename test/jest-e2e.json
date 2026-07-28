@@ -9,5 +9,6 @@
   "moduleNameMapper": {
     "^(\\.\\.?/.*)\\.js$": "$1"
   },
-  "transformIgnorePatterns": ["node_modules/(?!(uuid)/)"]
+  "transformIgnorePatterns": ["node_modules/(?!(uuid)/)"],
+  "maxWorkers": 1
 }
