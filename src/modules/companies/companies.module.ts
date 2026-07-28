@@ -5,6 +5,8 @@ import { Recruiter } from './entities/recruiter.entity.js';
 import { Subscription } from './entities/subscription.entity.js';
 import { CompanyService } from './company.service.js';
 import { CompanyController } from './company.controller.js';
+import { RecruiterService } from './recruiter.service.js';
+import { RecruiterController } from './recruiter.controller.js';
 import { UsersModule } from '../users/users.module.js';
 
 @Module({
@@ -12,8 +14,8 @@ import { UsersModule } from '../users/users.module.js';
     TypeOrmModule.forFeature([Company, Recruiter, Subscription]),
     UsersModule,
   ],
-  controllers: [CompanyController],
-  providers: [CompanyService],
-  exports: [TypeOrmModule, CompanyService],
+  controllers: [CompanyController, RecruiterController],
+  providers: [CompanyService, RecruiterService],
+  exports: [TypeOrmModule, CompanyService, RecruiterService],
 })
 export class CompaniesModule {}
