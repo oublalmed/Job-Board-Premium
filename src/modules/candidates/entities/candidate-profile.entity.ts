@@ -27,6 +27,12 @@ export class CandidateProfile {
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
+  @Column({ name: 'first_name', nullable: true })
+  firstName!: string | null;
+
+  @Column({ name: 'last_name', nullable: true })
+  lastName!: string | null;
+
   @Column({ nullable: true })
   headline!: string | null;
 

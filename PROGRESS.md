@@ -78,7 +78,7 @@ Périmètre précis :
 Stories dans l'ordre :
 
 - [x] `US-CAND-01` — inscription + vérification email (couvert par Lot 0 + tests DTO ajoutés)
-- [ ] `US-CAND-02` — profil + calcul de complétude (seuil 70 %, barème pondéré CDC §5.1)
+- [x] `US-CAND-02` — profil + calcul de complétude (seuil 70 %, barème pondéré CDC §5.1)
 - [ ] `US-CAND-03` — upload CV (FileScanner + ObjectStorage, PDF/DOCX <= 5 Mo)
 - [ ] `US-CAND-08` — export / suppression des données (droits CNDP/RGPD)
 
@@ -101,6 +101,7 @@ Pour chaque story : ses critères Given/When/Then du backlog = la Definition of 
 |---|---|---|---|
 | — | — | Initialisation du repo et des specs | Démarrer Lot 0 |
 | 2026-07-28 | Session 1 | Lot 0 complet : NestJS strict, TypeORM Data Mapper, auth JWT+refresh rotation, RBAC 5 rôles cumulatifs, 5 ports+stubs, audit, settings configurable, health check, Docker, CI. 7 commits, 66 tests (10 suites), 89% coverage. | Lot 1 : US-CAND-01 |
+| 2026-07-28 | Session 2 | US-CAND-01 confirmée (couverte par Lot 0 + tests DTO). US-CAND-02 : profil candidat (service + controller + DTOs), calcul complétude pondéré (7 critères CDC §5.1, poids en settings), entités Experience + ProfileLink, firstName/lastName sur profil. 22 tests ajoutés (95 total). | US-CAND-03 |
 
 ---
 
