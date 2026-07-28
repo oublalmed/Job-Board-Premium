@@ -103,7 +103,7 @@ Pour chaque story : ses critères Given/When/Then du backlog = la Definition of 
 | 2026-07-28 | Session 1 | Lot 0 complet : NestJS strict, TypeORM Data Mapper, auth JWT+refresh rotation, RBAC 5 rôles cumulatifs, 5 ports+stubs, audit, settings configurable, health check, Docker, CI. 7 commits, 66 tests (10 suites), 89% coverage. | Lot 1 : US-CAND-01 |
 | 2026-07-28 | Session 2 | US-CAND-01 confirmée (couverte par Lot 0 + tests DTO). US-CAND-02 : profil candidat (service + controller + DTOs), calcul complétude pondéré (7 critères CDC §5.1, poids en settings), entités Experience + ProfileLink, firstName/lastName sur profil. 22 tests ajoutés (95 total). | US-CAND-03 |
 | 2026-07-28 | Session 3 | US-CAND-03 : upload CV (POST/GET/DELETE /candidates/cv). Pipeline : validation type (PDF/DOCX) + taille (≤5 Mo configurable) → scan FileScanner (bloquant) → stockage ObjectStorage → Document entity → recalcul complétude. Refactoré ports en @Global PortsModule. US-CAND-08 : export données (JSON portable, sans hash/tokens) + suppression/anonymisation (soft-delete user, suppression profil+docs+storage, email anonymisé). Résilience si storage indispo. Audit journalisé. Recette Lot 1 : ajout tests controllers (isolation user.sub, pas d'accès croisé), tests getCV/deleteCV, couverture 100% stmts/funcs/lines sur les 4 fichiers candidat. 132 tests, 17 suites. Lot 1 validé ✅. | Lot 2 |
-| 2026-07-28 | Session 4 | US-EVAL-02 : passage de test en environnement sécurisé. Anti-triche socle : session unique, timer strict (expiresAt depuis durationMinutes), cooldown 90j configurable (settings `assessment_cooldown_days`), gestion d'incident (resumeToken UUID, reprise sans consommer de tentative). Enrichi Assessment (resumeToken, expiresAt), Score (testVersion, plagiarismVerdict), ScoringProvider port (verifyWebhookSignature, plagiarism). Controller : POST start/resume/incident, RBAC CANDIDATE. 32 tests ajoutés (164 total, 19 suites). | US-EVAL-03 |
+| 2026-07-28 | Session 4 | US-EVAL-02 : passage de test en environnement sécurisé. Anti-triche socle : session unique, timer strict (expiresAt depuis durationMinutes), cooldown 90j configurable (settings `assessment_cooldown_days`), gestion d'incident (resumeToken UUID, reprise sans consommer de tentative). Enrichi Assessment (resumeToken, expiresAt), Score (testVersion, plagiarismVerdict), ScoringProvider port (verifyWebhookSignature, plagiarism). Controller : POST start/resume/incident, RBAC CANDIDATE. 32 tests ajoutés (164 total, 19 suites). US-EVAL-03 : score normalisé 0-100 via webhook. WebhookService : vérification signature, normalisation score, persistance Score (baremeVersion, testVersion, plagiarismVerdict), idempotence (replay safe). WebhookController : POST /assessments/webhook (pas de JWT, signature header). Settings : `score_bareme_version`, `score_validity_days`. 27 tests ajoutés (191 total, 21 suites). | US-EVAL-SEUIL |
 
 ---
 
@@ -112,7 +112,7 @@ Pour chaque story : ses critères Given/When/Then du backlog = la Definition of 
 Stories dans l'ordre :
 
 - [x] `US-EVAL-02` — passage du test en environnement sécurisé (anti-triche socle : session unique, timer strict, cooldown 90j configurable, incident management avec resumeToken)
-- [ ] `US-EVAL-03` — score normalisé 0-100 + percentile via webhook (idempotent, signature verification, barème/testVersion historisés)
+- [x] `US-EVAL-03` — score normalisé 0-100 + percentile via webhook (idempotent, signature verification, barème/testVersion historisés)
 - [ ] `US-EVAL-SEUIL` — application des seuils d'indexation et de mise en avant
 
 ---
@@ -124,6 +124,9 @@ Stories dans l'ordre :
 - **Cooldown** : configurable via `assessment_cooldown_days` (settings table, fallback = 90).
 - **Incident management** : `resumeToken` (UUID) régénéré à chaque reprise. Reprise ne consomme pas de tentative, ne crée pas de nouvelle session ScoringProvider.
 - **Score entity enrichi** : `testVersion` (audit reproductibilité) + `plagiarismVerdict` (enum clean/suspected/confirmed).
+- **Webhook scoring** : idempotent (vérifie existence Score avant traitement), signature vérifiée via `ScoringProvider.verifyWebhookSignature()`. Score normalisé à 0-100 (score/maxScore*100). Pas de JWT, authentification par signature header `x-scoring-signature`.
+- **Barème et version de test** : figés par Score au moment du calcul (`baremeVersion` depuis settings `score_bareme_version`, `testVersion` depuis Test entity). Reproductibilité audit garantie.
+- **Validité du score** : configurable via `score_validity_days` (settings table, fallback = 365 jours).
 
 ---
 

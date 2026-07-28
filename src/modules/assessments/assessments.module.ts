@@ -6,11 +6,13 @@ import { Assessment } from './entities/assessment.entity.js';
 import { Score } from './entities/score.entity.js';
 import { AssessmentService } from './assessment.service.js';
 import { AssessmentController } from './assessment.controller.js';
+import { WebhookService } from './webhook.service.js';
+import { WebhookController } from './webhook.controller.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Specialty, Test, Assessment, Score])],
-  controllers: [AssessmentController],
-  providers: [AssessmentService],
-  exports: [TypeOrmModule, AssessmentService],
+  controllers: [AssessmentController, WebhookController],
+  providers: [AssessmentService, WebhookService],
+  exports: [TypeOrmModule, AssessmentService, WebhookService],
 })
 export class AssessmentsModule {}
