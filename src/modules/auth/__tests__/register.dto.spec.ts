@@ -37,9 +37,7 @@ describe('RegisterDto', () => {
     const errors = await validate(dto);
     const messages = errors.flatMap((e) => Object.values(e.constraints ?? {}));
     expect(messages).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('uppercase'),
-      ]),
+      expect.arrayContaining([expect.stringContaining('uppercase')]),
     );
   });
 
@@ -51,9 +49,7 @@ describe('RegisterDto', () => {
     const errors = await validate(dto);
     const messages = errors.flatMap((e) => Object.values(e.constraints ?? {}));
     expect(messages).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('lowercase'),
-      ]),
+      expect.arrayContaining([expect.stringContaining('lowercase')]),
     );
   });
 
@@ -65,9 +61,7 @@ describe('RegisterDto', () => {
     const errors = await validate(dto);
     const messages = errors.flatMap((e) => Object.values(e.constraints ?? {}));
     expect(messages).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('digit'),
-      ]),
+      expect.arrayContaining([expect.stringContaining('digit')]),
     );
   });
 
@@ -79,9 +73,7 @@ describe('RegisterDto', () => {
     const errors = await validate(dto);
     const messages = errors.flatMap((e) => Object.values(e.constraints ?? {}));
     expect(messages).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('special character'),
-      ]),
+      expect.arrayContaining([expect.stringContaining('special character')]),
     );
   });
 
