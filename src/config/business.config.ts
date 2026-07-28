@@ -22,6 +22,7 @@ export const businessConfig = registerAs('business', () => ({
     10,
   ),
   retestCooldownDays: parseInt(process.env['RETEST_COOLDOWN_DAYS'] ?? '90', 10),
+  trialDurationDays: parseInt(process.env['TRIAL_DURATION_DAYS'] ?? '14', 10),
   maxCvSizeBytes: parseInt(process.env['MAX_CV_SIZE_BYTES'] ?? '5242880', 10),
   currency: process.env['CURRENCY'] ?? 'MAD',
   plans: {

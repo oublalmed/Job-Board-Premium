@@ -187,7 +187,7 @@ describe('SearchService', () => {
 
       const result = await service.searchCandidates({ limit: 1 });
 
-      expect(mainQb.take).toHaveBeenCalledWith(2);
+      expect(mainQb.limit).toHaveBeenCalledWith(2);
       expect(result.nextCursor).toBeNull();
       expect(result.items).toHaveLength(1);
     });

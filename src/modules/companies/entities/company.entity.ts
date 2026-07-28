@@ -23,7 +23,7 @@ export class Company {
   @Column({ name: 'registration_number', type: 'varchar', nullable: true })
   registrationNumber!: string | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, unique: true })
   ice!: string | null;
 
   @Column({ default: false })

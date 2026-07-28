@@ -15,6 +15,7 @@ export enum AuditAction {
   ASSESSMENT_INCIDENT = 'assessment.incident',
   ASSESSMENT_RESUMED = 'assessment.resumed',
   SCORE_CALCULATED = 'score.calculated',
+  COMPANY_CREATED = 'company.created',
   SUBSCRIPTION_CREATED = 'subscription.created',
   SUBSCRIPTION_CANCELLED = 'subscription.cancelled',
   PAYMENT_RECEIVED = 'payment.received',

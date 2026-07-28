@@ -64,11 +64,16 @@ export class SearchService {
     const limit = filters.limit ?? 20;
     const qb = this.buildQuery(filters);
 
-    qb.orderBy('COALESCE(best_score.best_value, 0)', 'DESC').addOrderBy(
-      'profile.id',
-      'DESC',
-    );
-    qb.take(limit + 1);
+    // TypeORM's ORDER BY + getRawAndEntities() combination chokes on a raw
+    // function-call expression here ("COALESCE(best_score" alias was not
+    // found) — ordering by the already-selected plain alias avoids it.
+    qb.orderBy('"sortScore"', 'DESC').addOrderBy('profile.id', 'DESC');
+    // .take() wraps the query in a "DISTINCT ... FROM (...)" subquery to
+    // stay correct under one-to-many joins — our best_score join is 1:1
+    // (GROUP BY candidate_id), so that wrapping isn't needed, and it
+    // currently emits malformed SQL for this ORDER BY shape. .limit() is a
+    // plain SQL LIMIT and is safe given the join is 1:1.
+    qb.limit(limit + 1);
 
     const { entities, raw } = await qb.getRawAndEntities<RawScoreRow>();
 
@@ -122,6 +127,7 @@ export class SearchService {
       )
       .addSelect('best_score.best_value', 'bestScoreValue')
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
+      .addSelect('COALESCE(best_score.best_value, 0)', 'sortScore')
       .where('profile.indexedInCvtheque = true')
       .andWhere('profile.visibility IN (:...visibilities)', {
         visibilities: [

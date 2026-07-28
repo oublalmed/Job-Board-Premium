@@ -44,6 +44,7 @@ export const configValidationSchema = Joi.object({
   HIGHLIGHT_PERCENTILE_THRESHOLD: Joi.number().min(0).max(100).default(75),
   SCORE_VALIDITY_MONTHS: Joi.number().min(1).default(12),
   RETEST_COOLDOWN_DAYS: Joi.number().min(1).default(90),
+  TRIAL_DURATION_DAYS: Joi.number().min(1).default(14),
   PASSWORD_MIN_LENGTH: Joi.number().min(8).default(10),
   MAX_CV_SIZE_BYTES: Joi.number().default(5242880),
 

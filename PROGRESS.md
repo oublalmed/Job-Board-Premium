@@ -46,7 +46,7 @@ Légende statut : ⬜ À faire · 🟨 En cours · ✅ Terminé · ⏸️ Bloqu�
 | **Lot 1** | Module candidat (profil, CV, liens, complétude 70 %) | Lot 0 | ✅ Terminé | 2026-07-28 | 4 stories, 116 tests, 15 suites |
 | **Lot 2** | Évaluation & scoring (adaptateur API réel + webhook + anti-triche + barème) | Lot 0, 1 | ✅ Terminé | 2026-07-28 | 3 stories, 244 tests (25 suites) + 5 tests e2e. Fournisseur non choisi → port + stub mock. Anti-triche socle, score webhook idempotent + **authentifié (HMAC-SHA256, fail-closed)**, seuils indexation/featuring configurables. Webhook durci en recette (voir Décisions techniques Lot 2 — durcissement). |
 | **Lot 3** | CVthèque & recherche (indexation selon seuils) | Lot 1, 2 | ✅ Terminé | 2026-07-28 | US-SRCH-02 + fix EF-SRCH-01. 236 tests (24 suites), 92.7% coverage. FTS Postgres via QueryBuilder (sans GIN, sans migration). |
-| **Lot 4** | Espace recruteur & offres | Lot 0, 3 | ⬜ À faire | — | |
+| **Lot 4** | Espace recruteur & offres | Lot 0, 3 | 🟨 En cours | 2026-07-28 | EF-RECR-01 ✅ (création entreprise + auto-provisionnement recruiter/trial). Backlog livré ne détaille pas l'Épic recruteur → Given/When/Then dérivés du CDC §4.5, validés story par story avec l'utilisateur avant code. Reste : EF-RECR-02, EF-RECR-03, EF-RECR-06 (Should). |
 | **Lot 5** | Messagerie (socle) + quotas de contacts | Lot 1, 4 | ⬜ À faire | — | Décrément quota à l'ouverture du fil |
 | **Lot 6** | Abonnement & facturation (PSP, paliers, dunning) | Lot 4 | ⬜ À faire | — | ⚠️ Confirmer le PSP (compatible Maroc, ICE/TVA) ici |
 | **Lot 7** | Remédiation candidat + Amorçage (badge partageable, referral, essai recruteur) | Lot 2, 4 | ⬜ À faire | — | |
@@ -84,11 +84,16 @@ Stories dans l'ordre :
 
 ---
 
-## Prochaines stories (après Lot 3) — ordre recommandé
+## Prochaines stories (Lot 4 en cours) — ordre recommandé
 
-1. Lot 4 — Espace recruteur & offres : onboarding recruteur (compte entreprise KYB léger, `Company`/`Recruiter`/`Subscription` peuplés via de vrais endpoints — jusqu'ici seedés manuellement pour les tests), publication d'offres, EF-RECR-01→06.
+1. ✅ `EF-RECR-01` — création d'un compte entreprise (KYB léger, auto-provisionnement recruiter + trial)
+2. `EF-RECR-02` — gestion de plusieurs utilisateurs sous un compte (company_admin ajoute/retire des recruiters)
+3. `EF-RECR-03` — publication et gestion d'offres (modération avant publication, cycle de vie du statut)
+4. `EF-RECR-06` — shortlist / viviers (Should, si le temps)
 
-Pour chaque story : ses critères Given/When/Then du backlog = la Definition of Done. Rester dans le périmètre de la story, ne pas déborder.
+**Important** : le backlog livré ne détaille pas l'Épic recruteur en Given/When/Then (seul `US-RECR-05` — quota de contacts — y figure). Les critères d'acceptation de EF-RECR-01/02/03/06 sont **dérivés du CDC §4.5** et validés avec l'utilisateur story par story avant implémentation — ce ne sont pas des scénarios repris tels quels d'un livrable existant.
+
+Pour chaque story : ses critères Given/When/Then (backlog si disponible, sinon dérivés du CDC et validés) = la Definition of Done. Rester dans le périmètre de la story, ne pas déborder.
 
 ---
 
@@ -103,6 +108,32 @@ Pour chaque story : ses critères Given/When/Then du backlog = la Definition of 
 | 2026-07-28 | Session 4 | US-EVAL-02 : passage de test en environnement sécurisé. Anti-triche socle : session unique, timer strict (expiresAt depuis durationMinutes), cooldown 90j configurable (settings `assessment_cooldown_days`), gestion d'incident (resumeToken UUID, reprise sans consommer de tentative). Enrichi Assessment (resumeToken, expiresAt), Score (testVersion, plagiarismVerdict), ScoringProvider port (verifyWebhookSignature, plagiarism). Controller : POST start/resume/incident, RBAC CANDIDATE. 32 tests ajoutés (164 total, 19 suites). US-EVAL-03 : score normalisé 0-100 via webhook. WebhookService : vérification signature, normalisation score, persistance Score (baremeVersion, testVersion, plagiarismVerdict), idempotence (replay safe). WebhookController : POST /assessments/webhook (pas de JWT, signature header). Settings : `score_bareme_version`, `score_validity_days`. 27 tests ajoutés (191 total, 21 suites). US-EVAL-SEUIL : seuils d'indexation et featuring. IndexationService (applyThresholds) : score ≥ 40 OU percentile ≥ P30 → indexedInCvtheque, percentile ≥ P75 → featured. Exclut scores expirés et plagiat confirmé. Seuils configurables via settings. CandidateProfile enrichi (indexedInCvtheque, featured). Câblé dans WebhookService après persistance du score. 18 tests ajoutés (209 total, 22 suites). Lot 2 terminé ✅. | Lot 3 |
 | 2026-07-28 | Session 5 | Environnement local sans Docker (Postgres natif, `DB_SYNCHRONIZE=true` en dev faute de migrations). Fix bug bloquant : 21 colonnes `string \| null` sans `type` explicite plantaient TypeORM sur Postgres (`DataTypeNotSupportedError`) — ajout de `type: 'varchar'` partout où c'était manquant. Lot 3 — CVthèque & recherche : fix EF-SRCH-01 (IndexationService n'appliquait pas le seuil de complétude ≥70 % — corrigé, `featured` dépend désormais de `indexedInCvtheque`). Ajout champ `location` sur CandidateProfile (gap CDC EF-SRCH-02 vs modèle Lot 1). Nouveau module `search` : `GET /api/v1/search/candidates` (US-SRCH-02) — filtres combinables (q full-text, skills, scoreMin, availability, mobility, location, salaire), tri par meilleur score valide, pagination curseur (keyset base64), RBAC (recruiter/company_admin/admin), gate abonnement actif contre `Recruiter`/`Subscription` (entités du schéma Lot 0, pas encore peuplées par un vrai flux d'onboarding — Lot 4). Première utilisation de `createQueryBuilder`/FTS Postgres (`to_tsvector`/`plainto_tsquery`, sans index GIN — tech debt documentée). 44 tests ajoutés (236 total, 24 suites), 92.7% coverage. Lot 3 terminé ✅. | Recette Lot 2 |
 | 2026-07-28 | Session 6 | Recette Lot 2 demandée avant Lot 4. Audit code réel du webhook (idempotence : OK ; anti-triche : OK ; **authenticité : absente** — `verifyWebhookSignature` du stub acceptait tout sans lire payload/signature ; raw body jamais capturé, `@Req() rawBody: Buffer` recevait en fait l'objet `Request` d'Express). Corrections : `rawBody: true` dans `main.ts` + controller typé `RawBodyRequest<Request>` (rejet 400 si absent) ; HMAC-SHA256 réel dans `StubScoringAdapter.verifyWebhookSignature` (secret `SCORING_WEBHOOK_SECRET`, comparaison timing-safe, **fail-closed** si secret absent, externalId extrait après vérification) ; tests de rejet réels (pas de mock) sur la fonction de vérification elle-même : sans signature, mauvaise signature, payload altéré, secret absent, longueur de signature différente, bonne signature. Ajout d'un test e2e (`test/webhook.e2e-spec.ts`, 4 scénarios contre app + Postgres réels) qui a révélé que `test/jest-e2e.json` n'avait jamais eu le `moduleNameMapper` requis — `test:e2e` n'avait probablement jamais tourné avec succès ; corrigé et câblé dans la CI. `test/app.e2e-spec.ts` (boilerplate testant une route `/` inexistante) remplacé par un smoke test réel sur `/health`. 8 tests ajoutés (244 total, 25 suites) + 5 tests e2e (2 suites). Lot 2 durci et validé ✅. | Lot 4 |
+| 2026-07-28 | Session 7 | Lot 4 démarré. Backlog livré sans Given/When/Then pour l'Épic recruteur → scénarios dérivés du CDC §4.5, validés avec l'utilisateur avant code (convention adoptée pour tout le lot). `EF-RECR-01` : `POST /companies` (tout utilisateur authentifié email-vérifié) crée `Company` (ICE 15 chiffres validé + unique en DB) + `Recruiter` liant l'appelant + promotion `Role.COMPANY_ADMIN` (dédupliquée) + `Subscription` trial auto-provisionnée (`plan=starter`, `contactQuota` lu via settings `plan_starter_contacts`/env `PLAN_STARTER_CONTACTS`, **`endsAt` = createdAt + `trial_duration_days`** lu via settings/env `TRIAL_DURATION_DAYS`, fallback 14j — jamais illimité). `GET /companies/me` (404 propre si aucune entreprise, pas de crash). En écrivant l'e2e complet (créer entreprise → recruiter → trial → `/search/candidates`), **2 bugs réels du Lot 3 découverts et corrigés** dans `SearchService` (jamais exécuté contre un vrai Postgres avant : les tests Lot 3 ne mockaient que le QueryBuilder) : (1) `ORDER BY COALESCE(best_score...)` — TypeORM ne résout pas un alias dans une expression de fonction brute → fix via `addSelect(..., 'sortScore')` + `orderBy('"sortScore"')` ; (2) `.take()` génère un SQL invalide (`DISTINCT ... , , ...`) en combinaison avec `getRawAndEntities()` sur ce join — remplacé par `.limit()` (safe ici, jointure 1:1 par `GROUP BY`). E2e dédié prouvant le garde-fou demandé : trial réel reculé dans le passé (pas de `trial_duration_days` négatif) → `/search/candidates` → 403. 20 tests unitaires + 7 tests e2e ajoutés (258 tests unit / 27 suites, 12 tests e2e / 3 suites). `EF-RECR-01` validé ✅, Lot 4 en cours. | EF-RECR-02 (attente feu vert) |
+
+---
+
+## Détail du Lot 4 — Espace recruteur & offres (🟨 En cours)
+
+Stories dans l'ordre :
+
+- [x] `EF-RECR-01` — création d'un compte entreprise (KYB léger : ICE 15 chiffres + RC libre, auto-provisionnement `Recruiter` + rôle `company_admin` + `Subscription` trial expirable)
+- [ ] `EF-RECR-02` — gestion de plusieurs utilisateurs sous un compte
+- [ ] `EF-RECR-03` — publication et gestion d'offres
+- [ ] `EF-RECR-06` — shortlist / viviers (Should)
+
+---
+
+## Décisions techniques Lot 4
+
+- **Origine des critères d'acceptation** : le backlog livré ne détaille pas l'Épic recruteur (seul `US-RECR-05` y figure). Les Given/When/Then de EF-RECR-01/02/03/06 sont dérivés du CDC §4.5 par la session et validés avec l'utilisateur avant chaque implémentation — à traiter comme faisant foi au même titre qu'un backlog fourni, mais à distinguer si un vrai backlog détaillé arrive plus tard.
+- **`company_admin` n'est jamais auto-attribuable à l'inscription** (`POST /auth/register` n'autorise que `candidate`/`recruiter`, inchangé). On le devient uniquement en créant une entreprise via `POST /companies` — évite qu'un rôle à fort privilège soit déclaratif côté client.
+- **Un seul rattachement entreprise par utilisateur** : `Recruiter.userId` est unique (contrainte déjà présente depuis le Lot 0) → un `POST /companies` alors qu'un `Recruiter` existe déjà rejette en 409, pas de double-appartenance au MVP.
+- **ICE unique** : contrainte `unique: true` ajoutée sur `Company.ice` (defense in depth ; le service vérifie aussi explicitement avant insert pour renvoyer un 409 propre plutôt qu'une erreur de contrainte brute).
+- **Trial jamais illimité** : `Subscription.endsAt` est **toujours** renseigné à la création (`createdAt + trial_duration_days`, settings `trial_duration_days` / env `TRIAL_DURATION_DAYS`, fallback 14j). Le gate d'abonnement du Lot 3 (`search.controller.ts`) vérifiait déjà correctement `endsAt` s'il est présent — le risque n'était donc pas dans le gate mais dans un provisionnement qui aurait pu laisser `endsAt` null. Prouvé par e2e : trial réel reculé dans le passé après création (pas de `trial_duration_days` négatif, qui aurait testé une config tordue plutôt que le gate lui-même) → `/search/candidates` → 403.
+- **Quota trial** : palier `starter` par défaut, `contactQuota` lu via `SettingsService.getNumber('plan_starter_contacts', 'PLAN_STARTER_CONTACTS')` (jamais en dur), cohérent avec la grille pricing §5.4 du CDC.
+- **Bugs Lot 3 découverts en écrivant l'e2e de bouclage** (`SearchService`, jamais exécuté avant contre un vrai Postgres — les tests Lot 3 ne mockaient que le QueryBuilder) :
+  1. `ORDER BY COALESCE(best_score.best_value, 0)` — TypeORM essaie de résoudre un alias dans une expression de fonction brute et échoue (`"COALESCE(best_score" alias was not found`). Fix : sélectionner l'expression sous un alias dédié (`addSelect(..., 'sortScore')`) et trier sur cet alias plutôt que l'expression brute.
+  2. `.take()` combiné à `getRawAndEntities()` sur ce join génère un SQL invalide (virgule vide dans le `SELECT DISTINCT` de la sous-requête de pagination que TypeORM construit automatiquement pour rester correct sous des jointures one-to-many). Remplacé par `.limit()` — sûr ici car la jointure `best_score` est fonctionnellement 1:1 (`GROUP BY candidate_id` dans la sous-requête).
 
 ---
 
