@@ -4,4 +4,5 @@ export { redisConfig } from './redis.config.js';
 export { authConfig } from './auth.config.js';
 export { storageConfig } from './storage.config.js';
 export { businessConfig } from './business.config.js';
+export { scoringConfig } from './scoring.config.js';
 export { configValidationSchema } from './config.validation.js';

@@ -26,6 +26,7 @@ services:
       JWT_ACCESS_EXPIRATION: 15m
       JWT_REFRESH_SECRET: dev-refresh-secret-change-me-in-prod
       JWT_REFRESH_EXPIRATION: 7d
+      SCORING_WEBHOOK_SECRET: dev-scoring-webhook-secret-change-me
       STORAGE_ENDPOINT: http://minio:9000
       STORAGE_ACCESS_KEY: minioadmin
       STORAGE_SECRET_KEY: minioadmin

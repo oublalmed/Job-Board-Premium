@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException, type RawBodyRequest } from '@nestjs/common';
+import type { Request } from 'express';
 import { WebhookController } from '../webhook.controller.js';
 import { WebhookService } from '../webhook.service.js';
 
@@ -23,17 +25,27 @@ describe('WebhookController', () => {
   });
 
   describe('handleWebhook', () => {
-    const rawBody = Buffer.from('{"externalId":"ext-123"}');
+    const rawBodyBuffer = Buffer.from('{"externalId":"ext-123"}');
     const signature = 'valid-sig';
 
-    it('should pass raw body and signature to service', async () => {
-      await controller.handleWebhook(rawBody, signature);
+    function makeRequest(rawBody: Buffer | undefined): RawBodyRequest<Request> {
+      return { rawBody } as RawBodyRequest<Request>;
+    }
 
-      expect(service.processWebhook).toHaveBeenCalledWith(rawBody, signature);
+    it('should pass the raw request body and signature to the service', async () => {
+      await controller.handleWebhook(makeRequest(rawBodyBuffer), signature);
+
+      expect(service.processWebhook).toHaveBeenCalledWith(
+        rawBodyBuffer,
+        signature,
+      );
     });
 
     it('should return processed result', async () => {
-      const result = await controller.handleWebhook(rawBody, signature);
+      const result = await controller.handleWebhook(
+        makeRequest(rawBodyBuffer),
+        signature,
+      );
 
       expect(result.alreadyProcessed).toBe(false);
       expect(result.scoreId).toBe('score-1');
@@ -45,9 +57,20 @@ describe('WebhookController', () => {
         scoreId: 'score-1',
       });
 
-      const result = await controller.handleWebhook(rawBody, signature);
+      const result = await controller.handleWebhook(
+        makeRequest(rawBodyBuffer),
+        signature,
+      );
 
       expect(result.alreadyProcessed).toBe(true);
+    });
+
+    it('should reject when the raw body was not captured', async () => {
+      await expect(
+        controller.handleWebhook(makeRequest(undefined), signature),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(service.processWebhook).not.toHaveBeenCalled();
     });
 
     it('should not require JWT authentication', () => {

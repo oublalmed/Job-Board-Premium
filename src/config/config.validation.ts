@@ -61,4 +61,7 @@ export const configValidationSchema = Joi.object({
   PLAN_SCALE_OFFERS: Joi.number().default(20),
   PLAN_SCALE_USERS: Joi.number().default(10),
   CURRENCY: Joi.string().default('MAD'),
+
+  // Scoring webhook
+  SCORING_WEBHOOK_SECRET: Joi.string().allow('').default(''),
 });

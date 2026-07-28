@@ -1,4 +1,13 @@
-import { Controller, Post, Headers, Req, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Headers,
+  Req,
+  HttpCode,
+  BadRequestException,
+  type RawBodyRequest,
+} from '@nestjs/common';
+import type { Request } from 'express';
 import { WebhookService } from './webhook.service.js';
 
 @Controller('assessments/webhook')
@@ -8,9 +17,14 @@ export class WebhookController {
   @Post()
   @HttpCode(200)
   async handleWebhook(
-    @Req() rawBody: Buffer,
+    @Req() req: RawBodyRequest<Request>,
     @Headers('x-scoring-signature') signature: string,
   ) {
+    const rawBody = req.rawBody;
+    if (!rawBody) {
+      throw new BadRequestException('Missing raw request body');
+    }
+
     return this.webhookService.processWebhook(rawBody, signature);
   }
 }

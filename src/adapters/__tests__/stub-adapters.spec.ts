@@ -1,33 +1,10 @@
-import { StubScoringAdapter } from '../scoring/stub-scoring.adapter.js';
 import { StubPaymentAdapter } from '../payment/stub-payment.adapter.js';
 import { StubMailAdapter } from '../mail/stub-mail.adapter.js';
 import { StubFileScannerAdapter } from '../file-scanner/stub-file-scanner.adapter.js';
 import { StubObjectStorageAdapter } from '../object-storage/stub-object-storage.adapter.js';
 
-describe('StubScoringAdapter', () => {
-  const adapter = new StubScoringAdapter();
-
-  it('should create an assessment', async () => {
-    const result = await adapter.createAssessment({
-      candidateId: 'c1',
-      specialtyId: 's1',
-      testId: 't1',
-    });
-    expect(result.externalId).toBeDefined();
-    expect(result.assessmentUrl).toContain(result.externalId);
-  });
-
-  it('should return a stubbed result', async () => {
-    const result = await adapter.getResult('ext-123');
-    expect(result).not.toBeNull();
-    expect(result!.score).toBe(65);
-    expect(result!.maxScore).toBe(100);
-  });
-
-  it('should cancel without error', async () => {
-    await expect(adapter.cancelAssessment('ext-123')).resolves.toBeUndefined();
-  });
-});
+// StubScoringAdapter has its own dedicated suite: see
+// src/adapters/scoring/__tests__/stub-scoring.adapter.spec.ts
 
 describe('StubPaymentAdapter', () => {
   const adapter = new StubPaymentAdapter();

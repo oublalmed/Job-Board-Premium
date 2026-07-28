@@ -50,6 +50,7 @@ jobs:
       JWT_ACCESS_EXPIRATION: 15m
       JWT_REFRESH_SECRET: ci-test-refresh-secret-32chars
       JWT_REFRESH_EXPIRATION: 7d
+      SCORING_WEBHOOK_SECRET: ci-test-scoring-webhook-secret
       STORAGE_ENDPOINT: http://localhost:9000
       STORAGE_ACCESS_KEY: minioadmin
       STORAGE_SECRET_KEY: minioadmin
@@ -73,6 +74,9 @@ jobs:
 
       - name: Test
         run: npm run test:cov
+
+      - name: E2E test
+        run: npm run test:e2e
 
       - name: Build
         run: npm run build

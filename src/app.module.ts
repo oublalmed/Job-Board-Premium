@@ -9,6 +9,7 @@ import {
   authConfig,
   storageConfig,
   businessConfig,
+  scoringConfig,
   configValidationSchema,
 } from './config/index.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -33,6 +34,7 @@ import { PortsModule } from './ports/ports.module.js';
         authConfig,
         storageConfig,
         businessConfig,
+        scoringConfig,
       ],
       validationSchema: configValidationSchema,
       validationOptions: { abortEarly: true },
