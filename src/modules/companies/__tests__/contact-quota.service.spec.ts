@@ -7,6 +7,7 @@ import {
 } from '../entities/subscription.entity.js';
 import {
   ContactQuotaExceededException,
+  MultipleActiveSubscriptionsException,
   SubscriptionInactiveException,
 } from '../contact-quota.exceptions.js';
 
@@ -21,6 +22,14 @@ function createMockUpdateQueryBuilder(
   return qb;
 }
 
+function activeSubscription(id: string): Record<string, unknown> {
+  return {
+    id,
+    status: SubscriptionStatus.ACTIVE,
+    endsAt: null,
+  };
+}
+
 describe('ContactQuotaService', () => {
   let service: ContactQuotaService;
   let subscriptionRepo: Record<string, jest.Mock>;
@@ -32,7 +41,7 @@ describe('ContactQuotaService', () => {
     updateQb = createMockUpdateQueryBuilder(1);
     subscriptionRepo = {
       createQueryBuilder: jest.fn().mockReturnValue(updateQb),
-      findOne: jest.fn().mockResolvedValue(null),
+      find: jest.fn().mockResolvedValue([activeSubscription('sub-1')]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -48,30 +57,32 @@ describe('ContactQuotaService', () => {
     service = module.get(ContactQuotaService);
   });
 
-  describe('Scenario 1 — quota disponible', () => {
+  describe('Scenario 1 — une seule subscription active, quota disponible (régression nominale)', () => {
     it('resolves without throwing when the UPDATE affects a row', async () => {
       await expect(
         service.consumeOneContact(companyId),
       ).resolves.toBeUndefined();
-
-      expect(subscriptionRepo.findOne).not.toHaveBeenCalled();
     });
 
-    it('issues a single atomic UPDATE with the increment, company scope, active statuses and quota guard', async () => {
+    it('resolves the active subscription id first, then runs the atomic UPDATE scoped to that id and the quota guard only', async () => {
       await service.consumeOneContact(companyId);
+
+      expect(subscriptionRepo.find).toHaveBeenCalledTimes(1);
 
       expect(updateQb.set).toHaveBeenCalledWith({
         contactsUsed: expect.any(Function),
       });
-      expect(updateQb.where).toHaveBeenCalledWith('company_id = :companyId', {
-        companyId,
+      expect(updateQb.where).toHaveBeenCalledWith('id = :id', {
+        id: 'sub-1',
       });
       expect(updateQb.andWhere).toHaveBeenCalledWith(
-        'status IN (:...statuses)',
-        { statuses: [SubscriptionStatus.TRIAL, SubscriptionStatus.ACTIVE] },
-      );
-      expect(updateQb.andWhere).toHaveBeenCalledWith(
         'contacts_used < contact_quota',
+      );
+      // The WHERE must never target company_id directly — that's the bug
+      // being fixed (company_id is not unique, id is).
+      expect(updateQb.where).not.toHaveBeenCalledWith(
+        expect.stringContaining('company_id'),
+        expect.anything(),
       );
 
       // The increment itself must be a raw SQL fragment (atomic on the DB
@@ -83,52 +94,45 @@ describe('ContactQuotaService', () => {
     });
   });
 
-  describe('Scenario 2 — quota épuisé (quota_used === contact_quota)', () => {
-    it('throws ContactQuotaExceededException and performs no write', async () => {
+  describe('Scenario 2 — quota épuisé (une seule subscription active, UPDATE ne matche aucune ligne)', () => {
+    it('throws ContactQuotaExceededException and performs no diagnostic read', async () => {
       updateQb.execute.mockResolvedValue({ affected: 0 });
-      subscriptionRepo.findOne.mockResolvedValue({
-        status: SubscriptionStatus.ACTIVE,
-        endsAt: null,
-      });
 
       await expect(service.consumeOneContact(companyId)).rejects.toThrow(
         ContactQuotaExceededException,
       );
+
+      // resolveActiveSubscriptionId is the only read; no extra diagnostic
+      // findOne is needed once affected === 0.
+      expect(subscriptionRepo.find).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('Scenario 3 — abonnement inactif', () => {
-    it('throws SubscriptionInactiveException when there is no subscription at all', async () => {
-      updateQb.execute.mockResolvedValue({ affected: 0 });
-      subscriptionRepo.findOne.mockResolvedValue(null);
+  describe('Scenario 3 — aucune subscription active', () => {
+    it('throws SubscriptionInactiveException and never issues the UPDATE', async () => {
+      subscriptionRepo.find.mockResolvedValue([]);
 
       await expect(service.consumeOneContact(companyId)).rejects.toThrow(
         SubscriptionInactiveException,
       );
+
+      expect(subscriptionRepo.createQueryBuilder).not.toHaveBeenCalled();
     });
+  });
 
-    it('throws SubscriptionInactiveException when the subscription is cancelled', async () => {
-      updateQb.execute.mockResolvedValue({ affected: 0 });
-      subscriptionRepo.findOne.mockResolvedValue({
-        status: SubscriptionStatus.CANCELLED,
-        endsAt: null,
-      });
-
-      await expect(service.consumeOneContact(companyId)).rejects.toThrow(
-        SubscriptionInactiveException,
-      );
-    });
-
-    it('throws SubscriptionInactiveException when the trial has expired', async () => {
-      updateQb.execute.mockResolvedValue({ affected: 0 });
-      subscriptionRepo.findOne.mockResolvedValue({
-        status: SubscriptionStatus.TRIAL,
-        endsAt: new Date(Date.now() - 3600000),
-      });
+  describe('Scenario 4 — plusieurs subscriptions actives (violation d’invariant)', () => {
+    it('throws MultipleActiveSubscriptionsException and never issues the UPDATE, so neither row is touched', async () => {
+      subscriptionRepo.find.mockResolvedValue([
+        activeSubscription('sub-1'),
+        activeSubscription('sub-2'),
+      ]);
 
       await expect(service.consumeOneContact(companyId)).rejects.toThrow(
-        SubscriptionInactiveException,
+        MultipleActiveSubscriptionsException,
       );
+
+      expect(subscriptionRepo.createQueryBuilder).not.toHaveBeenCalled();
+      expect(updateQb.execute).not.toHaveBeenCalled();
     });
   });
 });

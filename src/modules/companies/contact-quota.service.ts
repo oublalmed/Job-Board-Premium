@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, IsNull, MoreThan, Repository } from 'typeorm';
 import {
   Subscription,
   SubscriptionStatus,
@@ -8,6 +8,7 @@ import {
 import type { ContactQuotaPort } from '../../ports/contact-quota.port.js';
 import {
   ContactQuotaExceededException,
+  MultipleActiveSubscriptionsException,
   SubscriptionInactiveException,
 } from './contact-quota.exceptions.js';
 
@@ -24,6 +25,8 @@ export class ContactQuotaService implements ContactQuotaPort {
   ) {}
 
   async consumeOneContact(companyId: string): Promise<void> {
+    const subscriptionId = await this.resolveActiveSubscriptionId(companyId);
+
     // A "read quota_used, check in JS, then write" is NOT safe here: two
     // concurrent requests can both read quota_used=4/quota=5, both decide
     // "there's room", and both write quota_used=5 — the quota silently goes
@@ -38,16 +41,16 @@ export class ContactQuotaService implements ContactQuotaPort {
     // first UPDATE left it. If the first UPDATE already pushed
     // contacts_used to the limit, the second UPDATE's
     // "contacts_used < contact_quota" condition matches zero rows — there is
-    // no window in which both can succeed.
+    // no window in which both can succeed. Targeting the subscription's
+    // primary key (rather than company_id, which is NOT unique — see
+    // resolveActiveSubscriptionId below) guarantees the lock, and the WHERE,
+    // apply to exactly the one row resolved above and never to a sibling row
+    // for the same company.
     const result = await this.subscriptionRepo
       .createQueryBuilder()
       .update(Subscription)
       .set({ contactsUsed: () => 'contacts_used + 1' })
-      .where('company_id = :companyId', { companyId })
-      .andWhere('status IN (:...statuses)', {
-        statuses: ACTIVE_SUBSCRIPTION_STATUSES,
-      })
-      .andWhere('(ends_at IS NULL OR ends_at > :now)', { now: new Date() })
+      .where('id = :id', { id: subscriptionId })
       .andWhere('contacts_used < contact_quota')
       .execute();
 
@@ -55,24 +58,50 @@ export class ContactQuotaService implements ContactQuotaPort {
       return;
     }
 
-    // The UPDATE matched no row. This read happens only on the failure
-    // path, after the atomic write above has already failed — it cannot
-    // reintroduce the race the UPDATE was written to avoid, it only picks
-    // the right exception to throw.
-    const subscription = await this.subscriptionRepo.findOne({
-      where: { companyId },
-      order: { createdAt: 'DESC' },
+    // resolveActiveSubscriptionId already guarantees this specific row is
+    // active, so an unmatched UPDATE here can only mean the quota guard
+    // failed — no ambiguity to resolve with a follow-up read.
+    throw new ContactQuotaExceededException(companyId);
+  }
+
+  // Subscription.companyId carries no unique constraint in the database
+  // (defense-in-depth via a Postgres partial unique index is deferred to
+  // Lot 6, see PROGRESS.md), so "the" active subscription for a company is
+  // an invariant enforced here, in application code: at most one row with
+  // status IN (trial, active) and not expired. Zero or more than one is a
+  // failure, not a value to guess from — resolving to a specific id up front
+  // (rather than filtering the UPDATE on company_id) is what keeps the
+  // atomic UPDATE above from ever touching more than one row.
+  private async resolveActiveSubscriptionId(
+    companyId: string,
+  ): Promise<string> {
+    const now = new Date();
+    const activeSubscriptions = await this.subscriptionRepo.find({
+      where: [
+        {
+          companyId,
+          status: In(ACTIVE_SUBSCRIPTION_STATUSES),
+          endsAt: IsNull(),
+        },
+        {
+          companyId,
+          status: In(ACTIVE_SUBSCRIPTION_STATUSES),
+          endsAt: MoreThan(now),
+        },
+      ],
     });
 
-    const isActive =
-      !!subscription &&
-      ACTIVE_SUBSCRIPTION_STATUSES.includes(subscription.status) &&
-      (!subscription.endsAt || subscription.endsAt > new Date());
-
-    if (!isActive) {
+    if (activeSubscriptions.length === 0) {
       throw new SubscriptionInactiveException(companyId);
     }
 
-    throw new ContactQuotaExceededException(companyId);
+    if (activeSubscriptions.length > 1) {
+      throw new MultipleActiveSubscriptionsException(
+        companyId,
+        activeSubscriptions.length,
+      );
+    }
+
+    return activeSubscriptions[0].id;
   }
 }
