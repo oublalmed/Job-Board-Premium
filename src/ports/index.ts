@@ -21,3 +21,6 @@ export { FILE_SCANNER } from './file-scanner.port.js';
 
 export type { ObjectStorage, UploadRequest } from './object-storage.port.js';
 export { OBJECT_STORAGE } from './object-storage.port.js';
+
+export type { ContactQuotaPort } from './contact-quota.port.js';
+export { CONTACT_QUOTA_PORT } from './contact-quota.port.js';

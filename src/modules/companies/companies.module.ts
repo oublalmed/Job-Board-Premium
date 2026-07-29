@@ -14,8 +14,10 @@ import { JobOfferService } from './job-offer.service.js';
 import { JobOfferController } from './job-offer.controller.js';
 import { ShortlistService } from './shortlist.service.js';
 import { ShortlistController } from './shortlist.controller.js';
+import { ContactQuotaService } from './contact-quota.service.js';
 import { UsersModule } from '../users/users.module.js';
 import { CandidatesModule } from '../candidates/candidates.module.js';
+import { CONTACT_QUOTA_PORT } from '../../ports/contact-quota.port.js';
 
 @Module({
   imports: [
@@ -41,12 +43,16 @@ import { CandidatesModule } from '../candidates/candidates.module.js';
     SubscriptionGuardService,
     JobOfferService,
     ShortlistService,
+    ContactQuotaService,
+    { provide: CONTACT_QUOTA_PORT, useClass: ContactQuotaService },
   ],
   exports: [
     TypeOrmModule,
     CompanyService,
     RecruiterService,
     SubscriptionGuardService,
+    ContactQuotaService,
+    CONTACT_QUOTA_PORT,
   ],
 })
 export class CompaniesModule {}
