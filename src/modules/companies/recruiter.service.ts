@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Recruiter } from './entities/recruiter.entity.js';
 import { AddRecruiterDto } from './dto/add-recruiter.dto.js';
+import { SubscriptionGuardService } from './subscription-guard.service.js';
 import { UsersService } from '../users/users.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
@@ -26,25 +27,16 @@ export class RecruiterService {
   constructor(
     @InjectRepository(Recruiter)
     private readonly recruiterRepo: Repository<Recruiter>,
+    private readonly subscriptionGuard: SubscriptionGuardService,
     private readonly usersService: UsersService,
     private readonly auditService: AuditService,
   ) {}
-
-  private async getCallerCompanyId(callerId: string): Promise<string> {
-    const recruiter = await this.recruiterRepo.findOne({
-      where: { userId: callerId },
-    });
-    if (!recruiter) {
-      throw new NotFoundException('No company associated with this account');
-    }
-    return recruiter.companyId;
-  }
 
   async addRecruiter(
     callerId: string,
     dto: AddRecruiterDto,
   ): Promise<Recruiter> {
-    const companyId = await this.getCallerCompanyId(callerId);
+    const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
 
     const targetUser = await this.usersService.findByEmail(
       dto.email.toLowerCase(),
@@ -92,7 +84,7 @@ export class RecruiterService {
   }
 
   async listRecruiters(callerId: string): Promise<RecruiterSummary[]> {
-    const companyId = await this.getCallerCompanyId(callerId);
+    const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
 
     const recruiters = await this.recruiterRepo.find({
       where: { companyId },
@@ -110,12 +102,12 @@ export class RecruiterService {
   }
 
   async removeRecruiter(callerId: string, recruiterId: string): Promise<void> {
-    const companyId = await this.getCallerCompanyId(callerId);
+    const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
 
     const recruiter = await this.recruiterRepo.findOne({
-      where: { id: recruiterId },
+      where: { id: recruiterId, companyId },
     });
-    if (!recruiter || recruiter.companyId !== companyId) {
+    if (!recruiter) {
       throw new NotFoundException('Recruiter not found');
     }
 

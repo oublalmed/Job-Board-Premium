@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ShortlistEntry } from './entities/shortlist-entry.entity.js';
-import { Recruiter } from './entities/recruiter.entity.js';
 import {
   CandidateProfile,
   ProfileVisibility,
@@ -21,23 +20,11 @@ export class ShortlistService {
   constructor(
     @InjectRepository(ShortlistEntry)
     private readonly shortlistRepo: Repository<ShortlistEntry>,
-    @InjectRepository(Recruiter)
-    private readonly recruiterRepo: Repository<Recruiter>,
     @InjectRepository(CandidateProfile)
     private readonly profileRepo: Repository<CandidateProfile>,
     private readonly subscriptionGuard: SubscriptionGuardService,
     private readonly auditService: AuditService,
   ) {}
-
-  private async getCallerCompanyId(callerId: string): Promise<string> {
-    const recruiter = await this.recruiterRepo.findOne({
-      where: { userId: callerId },
-    });
-    if (!recruiter) {
-      throw new NotFoundException('No company associated with this account');
-    }
-    return recruiter.companyId;
-  }
 
   async addEntry(
     callerId: string,
@@ -87,7 +74,7 @@ export class ShortlistService {
   }
 
   async listEntries(callerId: string): Promise<ShortlistEntry[]> {
-    const companyId = await this.getCallerCompanyId(callerId);
+    const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
     return this.shortlistRepo.find({
       where: { companyId },
       order: { createdAt: 'DESC' },
@@ -95,12 +82,12 @@ export class ShortlistService {
   }
 
   async removeEntry(callerId: string, entryId: string): Promise<void> {
-    const companyId = await this.getCallerCompanyId(callerId);
+    const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
 
     const entry = await this.shortlistRepo.findOne({
-      where: { id: entryId },
+      where: { id: entryId, companyId },
     });
-    if (!entry || entry.companyId !== companyId) {
+    if (!entry) {
       throw new NotFoundException('Shortlist entry not found');
     }
 

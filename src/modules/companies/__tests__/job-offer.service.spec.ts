@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { JobOfferService } from '../job-offer.service.js';
 import { JobOffer, JobOfferStatus } from '../entities/job-offer.entity.js';
-import { Recruiter } from '../entities/recruiter.entity.js';
 import { ModerationDecision } from '../dto/moderate-job-offer.dto.js';
 import { SubscriptionGuardService } from '../subscription-guard.service.js';
 import { AuditService } from '../../audit/audit.service.js';
@@ -16,7 +15,6 @@ import { AuditAction } from '../../../common/enums/audit-action.enum.js';
 describe('JobOfferService', () => {
   let service: JobOfferService;
   let jobOfferRepo: Record<string, jest.Mock>;
-  let recruiterRepo: Record<string, jest.Mock>;
   let subscriptionGuard: Record<string, jest.Mock>;
   let auditService: Record<string, jest.Mock>;
 
@@ -54,14 +52,9 @@ describe('JobOfferService', () => {
         .mockImplementation((e: Record<string, unknown>) => Promise.resolve(e)),
     };
 
-    recruiterRepo = {
-      findOne: jest
-        .fn()
-        .mockResolvedValue({ id: 'recruiter-1', userId: callerId, companyId }),
-    };
-
     subscriptionGuard = {
       assertActiveSubscription: jest.fn().mockResolvedValue({ companyId }),
+      resolveCompanyId: jest.fn().mockResolvedValue(companyId),
     };
 
     auditService = { log: jest.fn().mockResolvedValue({ id: 'audit-1' }) };
@@ -70,7 +63,6 @@ describe('JobOfferService', () => {
       providers: [
         JobOfferService,
         { provide: getRepositoryToken(JobOffer), useValue: jobOfferRepo },
-        { provide: getRepositoryToken(Recruiter), useValue: recruiterRepo },
         { provide: SubscriptionGuardService, useValue: subscriptionGuard },
         { provide: AuditService, useValue: auditService },
       ],
@@ -184,6 +176,18 @@ describe('JobOfferService', () => {
       expect(result.status).toBe(JobOfferStatus.CLOSED);
     });
 
+    it('queries the offer with id AND companyId in the same WHERE (not a separate JS check)', async () => {
+      jobOfferRepo.findOne.mockResolvedValue(
+        makeOffer({ status: JobOfferStatus.PUBLISHED }),
+      );
+
+      await service.closeOffer(callerId, 'offer-1');
+
+      expect(jobOfferRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'offer-1', companyId } }),
+      );
+    });
+
     it('rejects closing a non-published offer (409)', async () => {
       jobOfferRepo.findOne.mockResolvedValue(makeOffer());
 
@@ -193,20 +197,23 @@ describe('JobOfferService', () => {
     });
 
     it("rejects closing another company's offer with 404", async () => {
-      jobOfferRepo.findOne.mockResolvedValue(
-        makeOffer({
-          companyId: 'other-company',
-          status: JobOfferStatus.PUBLISHED,
-        }),
-      );
+      // A row with this id exists under a different company. The combined
+      // WHERE id+companyId means TypeORM itself returns no row for this
+      // caller's companyId — the mock mirrors that by returning null.
+      jobOfferRepo.findOne.mockResolvedValue(null);
 
       await expect(service.closeOffer(callerId, 'offer-1')).rejects.toThrow(
         NotFoundException,
       );
+      expect(jobOfferRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'offer-1', companyId } }),
+      );
     });
 
     it('throws 404 when the caller has no company', async () => {
-      recruiterRepo.findOne.mockResolvedValue(null);
+      subscriptionGuard.resolveCompanyId.mockRejectedValue(
+        new NotFoundException('No company associated with this account'),
+      );
 
       await expect(service.closeOffer(callerId, 'offer-1')).rejects.toThrow(
         NotFoundException,

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { RecruiterService } from '../recruiter.service.js';
 import { Recruiter } from '../entities/recruiter.entity.js';
+import { SubscriptionGuardService } from '../subscription-guard.service.js';
 import { UsersService } from '../../users/users.service.js';
 import { AuditService } from '../../audit/audit.service.js';
 import { AuditAction } from '../../../common/enums/audit-action.enum.js';
@@ -15,17 +16,12 @@ import { Role } from '../../../common/enums/role.enum.js';
 describe('RecruiterService', () => {
   let service: RecruiterService;
   let recruiterRepo: Record<string, jest.Mock>;
+  let subscriptionGuard: Record<string, jest.Mock>;
   let usersService: Record<string, jest.Mock>;
   let auditService: Record<string, jest.Mock>;
 
   const callerId = 'admin-1';
   const companyId = 'company-1';
-
-  const callerRecruiter = {
-    id: 'recruiter-admin',
-    userId: callerId,
-    companyId,
-  };
 
   const targetUser = {
     id: 'target-1',
@@ -36,11 +32,12 @@ describe('RecruiterService', () => {
 
   beforeEach(async () => {
     recruiterRepo = {
+      // Simulates the real `WHERE id = :id AND company_id = :companyId`
+      // combined predicate: a row is only returned when BOTH match.
       findOne: jest
         .fn()
         .mockImplementation(({ where }: { where: Record<string, unknown> }) => {
-          if (where.userId === callerId)
-            return Promise.resolve(callerRecruiter);
+          if (where.userId === targetUser.id) return Promise.resolve(null);
           return Promise.resolve(null);
         }),
       find: jest.fn().mockResolvedValue([]),
@@ -53,6 +50,10 @@ describe('RecruiterService', () => {
         .fn()
         .mockImplementation((e: Record<string, unknown>) => Promise.resolve(e)),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
+
+    subscriptionGuard = {
+      resolveCompanyId: jest.fn().mockResolvedValue(companyId),
     };
 
     usersService = {
@@ -69,6 +70,7 @@ describe('RecruiterService', () => {
       providers: [
         RecruiterService,
         { provide: getRepositoryToken(Recruiter), useValue: recruiterRepo },
+        { provide: SubscriptionGuardService, useValue: subscriptionGuard },
         { provide: UsersService, useValue: usersService },
         { provide: AuditService, useValue: auditService },
       ],
@@ -139,8 +141,6 @@ describe('RecruiterService', () => {
     it('rejects 409 when the target user is already attached to a company', async () => {
       recruiterRepo.findOne.mockImplementation(
         ({ where }: { where: Record<string, unknown> }) => {
-          if (where.userId === callerId)
-            return Promise.resolve(callerRecruiter);
           if (where.userId === targetUser.id)
             return Promise.resolve({
               id: 'existing',
@@ -157,7 +157,9 @@ describe('RecruiterService', () => {
     });
 
     it('rejects 404 when the caller has no company', async () => {
-      recruiterRepo.findOne.mockResolvedValue(null);
+      subscriptionGuard.resolveCompanyId.mockRejectedValue(
+        new NotFoundException('No company associated with this account'),
+      );
 
       await expect(
         service.addRecruiter(callerId, { email: 'newrecruiter@acme.ma' }),
@@ -193,14 +195,13 @@ describe('RecruiterService', () => {
     it('should remove a recruiter and strip their recruiter/company_admin roles', async () => {
       recruiterRepo.findOne.mockImplementation(
         ({ where }: { where: Record<string, unknown> }) => {
-          if (where.userId === callerId)
-            return Promise.resolve(callerRecruiter);
-          if (where.id === 'recruiter-x')
+          if (where.id === 'recruiter-x' && where.companyId === companyId) {
             return Promise.resolve({
               id: 'recruiter-x',
               userId: 'other-user',
               companyId,
             });
+          }
           return Promise.resolve(null);
         },
       );
@@ -217,52 +218,63 @@ describe('RecruiterService', () => {
       });
     });
 
+    it('queries the target recruiter with id AND companyId in the same WHERE (not a separate JS check)', async () => {
+      recruiterRepo.findOne.mockResolvedValue({
+        id: 'recruiter-x',
+        userId: 'other-user',
+        companyId,
+      });
+      usersService.findById.mockResolvedValue({
+        id: 'other-user',
+        roles: [Role.RECRUITER],
+      });
+
+      await service.removeRecruiter(callerId, 'recruiter-x');
+
+      expect(recruiterRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'recruiter-x', companyId } }),
+      );
+    });
+
     it('rejects 409 when the company_admin tries to remove themselves', async () => {
       recruiterRepo.findOne.mockImplementation(
         ({ where }: { where: Record<string, unknown> }) => {
-          if (where.userId === callerId)
-            return Promise.resolve(callerRecruiter);
-          if (where.id === callerRecruiter.id)
-            return Promise.resolve(callerRecruiter);
+          if (where.id === 'recruiter-admin' && where.companyId === companyId) {
+            return Promise.resolve({
+              id: 'recruiter-admin',
+              userId: callerId,
+              companyId,
+            });
+          }
           return Promise.resolve(null);
         },
       );
 
       await expect(
-        service.removeRecruiter(callerId, callerRecruiter.id),
+        service.removeRecruiter(callerId, 'recruiter-admin'),
       ).rejects.toThrow(ConflictException);
       expect(recruiterRepo.delete).not.toHaveBeenCalled();
     });
 
     it('rejects 404 when the target recruiter belongs to another company (isolation)', async () => {
-      recruiterRepo.findOne.mockImplementation(
-        ({ where }: { where: Record<string, unknown> }) => {
-          if (where.userId === callerId)
-            return Promise.resolve(callerRecruiter);
-          if (where.id === 'foreign-recruiter')
-            return Promise.resolve({
-              id: 'foreign-recruiter',
-              userId: 'someone-else',
-              companyId: 'company-B',
-            });
-          return Promise.resolve(null);
-        },
-      );
+      // A recruiter row with this id genuinely exists, but under a different
+      // company — the combined WHERE id+companyId means TypeORM itself
+      // returns no row, exactly like this mock does.
+      recruiterRepo.findOne.mockResolvedValue(null);
 
       await expect(
         service.removeRecruiter(callerId, 'foreign-recruiter'),
       ).rejects.toThrow(NotFoundException);
+      expect(recruiterRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'foreign-recruiter', companyId },
+        }),
+      );
       expect(recruiterRepo.delete).not.toHaveBeenCalled();
     });
 
     it('rejects 404 when the target recruiter does not exist', async () => {
-      recruiterRepo.findOne.mockImplementation(
-        ({ where }: { where: Record<string, unknown> }) => {
-          if (where.userId === callerId)
-            return Promise.resolve(callerRecruiter);
-          return Promise.resolve(null);
-        },
-      );
+      recruiterRepo.findOne.mockResolvedValue(null);
 
       await expect(
         service.removeRecruiter(callerId, 'nonexistent'),

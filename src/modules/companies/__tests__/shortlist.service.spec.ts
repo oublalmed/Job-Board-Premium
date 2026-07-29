@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { ShortlistService } from '../shortlist.service.js';
 import { ShortlistEntry } from '../entities/shortlist-entry.entity.js';
-import { Recruiter } from '../entities/recruiter.entity.js';
 import {
   CandidateProfile,
   ProfileVisibility,
@@ -19,7 +18,6 @@ import { AuditAction } from '../../../common/enums/audit-action.enum.js';
 describe('ShortlistService', () => {
   let service: ShortlistService;
   let shortlistRepo: Record<string, jest.Mock>;
-  let recruiterRepo: Record<string, jest.Mock>;
   let profileRepo: Record<string, jest.Mock>;
   let subscriptionGuard: Record<string, jest.Mock>;
   let auditService: Record<string, jest.Mock>;
@@ -49,18 +47,13 @@ describe('ShortlistService', () => {
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
     };
 
-    recruiterRepo = {
-      findOne: jest
-        .fn()
-        .mockResolvedValue({ id: 'recruiter-1', userId: callerId, companyId }),
-    };
-
     profileRepo = {
       findOne: jest.fn().mockResolvedValue({ ...visibleIndexedProfile }),
     };
 
     subscriptionGuard = {
       assertActiveSubscription: jest.fn().mockResolvedValue({ companyId }),
+      resolveCompanyId: jest.fn().mockResolvedValue(companyId),
     };
 
     auditService = { log: jest.fn().mockResolvedValue({ id: 'audit-1' }) };
@@ -72,7 +65,6 @@ describe('ShortlistService', () => {
           provide: getRepositoryToken(ShortlistEntry),
           useValue: shortlistRepo,
         },
-        { provide: getRepositoryToken(Recruiter), useValue: recruiterRepo },
         {
           provide: getRepositoryToken(CandidateProfile),
           useValue: profileRepo,
@@ -179,14 +171,27 @@ describe('ShortlistService', () => {
       expect(shortlistRepo.delete).toHaveBeenCalledWith({ id: 'entry-1' });
     });
 
+    it('queries the entry with id AND companyId in the same WHERE (not a separate JS check)', async () => {
+      shortlistRepo.findOne.mockResolvedValue({ id: 'entry-1', companyId });
+
+      await service.removeEntry(callerId, 'entry-1');
+
+      expect(shortlistRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'entry-1', companyId } }),
+      );
+    });
+
     it("rejects removing another company's entry with 404", async () => {
-      shortlistRepo.findOne.mockResolvedValue({
-        id: 'entry-1',
-        companyId: 'other-company',
-      });
+      // A row with this id exists under a different company. The combined
+      // WHERE id+companyId means TypeORM itself returns no row for this
+      // caller's companyId — the mock mirrors that by returning null.
+      shortlistRepo.findOne.mockResolvedValue(null);
 
       await expect(service.removeEntry(callerId, 'entry-1')).rejects.toThrow(
         NotFoundException,
+      );
+      expect(shortlistRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'entry-1', companyId } }),
       );
       expect(shortlistRepo.delete).not.toHaveBeenCalled();
     });

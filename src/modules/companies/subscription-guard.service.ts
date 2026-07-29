@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Recruiter } from './entities/recruiter.entity.js';
@@ -51,5 +55,18 @@ export class SubscriptionGuardService {
     }
 
     return { companyId: recruiter.companyId };
+  }
+
+  // Company resolution only, no subscription check — used by mutations that
+  // must scope to the caller's company regardless of subscription state
+  // (e.g. removing a recruiter, closing an offer).
+  async resolveCompanyId(userId: string): Promise<string> {
+    const recruiter = await this.recruiterRepo.findOne({
+      where: { userId },
+    });
+    if (!recruiter) {
+      throw new NotFoundException('No company associated with this account');
+    }
+    return recruiter.companyId;
   }
 }

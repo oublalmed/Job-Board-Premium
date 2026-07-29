@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { SubscriptionGuardService } from '../subscription-guard.service.js';
 import { Recruiter } from '../entities/recruiter.entity.js';
 import {
@@ -93,5 +93,25 @@ describe('SubscriptionGuardService', () => {
       ForbiddenException,
     );
     expect(subscriptionRepo.findOne).not.toHaveBeenCalled();
+  });
+
+  describe('resolveCompanyId', () => {
+    it('returns the companyId for a user with a Recruiter record', async () => {
+      await expect(service.resolveCompanyId(userId)).resolves.toBe('company-1');
+    });
+
+    it('does not check subscription status at all', async () => {
+      await service.resolveCompanyId(userId);
+
+      expect(subscriptionRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    it('throws 404 when the caller has no recruiter account', async () => {
+      recruiterRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.resolveCompanyId(userId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
   });
 });

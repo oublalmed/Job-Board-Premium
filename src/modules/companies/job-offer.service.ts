@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JobOffer, JobOfferStatus } from './entities/job-offer.entity.js';
-import { Recruiter } from './entities/recruiter.entity.js';
 import { CreateJobOfferDto } from './dto/create-job-offer.dto.js';
 import {
   ModerateJobOfferDto,
@@ -21,21 +20,9 @@ export class JobOfferService {
   constructor(
     @InjectRepository(JobOffer)
     private readonly jobOfferRepo: Repository<JobOffer>,
-    @InjectRepository(Recruiter)
-    private readonly recruiterRepo: Repository<Recruiter>,
     private readonly subscriptionGuard: SubscriptionGuardService,
     private readonly auditService: AuditService,
   ) {}
-
-  private async getCallerCompanyId(callerId: string): Promise<string> {
-    const recruiter = await this.recruiterRepo.findOne({
-      where: { userId: callerId },
-    });
-    if (!recruiter) {
-      throw new NotFoundException('No company associated with this account');
-    }
-    return recruiter.companyId;
-  }
 
   async createOffer(
     callerId: string,
@@ -67,7 +54,7 @@ export class JobOfferService {
   }
 
   async listOffers(callerId: string): Promise<JobOffer[]> {
-    const companyId = await this.getCallerCompanyId(callerId);
+    const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
     return this.jobOfferRepo.find({
       where: { companyId },
       order: { createdAt: 'DESC' },
@@ -75,12 +62,12 @@ export class JobOfferService {
   }
 
   async closeOffer(callerId: string, offerId: string): Promise<JobOffer> {
-    const companyId = await this.getCallerCompanyId(callerId);
+    const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
 
     const offer = await this.jobOfferRepo.findOne({
-      where: { id: offerId },
+      where: { id: offerId, companyId },
     });
-    if (!offer || offer.companyId !== companyId) {
+    if (!offer) {
       throw new NotFoundException('Job offer not found');
     }
 
