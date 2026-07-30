@@ -1,25 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity.js';
 import { Message, MessageSenderRole } from './entities/message.entity.js';
 import { CandidateProfile } from '../candidates/entities/candidate-profile.entity.js';
 import { SubscriptionGuardService } from '../companies/subscription-guard.service.js';
 import { ContactQuotaService } from '../companies/contact-quota.service.js';
+import { isUniqueViolation } from '../../common/typeorm/is-unique-violation.js';
 import {
   CandidateProfileNotFoundException,
   ConversationNotFoundException,
 } from './messaging.exceptions.js';
-
-const POSTGRES_UNIQUE_VIOLATION = '23505';
-
-function isUniqueViolation(error: unknown): boolean {
-  return (
-    error instanceof QueryFailedError &&
-    (error as QueryFailedError & { code?: string }).code ===
-      POSTGRES_UNIQUE_VIOLATION
-  );
-}
 
 @Injectable()
 export class ConversationService {

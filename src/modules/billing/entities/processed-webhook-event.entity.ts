@@ -1,0 +1,31 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
+
+// Layer 1 of the webhook idempotence strategy: provider_event_id is UNIQUE,
+// so a second delivery of the same event hits a constraint violation
+// (23505) instead of a prior findOne-then-insert check — the same pattern
+// as Conversation's UNIQUE(candidate_id, company_id) in Lot 5B. Layer 2 is
+// the business-level guard (assertValidSubscriptionTransition +
+// UQ_subscriptions_company_active from Lot 6A) for effects that also need
+// to be safe against non-webhook concurrent writers.
+@Entity('processed_webhook_events')
+export class ProcessedWebhookEvent {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'provider_event_id', unique: true })
+  providerEventId!: string;
+
+  @Column()
+  provider!: string;
+
+  @Column({ name: 'event_type' })
+  eventType!: string;
+
+  @CreateDateColumn({ name: 'processed_at', type: 'timestamptz' })
+  processedAt!: Date;
+}
