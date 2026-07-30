@@ -1,4 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager, In } from 'typeorm';
 import {
@@ -16,6 +21,7 @@ import {
   type PaymentProvider,
   type PaymentFailedEvent,
   type SubscriptionActivatedEvent,
+  type SubscriptionRenewedEvent,
   type WebhookEvent,
 } from '../../ports/payment.port.js';
 import { resolveContactQuotaForPlan } from './plan-quota.js';
@@ -23,8 +29,10 @@ import { isUniqueViolation } from '../../common/typeorm/is-unique-violation.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
 import { InvoiceEmissionService } from './invoice-emission.service.js';
+import { addDays } from './date-utils.js';
 
 const PROVIDER_NAME = 'stripe';
+const BILLING_PERIOD_DAYS = 30;
 
 @Injectable()
 export class PaymentWebhookService {
@@ -101,13 +109,17 @@ export class PaymentWebhookService {
       case 'subscription.activated':
         await this.activateSubscription(event, manager);
         return;
+      case 'subscription.renewed':
+        await this.renewSubscription(event, manager);
+        return;
       case 'payment.failed':
         await this.markPastDue(event, manager);
         return;
       case 'subscription.cancelled':
       case 'ignored':
-        // Recorded in processed_webhook_events for idempotence/audit;
-        // no further business effect in Lot 6B.
+        // subscription.cancelled becomes real in Lot 6D commit 2 (dunning
+        // exhausted / cancel_at_period_end fulfilled). Recorded in
+        // processed_webhook_events for idempotence/audit either way.
         return;
     }
   }
@@ -134,6 +146,14 @@ export class PaymentWebhookService {
     });
 
     let subscription: Subscription;
+    const now = new Date();
+    // The first paid period end — extended by BILLING_PERIOD_DAYS on each
+    // subscription.renewed (renewSubscription below). This does NOT gate
+    // access on its own for an ACTIVE row (see
+    // SubscriptionGuardService.assertActiveSubscription) — only the
+    // status itself does, driven by Stripe webhooks — so imprecision here
+    // is informational, not a correctness risk.
+    const periodEnd = addDays(now, BILLING_PERIOD_DAYS);
 
     if (eligible) {
       assertValidSubscriptionTransition(
@@ -144,8 +164,10 @@ export class PaymentWebhookService {
       eligible.plan = event.plan;
       eligible.contactQuota = quota;
       eligible.contactsUsed = 0;
-      eligible.externalSubscriptionId = event.providerSessionId;
-      eligible.endsAt = null;
+      // The Stripe Subscription id, not the Checkout Session id — every
+      // recurring event (renewal, dunning, cancellation) references this.
+      eligible.externalSubscriptionId = event.providerSubscriptionId;
+      eligible.endsAt = periodEnd;
       subscription = await subRepo.save(eligible);
     } else {
       subscription = await subRepo.save(
@@ -155,9 +177,9 @@ export class PaymentWebhookService {
           status: SubscriptionStatus.ACTIVE,
           contactQuota: quota,
           contactsUsed: 0,
-          externalSubscriptionId: event.providerSessionId,
-          startsAt: new Date(),
-          endsAt: null,
+          externalSubscriptionId: event.providerSubscriptionId,
+          startsAt: now,
+          endsAt: periodEnd,
         }),
       );
       // UQ_subscriptions_company_active (Lot 6A) is the structural
@@ -191,6 +213,70 @@ export class PaymentWebhookService {
 
     await this.invoiceEmissionService.emit(
       { subscription, company, stripeEventId: event.providerEventId },
+      manager,
+    );
+  }
+
+  // A recurring cycle payment (Stripe invoice.paid, billing_reason
+  // subscription_cycle) — not a status change (stays ACTIVE), so this
+  // deliberately does NOT call assertValidSubscriptionTransition: the
+  // guard rejects same-status "transitions" by design (see
+  // subscription-lifecycle.ts), and a renewal is exactly that — a
+  // same-status data update (extend the period, reset the monthly quota),
+  // not a transition.
+  private async renewSubscription(
+    event: SubscriptionRenewedEvent,
+    manager: EntityManager,
+  ): Promise<void> {
+    const subRepo = manager.getRepository(Subscription);
+
+    const subscription = await subRepo.findOne({
+      where: {
+        externalSubscriptionId: event.providerSubscriptionId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    // No ACTIVE row for this Stripe subscription is a genuine anomaly —
+    // e.g. Stripe renewed a subscription we don't have a record of, or one
+    // we already consider PAST_DUE/CANCELLED. Throwing (not silently
+    // ignoring) surfaces it as a real error rather than a payment Stripe
+    // collected with no corresponding effect on our side.
+    if (!subscription) {
+      throw new InternalServerErrorException(
+        `subscription.renewed for unknown or non-ACTIVE Stripe subscription ${event.providerSubscriptionId}`,
+      );
+    }
+
+    subscription.endsAt = addDays(
+      subscription.endsAt ?? new Date(),
+      BILLING_PERIOD_DAYS,
+    );
+    // Monthly quota, not reportable across periods (CDC §5.4) — every
+    // renewal resets consumption, contactQuota itself is unchanged (same
+    // plan; a plan change is Lot 6D commit 4, handled separately).
+    subscription.contactsUsed = 0;
+    const saved = await subRepo.save(subscription);
+
+    await this.auditService.log({
+      actorId: null,
+      action: AuditAction.PAYMENT_RECEIVED,
+      entityType: 'subscription',
+      entityId: saved.id,
+      metadata: {
+        companyId: saved.companyId,
+        renewal: true,
+        newPeriodEnd: saved.endsAt,
+        providerEventId: event.providerEventId,
+      },
+    });
+
+    const company = await manager
+      .getRepository(Company)
+      .findOneByOrFail({ id: saved.companyId });
+
+    await this.invoiceEmissionService.emit(
+      { subscription: saved, company, stripeEventId: event.providerEventId },
       manager,
     );
   }

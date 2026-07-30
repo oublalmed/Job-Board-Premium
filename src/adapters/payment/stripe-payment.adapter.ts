@@ -14,15 +14,31 @@ import {
 } from '../../ports/payment.port.js';
 import { SubscriptionPlan } from '../../modules/companies/entities/subscription.entity.js';
 
-// The only Stripe event types this adapter acts on for Lot 6B. Renewal
-// (invoice.paid) and cancellation (customer.subscription.deleted) are
-// deliberately not handled here — see PROGRESS.md, that's Lot 6D
-// (dunning/lifecycle) territory, not initial activation.
 const ACTIVATING_EVENT_TYPES = new Set<string>(['checkout.session.completed']);
 const FAILURE_EVENT_TYPES = new Set<string>([
   'checkout.session.async_payment_failed',
   'checkout.session.expired',
 ]);
+
+// invoice.paid fires for every successful invoice — including the very
+// first one from Checkout, which ACTIVATING_EVENT_TYPES above already
+// handles. billing_reason is how Stripe tells these apart:
+// 'subscription_create' is that same first payment (must be ignored here,
+// or it would be double-processed under two different event types),
+// 'subscription_cycle' is a genuine recurring renewal (Lot 6D commit 1).
+// 'subscription_update' (proration) is handled separately — Lot 6D
+// commit 4.
+const RENEWAL_BILLING_REASON = 'subscription_cycle';
+const INITIAL_PAYMENT_BILLING_REASON = 'subscription_create';
+
+// This Stripe API version nests the subscription reference under
+// invoice.parent.subscription_details.subscription (the older flat
+// invoice.subscription field doesn't exist on this SDK version's Invoice
+// type — checked against node_modules/stripe's own .d.ts, not assumed).
+function extractSubscriptionId(invoice: Stripe.Invoice): string | undefined {
+  const subscription = invoice.parent?.subscription_details?.subscription;
+  return typeof subscription === 'string' ? subscription : subscription?.id;
+}
 
 // The only file in this codebase allowed to import the `stripe` package or
 // reference a `Stripe.*` type — everything crossing the PaymentProvider
@@ -114,13 +130,28 @@ export class StripePaymentProvider implements PaymentProvider {
         );
       }
 
+      const providerSubscriptionId =
+        typeof session.subscription === 'string'
+          ? session.subscription
+          : session.subscription?.id;
+      if (!providerSubscriptionId) {
+        throw new InternalServerErrorException(
+          `Stripe event ${event.id} completed a session with no subscription — expected mode: 'subscription'`,
+        );
+      }
+
       return {
         type: 'subscription.activated',
         providerEventId: event.id,
         providerSessionId: session.id,
+        providerSubscriptionId,
         companyId,
         plan,
       };
+    }
+
+    if (event.type === 'invoice.paid') {
+      return this.toInvoicePaidDomainEvent(event);
     }
 
     if (FAILURE_EVENT_TYPES.has(event.type)) {
@@ -145,6 +176,46 @@ export class StripePaymentProvider implements PaymentProvider {
       type: 'ignored',
       providerEventId: event.id,
       reason: `unhandled event type ${event.type}`,
+    };
+  }
+
+  private toInvoicePaidDomainEvent(event: Stripe.Event): WebhookEvent {
+    const invoice = event.data.object as Stripe.Invoice;
+    const billingReason = invoice.billing_reason;
+
+    if (billingReason === INITIAL_PAYMENT_BILLING_REASON) {
+      // Same underlying payment as the checkout.session.completed that
+      // already activated this subscription — not a second event to act
+      // on, just Stripe's other notification for the same charge.
+      return {
+        type: 'ignored',
+        providerEventId: event.id,
+        reason: 'invoice.paid for the initial subscription_create payment (already handled via checkout.session.completed)',
+      };
+    }
+
+    if (billingReason === RENEWAL_BILLING_REASON) {
+      const providerSubscriptionId = extractSubscriptionId(invoice);
+
+      if (!providerSubscriptionId) {
+        throw new InternalServerErrorException(
+          `Stripe event ${event.id} is a subscription_cycle invoice with no subscription reference`,
+        );
+      }
+
+      return {
+        type: 'subscription.renewed',
+        providerEventId: event.id,
+        providerSubscriptionId,
+      };
+    }
+
+    // Includes 'subscription_update' (proration, Lot 6D commit 4) and
+    // 'manual' — not acted on by this commit.
+    return {
+      type: 'ignored',
+      providerEventId: event.id,
+      reason: `invoice.paid with billing_reason=${billingReason ?? 'unknown'}`,
     };
   }
 }

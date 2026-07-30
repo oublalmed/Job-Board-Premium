@@ -30,8 +30,28 @@ export interface SubscriptionActivatedEvent {
   type: 'subscription.activated';
   providerEventId: string;
   providerSessionId: string;
+  // The Stripe Subscription id (sub_...), distinct from the Checkout
+  // Session id above (cs_...). Every recurring event (renewal, dunning,
+  // cancellation, proration) references the subscription, never the
+  // session that created it — this is what gets stored in
+  // Subscription.externalSubscriptionId so those events can find their
+  // row.
+  providerSubscriptionId: string;
   companyId: string;
   plan: SubscriptionPlan;
+}
+
+// A recurring-cycle invoice paid — distinct from the first payment
+// (SubscriptionActivatedEvent already covers that; the adapter
+// discriminates using Stripe's invoice.billing_reason so the same
+// underlying first payment is never processed twice under two different
+// event types). Deliberately carries no companyId/plan: the handler looks
+// up the Subscription row by providerSubscriptionId and reads both from
+// there, since a renewal doesn't change either.
+export interface SubscriptionRenewedEvent {
+  type: 'subscription.renewed';
+  providerEventId: string;
+  providerSubscriptionId: string;
 }
 
 export interface PaymentFailedEvent {
@@ -45,6 +65,7 @@ export interface SubscriptionCancelledEvent {
   type: 'subscription.cancelled';
   providerEventId: string;
   companyId: string;
+  reason: string;
 }
 
 // A provider sends many event types we don't act on. Rather than throwing
@@ -60,6 +81,7 @@ export interface IgnoredWebhookEvent {
 
 export type WebhookEvent =
   | SubscriptionActivatedEvent
+  | SubscriptionRenewedEvent
   | PaymentFailedEvent
   | SubscriptionCancelledEvent
   | IgnoredWebhookEvent;

@@ -37,7 +37,36 @@ function checkoutSessionCompletedPayload(
   return JSON.stringify({
     id: eventId,
     type: 'checkout.session.completed',
-    data: { object: { id: 'cs_test_1', metadata: { companyId, plan } } },
+    data: {
+      object: {
+        id: 'cs_test_1',
+        subscription: 'sub_test_1',
+        metadata: { companyId, plan },
+      },
+    },
+  });
+}
+
+// This SDK's Invoice shape nests the subscription reference under
+// invoice.parent.subscription_details.subscription — see
+// stripe-payment.adapter.ts's extractSubscriptionId comment.
+function invoicePaidPayload(
+  billingReason: string,
+  eventId: string,
+  subscriptionId = 'sub_test_1',
+): string {
+  return JSON.stringify({
+    id: eventId,
+    type: 'invoice.paid',
+    data: {
+      object: {
+        id: 'in_test_1',
+        billing_reason: billingReason,
+        parent: {
+          subscription_details: { subscription: subscriptionId },
+        },
+      },
+    },
   });
 }
 
@@ -109,9 +138,28 @@ describe('StripePaymentProvider', () => {
         type: 'subscription.activated',
         providerEventId: 'evt_abc',
         providerSessionId: 'cs_test_1',
+        providerSubscriptionId: 'sub_test_1',
         companyId: 'company-1',
         plan: SubscriptionPlan.GROWTH,
       });
+    });
+
+    it('throws — does not silently ignore — a checkout.session.completed with no subscription reference', () => {
+      const payload = JSON.stringify({
+        id: 'evt_no_sub',
+        type: 'checkout.session.completed',
+        data: {
+          object: {
+            id: 'cs_no_sub',
+            metadata: { companyId: 'company-1', plan: SubscriptionPlan.GROWTH },
+          },
+        },
+      });
+      const signature = signPayload(payload);
+
+      expect(() =>
+        provider.verifyAndParseWebhook(Buffer.from(payload), signature),
+      ).toThrow(/no subscription/);
     });
 
     it('maps an event type this adapter does not act on to "ignored"', () => {
@@ -164,6 +212,71 @@ describe('StripePaymentProvider', () => {
         companyId: 'company-9',
         reason: 'checkout.session.expired',
       });
+    });
+  });
+
+  describe('invoice.paid — billing_reason discrimination', () => {
+    it('maps billing_reason=subscription_cycle to subscription.renewed', () => {
+      const payload = invoicePaidPayload(
+        'subscription_cycle',
+        'evt_renew_1',
+        'sub_renew_1',
+      );
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event).toEqual({
+        type: 'subscription.renewed',
+        providerEventId: 'evt_renew_1',
+        providerSubscriptionId: 'sub_renew_1',
+      });
+    });
+
+    it('maps billing_reason=subscription_create to "ignored" — already handled via checkout.session.completed', () => {
+      const payload = invoicePaidPayload('subscription_create', 'evt_first_1');
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event.type).toBe('ignored');
+    });
+
+    it('maps billing_reason=subscription_update (proration) to "ignored" — not acted on by this commit', () => {
+      const payload = invoicePaidPayload('subscription_update', 'evt_proration_1');
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event.type).toBe('ignored');
+    });
+
+    it('throws — does not silently ignore — a subscription_cycle invoice with no subscription reference', () => {
+      const payload = JSON.stringify({
+        id: 'evt_renew_bad',
+        type: 'invoice.paid',
+        data: {
+          object: {
+            id: 'in_bad',
+            billing_reason: 'subscription_cycle',
+            parent: null,
+          },
+        },
+      });
+      const signature = signPayload(payload);
+
+      expect(() =>
+        provider.verifyAndParseWebhook(Buffer.from(payload), signature),
+      ).toThrow(/subscription_cycle invoice with no subscription/);
     });
   });
 

@@ -81,6 +81,7 @@ describe('Payment webhook (e2e) — Lot 6B', () => {
       data: {
         object: {
           id: `cs_${eventId}`,
+          subscription: `sub_${eventId}`,
           metadata: { companyId, plan },
         },
       },
@@ -96,6 +97,29 @@ describe('Payment webhook (e2e) — Lot 6B', () => {
       type: 'checkout.session.expired',
       data: {
         object: { id: `cs_${eventId}`, metadata: { companyId } },
+      },
+    });
+  }
+
+  // This SDK's Invoice shape nests the subscription reference under
+  // invoice.parent.subscription_details.subscription — see
+  // stripe-payment.adapter.ts's extractSubscriptionId comment.
+  function invoicePaidPayload(
+    billingReason: string,
+    eventId: string,
+    providerSubscriptionId: string,
+  ): string {
+    return JSON.stringify({
+      id: eventId,
+      type: 'invoice.paid',
+      data: {
+        object: {
+          id: `in_${eventId}`,
+          billing_reason: billingReason,
+          parent: {
+            subscription_details: { subscription: providerSubscriptionId },
+          },
+        },
       },
     });
   }
@@ -361,6 +385,152 @@ describe('Payment webhook (e2e) — Lot 6B', () => {
       expect(rows).toHaveLength(1);
       expect(rows[0].id).toBe(existing.id);
       expect(rows[0].status).toBe(SubscriptionStatus.ACTIVE);
+    });
+  });
+
+  describe('Scénario 6 — renouvellement récurrent (Lot 6D)', () => {
+    it('extends endsAt by one billing period and resets contactsUsed on invoice.paid (subscription_cycle)', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+
+      const beforeRenewal = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(beforeRenewal.externalSubscriptionId).toBe(
+        `sub_${activateEventId}`,
+      );
+
+      // Consume some quota before renewal, to prove the reset actually
+      // happens (not just already zero).
+      beforeRenewal.contactsUsed = 12;
+      await subscriptionRepo.save(beforeRenewal);
+
+      const renewEventId = nextEventId();
+      const renewPayload = invoicePaidPayload(
+        'subscription_cycle',
+        renewEventId,
+        beforeRenewal.externalSubscriptionId!,
+      );
+
+      const res = await request(app.getHttpServer())
+        .post(path('/webhooks/payment'))
+        .set('stripe-signature', sign(renewPayload))
+        .set('Content-Type', 'application/json')
+        .send(renewPayload)
+        .expect(200);
+      expect((res.body as { alreadyProcessed: boolean }).alreadyProcessed).toBe(
+        false,
+      );
+
+      const afterRenewal = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(afterRenewal.status).toBe(SubscriptionStatus.ACTIVE);
+      expect(afterRenewal.contactsUsed).toBe(0);
+      expect(afterRenewal.endsAt!.getTime()).toBeGreaterThan(
+        beforeRenewal.endsAt!.getTime(),
+      );
+    });
+
+    it('is idempotent on replay — one prolongation, endsAt unchanged by the second delivery', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const renewEventId = nextEventId();
+      const renewPayload = invoicePaidPayload(
+        'subscription_cycle',
+        renewEventId,
+        subscription.externalSubscriptionId!,
+      );
+      const signature = sign(renewPayload);
+
+      const first = await webhookService.handleWebhook(
+        Buffer.from(renewPayload),
+        signature,
+      );
+      expect(first.alreadyProcessed).toBe(false);
+      const afterFirst = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const second = await webhookService.handleWebhook(
+        Buffer.from(renewPayload),
+        signature,
+      );
+      expect(second.alreadyProcessed).toBe(true);
+      const afterSecond = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      expect(afterSecond.endsAt!.getTime()).toBe(afterFirst.endsAt!.getTime());
+      expect(afterSecond.contactsUsed).toBe(afterFirst.contactsUsed);
+
+      const rows = await processedEventRepo.find({
+        where: { providerEventId: renewEventId },
+      });
+      expect(rows).toHaveLength(1);
+    });
+
+    it('invoice.paid with billing_reason=subscription_create (the first payment) is ignored — no double renewal', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const beforeReplay = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const firstInvoicePayload = invoicePaidPayload(
+        'subscription_create',
+        nextEventId(),
+        beforeReplay.externalSubscriptionId!,
+      );
+      const res = await request(app.getHttpServer())
+        .post(path('/webhooks/payment'))
+        .set('stripe-signature', sign(firstInvoicePayload))
+        .set('Content-Type', 'application/json')
+        .send(firstInvoicePayload)
+        .expect(200);
+      expect((res.body as { alreadyProcessed: boolean }).alreadyProcessed).toBe(
+        false,
+      );
+
+      const afterReplay = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(afterReplay.endsAt!.getTime()).toBe(beforeReplay.endsAt!.getTime());
+      expect(afterReplay.contactsUsed).toBe(beforeReplay.contactsUsed);
     });
   });
 });

@@ -112,6 +112,7 @@ describe('PaymentWebhookService', () => {
       type: 'subscription.activated',
       providerEventId: 'evt_1',
       providerSessionId: 'cs_1',
+      providerSubscriptionId: 'sub_1',
       companyId,
       plan: 'growth',
     });
@@ -127,6 +128,8 @@ describe('PaymentWebhookService', () => {
         status: SubscriptionStatus.ACTIVE,
         contactQuota: 60,
         contactsUsed: 0,
+        externalSubscriptionId: 'sub_1',
+        endsAt: expect.any(Date),
       }),
     );
     // Invoice emission (Lot 6C) is grafted onto the same activation, same
@@ -152,6 +155,7 @@ describe('PaymentWebhookService', () => {
       type: 'subscription.activated',
       providerEventId: 'evt_2',
       providerSessionId: 'cs_2',
+      providerSubscriptionId: 'sub_2',
       companyId,
       plan: 'growth',
     });
@@ -163,6 +167,8 @@ describe('PaymentWebhookService', () => {
         companyId,
         status: SubscriptionStatus.ACTIVE,
         contactQuota: 60,
+        externalSubscriptionId: 'sub_2',
+        endsAt: expect.any(Date),
       }),
     );
     expect(invoiceEmissionService.emit).toHaveBeenCalledWith(
@@ -179,6 +185,7 @@ describe('PaymentWebhookService', () => {
       type: 'subscription.activated',
       providerEventId: 'evt_3',
       providerSessionId: 'cs_3',
+      providerSubscriptionId: 'sub_3',
       companyId,
       plan: 'growth',
     });
@@ -196,6 +203,7 @@ describe('PaymentWebhookService', () => {
       type: 'subscription.activated',
       providerEventId: 'evt_4',
       providerSessionId: 'cs_4',
+      providerSubscriptionId: 'sub_4',
       companyId,
       plan: 'growth',
     });
@@ -218,6 +226,7 @@ describe('PaymentWebhookService', () => {
       type: 'subscription.activated',
       providerEventId: 'evt_race',
       providerSessionId: 'cs_race',
+      providerSubscriptionId: 'sub_race',
       companyId,
       plan: 'growth',
     });
@@ -239,6 +248,7 @@ describe('PaymentWebhookService', () => {
       type: 'subscription.activated',
       providerEventId: 'evt_no_constraint',
       providerSessionId: 'cs_x',
+      providerSubscriptionId: 'sub_x',
       companyId,
       plan: 'growth',
     });
@@ -296,5 +306,104 @@ describe('PaymentWebhookService', () => {
     expect(result.alreadyProcessed).toBe(false);
     expect(subscriptionRepo.save).not.toHaveBeenCalled();
     expect(auditService.log).toHaveBeenCalled();
+  });
+
+  describe('subscription.renewed', () => {
+    it('extends endsAt by the billing period, resets contactsUsed, and emits a new invoice', async () => {
+      const currentEndsAt = new Date('2026-06-15T00:00:00.000Z');
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        externalSubscriptionId: 'sub_renew_1',
+        endsAt: currentEndsAt,
+        contactsUsed: 42,
+        contactQuota: 60,
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.renewed',
+        providerEventId: 'evt_renew_1',
+        providerSubscriptionId: 'sub_renew_1',
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(false);
+      expect(subscriptionRepo.findOne).toHaveBeenCalledWith({
+        where: {
+          externalSubscriptionId: 'sub_renew_1',
+          status: SubscriptionStatus.ACTIVE,
+        },
+      });
+      expect(subscriptionRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contactsUsed: 0,
+          endsAt: new Date('2026-07-15T00:00:00.000Z'),
+        }),
+      );
+      expect(invoiceEmissionService.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stripeEventId: 'evt_renew_1',
+          company: expect.objectContaining({ id: companyId }),
+        }),
+        manager,
+      );
+    });
+
+    it('does not call assertValidSubscriptionTransition — a renewal stays ACTIVE, it is not a status transition', async () => {
+      // If the guard were (incorrectly) invoked with ACTIVE -> ACTIVE, it
+      // would throw (same-status "transitions" are rejected by design —
+      // see subscription-lifecycle.ts). This test's mere success proves the
+      // guard was not called with a rejecting pair.
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        externalSubscriptionId: 'sub_renew_2',
+        endsAt: new Date('2026-06-15T00:00:00.000Z'),
+        contactsUsed: 10,
+        contactQuota: 60,
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.renewed',
+        providerEventId: 'evt_renew_2',
+        providerSubscriptionId: 'sub_renew_2',
+      });
+
+      await expect(
+        service.handleWebhook(Buffer.from('{}'), 'sig'),
+      ).resolves.toEqual({ alreadyProcessed: false });
+    });
+
+    it('throws when no ACTIVE subscription matches the Stripe subscription id (anomaly, not a silent no-op)', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(null);
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.renewed',
+        providerEventId: 'evt_renew_3',
+        providerSubscriptionId: 'sub_unknown',
+      });
+
+      await expect(
+        service.handleWebhook(Buffer.from('{}'), 'sig'),
+      ).rejects.toThrow(/sub_unknown/);
+      expect(invoiceEmissionService.emit).not.toHaveBeenCalled();
+    });
+
+    it('is idempotent on replay via the dedup marker — no second save/invoice', async () => {
+      dataSource.transaction.mockRejectedValueOnce(
+        uniqueViolation(PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT),
+      );
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.renewed',
+        providerEventId: 'evt_renew_4',
+        providerSubscriptionId: 'sub_renew_4',
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(true);
+      expect(subscriptionRepo.save).not.toHaveBeenCalled();
+      expect(invoiceEmissionService.emit).not.toHaveBeenCalled();
+    });
   });
 });

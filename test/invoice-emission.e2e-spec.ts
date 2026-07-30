@@ -9,7 +9,7 @@ import request from 'supertest';
 import type { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { User } from '../src/modules/users/entities/user.entity';
-import { SubscriptionPlan } from '../src/modules/companies/entities/subscription.entity';
+import { Subscription, SubscriptionPlan } from '../src/modules/companies/entities/subscription.entity';
 import { Invoice } from '../src/modules/billing/entities/invoice.entity';
 import { PaymentWebhookService } from '../src/modules/billing/payment-webhook.service';
 import { Role } from '../src/common/enums/role.enum';
@@ -20,6 +20,7 @@ describe('Invoice emission (e2e) — Lot 6C', () => {
   let jwtService: JwtService;
   let userRepo: Repository<User>;
   let invoiceRepo: Repository<Invoice>;
+  let subscriptionRepo: Repository<Subscription>;
   let webhookService: PaymentWebhookService;
   let webhookSecret: string;
 
@@ -74,7 +75,34 @@ describe('Invoice emission (e2e) — Lot 6C', () => {
       id: eventId,
       type: 'checkout.session.completed',
       data: {
-        object: { id: `cs_${eventId}`, metadata: { companyId, plan } },
+        object: {
+          id: `cs_${eventId}`,
+          subscription: `sub_${eventId}`,
+          metadata: { companyId, plan },
+        },
+      },
+    });
+  }
+
+  // This SDK's Invoice shape nests the subscription reference under
+  // invoice.parent.subscription_details.subscription — see
+  // stripe-payment.adapter.ts's extractSubscriptionId comment.
+  function invoicePaidPayload(
+    billingReason: string,
+    eventId: string,
+    providerSubscriptionId: string,
+  ): string {
+    return JSON.stringify({
+      id: eventId,
+      type: 'invoice.paid',
+      data: {
+        object: {
+          id: `in_${eventId}`,
+          billing_reason: billingReason,
+          parent: {
+            subscription_details: { subscription: providerSubscriptionId },
+          },
+        },
       },
     });
   }
@@ -116,6 +144,7 @@ describe('Invoice emission (e2e) — Lot 6C', () => {
     jwtService = app.get(JwtService);
     userRepo = app.get(getRepositoryToken(User));
     invoiceRepo = app.get(getRepositoryToken(Invoice));
+    subscriptionRepo = app.get(getRepositoryToken(Subscription));
     webhookService = app.get(PaymentWebhookService);
   });
 
@@ -188,6 +217,85 @@ describe('Invoice emission (e2e) — Lot 6C', () => {
         where: { stripeInvoiceId: eventId },
       });
       expect(byStripeId).toHaveLength(1);
+    });
+  });
+
+  describe('Renouvellement récurrent (Lot 6D)', () => {
+    it('emits exactly one new invoice (via the same 6C numbering) on invoice.paid subscription_cycle', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      const renewEventId = nextEventId();
+      const renewPayload = invoicePaidPayload(
+        'subscription_cycle',
+        renewEventId,
+        subscription.externalSubscriptionId!,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(renewPayload),
+        sign(renewPayload),
+      );
+
+      const invoices = await invoiceRepo.find({
+        where: { companyId },
+        order: { issuedAt: 'ASC' },
+      });
+      expect(invoices).toHaveLength(2);
+      expect(invoices[0].stripeInvoiceId).toBe(activateEventId);
+      expect(invoices[1].stripeInvoiceId).toBe(renewEventId);
+      // Gapless legal numbering (Lot 6C) extends across the renewal, not a
+      // separate sequence.
+      expect(invoices[1].invoiceNumber).not.toBe(invoices[0].invoiceNumber);
+    });
+
+    it('replaying the renewal event is idempotent — still exactly one renewal invoice', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const renewEventId = nextEventId();
+      const renewPayload = invoicePaidPayload(
+        'subscription_cycle',
+        renewEventId,
+        subscription.externalSubscriptionId!,
+      );
+      const signature = sign(renewPayload);
+
+      await webhookService.handleWebhook(Buffer.from(renewPayload), signature);
+      await webhookService.handleWebhook(Buffer.from(renewPayload), signature);
+
+      const invoices = await invoiceRepo.find({ where: { companyId } });
+      expect(invoices).toHaveLength(2); // one for activation, one for renewal
+
+      const byRenewalStripeId = await invoiceRepo.find({
+        where: { stripeInvoiceId: renewEventId },
+      });
+      expect(byRenewalStripeId).toHaveLength(1);
     });
   });
 
