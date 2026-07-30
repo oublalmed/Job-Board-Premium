@@ -142,7 +142,7 @@ Sous-lots :
 Dette de release découverte en recette du Lot 5B (session 13) : le schéma (~19 tables hors messagerie) n'a jamais été capturé par une migration, uniquement construit via `synchronize: true`. Trois livrables, en commits séparés et chacun vérifiable seul :
 
 - [x] **Migration baseline** — `BaselineSchema1700000000000`, générée depuis les 19 entités préexistantes contre une base vierge, ordonnée avant `CreateMessagingTables`. Validée par le critère mécanique de l'ADR-0002 (`schema:log` vide après migrations sur base vierge) + double-preuve `pg_dump --schema-only` contre une base `synchronize: true`. `down()` prouvée par round-trip réel.
-- [ ] **`synchronize: false` hors dev** — déjà la valeur par défaut du code applicatif (`Joi.boolean().default(false)`, `.env.example`) ; reste à l'imposer côté CI et à vérifier que la suite e2e passe intégralement en local avec les migrations à la place de `synchronize`.
+- [x] **`synchronize: false` hors dev** — déjà la valeur par défaut du code applicatif (`Joi.boolean().default(false)`, `.env.example`, maintenant commenté avec renvoi vers cet ADR) ; aucun changement de code nécessaire, seule la CI (livrable suivant) l'a encore à `true`. Vérifié : suite e2e complète (37 tests / 8 suites) rejouée contre `jobboard_baseline` — base construite uniquement par les migrations (baseline + `CreateMessagingTables`) — avec `DB_SYNCHRONIZE=false` explicite, tous verts.
 - [ ] **Job CI migration-only** — base Postgres vierge, `synchronize: false`, toutes les migrations appliquées dans l'ordre, puis suite e2e complète dessus. Seul moyen d'empêcher que la dette se reforme silencieusement.
 
 ---
