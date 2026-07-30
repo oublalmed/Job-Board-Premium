@@ -9,7 +9,9 @@ import {
   Subscription,
   SubscriptionStatus,
 } from '../../companies/entities/subscription.entity.js';
+import { Company } from '../../companies/entities/company.entity.js';
 import { PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT } from '../entities/processed-webhook-event.entity.js';
+import { InvoiceEmissionService } from '../invoice-emission.service.js';
 
 function uniqueViolation(constraint: string): QueryFailedError {
   const driverError = Object.assign(
@@ -33,6 +35,8 @@ describe('PaymentWebhookService', () => {
   let manager: { getRepository: jest.Mock };
   let processedEventRepo: { insert: jest.Mock };
   let subscriptionRepo: { findOne: jest.Mock; save: jest.Mock; create: jest.Mock };
+  let companyRepo: { findOneByOrFail: jest.Mock };
+  let invoiceEmissionService: { emit: jest.Mock };
 
   const companyId = 'company-1';
 
@@ -45,9 +49,15 @@ describe('PaymentWebhookService', () => {
         Promise.resolve({ id: 'sub-1', ...(data as object) }),
       ),
     };
+    companyRepo = {
+      findOneByOrFail: jest
+        .fn()
+        .mockResolvedValue({ id: companyId, name: 'Acme', ice: '001234567000089' }),
+    };
     manager = {
       getRepository: jest.fn((entity: unknown) => {
         if (entity === Subscription) return subscriptionRepo;
+        if (entity === Company) return companyRepo;
         return processedEventRepo;
       }),
     };
@@ -64,6 +74,7 @@ describe('PaymentWebhookService', () => {
       }),
     };
     auditService = { log: jest.fn().mockResolvedValue(undefined) };
+    invoiceEmissionService = { emit: jest.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -72,6 +83,7 @@ describe('PaymentWebhookService', () => {
         { provide: PAYMENT_PROVIDER, useValue: paymentProvider },
         { provide: ConfigService, useValue: configService },
         { provide: AuditService, useValue: auditService },
+        { provide: InvoiceEmissionService, useValue: invoiceEmissionService },
       ],
     }).compile();
 
@@ -117,6 +129,21 @@ describe('PaymentWebhookService', () => {
         contactsUsed: 0,
       }),
     );
+    // Invoice emission (Lot 6C) is grafted onto the same activation, same
+    // transaction, looked up by the company the event resolved to.
+    expect(companyRepo.findOneByOrFail).toHaveBeenCalledWith({
+      id: companyId,
+    });
+    expect(invoiceEmissionService.emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stripeEventId: 'evt_1',
+        company: expect.objectContaining({ id: companyId }),
+        subscription: expect.objectContaining({
+          status: SubscriptionStatus.ACTIVE,
+        }),
+      }),
+      manager,
+    );
   });
 
   it('creates a fresh row when no TRIAL/PAST_DUE row is eligible', async () => {
@@ -138,6 +165,10 @@ describe('PaymentWebhookService', () => {
         contactQuota: 60,
       }),
     );
+    expect(invoiceEmissionService.emit).toHaveBeenCalledWith(
+      expect.objectContaining({ stripeEventId: 'evt_2' }),
+      manager,
+    );
   });
 
   it('returns alreadyProcessed:true and performs no business effect when the dedup marker constraint is violated', async () => {
@@ -156,6 +187,7 @@ describe('PaymentWebhookService', () => {
 
     expect(result.alreadyProcessed).toBe(true);
     expect(subscriptionRepo.save).not.toHaveBeenCalled();
+    expect(invoiceEmissionService.emit).not.toHaveBeenCalled();
   });
 
   it('rethrows a non-unique-violation error from the transaction', async () => {

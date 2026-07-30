@@ -53,6 +53,9 @@ jobs:
       SCORING_WEBHOOK_SECRET: ci-test-scoring-webhook-secret
       STRIPE_SECRET_KEY: sk_test_ci_not_a_real_key
       STRIPE_WEBHOOK_SECRET: whsec_ci_test_webhook_secret
+      INVOICE_ISSUER_NAME: Job Board Premium SARL (CI)
+      INVOICE_ISSUER_ICE: '001234567000089'
+      INVOICE_ISSUER_ADDRESS: Casablanca, Maroc
       STORAGE_ENDPOINT: http://localhost:9000
       STORAGE_ACCESS_KEY: minioadmin
       STORAGE_SECRET_KEY: minioadmin
@@ -136,6 +139,9 @@ jobs:
       SCORING_WEBHOOK_SECRET: ci-test-scoring-webhook-secret
       STRIPE_SECRET_KEY: sk_test_ci_not_a_real_key
       STRIPE_WEBHOOK_SECRET: whsec_ci_test_webhook_secret
+      INVOICE_ISSUER_NAME: Job Board Premium SARL (CI)
+      INVOICE_ISSUER_ICE: '001234567000089'
+      INVOICE_ISSUER_ADDRESS: Casablanca, Maroc
       STORAGE_ENDPOINT: http://localhost:9000
       STORAGE_ACCESS_KEY: minioadmin
       STORAGE_SECRET_KEY: minioadmin

@@ -11,6 +11,7 @@ import {
   businessConfig,
   scoringConfig,
   paymentConfig,
+  legalConfig,
   configValidationSchema,
 } from './config/index.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -39,6 +40,7 @@ import { PortsModule } from './ports/ports.module.js';
         businessConfig,
         scoringConfig,
         paymentConfig,
+        legalConfig,
       ],
       validationSchema: configValidationSchema,
       validationOptions: { abortEarly: true },

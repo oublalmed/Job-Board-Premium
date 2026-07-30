@@ -9,6 +9,7 @@ import {
   Subscription,
   SubscriptionStatus,
 } from '../companies/entities/subscription.entity.js';
+import { Company } from '../companies/entities/company.entity.js';
 import { assertValidSubscriptionTransition } from '../companies/subscription-lifecycle.js';
 import {
   PAYMENT_PROVIDER,
@@ -21,6 +22,7 @@ import { resolveContactQuotaForPlan } from './plan-quota.js';
 import { isUniqueViolation } from '../../common/typeorm/is-unique-violation.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
+import { InvoiceEmissionService } from './invoice-emission.service.js';
 
 const PROVIDER_NAME = 'stripe';
 
@@ -34,6 +36,7 @@ export class PaymentWebhookService {
     private readonly paymentProvider: PaymentProvider,
     private readonly configService: ConfigService,
     private readonly auditService: AuditService,
+    private readonly invoiceEmissionService: InvoiceEmissionService,
   ) {}
 
   // Order matters and is deliberate:
@@ -130,7 +133,7 @@ export class PaymentWebhookService {
       order: { createdAt: 'DESC' },
     });
 
-    let subscriptionId: string;
+    let subscription: Subscription;
 
     if (eligible) {
       assertValidSubscriptionTransition(
@@ -143,10 +146,9 @@ export class PaymentWebhookService {
       eligible.contactsUsed = 0;
       eligible.externalSubscriptionId = event.providerSessionId;
       eligible.endsAt = null;
-      const saved = await subRepo.save(eligible);
-      subscriptionId = saved.id;
+      subscription = await subRepo.save(eligible);
     } else {
-      const created = await subRepo.save(
+      subscription = await subRepo.save(
         subRepo.create({
           companyId: event.companyId,
           plan: event.plan,
@@ -164,14 +166,13 @@ export class PaymentWebhookService {
       // a 23505 on THIS constraint, not the dedup marker's, so
       // handleWebhook's catch does not treat it as "already processed": it
       // propagates as a real error, on purpose (see handleWebhook above).
-      subscriptionId = created.id;
     }
 
     await this.auditService.log({
       actorId: null,
       action: AuditAction.PAYMENT_RECEIVED,
       entityType: 'subscription',
-      entityId: subscriptionId,
+      entityId: subscription.id,
       metadata: {
         companyId: event.companyId,
         plan: event.plan,
@@ -179,6 +180,19 @@ export class PaymentWebhookService {
         providerEventId: event.providerEventId,
       },
     });
+
+    // Invoice emission (Lot 6C) — same transaction as the activation
+    // above, on purpose: Stripe is the source of truth for the payment,
+    // we are the source of truth for the legal invoice, and both must
+    // land together or not at all (see invoice-emission.service.ts).
+    const company = await manager
+      .getRepository(Company)
+      .findOneByOrFail({ id: event.companyId });
+
+    await this.invoiceEmissionService.emit(
+      { subscription, company, stripeEventId: event.providerEventId },
+      manager,
+    );
   }
 
   private async markPastDue(

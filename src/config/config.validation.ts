@@ -69,4 +69,9 @@ export const configValidationSchema = Joi.object({
   // Payment (Stripe)
   STRIPE_SECRET_KEY: Joi.string().allow('').default(''),
   STRIPE_WEBHOOK_SECRET: Joi.string().allow('').default(''),
+
+  // Legal invoice issuer identity
+  INVOICE_ISSUER_NAME: Joi.string().allow('').default(''),
+  INVOICE_ISSUER_ICE: Joi.string().allow('').default(''),
+  INVOICE_ISSUER_ADDRESS: Joi.string().allow('').default(''),
 });
