@@ -24,7 +24,10 @@ cp .env.example .env
 # 3. Lancer l'infrastructure (PostgreSQL, Redis, MinIO)
 docker-compose up -d postgres redis minio
 
-# 4. Lancer les migrations (quand disponibles)
+# 4. Lancer les migrations (obligatoire avant le premier demarrage)
+# DB_SYNCHRONIZE=false par defaut (voir docs/adr/0002-schema-migration-governance.md) :
+# le schema n'est plus cree automatiquement au demarrage. Sur une base vierge,
+# sauter cette etape fait planter l'app (aucune table).
 npm run migration:run
 
 # 5. Demarrer en dev
@@ -38,6 +41,8 @@ L'API est disponible sur `http://localhost:3000/api` (prefix configurable via `A
 ```bash
 docker-compose up --build
 ```
+
+> **Non fonctionnel sur un volume Postgres vierge à ce jour** : le service `api` tourne avec `DB_SYNCHRONIZE=false` mais aucune étape du build/démarrage n'exécute `migration:run`, et l'image de production actuelle (`npm ci --omit=dev`) n'embarque pas `ts-node`/`tsconfig-paths`, dont ce script dépend. À corriger avant de dépendre de ce chemin (migrations à exécuter contre le `data-source` compilé dans `dist/`, sans `ts-node`) — voir `docs/adr/0002-schema-migration-governance.md`. En attendant, préférez le démarrage local ci-dessus.
 
 ## Scripts
 
