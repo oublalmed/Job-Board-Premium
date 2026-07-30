@@ -56,7 +56,9 @@ Résorber cette dette au premier des deux événements suivants, sans attendre l
 
 La condition 2 (`synchronize: false` hors dev) était déjà satisfaite par le code applicatif avant même cet ADR (`Joi.boolean().default(false)`, `.env.example`) — seule la CI avait encore `DB_SYNCHRONIZE: 'true'`. `.env.example` commente désormais explicitement cette contrainte avec renvoi vers ce document. Vérifié : la suite e2e complète (37 tests / 8 suites) rejouée avec `DB_SYNCHRONIZE=false` contre une base construite uniquement par les migrations (la même `jobboard_baseline` que ci-dessus) — tous verts, aucune régression liée à l'absence de `synchronize`.
 
-Reste à faire pour clore entièrement le trigger 1 : le job CI migration-only (condition 3). Le trigger 2 (Lot 6) est désormais **débloqué** : la baseline existe, un futur `AddSubscriptionPartialUniqueIndex` (ou nom équivalent) peut s'appliquer après elle sans `42P01`.
+La condition 3 (job CI migration-only) est faite : `.github/workflows/ci.yml` porte désormais un second job, `migration-e2e`, indépendant du `lint-test-build` existant (conservé tel quel, toujours `synchronize: true`) — service Postgres/Redis dédié, base vierge, `DB_SYNCHRONIZE: 'false'`, `npm run migration:run` (baseline puis `CreateMessagingTables`, dans l'ordre) puis `npm run test:e2e` sur le schéma qui en résulte. Reproduit et vérifié en local avant écriture du YAML, avec un rôle/DB recréés à l'identique des credentials du service CI (`jobboard` / `test_password` / base vierge) : les deux migrations s'appliquent sans erreur et la suite e2e complète (37/37) passe sur le schéma qu'elles construisent seules.
+
+**Dette résorbée.** Les trois conditions du trigger 1 sont remplies : la CI empêche désormais que ce chemin se rompe à nouveau sans être détecté, exactement comme demandé. Le trigger 2 (Lot 6) était déjà débloqué depuis la migration baseline — la baseline existe, un futur `AddSubscriptionPartialUniqueIndex` (ou nom équivalent) peut s'appliquer après elle sans `42P01`. Ce document reste la trace de la décision et de son contexte ; il n'est pas révoqué par la résorption de la dette qu'il documentait.
 
 ## Conséquences
 

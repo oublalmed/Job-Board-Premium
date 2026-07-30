@@ -137,13 +137,15 @@ Sous-lots :
 
 ---
 
-## Chantier infrastructure — schéma gouverné par migrations (ADR-0002, 🟨 en cours)
+## Chantier infrastructure — schéma gouverné par migrations (ADR-0002, ✅ Terminé)
 
 Dette de release découverte en recette du Lot 5B (session 13) : le schéma (~19 tables hors messagerie) n'a jamais été capturé par une migration, uniquement construit via `synchronize: true`. Trois livrables, en commits séparés et chacun vérifiable seul :
 
 - [x] **Migration baseline** — `BaselineSchema1700000000000`, générée depuis les 19 entités préexistantes contre une base vierge, ordonnée avant `CreateMessagingTables`. Validée par le critère mécanique de l'ADR-0002 (`schema:log` vide après migrations sur base vierge) + double-preuve `pg_dump --schema-only` contre une base `synchronize: true`. `down()` prouvée par round-trip réel.
-- [x] **`synchronize: false` hors dev** — déjà la valeur par défaut du code applicatif (`Joi.boolean().default(false)`, `.env.example`, maintenant commenté avec renvoi vers cet ADR) ; aucun changement de code nécessaire, seule la CI (livrable suivant) l'a encore à `true`. Vérifié : suite e2e complète (37 tests / 8 suites) rejouée contre `jobboard_baseline` — base construite uniquement par les migrations (baseline + `CreateMessagingTables`) — avec `DB_SYNCHRONIZE=false` explicite, tous verts.
-- [ ] **Job CI migration-only** — base Postgres vierge, `synchronize: false`, toutes les migrations appliquées dans l'ordre, puis suite e2e complète dessus. Seul moyen d'empêcher que la dette se reforme silencieusement.
+- [x] **`synchronize: false` hors dev** — déjà la valeur par défaut du code applicatif (`Joi.boolean().default(false)`, `.env.example`, maintenant commenté avec renvoi vers cet ADR) ; aucun changement de code nécessaire, seule la CI (livrable suivant) l'avait encore à `true`. Vérifié : suite e2e complète (37 tests / 8 suites) rejouée contre `jobboard_baseline` — base construite uniquement par les migrations (baseline + `CreateMessagingTables`) — avec `DB_SYNCHRONIZE=false` explicite, tous verts.
+- [x] **Job CI migration-only** (`.github/workflows/ci.yml`, job `migration-e2e`) — service Postgres/Redis dédié, base vierge (`jobboard_migration_test`), `DB_SYNCHRONIZE: 'false'`, `npm run migration:run` (baseline + `CreateMessagingTables` dans l'ordre) puis `npm run test:e2e` dessus. Job indépendant du `lint-test-build` existant (conservé tel quel, toujours `synchronize: true`), tourne en parallèle. Reproduit et vérifié en local avant écriture du YAML : rôle/DB recréés à l'identique des credentials du service CI, `migration:run` (2/2 migrations, aucune erreur) puis suite e2e complète (37/37) — même résultat que ce que le job GitHub Actions exécutera.
+
+ADR-0002 : trigger 1 (préparation déploiement staging/prod) désormais entièrement rempli côté schéma/CI ; trigger 2 (Lot 6, index unique partiel sur `Subscription`) débloqué depuis la migration baseline.
 
 ---
 
