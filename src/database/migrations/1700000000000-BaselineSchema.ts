@@ -1,0 +1,124 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class BaselineSchema1700000000000 implements MigrationInterface {
+    name = 'BaselineSchema1700000000000'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`CREATE TABLE "refresh_tokens" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "token_hash" character varying NOT NULL, "user_id" uuid NOT NULL, "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL, "revoked" boolean NOT NULL DEFAULT false, "replaced_by" character varying, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_a7838d2ba25be1342091b6695f1" UNIQUE ("token_hash"), CONSTRAINT "PK_7d8bee0204106019488c4c50ffa" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_a7838d2ba25be1342091b6695f" ON "refresh_tokens"  ("token_hash") `);
+        await queryRunner.query(`CREATE TYPE "public"."users_roles_enum" AS ENUM('candidate', 'recruiter', 'company_admin', 'moderator', 'admin')`);
+        await queryRunner.query(`CREATE TYPE "public"."users_status_enum" AS ENUM('pending_verification', 'active', 'suspended', 'deleted')`);
+        await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "password_hash" character varying NOT NULL, "roles" "public"."users_roles_enum" array NOT NULL DEFAULT '{candidate}', "status" "public"."users_status_enum" NOT NULL DEFAULT 'pending_verification', "email_verified" boolean NOT NULL DEFAULT false, "email_verification_token" character varying, "email_verification_expires" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_97672ac88f789774dd47f7c8be" ON "users"  ("email") `);
+        await queryRunner.query(`CREATE TABLE "specialties" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying, "active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_565f38f8b0417c7dbd40e429782" UNIQUE ("name"), CONSTRAINT "PK_ba01cec5aa8ac48778a1d097e98" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "tests" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "specialty_id" uuid NOT NULL, "version" character varying NOT NULL, "provider" character varying, "external_test_id" character varying, "duration_minutes" integer NOT NULL DEFAULT '60', "active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_4301ca51edf839623386860aed2" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."assessments_status_enum" AS ENUM('pending', 'in_progress', 'completed', 'cancelled', 'incident')`);
+        await queryRunner.query(`CREATE TABLE "assessments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "candidate_id" uuid NOT NULL, "test_id" uuid NOT NULL, "external_assessment_id" character varying, "status" "public"."assessments_status_enum" NOT NULL DEFAULT 'pending', "resume_token" uuid, "expires_at" TIMESTAMP WITH TIME ZONE, "started_at" TIMESTAMP WITH TIME ZONE, "completed_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_a3442bd80a00e9111cefca57f6c" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."scores_plagiarism_verdict_enum" AS ENUM('clean', 'suspected', 'confirmed')`);
+        await queryRunner.query(`CREATE TABLE "scores" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "assessment_id" uuid NOT NULL, "value" numeric(5,2) NOT NULL, "percentile" numeric(5,2), "bareme_version" character varying NOT NULL, "test_version" character varying NOT NULL, "plagiarism_verdict" "public"."scores_plagiarism_verdict_enum" NOT NULL DEFAULT 'clean', "details" jsonb, "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_d2d138b4f9792509c1fa0f8bb26" UNIQUE ("assessment_id"), CONSTRAINT "REL_d2d138b4f9792509c1fa0f8bb2" UNIQUE ("assessment_id"), CONSTRAINT "PK_c36917e6f26293b91d04b8fd521" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."audit_logs_action_enum" AS ENUM('user.registered', 'user.login', 'user.logout', 'user.email_verified', 'user.password_changed', 'user.roles_changed', 'user.deleted', 'user.data_exported', 'profile.updated', 'document.uploaded', 'document.deleted', 'assessment.started', 'assessment.completed', 'assessment.incident', 'assessment.resumed', 'score.calculated', 'company.created', 'recruiter.added', 'recruiter.removed', 'job_offer.created', 'job_offer.moderated', 'job_offer.closed', 'shortlist_entry.added', 'shortlist_entry.removed', 'subscription.created', 'subscription.cancelled', 'payment.received', 'payment.failed', 'settings.changed', 'moderation.action')`);
+        await queryRunner.query(`CREATE TABLE "audit_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "actor_id" character varying, "action" "public"."audit_logs_action_enum" NOT NULL, "entity_type" character varying, "entity_id" character varying, "metadata" jsonb, "ip_address" character varying, "user_agent" character varying, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_177183f29f438c488b5e8510cd" ON "audit_logs"  ("actor_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_cee5459245f652b75eb2759b4c" ON "audit_logs"  ("action") `);
+        await queryRunner.query(`CREATE INDEX "IDX_2cd10fda8276bb995288acfbfb" ON "audit_logs"  ("created_at") `);
+        await queryRunner.query(`CREATE TYPE "public"."candidate_profiles_visibility_enum" AS ENUM('public', 'recruiters_only', 'hidden')`);
+        await queryRunner.query(`CREATE TABLE "candidate_profiles" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "first_name" character varying, "last_name" character varying, "headline" character varying, "bio" text, "availability" character varying, "mobility" character varying, "location" character varying, "salary_min" integer, "salary_max" integer, "salary_visible" boolean NOT NULL DEFAULT false, "visibility" "public"."candidate_profiles_visibility_enum" NOT NULL DEFAULT 'hidden', "completeness" numeric(5,2) NOT NULL DEFAULT '0', "indexed_in_cvtheque" boolean NOT NULL DEFAULT false, "featured" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_5a3673f11918bcea56f48549603" UNIQUE ("user_id"), CONSTRAINT "REL_5a3673f11918bcea56f4854960" UNIQUE ("user_id"), CONSTRAINT "PK_8e8cf5b54118601673585218cc4" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."experiences_type_enum" AS ENUM('work', 'education')`);
+        await queryRunner.query(`CREATE TABLE "experiences" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "profile_id" uuid NOT NULL, "type" "public"."experiences_type_enum" NOT NULL, "title" character varying NOT NULL, "organization" character varying NOT NULL, "start_date" date NOT NULL, "end_date" date, "description" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_884f0913a63882712ea578e7c85" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."documents_type_enum" AS ENUM('cv', 'certification', 'other')`);
+        await queryRunner.query(`CREATE TYPE "public"."documents_scan_status_enum" AS ENUM('pending', 'clean', 'infected')`);
+        await queryRunner.query(`CREATE TABLE "documents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "owner_id" uuid NOT NULL, "type" "public"."documents_type_enum" NOT NULL, "storage_key" character varying NOT NULL, "original_name" character varying NOT NULL, "mime_type" character varying NOT NULL, "size" integer NOT NULL, "scan_status" "public"."documents_scan_status_enum" NOT NULL DEFAULT 'pending', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_ac51aa5181ee2036f5ca482857c" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."profile_links_type_enum" AS ENUM('github', 'portfolio', 'linkedin', 'other')`);
+        await queryRunner.query(`CREATE TABLE "profile_links" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "profile_id" uuid NOT NULL, "type" "public"."profile_links_type_enum" NOT NULL, "url" character varying NOT NULL, "label" character varying, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_c32e8b4c7ed79e0b9c61014f7f6" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "skills" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "category" character varying, "active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_81f05095507fd84aa2769b4a522" UNIQUE ("name"), CONSTRAINT "PK_0d3212120f4ecedf90864d7e298" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "profile_skills" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "profile_id" uuid NOT NULL, "skill_id" uuid NOT NULL, "level" character varying, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_3bee46f2b6fab719d7082b51b88" UNIQUE ("profile_id", "skill_id"), CONSTRAINT "PK_9347b76dd1aff0f0285dbba7f79" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."companies_status_enum" AS ENUM('pending_verification', 'active', 'suspended')`);
+        await queryRunner.query(`CREATE TABLE "companies" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "registration_number" character varying, "ice" character varying, "verified" boolean NOT NULL DEFAULT false, "status" "public"."companies_status_enum" NOT NULL DEFAULT 'pending_verification', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_5908badfb2ff4a5911cd69c04eb" UNIQUE ("ice"), CONSTRAINT "PK_d4bc3e82a314fa9e29f652c2c22" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."job_offers_status_enum" AS ENUM('pending_moderation', 'published', 'rejected', 'closed')`);
+        await queryRunner.query(`CREATE TABLE "job_offers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" uuid NOT NULL, "created_by" character varying NOT NULL, "title" character varying NOT NULL, "description" text, "specialty_id" uuid, "status" "public"."job_offers_status_enum" NOT NULL DEFAULT 'pending_moderation', "moderated_by" uuid, "moderated_at" TIMESTAMP WITH TIME ZONE, "rejection_reason" character varying, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_9a54d36bd6829979f945defdeb5" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "recruiters" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "company_id" uuid NOT NULL, "position" character varying, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_0c851bd72ee5568e8793794624b" UNIQUE ("user_id"), CONSTRAINT "REL_0c851bd72ee5568e8793794624" UNIQUE ("user_id"), CONSTRAINT "PK_1999e5a8e68fa6c525eed22c970" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "shortlist_entries" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" uuid NOT NULL, "candidate_profile_id" uuid NOT NULL, "added_by" character varying NOT NULL, "note" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_3a4e163c060154e93ca540a97af" UNIQUE ("company_id", "candidate_profile_id"), CONSTRAINT "PK_ea78584da6e635c91c786064234" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."subscriptions_plan_enum" AS ENUM('starter', 'growth', 'scale', 'enterprise')`);
+        await queryRunner.query(`CREATE TYPE "public"."subscriptions_status_enum" AS ENUM('trial', 'active', 'past_due', 'cancelled', 'expired')`);
+        await queryRunner.query(`CREATE TABLE "subscriptions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" uuid NOT NULL, "plan" "public"."subscriptions_plan_enum" NOT NULL, "status" "public"."subscriptions_status_enum" NOT NULL DEFAULT 'trial', "external_subscription_id" character varying, "starts_at" TIMESTAMP WITH TIME ZONE NOT NULL, "ends_at" TIMESTAMP WITH TIME ZONE, "contact_quota" integer NOT NULL, "contacts_used" integer NOT NULL DEFAULT '0', "quota_reset_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_a87248d73155605cf782be9ee5e" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "settings" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "key" character varying NOT NULL, "value" text NOT NULL, "description" character varying, "value_type" character varying NOT NULL DEFAULT 'string', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_c8639b7626fa94ba8265628f214" UNIQUE ("key"), CONSTRAINT "PK_0669fe20e252eb692bf4d344975" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_c8639b7626fa94ba8265628f21" ON "settings"  ("key") `);
+        await queryRunner.query(`ALTER TABLE "refresh_tokens" ADD CONSTRAINT "FK_3ddc983c5f7bcf132fd8732c3f4" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "tests" ADD CONSTRAINT "FK_aa0e5b24530f6899ac4f788523d" FOREIGN KEY ("specialty_id") REFERENCES "specialties"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "assessments" ADD CONSTRAINT "FK_4a4634584a729bff10e7e0db81a" FOREIGN KEY ("candidate_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "assessments" ADD CONSTRAINT "FK_a74e2a4c09b2381f024e65e01c4" FOREIGN KEY ("test_id") REFERENCES "tests"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "scores" ADD CONSTRAINT "FK_d2d138b4f9792509c1fa0f8bb26" FOREIGN KEY ("assessment_id") REFERENCES "assessments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "candidate_profiles" ADD CONSTRAINT "FK_5a3673f11918bcea56f48549603" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "experiences" ADD CONSTRAINT "FK_358a314d189554fce6d662d042a" FOREIGN KEY ("profile_id") REFERENCES "candidate_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "documents" ADD CONSTRAINT "FK_888a4852e27627d1ebd8a094e98" FOREIGN KEY ("owner_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "profile_links" ADD CONSTRAINT "FK_91652eb8aa51ec36557c62bfb2b" FOREIGN KEY ("profile_id") REFERENCES "candidate_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "profile_skills" ADD CONSTRAINT "FK_307099ef26ed5a2dc95b8ab4c41" FOREIGN KEY ("profile_id") REFERENCES "candidate_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "profile_skills" ADD CONSTRAINT "FK_af54190875059c8beac9e0f33a0" FOREIGN KEY ("skill_id") REFERENCES "skills"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "job_offers" ADD CONSTRAINT "FK_22cb0ff42ddb232ccdee8273982" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "recruiters" ADD CONSTRAINT "FK_0c851bd72ee5568e8793794624b" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "recruiters" ADD CONSTRAINT "FK_b1f7a66e621a4b4b5cedc52e3d6" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "shortlist_entries" ADD CONSTRAINT "FK_9690563aa8c32c049491d68fcbb" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "shortlist_entries" ADD CONSTRAINT "FK_2133f18e481c0416ce7e9a809ec" FOREIGN KEY ("candidate_profile_id") REFERENCES "candidate_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "subscriptions" ADD CONSTRAINT "FK_7e3cc01c420db5151aa21360358" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "subscriptions" DROP CONSTRAINT "FK_7e3cc01c420db5151aa21360358"`);
+        await queryRunner.query(`ALTER TABLE "shortlist_entries" DROP CONSTRAINT "FK_2133f18e481c0416ce7e9a809ec"`);
+        await queryRunner.query(`ALTER TABLE "shortlist_entries" DROP CONSTRAINT "FK_9690563aa8c32c049491d68fcbb"`);
+        await queryRunner.query(`ALTER TABLE "recruiters" DROP CONSTRAINT "FK_b1f7a66e621a4b4b5cedc52e3d6"`);
+        await queryRunner.query(`ALTER TABLE "recruiters" DROP CONSTRAINT "FK_0c851bd72ee5568e8793794624b"`);
+        await queryRunner.query(`ALTER TABLE "job_offers" DROP CONSTRAINT "FK_22cb0ff42ddb232ccdee8273982"`);
+        await queryRunner.query(`ALTER TABLE "profile_skills" DROP CONSTRAINT "FK_af54190875059c8beac9e0f33a0"`);
+        await queryRunner.query(`ALTER TABLE "profile_skills" DROP CONSTRAINT "FK_307099ef26ed5a2dc95b8ab4c41"`);
+        await queryRunner.query(`ALTER TABLE "profile_links" DROP CONSTRAINT "FK_91652eb8aa51ec36557c62bfb2b"`);
+        await queryRunner.query(`ALTER TABLE "documents" DROP CONSTRAINT "FK_888a4852e27627d1ebd8a094e98"`);
+        await queryRunner.query(`ALTER TABLE "experiences" DROP CONSTRAINT "FK_358a314d189554fce6d662d042a"`);
+        await queryRunner.query(`ALTER TABLE "candidate_profiles" DROP CONSTRAINT "FK_5a3673f11918bcea56f48549603"`);
+        await queryRunner.query(`ALTER TABLE "scores" DROP CONSTRAINT "FK_d2d138b4f9792509c1fa0f8bb26"`);
+        await queryRunner.query(`ALTER TABLE "assessments" DROP CONSTRAINT "FK_a74e2a4c09b2381f024e65e01c4"`);
+        await queryRunner.query(`ALTER TABLE "assessments" DROP CONSTRAINT "FK_4a4634584a729bff10e7e0db81a"`);
+        await queryRunner.query(`ALTER TABLE "tests" DROP CONSTRAINT "FK_aa0e5b24530f6899ac4f788523d"`);
+        await queryRunner.query(`ALTER TABLE "refresh_tokens" DROP CONSTRAINT "FK_3ddc983c5f7bcf132fd8732c3f4"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_c8639b7626fa94ba8265628f21"`);
+        await queryRunner.query(`DROP TABLE "settings"`);
+        await queryRunner.query(`DROP TABLE "subscriptions"`);
+        await queryRunner.query(`DROP TYPE "public"."subscriptions_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."subscriptions_plan_enum"`);
+        await queryRunner.query(`DROP TABLE "shortlist_entries"`);
+        await queryRunner.query(`DROP TABLE "recruiters"`);
+        await queryRunner.query(`DROP TABLE "job_offers"`);
+        await queryRunner.query(`DROP TYPE "public"."job_offers_status_enum"`);
+        await queryRunner.query(`DROP TABLE "companies"`);
+        await queryRunner.query(`DROP TYPE "public"."companies_status_enum"`);
+        await queryRunner.query(`DROP TABLE "profile_skills"`);
+        await queryRunner.query(`DROP TABLE "skills"`);
+        await queryRunner.query(`DROP TABLE "profile_links"`);
+        await queryRunner.query(`DROP TYPE "public"."profile_links_type_enum"`);
+        await queryRunner.query(`DROP TABLE "documents"`);
+        await queryRunner.query(`DROP TYPE "public"."documents_scan_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."documents_type_enum"`);
+        await queryRunner.query(`DROP TABLE "experiences"`);
+        await queryRunner.query(`DROP TYPE "public"."experiences_type_enum"`);
+        await queryRunner.query(`DROP TABLE "candidate_profiles"`);
+        await queryRunner.query(`DROP TYPE "public"."candidate_profiles_visibility_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_2cd10fda8276bb995288acfbfb"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_cee5459245f652b75eb2759b4c"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_177183f29f438c488b5e8510cd"`);
+        await queryRunner.query(`DROP TABLE "audit_logs"`);
+        await queryRunner.query(`DROP TYPE "public"."audit_logs_action_enum"`);
+        await queryRunner.query(`DROP TABLE "scores"`);
+        await queryRunner.query(`DROP TYPE "public"."scores_plagiarism_verdict_enum"`);
+        await queryRunner.query(`DROP TABLE "assessments"`);
+        await queryRunner.query(`DROP TYPE "public"."assessments_status_enum"`);
+        await queryRunner.query(`DROP TABLE "tests"`);
+        await queryRunner.query(`DROP TABLE "specialties"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_97672ac88f789774dd47f7c8be"`);
+        await queryRunner.query(`DROP TABLE "users"`);
+        await queryRunner.query(`DROP TYPE "public"."users_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."users_roles_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_a7838d2ba25be1342091b6695f"`);
+        await queryRunner.query(`DROP TABLE "refresh_tokens"`);
+    }
+
+}
