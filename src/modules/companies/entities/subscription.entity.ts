@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Company } from './company.entity.js';
 
@@ -24,7 +25,19 @@ export enum SubscriptionStatus {
   EXPIRED = 'expired',
 }
 
+// Database-level twin of the "at most one active subscription per company"
+// invariant already enforced in application code by
+// ContactQuotaService.resolveActiveSubscriptionId (which throws
+// MultipleActiveSubscriptionsException — see PROGRESS.md / ADR-0002). A
+// partial unique index rather than a plain UNIQUE(company_id): terminal
+// rows (CANCELLED, EXPIRED) must be allowed to accumulate per company
+// (resubscriptions create new rows), only TRIAL/ACTIVE are mutually
+// exclusive.
 @Entity('subscriptions')
+@Index('UQ_subscriptions_company_active', ['companyId'], {
+  unique: true,
+  where: `status IN ('trial', 'active')`,
+})
 export class Subscription {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
