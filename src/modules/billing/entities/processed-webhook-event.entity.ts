@@ -3,7 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
+
+export const PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT =
+  'UQ_processed_webhook_events_provider_event_id';
 
 // Layer 1 of the webhook idempotence strategy: provider_event_id is UNIQUE,
 // so a second delivery of the same event hits a constraint violation
@@ -12,12 +16,22 @@ import {
 // the business-level guard (assertValidSubscriptionTransition +
 // UQ_subscriptions_company_active from Lot 6A) for effects that also need
 // to be safe against non-webhook concurrent writers.
+//
+// Named explicitly (not left to TypeORM's auto-generated hash) because
+// PaymentWebhookService's catch block must discriminate this constraint
+// from UQ_subscriptions_company_active — both can raise 23505 inside the
+// same transaction, and only a violation of THIS constraint means "replay,
+// already processed". See PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT usage
+// in payment-webhook.service.ts.
 @Entity('processed_webhook_events')
+@Index(PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT, ['providerEventId'], {
+  unique: true,
+})
 export class ProcessedWebhookEvent {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'provider_event_id', unique: true })
+  @Column({ name: 'provider_event_id' })
   providerEventId!: string;
 
   @Column()

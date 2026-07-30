@@ -1,7 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager, In } from 'typeorm';
-import { ProcessedWebhookEvent } from './entities/processed-webhook-event.entity.js';
+import {
+  ProcessedWebhookEvent,
+  PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT,
+} from './entities/processed-webhook-event.entity.js';
 import {
   Subscription,
   SubscriptionStatus,
@@ -42,6 +45,17 @@ export class PaymentWebhookService {
   //     catch that outside the transaction to report "already processed"
   //     without redoing work — same idempotence pattern as
   //     ConversationService.openConversation in Lot 5B.
+  //
+  // The catch below discriminates WHICH constraint raised 23505 — it does
+  // NOT treat every unique violation as "already processed". Two different
+  // unique constraints are reachable inside this transaction: the dedup
+  // marker itself, and (via activateSubscription's "no eligible row"
+  // branch) Lot 6A's UQ_subscriptions_company_active, if a race let two
+  // events try to activate two subscriptions for the same company. Only a
+  // violation of the dedup marker's constraint means "this is a replay" —
+  // any other 23505 is a genuine data-invariant conflict and must surface
+  // as a real error (non-2xx, Stripe retries, the incident is visible),
+  // never be swallowed into a silent 200.
   async handleWebhook(
     rawBody: Buffer,
     signature: string,
@@ -62,7 +76,9 @@ export class PaymentWebhookService {
         await this.applyEffect(event, manager);
       });
     } catch (error) {
-      if (isUniqueViolation(error)) {
+      if (
+        isUniqueViolation(error, PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT)
+      ) {
         this.logger.debug(
           `Webhook event ${event.providerEventId} already processed, skipping`,
         );
@@ -145,8 +161,9 @@ export class PaymentWebhookService {
       // UQ_subscriptions_company_active (Lot 6A) is the structural
       // backstop if this "no eligible row" read raced a concurrent
       // activation for the same company — a genuine race here surfaces as
-      // a 23505 on this insert, caught by the same idempotence handling
-      // as the dedup marker above, one transaction up the call stack.
+      // a 23505 on THIS constraint, not the dedup marker's, so
+      // handleWebhook's catch does not treat it as "already processed": it
+      // propagates as a real error, on purpose (see handleWebhook above).
       subscriptionId = created.id;
     }
 

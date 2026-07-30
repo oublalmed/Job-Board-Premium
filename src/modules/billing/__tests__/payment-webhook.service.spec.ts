@@ -5,14 +5,22 @@ import { PaymentWebhookService } from '../payment-webhook.service.js';
 import { PAYMENT_PROVIDER } from '../../../ports/payment.port.js';
 import { InvalidWebhookSignatureException } from '../../../ports/payment.port.js';
 import { AuditService } from '../../audit/audit.service.js';
-import { Subscription, SubscriptionStatus } from '../../companies/entities/subscription.entity.js';
+import {
+  Subscription,
+  SubscriptionStatus,
+} from '../../companies/entities/subscription.entity.js';
+import { PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT } from '../entities/processed-webhook-event.entity.js';
 
-function uniqueViolation(): QueryFailedError {
+function uniqueViolation(constraint: string): QueryFailedError {
   const driverError = Object.assign(
     new Error('duplicate key value violates unique constraint'),
-    { code: '23505' },
+    { code: '23505', constraint },
   );
-  return new QueryFailedError('INSERT INTO "processed_webhook_events" ...', [], driverError);
+  return new QueryFailedError(
+    'INSERT INTO "processed_webhook_events" ...',
+    [],
+    driverError,
+  );
 }
 
 describe('PaymentWebhookService', () => {
@@ -132,8 +140,10 @@ describe('PaymentWebhookService', () => {
     );
   });
 
-  it('returns alreadyProcessed:true and performs no business effect when the dedup insert violates the unique constraint', async () => {
-    dataSource.transaction.mockRejectedValueOnce(uniqueViolation());
+  it('returns alreadyProcessed:true and performs no business effect when the dedup marker constraint is violated', async () => {
+    dataSource.transaction.mockRejectedValueOnce(
+      uniqueViolation(PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT),
+    );
     paymentProvider.verifyAndParseWebhook.mockReturnValue({
       type: 'subscription.activated',
       providerEventId: 'evt_3',
@@ -161,6 +171,49 @@ describe('PaymentWebhookService', () => {
     await expect(
       service.handleWebhook(Buffer.from('{}'), 'sig'),
     ).rejects.toThrow('boom');
+  });
+
+  it('does NOT treat a 23505 on a different constraint as "already processed" — it propagates as a real error', async () => {
+    // Simulates the race this discrimination exists for: the "no eligible
+    // row, insert fresh" branch hits UQ_subscriptions_company_active
+    // (Lot 6A) instead of the dedup marker's constraint. Swallowing this
+    // as alreadyProcessed:true would silently lose a real activation and
+    // tell Stripe everything is fine.
+    dataSource.transaction.mockRejectedValueOnce(
+      uniqueViolation('UQ_subscriptions_company_active'),
+    );
+    paymentProvider.verifyAndParseWebhook.mockReturnValue({
+      type: 'subscription.activated',
+      providerEventId: 'evt_race',
+      providerSessionId: 'cs_race',
+      companyId,
+      plan: 'growth',
+    });
+
+    await expect(
+      service.handleWebhook(Buffer.from('{}'), 'sig'),
+    ).rejects.toThrow(QueryFailedError);
+  });
+
+  it('does NOT treat a 23505 with no constraint name as "already processed" either', async () => {
+    const driverError = Object.assign(
+      new Error('duplicate key value violates unique constraint'),
+      { code: '23505' }, // no .constraint field at all
+    );
+    dataSource.transaction.mockRejectedValueOnce(
+      new QueryFailedError('INSERT ...', [], driverError),
+    );
+    paymentProvider.verifyAndParseWebhook.mockReturnValue({
+      type: 'subscription.activated',
+      providerEventId: 'evt_no_constraint',
+      providerSessionId: 'cs_x',
+      companyId,
+      plan: 'growth',
+    });
+
+    await expect(
+      service.handleWebhook(Buffer.from('{}'), 'sig'),
+    ).rejects.toThrow(QueryFailedError);
   });
 
   it('ignores "ignored" and "subscription.cancelled" events with no business effect (still recorded)', async () => {

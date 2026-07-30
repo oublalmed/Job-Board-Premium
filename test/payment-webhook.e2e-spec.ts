@@ -318,4 +318,49 @@ describe('Payment webhook (e2e) — Lot 6B', () => {
       expect(rows).toHaveLength(1); // no duplicate row created by the race
     });
   });
+
+  describe('Scénario 5 — discrimination du 23505 (pas tout conflit unique = déjà traité)', () => {
+    it('a 23505 on UQ_subscriptions_company_active (not the dedup marker) is NOT swallowed as alreadyProcessed — it surfaces as a real error', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+
+      // Simulates a company that already has a real ACTIVE subscription
+      // (e.g. activated by a prior, legitimate event) so that a NEW
+      // checkout.session.completed for the same company — with no eligible
+      // TRIAL/PAST_DUE row to reuse — takes activateSubscription's
+      // "insert fresh" branch and collides for real with Lot 6A's
+      // UQ_subscriptions_company_active, not with the dedup marker.
+      const existing = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      existing.status = SubscriptionStatus.ACTIVE;
+      await subscriptionRepo.save(existing);
+
+      const conflictingPayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        nextEventId(), // a genuinely new event id — not a replay
+      );
+      const signature = sign(conflictingPayload);
+
+      const res = await request(app.getHttpServer())
+        .post(path('/webhooks/payment'))
+        .set('stripe-signature', signature)
+        .set('Content-Type', 'application/json')
+        .send(conflictingPayload);
+
+      // Not a 2xx: this must NOT look like success to Stripe. The exact
+      // code depends on GlobalExceptionFilter's handling of an unhandled
+      // QueryFailedError, but it must not be in the 2xx range.
+      expect(res.status).toBeGreaterThanOrEqual(400);
+
+      // The whole transaction rolled back — including the dedup marker
+      // insert that ran before the conflict was hit — so no phantom
+      // "processed" row is left behind for an event that actually failed.
+      const rows = await subscriptionRepo.find({ where: { companyId } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0].id).toBe(existing.id);
+      expect(rows[0].status).toBe(SubscriptionStatus.ACTIVE);
+    });
+  });
 });
