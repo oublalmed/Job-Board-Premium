@@ -42,10 +42,13 @@ export function resolveContactQuotaForPlan(
   return quota;
 }
 
-// Config stores whole-MAD prices (e.g. 990 = 990 MAD/month); Stripe's
-// unit_amount is the smallest currency unit (centimes) — the *100
-// conversion happens here, once, rather than at every call site.
-export function resolveMonthlyPriceInCentimes(
+// Config stores whole-MAD, before-tax (HT) prices (e.g. 990 = 990 MAD
+// HT/month, standard B2B pricing-page convention) — the *100 centimes
+// conversion happens here, once, rather than at every call site. Callers
+// that need what the customer is actually charged must add VAT themselves
+// via computeVat() (tax.ts) — this function deliberately does not, so
+// there is exactly one place (tax.ts) that turns HT into TTC.
+export function resolveMonthlyPriceHtInCentimes(
   plan: SubscriptionPlan,
   configService: ConfigService,
 ): number {

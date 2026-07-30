@@ -13,7 +13,8 @@ import {
 } from '../../ports/payment.port.js';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto.js';
 import { CompanyAlreadySubscribedException } from './billing.exceptions.js';
-import { resolveMonthlyPriceInCentimes } from './plan-quota.js';
+import { resolveMonthlyPriceHtInCentimes } from './plan-quota.js';
+import { computeVat } from './tax.js';
 
 @Injectable()
 export class SubscriptionCheckoutService {
@@ -52,13 +53,21 @@ export class SubscriptionCheckoutService {
       throw new CompanyAlreadySubscribedException(companyId);
     }
 
-    const amount = resolveMonthlyPriceInCentimes(dto.plan, this.configService);
+    // Stripe charges the customer amountTTC (HT + VAT) — this endpoint
+    // used to send the raw HT config price, under-charging by the VAT
+    // amount. Fixed here rather than at the invoice, which must reflect
+    // what was actually paid, not what should have been.
+    const amountHT = resolveMonthlyPriceHtInCentimes(
+      dto.plan,
+      this.configService,
+    );
+    const { amountTTC } = computeVat(amountHT);
     const currency = this.configService.get<string>('business.currency', 'MAD');
 
     const session = await this.paymentProvider.createCheckoutSession({
       companyId,
       plan: dto.plan,
-      amount,
+      amount: amountTTC,
       currency,
       successUrl: dto.successUrl,
       cancelUrl: dto.cancelUrl,

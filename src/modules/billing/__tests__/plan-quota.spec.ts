@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import {
   resolveContactQuotaForPlan,
-  resolveMonthlyPriceInCentimes,
+  resolveMonthlyPriceHtInCentimes,
 } from '../plan-quota.js';
 import { EnterpriseQuotaNotAutomatedException } from '../billing.exceptions.js';
 import { SubscriptionPlan } from '../../companies/entities/subscription.entity.js';
@@ -47,20 +47,20 @@ describe('plan-quota', () => {
     });
   });
 
-  describe('resolveMonthlyPriceInCentimes', () => {
+  describe('resolveMonthlyPriceHtInCentimes', () => {
     it('converts whole-MAD config prices to centimes (x100)', () => {
       const configService = makeConfigService({
         'business.plans.starter.price': 990,
       });
       expect(
-        resolveMonthlyPriceInCentimes(SubscriptionPlan.STARTER, configService),
+        resolveMonthlyPriceHtInCentimes(SubscriptionPlan.STARTER, configService),
       ).toBe(99000);
     });
 
     it('throws EnterpriseQuotaNotAutomatedException for ENTERPRISE', () => {
       const configService = makeConfigService({});
       expect(() =>
-        resolveMonthlyPriceInCentimes(
+        resolveMonthlyPriceHtInCentimes(
           SubscriptionPlan.ENTERPRISE,
           configService,
         ),

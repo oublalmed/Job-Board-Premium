@@ -53,7 +53,7 @@ describe('SubscriptionCheckoutService', () => {
     service = module.get(SubscriptionCheckoutService);
   });
 
-  it('resolves companyId server-side and creates a checkout session with the amount in centimes', async () => {
+  it('resolves companyId server-side and charges the TTC amount (HT + 20% VAT), not the raw HT config price', async () => {
     const result = await service.createCheckoutSession(userId, {
       plan: SubscriptionPlan.GROWTH,
       successUrl: 'https://app.local/success',
@@ -64,7 +64,7 @@ describe('SubscriptionCheckoutService', () => {
     expect(paymentProvider.createCheckoutSession).toHaveBeenCalledWith({
       companyId,
       plan: SubscriptionPlan.GROWTH,
-      amount: 290000,
+      amount: 348000, // 290000 HT + 20% VAT (58000) = 348000 TTC
       currency: 'MAD',
       successUrl: 'https://app.local/success',
       cancelUrl: 'https://app.local/cancel',
