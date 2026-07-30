@@ -65,4 +65,8 @@ export const configValidationSchema = Joi.object({
 
   // Scoring webhook
   SCORING_WEBHOOK_SECRET: Joi.string().allow('').default(''),
+
+  // Payment (Stripe)
+  STRIPE_SECRET_KEY: Joi.string().allow('').default(''),
+  STRIPE_WEBHOOK_SECRET: Joi.string().allow('').default(''),
 });

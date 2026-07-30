@@ -1,40 +1,13 @@
-import { StubPaymentAdapter } from '../payment/stub-payment.adapter.js';
 import { StubMailAdapter } from '../mail/stub-mail.adapter.js';
 import { StubFileScannerAdapter } from '../file-scanner/stub-file-scanner.adapter.js';
 import { StubObjectStorageAdapter } from '../object-storage/stub-object-storage.adapter.js';
 
 // StubScoringAdapter has its own dedicated suite: see
 // src/adapters/scoring/__tests__/stub-scoring.adapter.spec.ts
-
-describe('StubPaymentAdapter', () => {
-  const adapter = new StubPaymentAdapter();
-
-  it('should create a checkout session', async () => {
-    const result = await adapter.createCheckout({
-      companyId: 'c1',
-      planId: 'starter',
-      amount: 990,
-      currency: 'MAD',
-    });
-    expect(result.sessionId).toBeDefined();
-    expect(result.checkoutUrl).toContain(result.sessionId);
-  });
-
-  it('should always verify webhook signature as true', () => {
-    expect(adapter.verifyWebhookSignature('payload', 'sig')).toBe(true);
-  });
-
-  it('should parse webhook event', () => {
-    const event = adapter.parseWebhookEvent('{}');
-    expect(event.eventType).toBe('payment.success');
-  });
-
-  it('should cancel subscription without error', async () => {
-    await expect(
-      adapter.cancelSubscription('sub-123'),
-    ).resolves.toBeUndefined();
-  });
-});
+//
+// The payment provider is no longer a stub — Stripe was chosen as the
+// first PSP (Lot 6B). StripePaymentProvider has its own dedicated suite:
+// see src/adapters/payment/__tests__/stripe-payment.adapter.spec.ts
 
 describe('StubMailAdapter', () => {
   const adapter = new StubMailAdapter();

@@ -5,7 +5,7 @@ import { MAIL_PROVIDER } from './mail.port.js';
 import { FILE_SCANNER } from './file-scanner.port.js';
 import { OBJECT_STORAGE } from './object-storage.port.js';
 import { StubScoringAdapter } from '../adapters/scoring/stub-scoring.adapter.js';
-import { StubPaymentAdapter } from '../adapters/payment/stub-payment.adapter.js';
+import { StripePaymentProvider } from '../adapters/payment/stripe-payment.adapter.js';
 import { StubMailAdapter } from '../adapters/mail/stub-mail.adapter.js';
 import { StubFileScannerAdapter } from '../adapters/file-scanner/stub-file-scanner.adapter.js';
 import { StubObjectStorageAdapter } from '../adapters/object-storage/stub-object-storage.adapter.js';
@@ -14,7 +14,7 @@ import { StubObjectStorageAdapter } from '../adapters/object-storage/stub-object
 @Module({
   providers: [
     { provide: SCORING_PROVIDER, useClass: StubScoringAdapter },
-    { provide: PAYMENT_PROVIDER, useClass: StubPaymentAdapter },
+    { provide: PAYMENT_PROVIDER, useClass: StripePaymentProvider },
     { provide: MAIL_PROVIDER, useClass: StubMailAdapter },
     { provide: FILE_SCANNER, useClass: StubFileScannerAdapter },
     { provide: OBJECT_STORAGE, useClass: StubObjectStorageAdapter },

@@ -7,11 +7,18 @@ export { SCORING_PROVIDER } from './scoring.port.js';
 
 export type {
   PaymentProvider,
-  CreateCheckoutRequest,
-  CheckoutSession,
-  PaymentEvent,
+  CreateCheckoutSessionParams,
+  CheckoutSessionResult,
+  WebhookEvent,
+  SubscriptionActivatedEvent,
+  PaymentFailedEvent,
+  SubscriptionCancelledEvent,
+  IgnoredWebhookEvent,
 } from './payment.port.js';
-export { PAYMENT_PROVIDER } from './payment.port.js';
+export {
+  PAYMENT_PROVIDER,
+  InvalidWebhookSignatureException,
+} from './payment.port.js';
 
 export type { MailProvider, SendMailRequest } from './mail.port.js';
 export { MAIL_PROVIDER } from './mail.port.js';

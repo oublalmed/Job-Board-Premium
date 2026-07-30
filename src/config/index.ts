@@ -5,4 +5,5 @@ export { authConfig } from './auth.config.js';
 export { storageConfig } from './storage.config.js';
 export { businessConfig } from './business.config.js';
 export { scoringConfig } from './scoring.config.js';
+export { paymentConfig } from './payment.config.js';
 export { configValidationSchema } from './config.validation.js';
