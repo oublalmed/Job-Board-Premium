@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, MoreThan, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, MoreThan, Repository } from 'typeorm';
 import {
   Subscription,
   SubscriptionStatus,
@@ -24,8 +24,23 @@ export class ContactQuotaService implements ContactQuotaPort {
     private readonly subscriptionRepo: Repository<Subscription>,
   ) {}
 
-  async consumeOneContact(companyId: string): Promise<void> {
-    const subscriptionId = await this.resolveActiveSubscriptionId(companyId);
+  // manager is optional and defaults to this.subscriptionRepo's own
+  // connection (Lot 5A behavior, unchanged). Callers that must decrement
+  // the quota atomically alongside other writes — e.g. ConversationService
+  // opening a thread — pass the EntityManager of their own
+  // dataSource.transaction() so this UPDATE (and the resolve SELECT before
+  // it) run inside that same transaction and roll back together with it.
+  async consumeOneContact(
+    companyId: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager
+      ? manager.getRepository(Subscription)
+      : this.subscriptionRepo;
+    const subscriptionId = await this.resolveActiveSubscriptionId(
+      companyId,
+      repo,
+    );
 
     // A "read quota_used, check in JS, then write" is NOT safe here: two
     // concurrent requests can both read quota_used=4/quota=5, both decide
@@ -46,7 +61,7 @@ export class ContactQuotaService implements ContactQuotaPort {
     // resolveActiveSubscriptionId below) guarantees the lock, and the WHERE,
     // apply to exactly the one row resolved above and never to a sibling row
     // for the same company.
-    const result = await this.subscriptionRepo
+    const result = await repo
       .createQueryBuilder()
       .update(Subscription)
       .set({ contactsUsed: () => 'contacts_used + 1' })
@@ -74,9 +89,10 @@ export class ContactQuotaService implements ContactQuotaPort {
   // atomic UPDATE above from ever touching more than one row.
   private async resolveActiveSubscriptionId(
     companyId: string,
+    repo: Repository<Subscription>,
   ): Promise<string> {
     const now = new Date();
-    const activeSubscriptions = await this.subscriptionRepo.find({
+    const activeSubscriptions = await repo.find({
       where: [
         {
           companyId,
