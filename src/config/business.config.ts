@@ -32,6 +32,9 @@ export const businessConfig = registerAs('business', () => ({
     10,
   ),
   maxCvSizeBytes: parseInt(process.env['MAX_CV_SIZE_BYTES'] ?? '5242880', 10),
+  // Lot 7 (EF-REM-03) — when the daily cooldown-expiry sweep job runs.
+  // Standard 5-field cron pattern, default daily at 03:00.
+  cooldownSweepCron: process.env['COOLDOWN_SWEEP_CRON'] ?? '0 3 * * *',
   currency: process.env['CURRENCY'] ?? 'MAD',
   plans: {
     starter: {

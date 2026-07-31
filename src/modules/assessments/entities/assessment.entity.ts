@@ -59,6 +59,14 @@ export class Assessment {
   @Column({ name: 'completed_at', type: 'timestamptz', nullable: true })
   completedAt!: Date | null;
 
+  // Lot 7 (EF-REM-03) — set once the J-90 cooldown-expiry notification has
+  // actually been sent for this assessment. This is the claim marker: the
+  // sweep only ever notifies a row where this is still NULL, via an atomic
+  // conditional UPDATE (WHERE ... AND cooldown_notified_at IS NULL), never
+  // a read-then-write — see RemediationNotificationService.
+  @Column({ name: 'cooldown_notified_at', type: 'timestamptz', nullable: true })
+  cooldownNotifiedAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
