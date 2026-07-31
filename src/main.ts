@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -44,6 +45,28 @@ async function bootstrap() {
     origin: configService.get<string>('CORS_ORIGIN', '*'),
     credentials: true,
   });
+
+  // The OpenAPI contract this frontend's API client is generated from
+  // (Front 0 — never hand-written types). Kept out of production: nothing
+  // in the running API needs it reachable at runtime, only whoever is
+  // regenerating the client against a dev/staging backend — and a fully
+  // public schema is a (minor, but avoidable) surface a production API
+  // doesn't need to expose. `@nestjs/swagger`'s compiler plugin
+  // (nest-cli.json) infers DTO shapes from their TypeScript types, so
+  // this reflects the real request/response contract without hand-
+  // annotating every property with @ApiProperty().
+  if (configService.get<string>('app.nodeEnv') !== 'production') {
+    const swaggerDocument = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder()
+        .setTitle('Job Board Premium API')
+        .setDescription('REST API — see CDC for the full functional spec')
+        .setVersion('1.0')
+        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
+        .build(),
+    );
+    SwaggerModule.setup(`${apiPrefix}/docs`, app, swaggerDocument);
+  }
 
   await app.listen(port);
 
