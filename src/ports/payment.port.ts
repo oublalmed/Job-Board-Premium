@@ -117,6 +117,15 @@ export interface PaymentProvider {
   // parsed event out of this port without the signature having already
   // been checked. Throws InvalidWebhookSignatureException on failure.
   verifyAndParseWebhook(rawBody: Buffer, signature: string): WebhookEvent;
+
+  // Schedules cancellation at the end of the CURRENT paid period — mirrors
+  // Stripe's own cancel_at_period_end flag, never an immediate cutoff
+  // (the customer already paid for this period). Does not change the
+  // subscription's status on our side by itself: Stripe fires
+  // customer.subscription.deleted once periodEnd is actually reached,
+  // which the existing dunning webhook handler (Lot 6D commit 2) already
+  // reacts to.
+  cancelAtPeriodEnd(providerSubscriptionId: string): Promise<void>;
 }
 
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');

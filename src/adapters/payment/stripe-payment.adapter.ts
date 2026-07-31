@@ -121,6 +121,12 @@ export class StripePaymentProvider implements PaymentProvider {
     return this.toDomainEvent(event);
   }
 
+  async cancelAtPeriodEnd(providerSubscriptionId: string): Promise<void> {
+    await this.stripe.subscriptions.update(providerSubscriptionId, {
+      cancel_at_period_end: true,
+    });
+  }
+
   private toDomainEvent(event: Stripe.Event): WebhookEvent {
     if (ACTIVATING_EVENT_TYPES.has(event.type)) {
       const session = event.data.object as Stripe.Checkout.Session;

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import {
   Subscription,
   SubscriptionStatus,
@@ -12,7 +12,10 @@ import {
   type PaymentProvider,
 } from '../../ports/payment.port.js';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto.js';
-import { CompanyAlreadySubscribedException } from './billing.exceptions.js';
+import {
+  CompanyAlreadySubscribedException,
+  NoActiveSubscriptionToCancelException,
+} from './billing.exceptions.js';
 import { resolveMonthlyPriceHtInCentimes } from './plan-quota.js';
 import { computeVat } from './tax.js';
 
@@ -74,5 +77,44 @@ export class SubscriptionCheckoutService {
     });
 
     return { url: session.url };
+  }
+
+  // Schedules cancellation at the end of the current paid period — never
+  // an immediate cutoff (the company already paid for it). Status stays
+  // whatever it currently is (ACTIVE or PAST_DUE); Stripe itself flips it
+  // to CANCELLED once periodEnd is reached, via the same webhook path
+  // dunning already uses (Lot 6D commit 2).
+  async cancelSubscription(
+    userId: string,
+  ): Promise<{ cancelAtPeriodEnd: boolean; periodEnd: Date | null }> {
+    const companyId = await this.subscriptionGuard.resolveCompanyId(userId);
+
+    const subscription = await this.subscriptionRepo.findOne({
+      where: {
+        companyId,
+        status: In([SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE]),
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!subscription || !subscription.externalSubscriptionId) {
+      throw new NoActiveSubscriptionToCancelException(companyId);
+    }
+
+    // Idempotent: a second call is a no-op, not a second Stripe API call —
+    // cancel_at_period_end is already true, there's nothing new to tell
+    // Stripe.
+    if (!subscription.cancelAtPeriodEnd) {
+      await this.paymentProvider.cancelAtPeriodEnd(
+        subscription.externalSubscriptionId,
+      );
+      subscription.cancelAtPeriodEnd = true;
+      await this.subscriptionRepo.save(subscription);
+    }
+
+    return {
+      cancelAtPeriodEnd: true,
+      periodEnd: subscription.endsAt,
+    };
   }
 }

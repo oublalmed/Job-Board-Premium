@@ -1,4 +1,8 @@
-import { ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 
 export class EnterpriseQuotaNotAutomatedException extends InternalServerErrorException {
   constructor() {
@@ -16,5 +20,13 @@ export class EnterpriseQuotaNotAutomatedException extends InternalServerErrorExc
 export class CompanyAlreadySubscribedException extends ForbiddenException {
   constructor(companyId: string) {
     super(`Company ${companyId} already has an active or trial subscription`);
+  }
+}
+
+// No ACTIVE/PAST_DUE row to cancel — e.g. still on TRIAL (nothing paid,
+// nothing to schedule cancellation for) or already CANCELLED/EXPIRED.
+export class NoActiveSubscriptionToCancelException extends NotFoundException {
+  constructor(companyId: string) {
+    super(`Company ${companyId} has no active subscription to cancel`);
   }
 }

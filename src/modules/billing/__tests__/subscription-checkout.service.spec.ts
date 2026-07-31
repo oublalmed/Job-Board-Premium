@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { SubscriptionCheckoutService } from '../subscription-checkout.service.js';
-import { CompanyAlreadySubscribedException } from '../billing.exceptions.js';
+import {
+  CompanyAlreadySubscribedException,
+  NoActiveSubscriptionToCancelException,
+} from '../billing.exceptions.js';
 import { SubscriptionGuardService } from '../../companies/subscription-guard.service.js';
 import { PAYMENT_PROVIDER } from '../../../ports/payment.port.js';
 import {
@@ -14,8 +17,11 @@ import {
 describe('SubscriptionCheckoutService', () => {
   let service: SubscriptionCheckoutService;
   let subscriptionGuard: { resolveCompanyId: jest.Mock };
-  let subscriptionRepo: { findOne: jest.Mock };
-  let paymentProvider: { createCheckoutSession: jest.Mock };
+  let subscriptionRepo: { findOne: jest.Mock; save: jest.Mock };
+  let paymentProvider: {
+    createCheckoutSession: jest.Mock;
+    cancelAtPeriodEnd: jest.Mock;
+  };
   let configService: { get: jest.Mock };
 
   const userId = 'user-1';
@@ -25,12 +31,16 @@ describe('SubscriptionCheckoutService', () => {
     subscriptionGuard = {
       resolveCompanyId: jest.fn().mockResolvedValue(companyId),
     };
-    subscriptionRepo = { findOne: jest.fn().mockResolvedValue(null) };
+    subscriptionRepo = {
+      findOne: jest.fn().mockResolvedValue(null),
+      save: jest.fn((data: unknown) => Promise.resolve(data)),
+    };
     paymentProvider = {
       createCheckoutSession: jest.fn().mockResolvedValue({
         url: 'https://checkout.stripe.com/test/cs_1',
         providerSessionId: 'cs_1',
       }),
+      cancelAtPeriodEnd: jest.fn().mockResolvedValue(undefined),
     };
     configService = {
       get: jest.fn((key: string, fallback?: unknown) => {
@@ -104,5 +114,75 @@ describe('SubscriptionCheckoutService', () => {
         cancelUrl: 'https://app.local/cancel',
       }),
     ).resolves.toBeDefined();
+  });
+
+  describe('cancelSubscription', () => {
+    it('resolves companyId server-side (ADR-0001), calls the provider, and sets cancelAtPeriodEnd', async () => {
+      const periodEnd = new Date('2026-08-15T00:00:00.000Z');
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        externalSubscriptionId: 'sub_ext_1',
+        endsAt: periodEnd,
+        cancelAtPeriodEnd: false,
+      });
+
+      const result = await service.cancelSubscription(userId);
+
+      expect(subscriptionGuard.resolveCompanyId).toHaveBeenCalledWith(userId);
+      expect(paymentProvider.cancelAtPeriodEnd).toHaveBeenCalledWith(
+        'sub_ext_1',
+      );
+      expect(subscriptionRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ cancelAtPeriodEnd: true }),
+      );
+      expect(result).toEqual({ cancelAtPeriodEnd: true, periodEnd });
+    });
+
+    it('accepts a PAST_DUE subscription too (still within grace, cancellation can be scheduled)', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.PAST_DUE,
+        externalSubscriptionId: 'sub_ext_2',
+        endsAt: null,
+        cancelAtPeriodEnd: false,
+      });
+
+      await expect(service.cancelSubscription(userId)).resolves.toEqual(
+        expect.objectContaining({ cancelAtPeriodEnd: true }),
+      );
+      expect(subscriptionRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ companyId }),
+        }),
+      );
+    });
+
+    it('is idempotent — a second call does not call the provider again', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        externalSubscriptionId: 'sub_ext_3',
+        endsAt: null,
+        cancelAtPeriodEnd: true, // already scheduled
+      });
+
+      await service.cancelSubscription(userId);
+
+      expect(paymentProvider.cancelAtPeriodEnd).not.toHaveBeenCalled();
+      expect(subscriptionRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('throws NoActiveSubscriptionToCancelException when there is no ACTIVE/PAST_DUE subscription', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.cancelSubscription(userId)).rejects.toThrow(
+        NoActiveSubscriptionToCancelException,
+      );
+      expect(paymentProvider.cancelAtPeriodEnd).not.toHaveBeenCalled();
+    });
   });
 });

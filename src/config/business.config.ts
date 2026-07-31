@@ -23,6 +23,14 @@ export const businessConfig = registerAs('business', () => ({
   ),
   retestCooldownDays: parseInt(process.env['RETEST_COOLDOWN_DAYS'] ?? '90', 10),
   trialDurationDays: parseInt(process.env['TRIAL_DURATION_DAYS'] ?? '14', 10),
+  // Lot 6D — PAST_DUE keeps full access for this many days from
+  // pastDueSince (Stripe Smart Retries running) before access is
+  // restricted (US-BILL-04). Not the Stripe retry count/cadence itself —
+  // that lives entirely in the Stripe dashboard config, never here.
+  subscriptionGracePeriodDays: parseInt(
+    process.env['SUBSCRIPTION_GRACE_PERIOD_DAYS'] ?? '7',
+    10,
+  ),
   maxCvSizeBytes: parseInt(process.env['MAX_CV_SIZE_BYTES'] ?? '5242880', 10),
   currency: process.env['CURRENCY'] ?? 'MAD',
   plans: {

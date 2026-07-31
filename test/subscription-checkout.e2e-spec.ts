@@ -26,6 +26,9 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
   let createCheckoutSpy: jest.SpiedFunction<
     PaymentProvider['createCheckoutSession']
   >;
+  let cancelAtPeriodEndSpy: jest.SpiedFunction<
+    PaymentProvider['cancelAtPeriodEnd']
+  >;
 
   let iceCounter = 0;
   function nextIce(): string {
@@ -105,10 +108,16 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
         url: 'https://checkout.stripe.com/test/fake-session',
         providerSessionId: 'cs_fake',
       });
+    // Same reasoning as createCheckoutSession above — cancelAtPeriodEnd
+    // (Lot 6D commit 3) is a real outbound Stripe API call too.
+    cancelAtPeriodEndSpy = jest
+      .spyOn(paymentProvider, 'cancelAtPeriodEnd')
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     createCheckoutSpy.mockClear();
+    cancelAtPeriodEndSpy.mockClear();
   });
 
   afterAll(async () => {
@@ -254,6 +263,159 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
       expect(createCheckoutSpy).not.toHaveBeenCalledWith(
         expect.objectContaining({ companyId: otherCompanyId }),
       );
+    });
+  });
+
+  describe('Scénario 7 — résiliation avec accès maintenu jusqu’à periodEnd (Lot 6D)', () => {
+    it('sets cancelAtPeriodEnd and keeps the subscription ACTIVE — access is maintained', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      subscription.status = SubscriptionStatus.ACTIVE;
+      subscription.externalSubscriptionId = 'sub_cancel_e2e_1';
+      subscription.endsAt = new Date('2026-08-20T00:00:00.000Z');
+      await subscriptionRepo.save(subscription);
+
+      const res = await request(app.getHttpServer())
+        .post(path('/subscriptions/cancel'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({})
+        .expect(201);
+
+      expect(res.body).toEqual({
+        cancelAtPeriodEnd: true,
+        periodEnd: '2026-08-20T00:00:00.000Z',
+      });
+      expect(cancelAtPeriodEndSpy).toHaveBeenCalledWith('sub_cancel_e2e_1');
+
+      const after = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(after.status).toBe(SubscriptionStatus.ACTIVE); // unchanged
+      expect(after.cancelAtPeriodEnd).toBe(true);
+
+      // Access maintained: a subscription-gated action still succeeds.
+      await request(app.getHttpServer())
+        .post(path('/companies/offers'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ title: 'Ingénieur logiciel' })
+        .expect(201);
+    });
+
+    it('is idempotent — a second call does not re-invoke the provider', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      subscription.status = SubscriptionStatus.ACTIVE;
+      subscription.externalSubscriptionId = 'sub_cancel_e2e_2';
+      await subscriptionRepo.save(subscription);
+
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/cancel'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({})
+        .expect(201);
+      expect(cancelAtPeriodEndSpy).toHaveBeenCalledTimes(1);
+
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/cancel'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({})
+        .expect(201);
+      expect(cancelAtPeriodEndSpy).toHaveBeenCalledTimes(1); // not called again
+    });
+
+    it('resolves companyId server-side (ADR-0001) — cancelling only ever touches the caller’s own company', async () => {
+      const recruiterA = await createVerifiedUser();
+      const companyIdA = await createCompanyFor(recruiterA.token, 'Company A');
+      const subA = await subscriptionRepo.findOneOrFail({
+        where: { companyId: companyIdA },
+      });
+      subA.status = SubscriptionStatus.ACTIVE;
+      subA.externalSubscriptionId = 'sub_a';
+      await subscriptionRepo.save(subA);
+
+      const recruiterB = await createVerifiedUser();
+      const companyIdB = await createCompanyFor(recruiterB.token, 'Company B');
+      const subB = await subscriptionRepo.findOneOrFail({
+        where: { companyId: companyIdB },
+      });
+      subB.status = SubscriptionStatus.ACTIVE;
+      subB.externalSubscriptionId = 'sub_b';
+      await subscriptionRepo.save(subB);
+
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/cancel'))
+        .set('Authorization', `Bearer ${recruiterA.token}`)
+        .send({})
+        .expect(201);
+
+      expect(cancelAtPeriodEndSpy).toHaveBeenLastCalledWith('sub_a');
+
+      const afterA = await subscriptionRepo.findOneOrFail({
+        where: { companyId: companyIdA },
+      });
+      const afterB = await subscriptionRepo.findOneOrFail({
+        where: { companyId: companyIdB },
+      });
+      expect(afterA.cancelAtPeriodEnd).toBe(true);
+      expect(afterB.cancelAtPeriodEnd).toBe(false); // company B untouched
+    });
+
+    it('rejects when the company has no ACTIVE/PAST_DUE subscription (still TRIAL)', async () => {
+      const recruiter = await createVerifiedUser();
+      await createCompanyFor(recruiter.token); // fresh company is TRIAL only
+
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/cancel'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({})
+        .expect(404);
+
+      expect(cancelAtPeriodEndSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unauthenticated request', async () => {
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/cancel'))
+        .send({})
+        .expect(401);
+    });
+  });
+
+  describe('Scénario 8 — fenêtre de grâce PAST_DUE (Lot 6D)', () => {
+    it('access maintained for PAST_DUE within the grace window, restricted once past it', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      subscription.status = SubscriptionStatus.PAST_DUE;
+      subscription.pastDueSince = new Date(); // just went past due
+      await subscriptionRepo.save(subscription);
+
+      await request(app.getHttpServer())
+        .post(path('/companies/offers'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ title: 'Dans la fenêtre de grâce' })
+        .expect(201);
+
+      // SUBSCRIPTION_GRACE_PERIOD_DAYS=7 in this environment's .env — well
+      // outside it.
+      subscription.pastDueSince = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000,
+      );
+      await subscriptionRepo.save(subscription);
+
+      await request(app.getHttpServer())
+        .post(path('/companies/offers'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ title: 'Hors de la fenêtre de grâce' })
+        .expect(403);
     });
   });
 });

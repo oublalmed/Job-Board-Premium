@@ -86,6 +86,14 @@ export class Subscription {
   @Column({ name: 'past_due_since', type: 'timestamptz', nullable: true })
   pastDueSince!: Date | null;
 
+  // Mirrors Stripe's own cancel_at_period_end flag — set via
+  // POST /subscriptions/cancel (Lot 6D commit 3). Does NOT change status:
+  // the subscription stays ACTIVE (full access) until Stripe reaches
+  // periodEnd and fires customer.subscription.deleted, which is what
+  // actually transitions status to CANCELLED (see payment-webhook.service.ts).
+  @Column({ name: 'cancel_at_period_end', type: 'boolean', default: false })
+  cancelAtPeriodEnd!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

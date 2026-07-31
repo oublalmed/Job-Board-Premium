@@ -23,4 +23,10 @@ export class SubscriptionCheckoutController {
   ) {
     return this.checkoutService.createCheckoutSession(user.sub, dto);
   }
+
+  @Post('cancel')
+  @Roles(Role.RECRUITER, Role.COMPANY_ADMIN)
+  async cancelSubscription(@CurrentUser() user: JwtPayload) {
+    return this.checkoutService.cancelSubscription(user.sub);
+  }
 }

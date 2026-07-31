@@ -32,7 +32,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
 import { InvoiceEmissionService } from './invoice-emission.service.js';
 import { DunningNotificationService } from './dunning-notification.service.js';
-import { addDays } from './date-utils.js';
+import { addDays } from '../../common/date-utils.js';
 
 const PROVIDER_NAME = 'stripe';
 const BILLING_PERIOD_DAYS = 30;
