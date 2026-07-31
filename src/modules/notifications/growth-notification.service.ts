@@ -41,6 +41,22 @@ export class GrowthNotificationService {
     );
   }
 
+  async notifyProfileViewed(
+    recipient: NotificationRecipient,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.notify(
+      recipient,
+      {
+        type: NotificationType.PROFILE_VIEWED,
+        title: 'Un recruteur a consulté votre profil',
+        body: 'Votre profil a été consulté par un recruteur — restez actif pour augmenter votre visibilité.',
+        templateId: 'profile-viewed',
+      },
+      manager,
+    );
+  }
+
   private async notify(
     recipient: NotificationRecipient,
     mail: {

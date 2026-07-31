@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import {
@@ -113,6 +113,59 @@ export class SearchService {
     }
 
     return { items, nextCursor };
+  }
+
+  // EF-GROW-04 — a single candidate's detail, gated by the exact same
+  // visibility rule as the list (indexedInCvtheque + PUBLIC/RECRUITERS_ONLY):
+  // never more reachable than what would already show up in a search, and
+  // a hidden/nonexistent profile are indistinguishable (404 either way —
+  // ADR-0001, same reasoning as EF-SRCH-03's list-side filter).
+  async getCandidateDetail(id: string): Promise<CandidateSearchResultDto> {
+    const qb = this.profileRepo
+      .createQueryBuilder('profile')
+      .leftJoin(
+        (sub) => this.bestScoreSubQuery(sub),
+        'best_score',
+        'best_score.candidate_id = profile.userId',
+      )
+      .addSelect('best_score.best_value', 'bestScoreValue')
+      .addSelect('best_score.best_percentile', 'bestScorePercentile')
+      .where('profile.id = :id', { id })
+      .andWhere('profile.indexedInCvtheque = true')
+      .andWhere('profile.visibility IN (:...visibilities)', {
+        visibilities: [
+          ProfileVisibility.PUBLIC,
+          ProfileVisibility.RECRUITERS_ONLY,
+        ],
+      });
+
+    const { entities, raw } = await qb.getRawAndEntities<RawScoreRow>();
+    if (entities.length === 0) {
+      throw new NotFoundException('Candidate profile not found');
+    }
+
+    const profile = entities[0];
+    const skillsByProfile = await this.loadSkills([profile.id]);
+
+    return {
+      id: profile.id,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      headline: profile.headline,
+      availability: profile.availability,
+      mobility: profile.mobility,
+      location: profile.location,
+      skills: skillsByProfile.get(profile.id) ?? [],
+      score: Number(raw[0]?.bestScoreValue ?? 0),
+      percentile:
+        raw[0]?.bestScorePercentile !== null &&
+        raw[0]?.bestScorePercentile !== undefined
+          ? Number(raw[0].bestScorePercentile)
+          : null,
+      featured: profile.featured,
+      salaryMin: profile.salaryVisible ? profile.salaryMin : null,
+      salaryMax: profile.salaryVisible ? profile.salaryMax : null,
+    };
   }
 
   private buildQuery(

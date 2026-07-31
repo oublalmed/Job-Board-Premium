@@ -35,6 +35,13 @@ export const businessConfig = registerAs('business', () => ({
   // Lot 7 (EF-REM-03) — when the daily cooldown-expiry sweep job runs.
   // Standard 5-field cron pattern, default daily at 03:00.
   cooldownSweepCron: process.env['COOLDOWN_SWEEP_CRON'] ?? '0 3 * * *',
+  // Lot 7 (EF-GROW-04) — anti-spam window: N views by the same recruiter
+  // on the same candidate within this window produce at most 1
+  // notification (the view itself is still always recorded).
+  profileViewNotificationCooldownHours: parseInt(
+    process.env['PROFILE_VIEW_NOTIFICATION_COOLDOWN_HOURS'] ?? '24',
+    10,
+  ),
   currency: process.env['CURRENCY'] ?? 'MAD',
   plans: {
     starter: {

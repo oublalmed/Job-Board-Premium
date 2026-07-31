@@ -47,6 +47,7 @@ export const configValidationSchema = Joi.object({
   TRIAL_DURATION_DAYS: Joi.number().min(1).default(14),
   SUBSCRIPTION_GRACE_PERIOD_DAYS: Joi.number().min(0).default(7),
   COOLDOWN_SWEEP_CRON: Joi.string().default('0 3 * * *'),
+  PROFILE_VIEW_NOTIFICATION_COOLDOWN_HOURS: Joi.number().min(0).default(24),
   PASSWORD_MIN_LENGTH: Joi.number().min(8).default(10),
   MAX_CV_SIZE_BYTES: Joi.number().default(5242880),
 

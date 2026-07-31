@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { SearchService } from '../search.service.js';
 import { CandidateProfile } from '../../candidates/entities/candidate-profile.entity.js';
@@ -290,6 +291,66 @@ describe('SearchService', () => {
 
       expect(profileSkillRepo.createQueryBuilder).not.toHaveBeenCalled();
       expect(result.items).toEqual([]);
+    });
+  });
+
+  describe('getCandidateDetail (EF-GROW-04) — same visibility rule as the list, never more reachable', () => {
+    it('scopes the lookup to the given id plus the same indexation/visibility filters as the list', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({
+        entities: [makeProfileEntity({ id: 'p1' })],
+        raw: [{ bestScoreValue: '70', bestScorePercentile: '65' }],
+      });
+
+      await service.getCandidateDetail('p1');
+
+      expect(mainQb.where).toHaveBeenCalledWith('profile.id = :id', {
+        id: 'p1',
+      });
+      expect(mainQb.andWhere).toHaveBeenCalledWith(
+        'profile.indexedInCvtheque = true',
+      );
+      expect(mainQb.andWhere).toHaveBeenCalledWith(
+        'profile.visibility IN (:...visibilities)',
+        expect.objectContaining({
+          visibilities: expect.arrayContaining(['public', 'recruiters_only']),
+        }),
+      );
+    });
+
+    it('throws NotFoundException when the profile does not exist, is hidden, or is not indexed', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({ entities: [], raw: [] });
+
+      await expect(service.getCandidateDetail('missing')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('returns the same field shape as a search result item, including skills and score', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({
+        entities: [makeProfileEntity({ id: 'p1', salaryVisible: false })],
+        raw: [{ bestScoreValue: '80', bestScorePercentile: '90' }],
+      });
+      skillQb.getRawMany.mockResolvedValue([
+        { profileId: 'p1', name: 'React' },
+      ]);
+
+      const result = await service.getCandidateDetail('p1');
+
+      expect(result).toEqual({
+        id: 'p1',
+        firstName: 'Amine',
+        lastName: 'K',
+        headline: 'Backend dev',
+        availability: 'immediate',
+        mobility: 'remote',
+        location: 'Casablanca',
+        skills: ['React'],
+        score: 80,
+        percentile: 90,
+        featured: false,
+        salaryMin: null,
+        salaryMax: null,
+      });
     });
   });
 });
