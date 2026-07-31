@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { In, Repository } from 'typeorm';
 import {
   Subscription,
+  SubscriptionPlan,
   SubscriptionStatus,
 } from '../companies/entities/subscription.entity.js';
 import { SubscriptionGuardService } from '../companies/subscription-guard.service.js';
@@ -12,12 +13,20 @@ import {
   type PaymentProvider,
 } from '../../ports/payment.port.js';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto.js';
+import { ChangeSubscriptionPlanDto } from './dto/change-subscription-plan.dto.js';
 import {
   CompanyAlreadySubscribedException,
   NoActiveSubscriptionToCancelException,
+  NoActiveSubscriptionToChangePlanException,
+  SamePlanException,
 } from './billing.exceptions.js';
-import { resolveMonthlyPriceHtInCentimes } from './plan-quota.js';
+import {
+  resolveContactQuotaForPlan,
+  resolveMonthlyPriceHtInCentimes,
+} from './plan-quota.js';
 import { computeVat } from './tax.js';
+import { AuditService } from '../audit/audit.service.js';
+import { AuditAction } from '../../common/enums/audit-action.enum.js';
 
 @Injectable()
 export class SubscriptionCheckoutService {
@@ -28,6 +37,7 @@ export class SubscriptionCheckoutService {
     @Inject(PAYMENT_PROVIDER)
     private readonly paymentProvider: PaymentProvider,
     private readonly configService: ConfigService,
+    private readonly auditService: AuditService,
   ) {}
 
   // Creates a Checkout Session and nothing else — no Subscription row is
@@ -115,6 +125,89 @@ export class SubscriptionCheckoutService {
     return {
       cancelAtPeriodEnd: true,
       periodEnd: subscription.endsAt,
+    };
+  }
+
+  // Upgrade or downgrade, applied immediately at Stripe (proration —
+  // Stripe computes and invoices the prorated amount itself, never
+  // recomputed by hand here). The resulting legal invoice is emitted
+  // separately, asynchronously, once Stripe's invoice.paid webhook
+  // arrives (PaymentWebhookService.handlePlanChangeInvoice) — Stripe's
+  // API call succeeding is not proof the invoice was actually charged
+  // yet.
+  //
+  // Quota, by contrast, is reajusted HERE, synchronously, the moment the
+  // Stripe API call succeeds — domain logic, not Stripe's job (explicit
+  // product decision): an upgrade's higher quota must be usable
+  // immediately, not after an async webhook round-trip. contactsUsed is
+  // deliberately left untouched (preserved across a plan change, reset
+  // only on renewal — CDC §5.4). For a downgrade where the new quota is
+  // below what's already been consumed: no special-casing needed —
+  // ContactQuotaService's existing atomic consumption guard
+  // (WHERE contacts_used < contact_quota) already naturally blocks
+  // further consumption the moment contactsUsed reaches contactQuota, so
+  // the company is capped, not retroactively penalized, and regains full
+  // quota at the next renewal.
+  async changePlan(
+    userId: string,
+    dto: ChangeSubscriptionPlanDto,
+  ): Promise<{ plan: SubscriptionPlan; contactQuota: number; contactsUsed: number }> {
+    const companyId = await this.subscriptionGuard.resolveCompanyId(userId);
+
+    const subscription = await this.subscriptionRepo.findOne({
+      where: {
+        companyId,
+        status: In([SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE]),
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!subscription || !subscription.externalSubscriptionId) {
+      throw new NoActiveSubscriptionToChangePlanException(companyId);
+    }
+
+    if (subscription.plan === dto.plan) {
+      throw new SamePlanException(dto.plan);
+    }
+
+    const newQuota = resolveContactQuotaForPlan(dto.plan, this.configService);
+    const amountHT = resolveMonthlyPriceHtInCentimes(
+      dto.plan,
+      this.configService,
+    );
+    const { amountTTC } = computeVat(amountHT);
+    const currency = this.configService.get<string>('business.currency', 'MAD');
+
+    await this.paymentProvider.changeSubscriptionPlan({
+      providerSubscriptionId: subscription.externalSubscriptionId,
+      plan: dto.plan,
+      amount: amountTTC,
+      currency,
+    });
+
+    const previousPlan = subscription.plan;
+    subscription.plan = dto.plan;
+    subscription.contactQuota = newQuota;
+    const saved = await this.subscriptionRepo.save(subscription);
+
+    await this.auditService.log({
+      actorId: userId,
+      action: AuditAction.SUBSCRIPTION_PLAN_CHANGED,
+      entityType: 'subscription',
+      entityId: saved.id,
+      metadata: {
+        companyId,
+        planChange: true,
+        previousPlan,
+        newPlan: dto.plan,
+        newContactQuota: newQuota,
+      },
+    });
+
+    return {
+      plan: saved.plan,
+      contactQuota: saved.contactQuota,
+      contactsUsed: saved.contactsUsed,
     };
   }
 }

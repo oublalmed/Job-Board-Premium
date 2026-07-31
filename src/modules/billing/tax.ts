@@ -29,3 +29,23 @@ export function computeVat(amountHT: number): VatBreakdown {
     amountTTC: amountHT + vatAmount,
   };
 }
+
+// The reverse direction — Lot 6D proration: Stripe reports what it
+// actually charged as a TTC amount (proration_behavior computes and
+// invoices the customer directly), never an HT figure we could feed to
+// computeVat above. Same single-rounding discipline as computeVat, just
+// applied to the other operand: amountHT is the one value derived via
+// Math.round, vatAmount is the remainder (amountTTC - amountHT) rather
+// than an independently rounded 20% — guaranteeing amountHT + vatAmount
+// === amountTTC exactly, never off by a centime from two separate
+// roundings.
+export function computeVatFromTtc(amountTTC: number): VatBreakdown {
+  const amountHT = Math.round(
+    (amountTTC * 100) / (100 + VAT_RATE_PERCENT),
+  );
+  return {
+    amountHT,
+    vatAmount: amountTTC - amountHT,
+    amountTTC,
+  };
+}

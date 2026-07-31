@@ -25,6 +25,7 @@ export enum AuditAction {
   SHORTLIST_ENTRY_REMOVED = 'shortlist_entry.removed',
   SUBSCRIPTION_CREATED = 'subscription.created',
   SUBSCRIPTION_PAST_DUE = 'subscription.past_due',
+  SUBSCRIPTION_PLAN_CHANGED = 'subscription.plan_changed',
   SUBSCRIPTION_CANCELLED = 'subscription.cancelled',
   PAYMENT_RECEIVED = 'payment.received',
   PAYMENT_FAILED = 'payment.failed',

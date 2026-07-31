@@ -5,6 +5,8 @@ import { SubscriptionCheckoutService } from '../subscription-checkout.service.js
 import {
   CompanyAlreadySubscribedException,
   NoActiveSubscriptionToCancelException,
+  NoActiveSubscriptionToChangePlanException,
+  SamePlanException,
 } from '../billing.exceptions.js';
 import { SubscriptionGuardService } from '../../companies/subscription-guard.service.js';
 import { PAYMENT_PROVIDER } from '../../../ports/payment.port.js';
@@ -13,6 +15,7 @@ import {
   SubscriptionPlan,
   SubscriptionStatus,
 } from '../../companies/entities/subscription.entity.js';
+import { AuditService } from '../../audit/audit.service.js';
 
 describe('SubscriptionCheckoutService', () => {
   let service: SubscriptionCheckoutService;
@@ -21,8 +24,10 @@ describe('SubscriptionCheckoutService', () => {
   let paymentProvider: {
     createCheckoutSession: jest.Mock;
     cancelAtPeriodEnd: jest.Mock;
+    changeSubscriptionPlan: jest.Mock;
   };
   let configService: { get: jest.Mock };
+  let auditService: { log: jest.Mock };
 
   const userId = 'user-1';
   const companyId = 'company-1';
@@ -41,14 +46,21 @@ describe('SubscriptionCheckoutService', () => {
         providerSessionId: 'cs_1',
       }),
       cancelAtPeriodEnd: jest.fn().mockResolvedValue(undefined),
+      changeSubscriptionPlan: jest.fn().mockResolvedValue(undefined),
     };
     configService = {
       get: jest.fn((key: string, fallback?: unknown) => {
         if (key === 'business.plans.growth.price') return 2900;
+        if (key === 'business.plans.growth.contacts') return 60;
+        if (key === 'business.plans.scale.price') return 6900;
+        if (key === 'business.plans.scale.contacts') return 200;
+        if (key === 'business.plans.starter.price') return 990;
+        if (key === 'business.plans.starter.contacts') return 15;
         if (key === 'business.currency') return 'MAD';
         return fallback;
       }),
     };
+    auditService = { log: jest.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,6 +69,7 @@ describe('SubscriptionCheckoutService', () => {
         { provide: getRepositoryToken(Subscription), useValue: subscriptionRepo },
         { provide: PAYMENT_PROVIDER, useValue: paymentProvider },
         { provide: ConfigService, useValue: configService },
+        { provide: AuditService, useValue: auditService },
       ],
     }).compile();
 
@@ -183,6 +196,114 @@ describe('SubscriptionCheckoutService', () => {
         NoActiveSubscriptionToCancelException,
       );
       expect(paymentProvider.cancelAtPeriodEnd).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('changePlan', () => {
+    it('upgrades: applies the change at Stripe (proration) and reajusts quota immediately, preserving contactsUsed', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        plan: SubscriptionPlan.GROWTH,
+        externalSubscriptionId: 'sub_ext_1',
+        contactQuota: 60,
+        contactsUsed: 45,
+      });
+
+      const result = await service.changePlan(userId, {
+        plan: SubscriptionPlan.SCALE,
+      });
+
+      expect(subscriptionGuard.resolveCompanyId).toHaveBeenCalledWith(userId);
+      expect(paymentProvider.changeSubscriptionPlan).toHaveBeenCalledWith({
+        providerSubscriptionId: 'sub_ext_1',
+        plan: SubscriptionPlan.SCALE,
+        amount: 828000, // scale: 690000 HT + 20% VAT = 828000 TTC
+        currency: 'MAD',
+      });
+      expect(subscriptionRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          plan: SubscriptionPlan.SCALE,
+          contactQuota: 200,
+          contactsUsed: 45, // preserved, not reset
+        }),
+      );
+      expect(result).toEqual({
+        plan: SubscriptionPlan.SCALE,
+        contactQuota: 200,
+        contactsUsed: 45,
+      });
+    });
+
+    it('downgrades: allows contactQuota to drop below contactsUsed — no special-casing, capped by the existing atomic guard elsewhere', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        plan: SubscriptionPlan.SCALE,
+        externalSubscriptionId: 'sub_ext_2',
+        contactQuota: 200,
+        contactsUsed: 80, // above the new starter quota of 15
+      });
+
+      const result = await service.changePlan(userId, {
+        plan: SubscriptionPlan.STARTER,
+      });
+
+      expect(subscriptionRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          plan: SubscriptionPlan.STARTER,
+          contactQuota: 15,
+          contactsUsed: 80, // preserved as-is, not clamped here
+        }),
+      );
+      expect(result.contactQuota).toBe(15);
+      expect(result.contactsUsed).toBe(80);
+    });
+
+    it('accepts a PAST_DUE subscription too', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.PAST_DUE,
+        plan: SubscriptionPlan.GROWTH,
+        externalSubscriptionId: 'sub_ext_3',
+        contactQuota: 60,
+        contactsUsed: 10,
+      });
+
+      await expect(
+        service.changePlan(userId, { plan: SubscriptionPlan.SCALE }),
+      ).resolves.toEqual(
+        expect.objectContaining({ plan: SubscriptionPlan.SCALE }),
+      );
+    });
+
+    it('throws SamePlanException when requesting the plan already in effect, without calling the provider', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        plan: SubscriptionPlan.GROWTH,
+        externalSubscriptionId: 'sub_ext_4',
+        contactQuota: 60,
+        contactsUsed: 0,
+      });
+
+      await expect(
+        service.changePlan(userId, { plan: SubscriptionPlan.GROWTH }),
+      ).rejects.toThrow(SamePlanException);
+      expect(paymentProvider.changeSubscriptionPlan).not.toHaveBeenCalled();
+    });
+
+    it('throws NoActiveSubscriptionToChangePlanException when there is no ACTIVE/PAST_DUE subscription', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.changePlan(userId, { plan: SubscriptionPlan.SCALE }),
+      ).rejects.toThrow(NoActiveSubscriptionToChangePlanException);
+      expect(paymentProvider.changeSubscriptionPlan).not.toHaveBeenCalled();
     });
   });
 });

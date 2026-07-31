@@ -457,6 +457,77 @@ describe('PaymentWebhookService', () => {
     });
   });
 
+  describe('subscription.plan_changed', () => {
+    it('emits an invoice for the exact amount Stripe charged, without touching plan/quota', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        plan: 'scale', // already updated synchronously by changePlan before this event arrives
+        externalSubscriptionId: 'sub_plan_1',
+        contactQuota: 200,
+        contactsUsed: 45,
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.plan_changed',
+        providerEventId: 'evt_plan_1',
+        providerSubscriptionId: 'sub_plan_1',
+        amountTTC: 42000,
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(false);
+      // No status/plan/quota mutation here — save() is never called for
+      // this event, only invoice emission and audit logging.
+      expect(subscriptionRepo.save).not.toHaveBeenCalled();
+      expect(invoiceEmissionService.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stripeEventId: 'evt_plan_1',
+          amountTTCOverride: 42000,
+          company: expect.objectContaining({ id: companyId }),
+          subscription: expect.objectContaining({
+            id: 'sub-1',
+            plan: 'scale',
+          }),
+        }),
+        manager,
+      );
+    });
+
+    it('throws when no subscription matches the Stripe subscription id', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(null);
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.plan_changed',
+        providerEventId: 'evt_plan_2',
+        providerSubscriptionId: 'sub_unknown',
+        amountTTC: 10000,
+      });
+
+      await expect(
+        service.handleWebhook(Buffer.from('{}'), 'sig'),
+      ).rejects.toThrow(/sub_unknown/);
+      expect(invoiceEmissionService.emit).not.toHaveBeenCalled();
+    });
+
+    it('is idempotent on replay via the dedup marker — no second invoice', async () => {
+      dataSource.transaction.mockRejectedValueOnce(
+        uniqueViolation(PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT),
+      );
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.plan_changed',
+        providerEventId: 'evt_plan_3',
+        providerSubscriptionId: 'sub_plan_3',
+        amountTTC: 15000,
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(true);
+      expect(invoiceEmissionService.emit).not.toHaveBeenCalled();
+    });
+  });
+
   describe('subscription.past_due', () => {
     it('demotes an ACTIVE subscription to PAST_DUE, sets pastDueSince, and notifies', async () => {
       subscriptionRepo.findOne.mockResolvedValue({

@@ -29,6 +29,9 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
   let cancelAtPeriodEndSpy: jest.SpiedFunction<
     PaymentProvider['cancelAtPeriodEnd']
   >;
+  let changeSubscriptionPlanSpy: jest.SpiedFunction<
+    PaymentProvider['changeSubscriptionPlan']
+  >;
 
   let iceCounter = 0;
   function nextIce(): string {
@@ -113,11 +116,17 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
     cancelAtPeriodEndSpy = jest
       .spyOn(paymentProvider, 'cancelAtPeriodEnd')
       .mockResolvedValue(undefined);
+    // changeSubscriptionPlan (Lot 6D commit 4) is also a real outbound
+    // Stripe API call — same reasoning.
+    changeSubscriptionPlanSpy = jest
+      .spyOn(paymentProvider, 'changeSubscriptionPlan')
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     createCheckoutSpy.mockClear();
     cancelAtPeriodEndSpy.mockClear();
+    changeSubscriptionPlanSpy.mockClear();
   });
 
   afterAll(async () => {
@@ -416,6 +425,164 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
         .set('Authorization', `Bearer ${recruiter.token}`)
         .send({ title: 'Hors de la fenêtre de grâce' })
         .expect(403);
+    });
+  });
+
+  describe('Scénario 9 — changement de plan avec prorata (Lot 6D)', () => {
+    it('upgrade: applies the change at Stripe and reajusts quota immediately, preserving contactsUsed', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      subscription.status = SubscriptionStatus.ACTIVE;
+      subscription.plan = SubscriptionPlan.GROWTH;
+      subscription.externalSubscriptionId = 'sub_plan_e2e_1';
+      subscription.contactQuota = 60;
+      subscription.contactsUsed = 45;
+      await subscriptionRepo.save(subscription);
+
+      const res = await request(app.getHttpServer())
+        .post(path('/subscriptions/plan'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ plan: SubscriptionPlan.SCALE })
+        .expect(201);
+
+      expect(res.body).toEqual({
+        plan: SubscriptionPlan.SCALE,
+        contactQuota: 200,
+        contactsUsed: 45,
+      });
+      expect(changeSubscriptionPlanSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          providerSubscriptionId: 'sub_plan_e2e_1',
+          plan: SubscriptionPlan.SCALE,
+          amount: 828000, // scale TTC
+        }),
+      );
+
+      const after = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(after.plan).toBe(SubscriptionPlan.SCALE);
+      expect(after.contactQuota).toBe(200);
+      expect(after.contactsUsed).toBe(45); // preserved immediately, not reset
+      expect(after.status).toBe(SubscriptionStatus.ACTIVE); // unchanged
+    });
+
+    it('downgrade: caps naturally via ContactQuotaService — no special-casing needed', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      subscription.status = SubscriptionStatus.ACTIVE;
+      subscription.plan = SubscriptionPlan.SCALE;
+      subscription.externalSubscriptionId = 'sub_plan_e2e_2';
+      subscription.contactQuota = 200;
+      subscription.contactsUsed = 80; // above starter's quota of 15
+      await subscriptionRepo.save(subscription);
+
+      const res = await request(app.getHttpServer())
+        .post(path('/subscriptions/plan'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ plan: SubscriptionPlan.STARTER })
+        .expect(201);
+
+      expect(res.body).toEqual({
+        plan: SubscriptionPlan.STARTER,
+        contactQuota: 15,
+        contactsUsed: 80,
+      });
+
+      const after = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(after.contactQuota).toBe(15);
+      expect(after.contactsUsed).toBe(80); // not clamped — capped by the
+      // atomic guard elsewhere (WHERE contacts_used < contact_quota) the
+      // next time a contact reveal is attempted, not retroactively here.
+    });
+
+    it('rejects a request for the plan already in effect', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      subscription.status = SubscriptionStatus.ACTIVE;
+      subscription.plan = SubscriptionPlan.GROWTH;
+      subscription.externalSubscriptionId = 'sub_plan_e2e_3';
+      await subscriptionRepo.save(subscription);
+
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/plan'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ plan: SubscriptionPlan.GROWTH })
+        .expect(400);
+
+      expect(changeSubscriptionPlanSpy).not.toHaveBeenCalled();
+    });
+
+    it('resolves companyId server-side (ADR-0001) — changing plan only ever touches the caller’s own company', async () => {
+      const recruiterA = await createVerifiedUser();
+      const companyIdA = await createCompanyFor(recruiterA.token, 'Company A');
+      const subA = await subscriptionRepo.findOneOrFail({
+        where: { companyId: companyIdA },
+      });
+      subA.status = SubscriptionStatus.ACTIVE;
+      subA.plan = SubscriptionPlan.GROWTH;
+      subA.externalSubscriptionId = 'sub_plan_a';
+      await subscriptionRepo.save(subA);
+
+      const recruiterB = await createVerifiedUser();
+      const companyIdB = await createCompanyFor(recruiterB.token, 'Company B');
+      const subB = await subscriptionRepo.findOneOrFail({
+        where: { companyId: companyIdB },
+      });
+      subB.status = SubscriptionStatus.ACTIVE;
+      subB.plan = SubscriptionPlan.GROWTH;
+      subB.externalSubscriptionId = 'sub_plan_b';
+      await subscriptionRepo.save(subB);
+
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/plan'))
+        .set('Authorization', `Bearer ${recruiterA.token}`)
+        .send({ plan: SubscriptionPlan.SCALE })
+        .expect(201);
+
+      expect(changeSubscriptionPlanSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ providerSubscriptionId: 'sub_plan_a' }),
+      );
+
+      const afterA = await subscriptionRepo.findOneOrFail({
+        where: { companyId: companyIdA },
+      });
+      const afterB = await subscriptionRepo.findOneOrFail({
+        where: { companyId: companyIdB },
+      });
+      expect(afterA.plan).toBe(SubscriptionPlan.SCALE);
+      expect(afterB.plan).toBe(SubscriptionPlan.GROWTH); // company B untouched
+    });
+
+    it('rejects when the company has no ACTIVE/PAST_DUE subscription (still TRIAL)', async () => {
+      const recruiter = await createVerifiedUser();
+      await createCompanyFor(recruiter.token); // fresh company is TRIAL only
+
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/plan'))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ plan: SubscriptionPlan.SCALE })
+        .expect(404);
+
+      expect(changeSubscriptionPlanSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unauthenticated request', async () => {
+      await request(app.getHttpServer())
+        .post(path('/subscriptions/plan'))
+        .send({ plan: SubscriptionPlan.SCALE })
+        .expect(401);
     });
   });
 });

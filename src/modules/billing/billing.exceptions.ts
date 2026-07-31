@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import type { SubscriptionPlan } from '../companies/entities/subscription.entity.js';
 
 export class EnterpriseQuotaNotAutomatedException extends InternalServerErrorException {
   constructor() {
@@ -28,5 +30,22 @@ export class CompanyAlreadySubscribedException extends ForbiddenException {
 export class NoActiveSubscriptionToCancelException extends NotFoundException {
   constructor(companyId: string) {
     super(`Company ${companyId} has no active subscription to cancel`);
+  }
+}
+
+// No ACTIVE/PAST_DUE row to change the plan of — same reasoning as
+// NoActiveSubscriptionToCancelException above, distinct endpoint.
+export class NoActiveSubscriptionToChangePlanException extends NotFoundException {
+  constructor(companyId: string) {
+    super(`Company ${companyId} has no active subscription to change the plan of`);
+  }
+}
+
+// A plan-change request for the plan the company is already on — not a
+// meaningful proration (nothing changed), and calling Stripe with an
+// identical price would be a wasted API call for zero business effect.
+export class SamePlanException extends BadRequestException {
+  constructor(plan: SubscriptionPlan) {
+    super(`Subscription is already on the ${plan} plan`);
   }
 }

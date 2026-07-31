@@ -77,6 +77,23 @@ export interface SubscriptionPastDueEvent {
   providerSubscriptionId: string;
 }
 
+// A plan change was invoiced (invoice.paid, billing_reason
+// subscription_update) — Stripe computed and charged the prorated
+// amount itself (proration_behavior on the changeSubscriptionPlan call
+// below, Lot 6D commit 4); this event carries exactly what was charged
+// so the resulting legal invoice reflects the real amount, never
+// recomputed by hand. Deliberately carries no plan/quota: those are
+// already updated synchronously, at the moment the plan-change API call
+// to Stripe succeeded (see SubscriptionCheckoutService.changePlan) —
+// domain logic (immediate quota reajustment), not something that should
+// wait on an async webhook.
+export interface SubscriptionPlanChangedEvent {
+  type: 'subscription.plan_changed';
+  providerEventId: string;
+  providerSubscriptionId: string;
+  amountTTC: number;
+}
+
 // Stripe has given up: either it flipped the subscription itself to
 // 'unpaid' (customer.subscription.updated, retries exhausted) or deleted
 // it outright (customer.subscription.deleted). Keyed by
@@ -104,8 +121,20 @@ export type WebhookEvent =
   | SubscriptionRenewedEvent
   | PaymentFailedEvent
   | SubscriptionPastDueEvent
+  | SubscriptionPlanChangedEvent
   | SubscriptionCancelledEvent
   | IgnoredWebhookEvent;
+
+export interface ChangeSubscriptionPlanParams {
+  providerSubscriptionId: string;
+  plan: SubscriptionPlan;
+  // The new monthly price, TTC, smallest currency unit — mirrors
+  // CreateCheckoutSessionParams.amount. Stripe computes the prorated
+  // difference from this and the subscription's current price itself
+  // (proration_behavior); we never calculate a proration amount by hand.
+  amount: number;
+  currency: string;
+}
 
 export interface PaymentProvider {
   createCheckoutSession(
@@ -126,6 +155,14 @@ export interface PaymentProvider {
   // which the existing dunning webhook handler (Lot 6D commit 2) already
   // reacts to.
   cancelAtPeriodEnd(providerSubscriptionId: string): Promise<void>;
+
+  // Changes the subscription's price immediately, with Stripe computing
+  // and invoicing the proration (proration_behavior: 'always_invoice') —
+  // never a hand-rolled proration calculation. Fires invoice.paid with
+  // billing_reason=subscription_update shortly after, which is how the
+  // resulting legal invoice gets emitted (see
+  // PaymentWebhookService.handlePlanChangeInvoice).
+  changeSubscriptionPlan(params: ChangeSubscriptionPlanParams): Promise<void>;
 }
 
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');

@@ -1,4 +1,4 @@
-import { computeVat, VAT_RATE_PERCENT } from '../tax.js';
+import { computeVat, computeVatFromTtc, VAT_RATE_PERCENT } from '../tax.js';
 
 describe('computeVat', () => {
   it('applies the 20% Morocco standard VAT rate', () => {
@@ -55,5 +55,54 @@ describe('computeVat', () => {
 
   it('handles zero', () => {
     expect(computeVat(0)).toEqual({ amountHT: 0, vatAmount: 0, amountTTC: 0 });
+  });
+});
+
+describe('computeVatFromTtc', () => {
+  it('round-trips exactly for a clean plan price (growth: 348000 TTC -> 290000 HT)', () => {
+    expect(computeVatFromTtc(348000)).toEqual({
+      amountHT: 290000,
+      vatAmount: 58000,
+      amountTTC: 348000,
+    });
+  });
+
+  it('round-trips exactly for the scale and starter plan prices too', () => {
+    expect(computeVatFromTtc(828000)).toEqual({
+      amountHT: 690000,
+      vatAmount: 138000,
+      amountTTC: 828000,
+    });
+    expect(computeVatFromTtc(118800)).toEqual({
+      amountHT: 99000,
+      vatAmount: 19800,
+      amountTTC: 118800,
+    });
+  });
+
+  it('amountHT + vatAmount always equals amountTTC exactly — single rounding on amountHT, vatAmount is the remainder', () => {
+    // Deliberately messy TTC amounts (a real Stripe proration figure would
+    // rarely be a clean multiple) — the invariant must hold regardless.
+    for (const amountTTC of [1, 3, 7, 11, 33, 99, 12345, 999999, 123457]) {
+      const result = computeVatFromTtc(amountTTC);
+      expect(Number.isInteger(result.amountHT)).toBe(true);
+      expect(Number.isInteger(result.vatAmount)).toBe(true);
+      expect(result.amountHT + result.vatAmount).toBe(result.amountTTC);
+    }
+  });
+
+  it('handles zero', () => {
+    expect(computeVatFromTtc(0)).toEqual({
+      amountHT: 0,
+      vatAmount: 0,
+      amountTTC: 0,
+    });
+  });
+
+  it('is the true inverse of computeVat for exact multiples of 1.2', () => {
+    for (const amountHT of [100, 500, 1000, 290000, 690000]) {
+      const { amountTTC } = computeVat(amountHT);
+      expect(computeVatFromTtc(amountTTC).amountHT).toBe(amountHT);
+    }
   });
 });

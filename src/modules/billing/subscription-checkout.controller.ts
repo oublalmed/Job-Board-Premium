@@ -7,6 +7,7 @@ import { Role } from '../../common/enums/role.enum.js';
 import type { JwtPayload } from '../../common/interfaces/request-with-user.interface.js';
 import { SubscriptionCheckoutService } from './subscription-checkout.service.js';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto.js';
+import { ChangeSubscriptionPlanDto } from './dto/change-subscription-plan.dto.js';
 
 @Controller('subscriptions')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,5 +29,14 @@ export class SubscriptionCheckoutController {
   @Roles(Role.RECRUITER, Role.COMPANY_ADMIN)
   async cancelSubscription(@CurrentUser() user: JwtPayload) {
     return this.checkoutService.cancelSubscription(user.sub);
+  }
+
+  @Post('plan')
+  @Roles(Role.RECRUITER, Role.COMPANY_ADMIN)
+  async changePlan(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ChangeSubscriptionPlanDto,
+  ) {
+    return this.checkoutService.changePlan(user.sub, dto);
   }
 }

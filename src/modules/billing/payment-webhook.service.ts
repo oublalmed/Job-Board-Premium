@@ -23,6 +23,7 @@ import {
   type SubscriptionActivatedEvent,
   type SubscriptionRenewedEvent,
   type SubscriptionPastDueEvent,
+  type SubscriptionPlanChangedEvent,
   type SubscriptionCancelledEvent,
   type WebhookEvent,
 } from '../../ports/payment.port.js';
@@ -121,6 +122,9 @@ export class PaymentWebhookService {
         return;
       case 'subscription.past_due':
         await this.markSubscriptionPastDue(event, manager);
+        return;
+      case 'subscription.plan_changed':
+        await this.handlePlanChangeInvoice(event, manager);
         return;
       case 'subscription.cancelled':
         await this.cancelSubscription(event, manager);
@@ -404,6 +408,56 @@ export class PaymentWebhookService {
       subscription.companyId,
       manager,
     );
+  }
+
+  // invoice.paid (billing_reason=subscription_update) — the proration
+  // invoice for a plan change. Plan and quota are NOT touched here: they
+  // were already updated synchronously by
+  // SubscriptionCheckoutService.changePlan at the moment the Stripe API
+  // call succeeded (immediate quota reajustment is domain logic, not
+  // something that should wait on an async webhook). This handler's only
+  // job is to emit the legal invoice for the amount Stripe actually
+  // charged — never recomputed by hand (see tax.ts computeVatFromTtc).
+  private async handlePlanChangeInvoice(
+    event: SubscriptionPlanChangedEvent,
+    manager: EntityManager,
+  ): Promise<void> {
+    const subscription = await manager.getRepository(Subscription).findOne({
+      where: { externalSubscriptionId: event.providerSubscriptionId },
+    });
+
+    if (!subscription) {
+      throw new InternalServerErrorException(
+        `invoice.paid (subscription_update) for unknown Stripe subscription ${event.providerSubscriptionId}`,
+      );
+    }
+
+    const company = await manager
+      .getRepository(Company)
+      .findOneByOrFail({ id: subscription.companyId });
+
+    await this.invoiceEmissionService.emit(
+      {
+        subscription,
+        company,
+        stripeEventId: event.providerEventId,
+        amountTTCOverride: event.amountTTC,
+      },
+      manager,
+    );
+
+    await this.auditService.log({
+      actorId: null,
+      action: AuditAction.PAYMENT_RECEIVED,
+      entityType: 'subscription',
+      entityId: subscription.id,
+      metadata: {
+        companyId: subscription.companyId,
+        proration: true,
+        amountTTC: event.amountTTC,
+        providerEventId: event.providerEventId,
+      },
+    });
   }
 
   // Stripe has given up on this subscription — either

@@ -91,6 +91,7 @@ describe('Invoice emission (e2e) — Lot 6C', () => {
     billingReason: string,
     eventId: string,
     providerSubscriptionId: string,
+    amountPaid?: number,
   ): string {
     return JSON.stringify({
       id: eventId,
@@ -99,6 +100,7 @@ describe('Invoice emission (e2e) — Lot 6C', () => {
         object: {
           id: `in_${eventId}`,
           billing_reason: billingReason,
+          amount_paid: amountPaid,
           parent: {
             subscription_details: { subscription: providerSubscriptionId },
           },
@@ -367,6 +369,102 @@ describe('Invoice emission (e2e) — Lot 6C', () => {
       await request(app.getHttpServer())
         .get(path(`/invoices/${invoice.id}`))
         .expect(401);
+    });
+  });
+
+  describe('Prorata — invoice.paid subscription_update (Lot 6D commit 4)', () => {
+    it('emits a conformant legal invoice for the exact amount Stripe charged, not the full monthly plan price', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      // A real proration is never the full monthly price of either plan —
+      // an arbitrary mid-cycle figure Stripe alone computed.
+      const prorationAmountTTC = 42357;
+      const prorationEventId = nextEventId();
+      const prorationPayload = invoicePaidPayload(
+        'subscription_update',
+        prorationEventId,
+        subscription.externalSubscriptionId!,
+        prorationAmountTTC,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(prorationPayload),
+        sign(prorationPayload),
+      );
+
+      const invoices = await invoiceRepo.find({
+        where: { companyId },
+        order: { issuedAt: 'ASC' },
+      });
+      expect(invoices).toHaveLength(2); // activation + proration
+      const prorationInvoice = invoices[1];
+
+      expect(prorationInvoice.stripeInvoiceId).toBe(prorationEventId);
+      expect(prorationInvoice.amountTTC).toBe(prorationAmountTTC);
+      // computeVatFromTtc(42357): HT = round(42357*100/120) = 35298,
+      // vatAmount = 42357 - 35298 = 7059.
+      expect(prorationInvoice.amountHT).toBe(35298);
+      expect(prorationInvoice.vatAmount).toBe(7059);
+      expect(prorationInvoice.amountHT + prorationInvoice.vatAmount).toBe(
+        prorationInvoice.amountTTC,
+      );
+      expect(prorationInvoice.invoiceNumber).not.toBe(
+        invoices[0].invoiceNumber,
+      ); // same gapless 6C sequence, not a separate one
+    });
+
+    it('replaying the proration event is idempotent — still exactly one proration invoice', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const prorationEventId = nextEventId();
+      const prorationPayload = invoicePaidPayload(
+        'subscription_update',
+        prorationEventId,
+        subscription.externalSubscriptionId!,
+        10000,
+      );
+      const signature = sign(prorationPayload);
+
+      await webhookService.handleWebhook(
+        Buffer.from(prorationPayload),
+        signature,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(prorationPayload),
+        signature,
+      );
+
+      const byStripeId = await invoiceRepo.find({
+        where: { stripeInvoiceId: prorationEventId },
+      });
+      expect(byStripeId).toHaveLength(1);
     });
   });
 });

@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import {
+  ChangeSubscriptionPlanParams,
   CheckoutSessionResult,
   CreateCheckoutSessionParams,
   InvalidWebhookSignatureException,
@@ -30,6 +31,7 @@ const FAILURE_EVENT_TYPES = new Set<string>([
 // commit 4.
 const RENEWAL_BILLING_REASON = 'subscription_cycle';
 const INITIAL_PAYMENT_BILLING_REASON = 'subscription_create';
+const PLAN_CHANGE_BILLING_REASON = 'subscription_update';
 
 // The status Stripe sets on a Subscription once Smart Retries are
 // exhausted with no successful payment — this is the ONLY status value
@@ -124,6 +126,52 @@ export class StripePaymentProvider implements PaymentProvider {
   async cancelAtPeriodEnd(providerSubscriptionId: string): Promise<void> {
     await this.stripe.subscriptions.update(providerSubscriptionId, {
       cancel_at_period_end: true,
+    });
+  }
+
+  async changeSubscriptionPlan(
+    params: ChangeSubscriptionPlanParams,
+  ): Promise<void> {
+    const subscription = await this.stripe.subscriptions.retrieve(
+      params.providerSubscriptionId,
+    );
+    const item = subscription.items.data[0];
+    if (!item) {
+      throw new InternalServerErrorException(
+        `Stripe subscription ${params.providerSubscriptionId} has no line item to change`,
+      );
+    }
+    // Unlike Checkout Session's price_data (which accepts inline
+    // product_data to create an ad-hoc Product), a Subscription Item's
+    // price_data requires a real Product id — checked against this SDK
+    // version's Item.PriceData type, not assumed. Reuses the Product
+    // already attached to the subscription's current price (created
+    // ad-hoc by createCheckoutSession's own product_data at signup) —
+    // same underlying product, just a different price tier.
+    const productId =
+      typeof item.price.product === 'string'
+        ? item.price.product
+        : item.price.product.id;
+
+    // proration_behavior: 'always_invoice' makes Stripe compute the
+    // prorated difference AND immediately finalize+charge an invoice for
+    // it (rather than silently accumulating it for the next cycle) — this
+    // is what makes invoice.paid (billing_reason=subscription_update)
+    // fire promptly, which is how the resulting legal invoice gets
+    // emitted (see PaymentWebhookService.handlePlanChangeInvoice).
+    await this.stripe.subscriptions.update(params.providerSubscriptionId, {
+      items: [
+        {
+          id: item.id,
+          price_data: {
+            currency: params.currency.toLowerCase(),
+            product: productId,
+            unit_amount: params.amount,
+            recurring: { interval: 'month' },
+          },
+        },
+      ],
+      proration_behavior: 'always_invoice',
     });
   }
 
@@ -278,8 +326,24 @@ export class StripePaymentProvider implements PaymentProvider {
       };
     }
 
-    // Includes 'subscription_update' (proration, Lot 6D commit 4) and
-    // 'manual' — not acted on by this commit.
+    if (billingReason === PLAN_CHANGE_BILLING_REASON) {
+      const providerSubscriptionId = extractSubscriptionId(invoice);
+
+      if (!providerSubscriptionId) {
+        throw new InternalServerErrorException(
+          `Stripe event ${event.id} is a subscription_update invoice with no subscription reference`,
+        );
+      }
+
+      return {
+        type: 'subscription.plan_changed',
+        providerEventId: event.id,
+        providerSubscriptionId,
+        amountTTC: invoice.amount_paid,
+      };
+    }
+
+    // 'manual' and anything else — not acted on.
     return {
       type: 'ignored',
       providerEventId: event.id,

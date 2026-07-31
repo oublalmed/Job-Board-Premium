@@ -6,7 +6,7 @@ import { Company } from '../companies/entities/company.entity.js';
 import { Subscription } from '../companies/entities/subscription.entity.js';
 import { allocateInvoiceNumber } from './invoice-numbering.js';
 import { resolveMonthlyPriceHtInCentimes } from './plan-quota.js';
-import { computeVat, VAT_RATE_PERCENT } from './tax.js';
+import { computeVat, computeVatFromTtc, VAT_RATE_PERCENT } from './tax.js';
 import { generateInvoicePdf } from './invoice-pdf.js';
 import {
   OBJECT_STORAGE,
@@ -35,16 +35,28 @@ export class InvoiceEmissionService {
       subscription: Subscription;
       company: Company;
       stripeEventId: string;
+      // Proration invoices (Lot 6D commit 4): Stripe already computed and
+      // charged this exact TTC amount — the legal invoice must reflect
+      // what was actually charged, never the full monthly price
+      // recomputed from plan config. Omit for the normal case
+      // (activation/renewal), where the full monthly price IS what's
+      // owed.
+      amountTTCOverride?: number;
     },
     manager: EntityManager,
   ): Promise<Invoice> {
-    const { subscription, company, stripeEventId } = params;
+    const { subscription, company, stripeEventId, amountTTCOverride } =
+      params;
 
-    const amountHT = resolveMonthlyPriceHtInCentimes(
-      subscription.plan,
-      this.configService,
-    );
-    const { vatAmount, amountTTC } = computeVat(amountHT);
+    const { amountHT, vatAmount, amountTTC } =
+      amountTTCOverride !== undefined
+        ? computeVatFromTtc(amountTTCOverride)
+        : computeVat(
+            resolveMonthlyPriceHtInCentimes(
+              subscription.plan,
+              this.configService,
+            ),
+          );
 
     const issuedAt = new Date();
     const invoiceNumber = await allocateInvoiceNumber(

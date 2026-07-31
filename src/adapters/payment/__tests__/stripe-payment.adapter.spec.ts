@@ -289,16 +289,52 @@ describe('StripePaymentProvider', () => {
       expect(event.type).toBe('ignored');
     });
 
-    it('maps billing_reason=subscription_update (proration) to "ignored" — not acted on by this commit', () => {
-      const payload = invoicePaidPayload('subscription_update', 'evt_proration_1');
-      const signature = signPayload(payload);
+    it('maps billing_reason=subscription_update (proration) to subscription.plan_changed with the amount Stripe actually charged', () => {
+      const payload = invoicePaidPayload(
+        'subscription_update',
+        'evt_proration_1',
+        'sub_proration_1',
+      );
+      // amount_paid isn't part of invoicePaidPayload's base shape — add it
+      // directly since this is the one test that needs it.
+      const parsed = JSON.parse(payload) as {
+        data: { object: Record<string, unknown> };
+      };
+      parsed.data.object['amount_paid'] = 12345;
+      const withAmount = JSON.stringify(parsed);
+      const signature = signPayload(withAmount);
 
       const event = provider.verifyAndParseWebhook(
-        Buffer.from(payload),
+        Buffer.from(withAmount),
         signature,
       );
 
-      expect(event.type).toBe('ignored');
+      expect(event).toEqual({
+        type: 'subscription.plan_changed',
+        providerEventId: 'evt_proration_1',
+        providerSubscriptionId: 'sub_proration_1',
+        amountTTC: 12345,
+      });
+    });
+
+    it('throws — does not silently ignore — a subscription_update invoice with no subscription reference', () => {
+      const payload = JSON.stringify({
+        id: 'evt_proration_bad',
+        type: 'invoice.paid',
+        data: {
+          object: {
+            id: 'in_proration_bad',
+            billing_reason: 'subscription_update',
+            amount_paid: 5000,
+            parent: null,
+          },
+        },
+      });
+      const signature = signPayload(payload);
+
+      expect(() =>
+        provider.verifyAndParseWebhook(Buffer.from(payload), signature),
+      ).toThrow(/subscription_update invoice with no subscription/);
     });
 
     it('throws — does not silently ignore — a subscription_cycle invoice with no subscription reference', () => {
