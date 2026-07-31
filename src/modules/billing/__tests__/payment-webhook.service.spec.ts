@@ -13,6 +13,7 @@ import { Company } from '../../companies/entities/company.entity.js';
 import { PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT } from '../entities/processed-webhook-event.entity.js';
 import { InvoiceEmissionService } from '../invoice-emission.service.js';
 import { DunningNotificationService } from '../dunning-notification.service.js';
+import { TrialConversionService } from '../trial-conversion.service.js';
 
 function uniqueViolation(constraint: string): QueryFailedError {
   const driverError = Object.assign(
@@ -43,6 +44,7 @@ describe('PaymentWebhookService', () => {
     notifySubscriptionCancelled: jest.Mock;
     notifySubscriptionReactivated: jest.Mock;
   };
+  let trialConversionService: { markConvertedIfApplicable: jest.Mock };
 
   const companyId = 'company-1';
 
@@ -86,6 +88,9 @@ describe('PaymentWebhookService', () => {
       notifySubscriptionCancelled: jest.fn().mockResolvedValue(undefined),
       notifySubscriptionReactivated: jest.fn().mockResolvedValue(undefined),
     };
+    trialConversionService = {
+      markConvertedIfApplicable: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -98,6 +103,10 @@ describe('PaymentWebhookService', () => {
         {
           provide: DunningNotificationService,
           useValue: dunningNotificationService,
+        },
+        {
+          provide: TrialConversionService,
+          useValue: trialConversionService,
         },
       ],
     }).compile();
@@ -160,6 +169,13 @@ describe('PaymentWebhookService', () => {
           status: SubscriptionStatus.ACTIVE,
         }),
       }),
+      manager,
+    );
+    // Lot 7 (EF-GROW-03) — trial-code conversion tracking is a thin,
+    // always-called hook (a no-op for a company with no redemption row),
+    // in the same transaction as the activation itself.
+    expect(trialConversionService.markConvertedIfApplicable).toHaveBeenCalledWith(
+      companyId,
       manager,
     );
   });

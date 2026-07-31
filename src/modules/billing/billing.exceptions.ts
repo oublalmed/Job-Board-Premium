@@ -49,3 +49,34 @@ export class SamePlanException extends BadRequestException {
     super(`Subscription is already on the ${plan} plan`);
   }
 }
+
+// Lot 7 (EF-GROW-03) — a single, deliberately generic message for every
+// invalid-code reason (nonexistent, revoked, expired, quota exhausted):
+// distinguishing them to the caller would let someone probe which trial
+// codes exist/still have uses left by trying candidates and reading the
+// error apart.
+export class InvalidTrialCodeException extends BadRequestException {
+  constructor() {
+    super('This trial code is not valid');
+  }
+}
+
+// The redeeming company's current subscription isn't TRIAL (already
+// ACTIVE/PAST_DUE/CANCELLED/EXPIRED, or somehow has none) — a promo code
+// extends an existing trial, it does not reset a paying or churned
+// customer back to one.
+export class TrialCodeNotEligibleException extends ForbiddenException {
+  constructor() {
+    super('A trial code can only be redeemed while on a trial subscription');
+  }
+}
+
+// This company has already redeemed a trial code before (companyId is
+// unique on trial_code_redemptions) — surfaced distinctly from
+// InvalidTrialCodeException so the caller understands it's their own
+// account's history, not the code, that's the problem.
+export class TrialCodeAlreadyRedeemedException extends ForbiddenException {
+  constructor() {
+    super('This company has already redeemed a trial code');
+  }
+}

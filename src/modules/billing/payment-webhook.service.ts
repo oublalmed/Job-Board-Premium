@@ -33,6 +33,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
 import { InvoiceEmissionService } from './invoice-emission.service.js';
 import { DunningNotificationService } from './dunning-notification.service.js';
+import { TrialConversionService } from './trial-conversion.service.js';
 import { addDays } from '../../common/date-utils.js';
 
 const PROVIDER_NAME = 'stripe';
@@ -50,6 +51,7 @@ export class PaymentWebhookService {
     private readonly auditService: AuditService,
     private readonly invoiceEmissionService: InvoiceEmissionService,
     private readonly dunningNotificationService: DunningNotificationService,
+    private readonly trialConversionService: TrialConversionService,
   ) {}
 
   // Order matters and is deliberate:
@@ -215,6 +217,17 @@ export class PaymentWebhookService {
         providerEventId: event.providerEventId,
       },
     });
+
+    // Lot 7 (EF-GROW-03) — a company whose trial (possibly extended via a
+    // trial code) just converted to a real paid subscription. Same
+    // transaction as the activation above, same reasoning as the invoice
+    // emission below: a no-op for a company with no trial-code redemption
+    // at all, never a separate write that could land without the
+    // activation it depends on.
+    await this.trialConversionService.markConvertedIfApplicable(
+      event.companyId,
+      manager,
+    );
 
     // Invoice emission (Lot 6C) — same transaction as the activation
     // above, on purpose: Stripe is the source of truth for the payment,

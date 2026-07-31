@@ -6,14 +6,17 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { Role } from '../../common/enums/role.enum.js';
 import type { JwtPayload } from '../../common/interfaces/request-with-user.interface.js';
 import { SubscriptionCheckoutService } from './subscription-checkout.service.js';
+import { TrialCodeRedemptionService } from './trial-code-redemption.service.js';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto.js';
 import { ChangeSubscriptionPlanDto } from './dto/change-subscription-plan.dto.js';
+import { RedeemTrialCodeDto } from './dto/redeem-trial-code.dto.js';
 
 @Controller('subscriptions')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SubscriptionCheckoutController {
   constructor(
     private readonly checkoutService: SubscriptionCheckoutService,
+    private readonly trialCodeRedemptionService: TrialCodeRedemptionService,
   ) {}
 
   @Post()
@@ -38,5 +41,14 @@ export class SubscriptionCheckoutController {
     @Body() dto: ChangeSubscriptionPlanDto,
   ) {
     return this.checkoutService.changePlan(user.sub, dto);
+  }
+
+  @Post('trial-code/redeem')
+  @Roles(Role.RECRUITER, Role.COMPANY_ADMIN)
+  async redeemTrialCode(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: RedeemTrialCodeDto,
+  ) {
+    return this.trialCodeRedemptionService.redeem(user.sub, dto.code);
   }
 }
