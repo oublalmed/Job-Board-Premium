@@ -70,6 +70,47 @@ function invoicePaidPayload(
   });
 }
 
+function invoicePaymentFailedPayload(
+  eventId: string,
+  subscriptionId: string | null = 'sub_test_1',
+): string {
+  return JSON.stringify({
+    id: eventId,
+    type: 'invoice.payment_failed',
+    data: {
+      object: {
+        id: 'in_failed_1',
+        parent: subscriptionId
+          ? { subscription_details: { subscription: subscriptionId } }
+          : null,
+      },
+    },
+  });
+}
+
+function subscriptionUpdatedPayload(
+  eventId: string,
+  status: string,
+  subscriptionId = 'sub_test_1',
+): string {
+  return JSON.stringify({
+    id: eventId,
+    type: 'customer.subscription.updated',
+    data: { object: { id: subscriptionId, status } },
+  });
+}
+
+function subscriptionDeletedPayload(
+  eventId: string,
+  subscriptionId = 'sub_test_1',
+): string {
+  return JSON.stringify({
+    id: eventId,
+    type: 'customer.subscription.deleted',
+    data: { object: { id: subscriptionId, status: 'canceled' } },
+  });
+}
+
 describe('StripePaymentProvider', () => {
   let provider: StripePaymentProvider;
 
@@ -277,6 +318,100 @@ describe('StripePaymentProvider', () => {
       expect(() =>
         provider.verifyAndParseWebhook(Buffer.from(payload), signature),
       ).toThrow(/subscription_cycle invoice with no subscription/);
+    });
+  });
+
+  describe('invoice.payment_failed — dunning', () => {
+    it('maps a failed recurring invoice to subscription.past_due, keyed by providerSubscriptionId', () => {
+      const payload = invoicePaymentFailedPayload('evt_fail_1', 'sub_dunning_1');
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event).toEqual({
+        type: 'subscription.past_due',
+        providerEventId: 'evt_fail_1',
+        providerSubscriptionId: 'sub_dunning_1',
+      });
+    });
+
+    it('maps a failed invoice with no subscription reference to "ignored"', () => {
+      const payload = invoicePaymentFailedPayload('evt_fail_2', null);
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event.type).toBe('ignored');
+    });
+  });
+
+  describe('customer.subscription.updated / deleted — dunning exhausted', () => {
+    it('maps status=unpaid to subscription.cancelled with reason retries_exhausted', () => {
+      const payload = subscriptionUpdatedPayload(
+        'evt_unpaid_1',
+        'unpaid',
+        'sub_exhausted_1',
+      );
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event).toEqual({
+        type: 'subscription.cancelled',
+        providerEventId: 'evt_unpaid_1',
+        providerSubscriptionId: 'sub_exhausted_1',
+        reason: 'retries_exhausted',
+      });
+    });
+
+    it('maps customer.subscription.deleted to subscription.cancelled with reason subscription_deleted', () => {
+      const payload = subscriptionDeletedPayload('evt_deleted_1', 'sub_deleted_1');
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event).toEqual({
+        type: 'subscription.cancelled',
+        providerEventId: 'evt_deleted_1',
+        providerSubscriptionId: 'sub_deleted_1',
+        reason: 'subscription_deleted',
+      });
+    });
+
+    it('maps any other customer.subscription.updated status to "ignored" — e.g. active (plan change, Lot 6D commit 4)', () => {
+      const payload = subscriptionUpdatedPayload('evt_active_1', 'active');
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event.type).toBe('ignored');
+    });
+
+    it('maps status=past_due on customer.subscription.updated to "ignored" — invoice.payment_failed already covers this transition', () => {
+      const payload = subscriptionUpdatedPayload('evt_pd_1', 'past_due');
+      const signature = signPayload(payload);
+
+      const event = provider.verifyAndParseWebhook(
+        Buffer.from(payload),
+        signature,
+      );
+
+      expect(event.type).toBe('ignored');
     });
   });
 

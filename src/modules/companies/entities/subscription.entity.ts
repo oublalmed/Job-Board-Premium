@@ -77,6 +77,15 @@ export class Subscription {
   @Column({ name: 'quota_reset_at', type: 'timestamptz', nullable: true })
   quotaResetAt!: Date | null;
 
+  // Set the moment a subscription first goes PAST_DUE (invoice.payment_failed
+  // while ACTIVE), cleared on the next successful payment (back to ACTIVE)
+  // or on cancellation. NOT overwritten by later Stripe retry failures on
+  // the same subscription — the grace-period deadline (Lot 6D commit 3)
+  // is measured from the first failure, not the most recent retry, or
+  // Stripe's own multi-week retry calendar would keep extending it.
+  @Column({ name: 'past_due_since', type: 'timestamptz', nullable: true })
+  pastDueSince!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

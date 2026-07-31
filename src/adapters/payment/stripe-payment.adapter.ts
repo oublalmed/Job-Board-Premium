@@ -31,6 +31,14 @@ const FAILURE_EVENT_TYPES = new Set<string>([
 const RENEWAL_BILLING_REASON = 'subscription_cycle';
 const INITIAL_PAYMENT_BILLING_REASON = 'subscription_create';
 
+// The status Stripe sets on a Subscription once Smart Retries are
+// exhausted with no successful payment — this is the ONLY status value
+// on customer.subscription.updated we act on. That event fires for every
+// field change on a subscription (plan changes, cancel_at_period_end
+// toggles, etc. — Lot 6D commits 3/4), so anything else must map to
+// 'ignored', never assumed to mean "cancel".
+const RETRIES_EXHAUSTED_STATUS = 'unpaid';
+
 // This Stripe API version nests the subscription reference under
 // invoice.parent.subscription_details.subscription (the older flat
 // invoice.subscription field doesn't exist on this SDK version's Invoice
@@ -152,6 +160,60 @@ export class StripePaymentProvider implements PaymentProvider {
 
     if (event.type === 'invoice.paid') {
       return this.toInvoicePaidDomainEvent(event);
+    }
+
+    if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const providerSubscriptionId = extractSubscriptionId(invoice);
+
+      // No subscription reference means this failed invoice belongs to
+      // the initial Checkout flow, not a recurring subscription — nothing
+      // for the dunning path to react to (Checkout's own failure/expiry
+      // events already cover that case, see FAILURE_EVENT_TYPES below).
+      if (!providerSubscriptionId) {
+        return {
+          type: 'ignored',
+          providerEventId: event.id,
+          reason: 'invoice.payment_failed with no subscription reference',
+        };
+      }
+
+      return {
+        type: 'subscription.past_due',
+        providerEventId: event.id,
+        providerSubscriptionId,
+      };
+    }
+
+    if (
+      event.type === 'customer.subscription.updated' ||
+      event.type === 'customer.subscription.deleted'
+    ) {
+      const subscription = event.data.object as Stripe.Subscription;
+
+      if (
+        event.type === 'customer.subscription.deleted' ||
+        subscription.status === RETRIES_EXHAUSTED_STATUS
+      ) {
+        return {
+          type: 'subscription.cancelled',
+          providerEventId: event.id,
+          providerSubscriptionId: subscription.id,
+          reason:
+            event.type === 'customer.subscription.deleted'
+              ? 'subscription_deleted'
+              : 'retries_exhausted',
+        };
+      }
+
+      // customer.subscription.updated fires for every field change (plan
+      // changes, cancel_at_period_end toggles — Lot 6D commits 3/4) —
+      // only a status of 'unpaid' means anything here.
+      return {
+        type: 'ignored',
+        providerEventId: event.id,
+        reason: `customer.subscription.updated with status=${subscription.status}`,
+      };
     }
 
     if (FAILURE_EVENT_TYPES.has(event.type)) {

@@ -12,6 +12,7 @@ import {
 import { Company } from '../../companies/entities/company.entity.js';
 import { PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT } from '../entities/processed-webhook-event.entity.js';
 import { InvoiceEmissionService } from '../invoice-emission.service.js';
+import { DunningNotificationService } from '../dunning-notification.service.js';
 
 function uniqueViolation(constraint: string): QueryFailedError {
   const driverError = Object.assign(
@@ -37,6 +38,11 @@ describe('PaymentWebhookService', () => {
   let subscriptionRepo: { findOne: jest.Mock; save: jest.Mock; create: jest.Mock };
   let companyRepo: { findOneByOrFail: jest.Mock };
   let invoiceEmissionService: { emit: jest.Mock };
+  let dunningNotificationService: {
+    notifyPaymentFailed: jest.Mock;
+    notifySubscriptionCancelled: jest.Mock;
+    notifySubscriptionReactivated: jest.Mock;
+  };
 
   const companyId = 'company-1';
 
@@ -75,6 +81,11 @@ describe('PaymentWebhookService', () => {
     };
     auditService = { log: jest.fn().mockResolvedValue(undefined) };
     invoiceEmissionService = { emit: jest.fn().mockResolvedValue(undefined) };
+    dunningNotificationService = {
+      notifyPaymentFailed: jest.fn().mockResolvedValue(undefined),
+      notifySubscriptionCancelled: jest.fn().mockResolvedValue(undefined),
+      notifySubscriptionReactivated: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -84,6 +95,10 @@ describe('PaymentWebhookService', () => {
         { provide: ConfigService, useValue: configService },
         { provide: AuditService, useValue: auditService },
         { provide: InvoiceEmissionService, useValue: invoiceEmissionService },
+        {
+          provide: DunningNotificationService,
+          useValue: dunningNotificationService,
+        },
       ],
     }).compile();
 
@@ -258,7 +273,7 @@ describe('PaymentWebhookService', () => {
     ).rejects.toThrow(QueryFailedError);
   });
 
-  it('ignores "ignored" and "subscription.cancelled" events with no business effect (still recorded)', async () => {
+  it('ignores "ignored" events with no business effect (still recorded)', async () => {
     paymentProvider.verifyAndParseWebhook.mockReturnValue({
       type: 'ignored',
       providerEventId: 'evt_5',
@@ -332,7 +347,10 @@ describe('PaymentWebhookService', () => {
       expect(subscriptionRepo.findOne).toHaveBeenCalledWith({
         where: {
           externalSubscriptionId: 'sub_renew_1',
-          status: SubscriptionStatus.ACTIVE,
+          status: expect.objectContaining({
+            _type: 'in',
+            _value: [SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE],
+          }),
         },
       });
       expect(subscriptionRepo.save).toHaveBeenCalledWith(
@@ -404,6 +422,198 @@ describe('PaymentWebhookService', () => {
       expect(result.alreadyProcessed).toBe(true);
       expect(subscriptionRepo.save).not.toHaveBeenCalled();
       expect(invoiceEmissionService.emit).not.toHaveBeenCalled();
+    });
+
+    it('resumes a PAST_DUE subscription to ACTIVE, clears pastDueSince, and notifies reactivation', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.PAST_DUE,
+        externalSubscriptionId: 'sub_resume_1',
+        endsAt: new Date('2026-06-15T00:00:00.000Z'),
+        pastDueSince: new Date('2026-06-20T00:00:00.000Z'),
+        contactsUsed: 30,
+        contactQuota: 60,
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.renewed',
+        providerEventId: 'evt_resume_1',
+        providerSubscriptionId: 'sub_resume_1',
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(false);
+      expect(subscriptionRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: SubscriptionStatus.ACTIVE,
+          pastDueSince: null,
+          contactsUsed: 0,
+        }),
+      );
+      expect(
+        dunningNotificationService.notifySubscriptionReactivated,
+      ).toHaveBeenCalledWith(companyId, manager);
+    });
+  });
+
+  describe('subscription.past_due', () => {
+    it('demotes an ACTIVE subscription to PAST_DUE, sets pastDueSince, and notifies', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        externalSubscriptionId: 'sub_pd_1',
+        pastDueSince: null,
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.past_due',
+        providerEventId: 'evt_pd_1',
+        providerSubscriptionId: 'sub_pd_1',
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(false);
+      expect(subscriptionRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: SubscriptionStatus.PAST_DUE,
+          pastDueSince: expect.any(Date),
+        }),
+      );
+      expect(
+        dunningNotificationService.notifyPaymentFailed,
+      ).toHaveBeenCalledWith(companyId, manager);
+    });
+
+    it('a second failure on an already-PAST_DUE subscription does not re-attempt the transition or overwrite pastDueSince', async () => {
+      const firstFailure = new Date('2026-06-20T00:00:00.000Z');
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.PAST_DUE,
+        externalSubscriptionId: 'sub_pd_2',
+        pastDueSince: firstFailure,
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.past_due',
+        providerEventId: 'evt_pd_2',
+        providerSubscriptionId: 'sub_pd_2',
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(false);
+      // No transition attempted (status already PAST_DUE) -> no save call.
+      expect(subscriptionRepo.save).not.toHaveBeenCalled();
+      // Still notified — the customer should hear about every failed retry.
+      expect(
+        dunningNotificationService.notifyPaymentFailed,
+      ).toHaveBeenCalledWith(companyId, manager);
+    });
+
+    it('throws when no subscription matches the Stripe subscription id', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(null);
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.past_due',
+        providerEventId: 'evt_pd_3',
+        providerSubscriptionId: 'sub_unknown',
+      });
+
+      await expect(
+        service.handleWebhook(Buffer.from('{}'), 'sig'),
+      ).rejects.toThrow(/sub_unknown/);
+    });
+  });
+
+  describe('subscription.cancelled', () => {
+    it('transitions an ACTIVE subscription to CANCELLED, clears pastDueSince, and notifies', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.ACTIVE,
+        externalSubscriptionId: 'sub_cancel_1',
+        pastDueSince: null,
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.cancelled',
+        providerEventId: 'evt_cancel_1',
+        providerSubscriptionId: 'sub_cancel_1',
+        reason: 'subscription_deleted',
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(false);
+      expect(subscriptionRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: SubscriptionStatus.CANCELLED,
+          pastDueSince: null,
+        }),
+      );
+      expect(
+        dunningNotificationService.notifySubscriptionCancelled,
+      ).toHaveBeenCalledWith(companyId, manager);
+    });
+
+    it('transitions a PAST_DUE subscription to CANCELLED (retries exhausted)', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.PAST_DUE,
+        externalSubscriptionId: 'sub_cancel_2',
+        pastDueSince: new Date('2026-06-20T00:00:00.000Z'),
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.cancelled',
+        providerEventId: 'evt_cancel_2',
+        providerSubscriptionId: 'sub_cancel_2',
+        reason: 'retries_exhausted',
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(false);
+      expect(subscriptionRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: SubscriptionStatus.CANCELLED }),
+      );
+    });
+
+    it('is idempotent (no-op, no re-thrown guard rejection) when already CANCELLED — Stripe sends both updated(unpaid) and deleted', async () => {
+      subscriptionRepo.findOne.mockResolvedValue({
+        id: 'sub-1',
+        companyId,
+        status: SubscriptionStatus.CANCELLED,
+        externalSubscriptionId: 'sub_cancel_3',
+      });
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.cancelled',
+        providerEventId: 'evt_cancel_3',
+        providerSubscriptionId: 'sub_cancel_3',
+        reason: 'subscription_deleted',
+      });
+
+      const result = await service.handleWebhook(Buffer.from('{}'), 'sig');
+
+      expect(result.alreadyProcessed).toBe(false);
+      expect(subscriptionRepo.save).not.toHaveBeenCalled();
+      expect(
+        dunningNotificationService.notifySubscriptionCancelled,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('throws when no subscription matches the Stripe subscription id', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(null);
+      paymentProvider.verifyAndParseWebhook.mockReturnValue({
+        type: 'subscription.cancelled',
+        providerEventId: 'evt_cancel_4',
+        providerSubscriptionId: 'sub_unknown',
+        reason: 'subscription_deleted',
+      });
+
+      await expect(
+        service.handleWebhook(Buffer.from('{}'), 'sig'),
+      ).rejects.toThrow(/sub_unknown/);
     });
   });
 });

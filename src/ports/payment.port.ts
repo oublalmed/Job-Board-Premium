@@ -54,6 +54,9 @@ export interface SubscriptionRenewedEvent {
   providerSubscriptionId: string;
 }
 
+// The initial Checkout attempt failed or expired — no subscription was
+// ever created (or one exists but never got its first payment), so this
+// is keyed by companyId from the session metadata, same as activation.
 export interface PaymentFailedEvent {
   type: 'payment.failed';
   providerEventId: string;
@@ -61,10 +64,27 @@ export interface PaymentFailedEvent {
   reason: string;
 }
 
+// A recurring invoice on an EXISTING subscription failed
+// (invoice.payment_failed) — one of Stripe Smart Retries' attempts, not
+// the final word. Our code only reacts (PAST_DUE + notification, no
+// access cut) — the retry cadence/count lives entirely in Stripe's
+// dashboard config, never reimplemented here. Keyed by
+// providerSubscriptionId like every other recurring event, not
+// companyId: an invoice carries no company metadata.
+export interface SubscriptionPastDueEvent {
+  type: 'subscription.past_due';
+  providerEventId: string;
+  providerSubscriptionId: string;
+}
+
+// Stripe has given up: either it flipped the subscription itself to
+// 'unpaid' (customer.subscription.updated, retries exhausted) or deleted
+// it outright (customer.subscription.deleted). Keyed by
+// providerSubscriptionId, not companyId, for the same reason as above.
 export interface SubscriptionCancelledEvent {
   type: 'subscription.cancelled';
   providerEventId: string;
-  companyId: string;
+  providerSubscriptionId: string;
   reason: string;
 }
 
@@ -83,6 +103,7 @@ export type WebhookEvent =
   | SubscriptionActivatedEvent
   | SubscriptionRenewedEvent
   | PaymentFailedEvent
+  | SubscriptionPastDueEvent
   | SubscriptionCancelledEvent
   | IgnoredWebhookEvent;
 

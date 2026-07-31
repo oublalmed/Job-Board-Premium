@@ -22,6 +22,8 @@ import {
   type PaymentFailedEvent,
   type SubscriptionActivatedEvent,
   type SubscriptionRenewedEvent,
+  type SubscriptionPastDueEvent,
+  type SubscriptionCancelledEvent,
   type WebhookEvent,
 } from '../../ports/payment.port.js';
 import { resolveContactQuotaForPlan } from './plan-quota.js';
@@ -29,6 +31,7 @@ import { isUniqueViolation } from '../../common/typeorm/is-unique-violation.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
 import { InvoiceEmissionService } from './invoice-emission.service.js';
+import { DunningNotificationService } from './dunning-notification.service.js';
 import { addDays } from './date-utils.js';
 
 const PROVIDER_NAME = 'stripe';
@@ -45,6 +48,7 @@ export class PaymentWebhookService {
     private readonly configService: ConfigService,
     private readonly auditService: AuditService,
     private readonly invoiceEmissionService: InvoiceEmissionService,
+    private readonly dunningNotificationService: DunningNotificationService,
   ) {}
 
   // Order matters and is deliberate:
@@ -115,11 +119,16 @@ export class PaymentWebhookService {
       case 'payment.failed':
         await this.markPastDue(event, manager);
         return;
+      case 'subscription.past_due':
+        await this.markSubscriptionPastDue(event, manager);
+        return;
       case 'subscription.cancelled':
+        await this.cancelSubscription(event, manager);
+        return;
       case 'ignored':
-        // subscription.cancelled becomes real in Lot 6D commit 2 (dunning
-        // exhausted / cancel_at_period_end fulfilled). Recorded in
-        // processed_webhook_events for idempotence/audit either way.
+        // Recorded in processed_webhook_events for idempotence/audit, no
+        // business effect — see the adapter for why each case ends up here
+        // (unhandled event type, or a field change we don't act on).
         return;
     }
   }
@@ -218,12 +227,15 @@ export class PaymentWebhookService {
   }
 
   // A recurring cycle payment (Stripe invoice.paid, billing_reason
-  // subscription_cycle) — not a status change (stays ACTIVE), so this
-  // deliberately does NOT call assertValidSubscriptionTransition: the
-  // guard rejects same-status "transitions" by design (see
-  // subscription-lifecycle.ts), and a renewal is exactly that — a
-  // same-status data update (extend the period, reset the monthly quota),
-  // not a transition.
+  // subscription_cycle). Covers two cases with the same underlying event:
+  //  - ACTIVE -> stays ACTIVE: not a status change, so this deliberately
+  //    does NOT call assertValidSubscriptionTransition for that case — the
+  //    guard rejects same-status "transitions" by design (see
+  //    subscription-lifecycle.ts), and this is exactly that: a same-status
+  //    data update (extend the period, reset the monthly quota).
+  //  - PAST_DUE -> ACTIVE: a Stripe Smart Retry succeeded — the "resumed
+  //    payment" path. This DOES go through the guard (a genuine
+  //    transition) and clears pastDueSince.
   private async renewSubscription(
     event: SubscriptionRenewedEvent,
     manager: EntityManager,
@@ -233,19 +245,30 @@ export class PaymentWebhookService {
     const subscription = await subRepo.findOne({
       where: {
         externalSubscriptionId: event.providerSubscriptionId,
-        status: SubscriptionStatus.ACTIVE,
+        status: In([SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE]),
       },
     });
 
-    // No ACTIVE row for this Stripe subscription is a genuine anomaly —
-    // e.g. Stripe renewed a subscription we don't have a record of, or one
-    // we already consider PAST_DUE/CANCELLED. Throwing (not silently
+    // No ACTIVE/PAST_DUE row for this Stripe subscription is a genuine
+    // anomaly — e.g. Stripe renewed a subscription we don't have a record
+    // of, or one we already consider CANCELLED. Throwing (not silently
     // ignoring) surfaces it as a real error rather than a payment Stripe
     // collected with no corresponding effect on our side.
     if (!subscription) {
       throw new InternalServerErrorException(
-        `subscription.renewed for unknown or non-ACTIVE Stripe subscription ${event.providerSubscriptionId}`,
+        `subscription.renewed for unknown or non-ACTIVE/PAST_DUE Stripe subscription ${event.providerSubscriptionId}`,
       );
+    }
+
+    const wasResumedFromPastDue =
+      subscription.status === SubscriptionStatus.PAST_DUE;
+    if (wasResumedFromPastDue) {
+      assertValidSubscriptionTransition(
+        subscription.status,
+        SubscriptionStatus.ACTIVE,
+      );
+      subscription.status = SubscriptionStatus.ACTIVE;
+      subscription.pastDueSince = null;
     }
 
     subscription.endsAt = addDays(
@@ -266,10 +289,18 @@ export class PaymentWebhookService {
       metadata: {
         companyId: saved.companyId,
         renewal: true,
+        resumedFromPastDue: wasResumedFromPastDue,
         newPeriodEnd: saved.endsAt,
         providerEventId: event.providerEventId,
       },
     });
+
+    if (wasResumedFromPastDue) {
+      await this.dunningNotificationService.notifySubscriptionReactivated(
+        saved.companyId,
+        manager,
+      );
+    }
 
     const company = await manager
       .getRepository(Company)
@@ -322,5 +353,109 @@ export class PaymentWebhookService {
       entityId: saved.id,
       metadata: { reason: event.reason, providerEventId: event.providerEventId },
     });
+  }
+
+  // invoice.payment_failed on an EXISTING subscription — one of Stripe
+  // Smart Retries' attempts (~4 over ~2 weeks per the dashboard config we
+  // never reimplement here). No access cut at this point: only the
+  // status moves to PAST_DUE, on the FIRST failure only (subsequent
+  // retries against an already-PAST_DUE subscription are recorded and
+  // still notified, but don't re-attempt a transition or overwrite
+  // pastDueSince — the grace-period deadline, Lot 6D commit 3, is
+  // measured from the first failure).
+  private async markSubscriptionPastDue(
+    event: SubscriptionPastDueEvent,
+    manager: EntityManager,
+  ): Promise<void> {
+    const subRepo = manager.getRepository(Subscription);
+
+    const subscription = await subRepo.findOne({
+      where: { externalSubscriptionId: event.providerSubscriptionId },
+    });
+
+    if (!subscription) {
+      throw new InternalServerErrorException(
+        `invoice.payment_failed for unknown Stripe subscription ${event.providerSubscriptionId}`,
+      );
+    }
+
+    if (subscription.status === SubscriptionStatus.ACTIVE) {
+      assertValidSubscriptionTransition(
+        subscription.status,
+        SubscriptionStatus.PAST_DUE,
+      );
+      subscription.status = SubscriptionStatus.PAST_DUE;
+      subscription.pastDueSince = new Date();
+      await subRepo.save(subscription);
+    }
+
+    await this.auditService.log({
+      actorId: null,
+      action: AuditAction.SUBSCRIPTION_PAST_DUE,
+      entityType: 'subscription',
+      entityId: subscription.id,
+      metadata: {
+        companyId: subscription.companyId,
+        providerEventId: event.providerEventId,
+      },
+    });
+
+    await this.dunningNotificationService.notifyPaymentFailed(
+      subscription.companyId,
+      manager,
+    );
+  }
+
+  // Stripe has given up on this subscription — either
+  // customer.subscription.updated flipped it to 'unpaid' (retries
+  // exhausted) or customer.subscription.deleted removed it outright.
+  // Idempotent against Stripe sending BOTH for the same outcome: a
+  // subscription already CANCELLED is a no-op, not a re-thrown guard
+  // rejection (CANCELLED -> CANCELLED isn't a valid transition by
+  // design — see subscription-lifecycle.ts).
+  private async cancelSubscription(
+    event: SubscriptionCancelledEvent,
+    manager: EntityManager,
+  ): Promise<void> {
+    const subRepo = manager.getRepository(Subscription);
+
+    const subscription = await subRepo.findOne({
+      where: { externalSubscriptionId: event.providerSubscriptionId },
+    });
+
+    if (!subscription) {
+      throw new InternalServerErrorException(
+        `${event.reason} for unknown Stripe subscription ${event.providerSubscriptionId}`,
+      );
+    }
+
+    if (subscription.status === SubscriptionStatus.CANCELLED) {
+      return;
+    }
+
+    assertValidSubscriptionTransition(
+      subscription.status,
+      SubscriptionStatus.CANCELLED,
+    );
+    subscription.status = SubscriptionStatus.CANCELLED;
+    subscription.pastDueSince = null;
+    await subRepo.save(subscription);
+
+    await this.auditService.log({
+      actorId: null,
+      action: AuditAction.SUBSCRIPTION_CANCELLED,
+      entityType: 'subscription',
+      entityId: subscription.id,
+      metadata: {
+        companyId: subscription.companyId,
+        reason: event.reason,
+        providerEventId: event.providerEventId,
+      },
+    });
+
+    await this.dunningNotificationService.notifySubscriptionCancelled(
+      subscription.companyId,
+      manager,
+    );
   }
 }

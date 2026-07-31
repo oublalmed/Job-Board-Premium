@@ -10,6 +10,7 @@ import { SubscriptionCheckoutController } from './subscription-checkout.controll
 import { InvoiceEmissionService } from './invoice-emission.service.js';
 import { InvoiceService } from './invoice.service.js';
 import { InvoiceController } from './invoice.controller.js';
+import { DunningNotificationService } from './dunning-notification.service.js';
 import { CompaniesModule } from '../companies/companies.module.js';
 
 @Module({
@@ -27,6 +28,7 @@ import { CompaniesModule } from '../companies/companies.module.js';
     SubscriptionCheckoutService,
     InvoiceEmissionService,
     InvoiceService,
+    DunningNotificationService,
   ],
 })
 export class BillingModule {}

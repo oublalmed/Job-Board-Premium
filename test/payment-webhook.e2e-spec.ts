@@ -17,6 +17,8 @@ import {
 import { ProcessedWebhookEvent } from '../src/modules/billing/entities/processed-webhook-event.entity';
 import { PaymentWebhookService } from '../src/modules/billing/payment-webhook.service';
 import { Role } from '../src/common/enums/role.enum';
+import { MAIL_PROVIDER } from '../src/ports/mail.port';
+import { StubMailAdapter } from '../src/adapters/mail/stub-mail.adapter';
 
 describe('Payment webhook (e2e) — Lot 6B', () => {
   let app: INestApplication<App>;
@@ -27,6 +29,7 @@ describe('Payment webhook (e2e) — Lot 6B', () => {
   let processedEventRepo: Repository<ProcessedWebhookEvent>;
   let webhookService: PaymentWebhookService;
   let webhookSecret: string;
+  let mailAdapter: StubMailAdapter;
 
   let iceCounter = 0;
   function nextIce(): string {
@@ -124,6 +127,47 @@ describe('Payment webhook (e2e) — Lot 6B', () => {
     });
   }
 
+  function invoicePaymentFailedPayload(
+    eventId: string,
+    providerSubscriptionId: string,
+  ): string {
+    return JSON.stringify({
+      id: eventId,
+      type: 'invoice.payment_failed',
+      data: {
+        object: {
+          id: `in_${eventId}`,
+          parent: {
+            subscription_details: { subscription: providerSubscriptionId },
+          },
+        },
+      },
+    });
+  }
+
+  function subscriptionUpdatedPayload(
+    eventId: string,
+    status: string,
+    providerSubscriptionId: string,
+  ): string {
+    return JSON.stringify({
+      id: eventId,
+      type: 'customer.subscription.updated',
+      data: { object: { id: providerSubscriptionId, status } },
+    });
+  }
+
+  function subscriptionDeletedPayload(
+    eventId: string,
+    providerSubscriptionId: string,
+  ): string {
+    return JSON.stringify({
+      id: eventId,
+      type: 'customer.subscription.deleted',
+      data: { object: { id: providerSubscriptionId, status: 'canceled' } },
+    });
+  }
+
   function sign(payload: string): string {
     return Stripe.webhooks.generateTestHeaderString({
       payload,
@@ -163,6 +207,7 @@ describe('Payment webhook (e2e) — Lot 6B', () => {
     subscriptionRepo = app.get(getRepositoryToken(Subscription));
     processedEventRepo = app.get(getRepositoryToken(ProcessedWebhookEvent));
     webhookService = app.get(PaymentWebhookService);
+    mailAdapter = app.get(MAIL_PROVIDER);
   });
 
   afterAll(async () => {
@@ -531,6 +576,240 @@ describe('Payment webhook (e2e) — Lot 6B', () => {
       });
       expect(afterReplay.endsAt!.getTime()).toBe(beforeReplay.endsAt!.getTime());
       expect(afterReplay.contactsUsed).toBe(beforeReplay.contactsUsed);
+    });
+  });
+
+  describe('Scénario 7 — dunning piloté par Stripe (Lot 6D)', () => {
+    it('invoice.payment_failed demotes ACTIVE to PAST_DUE (no access cut) and notifies the recruiter by email', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      mailAdapter.clearSentMails();
+
+      const failPayload = invoicePaymentFailedPayload(
+        nextEventId(),
+        subscription.externalSubscriptionId!,
+      );
+      const res = await request(app.getHttpServer())
+        .post(path('/webhooks/payment'))
+        .set('stripe-signature', sign(failPayload))
+        .set('Content-Type', 'application/json')
+        .send(failPayload)
+        .expect(200);
+      expect((res.body as { alreadyProcessed: boolean }).alreadyProcessed).toBe(
+        false,
+      );
+
+      const after = await subscriptionRepo.findOneOrFail({ where: { companyId } });
+      expect(after.status).toBe(SubscriptionStatus.PAST_DUE);
+      expect(after.pastDueSince).not.toBeNull();
+
+      const sentMails = mailAdapter.getSentMails();
+      expect(sentMails).toHaveLength(1);
+      expect(sentMails[0].to).toBe(recruiter.email);
+      expect(sentMails[0].templateId).toBe('subscription-payment-failed');
+    });
+
+    it('a resumed payment (invoice.paid subscription_cycle after PAST_DUE) restores ACTIVE and clears pastDueSince', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const failPayload = invoicePaymentFailedPayload(
+        nextEventId(),
+        subscription.externalSubscriptionId!,
+      );
+      await webhookService.handleWebhook(Buffer.from(failPayload), sign(failPayload));
+      const pastDue = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(pastDue.status).toBe(SubscriptionStatus.PAST_DUE);
+      mailAdapter.clearSentMails();
+
+      const resumePayload = invoicePaidPayload(
+        'subscription_cycle',
+        nextEventId(),
+        subscription.externalSubscriptionId!,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(resumePayload),
+        sign(resumePayload),
+      );
+
+      const resumed = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(resumed.status).toBe(SubscriptionStatus.ACTIVE);
+      expect(resumed.pastDueSince).toBeNull();
+      expect(resumed.contactsUsed).toBe(0);
+
+      const sentMails = mailAdapter.getSentMails();
+      expect(sentMails).toHaveLength(1);
+      expect(sentMails[0].to).toBe(recruiter.email);
+      expect(sentMails[0].templateId).toBe('subscription-reactivated');
+    });
+
+    it('customer.subscription.updated(status=unpaid) cancels the subscription — retries exhausted', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      mailAdapter.clearSentMails();
+
+      const unpaidPayload = subscriptionUpdatedPayload(
+        nextEventId(),
+        'unpaid',
+        subscription.externalSubscriptionId!,
+      );
+      const res = await request(app.getHttpServer())
+        .post(path('/webhooks/payment'))
+        .set('stripe-signature', sign(unpaidPayload))
+        .set('Content-Type', 'application/json')
+        .send(unpaidPayload)
+        .expect(200);
+      expect((res.body as { alreadyProcessed: boolean }).alreadyProcessed).toBe(
+        false,
+      );
+
+      const after = await subscriptionRepo.findOneOrFail({ where: { companyId } });
+      expect(after.status).toBe(SubscriptionStatus.CANCELLED);
+
+      const sentMails = mailAdapter.getSentMails();
+      expect(sentMails).toHaveLength(1);
+      expect(sentMails[0].templateId).toBe('subscription-cancelled');
+    });
+
+    it('is idempotent when Stripe sends both updated(unpaid) and deleted for the same subscription', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const unpaidPayload = subscriptionUpdatedPayload(
+        nextEventId(),
+        'unpaid',
+        subscription.externalSubscriptionId!,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(unpaidPayload),
+        sign(unpaidPayload),
+      );
+
+      const deletedPayload = subscriptionDeletedPayload(
+        nextEventId(),
+        subscription.externalSubscriptionId!,
+      );
+      const res = await request(app.getHttpServer())
+        .post(path('/webhooks/payment'))
+        .set('stripe-signature', sign(deletedPayload))
+        .set('Content-Type', 'application/json')
+        .send(deletedPayload)
+        .expect(200);
+      expect((res.body as { alreadyProcessed: boolean }).alreadyProcessed).toBe(
+        false,
+      );
+
+      const after = await subscriptionRepo.findOneOrFail({ where: { companyId } });
+      expect(after.status).toBe(SubscriptionStatus.CANCELLED);
+
+      const rows = await subscriptionRepo.find({ where: { companyId } });
+      expect(rows).toHaveLength(1); // still exactly one row, no duplicate/second effect
+    });
+
+    it('a second invoice.payment_failed on an already-PAST_DUE subscription does not throw (Stripe retries multiple times)', async () => {
+      const recruiter = await createVerifiedUser();
+      const companyId = await createCompanyFor(recruiter.token);
+      const activateEventId = nextEventId();
+      const activatePayload = checkoutSessionCompletedPayload(
+        companyId,
+        SubscriptionPlan.GROWTH,
+        activateEventId,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(activatePayload),
+        sign(activatePayload),
+      );
+      const subscription = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const firstFailPayload = invoicePaymentFailedPayload(
+        nextEventId(),
+        subscription.externalSubscriptionId!,
+      );
+      await webhookService.handleWebhook(
+        Buffer.from(firstFailPayload),
+        sign(firstFailPayload),
+      );
+      const afterFirst = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+
+      const secondFailPayload = invoicePaymentFailedPayload(
+        nextEventId(),
+        subscription.externalSubscriptionId!,
+      );
+      const result = await webhookService.handleWebhook(
+        Buffer.from(secondFailPayload),
+        sign(secondFailPayload),
+      );
+      expect(result.alreadyProcessed).toBe(false);
+
+      const afterSecond = await subscriptionRepo.findOneOrFail({
+        where: { companyId },
+      });
+      expect(afterSecond.status).toBe(SubscriptionStatus.PAST_DUE);
+      // pastDueSince unchanged by the second failure — measured from the
+      // first, not the latest retry.
+      expect(afterSecond.pastDueSince!.getTime()).toBe(
+        afterFirst.pastDueSince!.getTime(),
+      );
     });
   });
 });
