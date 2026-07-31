@@ -73,11 +73,19 @@ export class CooldownSchedulerService implements OnModuleInit {
     // harmless observer on the same promise (multiple handlers are fine),
     // purely so a delayed failure is never unhandled.
     promise.catch(() => {});
-    return Promise.race([
-      promise,
-      new Promise<T>((_, reject) =>
-        setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms),
-      ),
-    ]);
+    let timeoutHandle: NodeJS.Timeout;
+    const timeout = new Promise<T>((_, reject) => {
+      timeoutHandle = setTimeout(
+        () => reject(new Error(`timed out after ${ms}ms`)),
+        ms,
+      );
+    });
+    // Also clear the timer once the race settles either way — an
+    // uncleared setTimeout keeps the event loop (and, in tests, Jest)
+    // alive until it actually fires, even after the race already resolved
+    // via the other branch.
+    return Promise.race([promise, timeout]).finally(() =>
+      clearTimeout(timeoutHandle),
+    );
   }
 }

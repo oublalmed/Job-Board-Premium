@@ -11,6 +11,16 @@ async function bootstrap() {
     rawBody: true,
   });
 
+  // Without this, NestJS never listens for SIGTERM/SIGINT at all — a
+  // Kubernetes pod redeploy/scale-down (CDC §9) would kill the process
+  // immediately, skipping onModuleDestroy/onApplicationShutdown entirely on
+  // every provider (Postgres connections, the shared Redis connection, any
+  // in-flight BullMQ job). enableShutdownHooks() is what wires OS signals
+  // to app.close() — the graceful-teardown code path already exercised by
+  // this repo's own e2e tests (afterAll(() => app.close())) runs
+  // regardless of this call, but production only gets it with this line.
+  app.enableShutdownHooks();
+
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port', 3000);
   const apiPrefix = configService.get<string>('app.apiPrefix', 'api/v1');
