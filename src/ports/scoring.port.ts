@@ -4,6 +4,18 @@ export interface CreateAssessmentRequest {
   testId: string;
 }
 
+export type DomainFeedbackLevel = 'weak' | 'medium' | 'strong';
+
+// A closed shape, deliberately — this is what makes "never leak a question
+// or an answer" structural rather than a discipline every future caller has
+// to remember. `domain` is a competency label (e.g. "Algorithmes"), never a
+// question/item identifier from the test bank; there is no field this type
+// could carry that would let one through.
+export interface DomainFeedbackEntry {
+  domain: string;
+  level: DomainFeedbackLevel;
+}
+
 export interface AssessmentResult {
   externalId: string;
   score: number;
@@ -11,6 +23,11 @@ export interface AssessmentResult {
   percentile: number | null;
   plagiarismVerdict: 'clean' | 'suspected' | 'confirmed';
   details: Record<string, unknown>;
+  // Lot 7 (EF-REM-01) — per-domain strengths/weaknesses for the
+  // remediation feedback. Stubbed today (StubScoringAdapter fabricates a
+  // plausible breakdown); a real vendor adapter would populate this from
+  // whatever per-topic rubric their platform actually returns.
+  domainFeedback: DomainFeedbackEntry[];
 }
 
 export interface WebhookVerificationResult {

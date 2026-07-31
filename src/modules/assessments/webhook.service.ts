@@ -121,6 +121,7 @@ export class WebhookService {
       testVersion: test?.version ?? 'unknown',
       plagiarismVerdict,
       details: result.details,
+      domainFeedback: result.domainFeedback,
       expiresAt,
     });
 

@@ -16,8 +16,11 @@ import { SCORING_PROVIDER } from '../../ports/scoring.port.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
-
-const DEFAULT_COOLDOWN_DAYS = 90;
+import {
+  COOLDOWN_SETTINGS_KEY,
+  DEFAULT_COOLDOWN_DAYS,
+  computeCooldownEnd,
+} from './cooldown.js';
 
 @Injectable()
 export class AssessmentService {
@@ -180,7 +183,7 @@ export class AssessmentService {
     }
 
     const cooldownDays =
-      (await this.settingsService.getNumber('assessment_cooldown_days')) ??
+      (await this.settingsService.getNumber(COOLDOWN_SETTINGS_KEY)) ??
       DEFAULT_COOLDOWN_DAYS;
 
     const lastCompleted = await this.assessmentRepo.findOne({
@@ -193,8 +196,10 @@ export class AssessmentService {
     });
 
     if (lastCompleted?.completedAt) {
-      const cooldownEnd = new Date(lastCompleted.completedAt);
-      cooldownEnd.setDate(cooldownEnd.getDate() + cooldownDays);
+      const cooldownEnd = computeCooldownEnd(
+        lastCompleted.completedAt,
+        cooldownDays,
+      );
 
       if (cooldownEnd > new Date()) {
         throw new ConflictException({

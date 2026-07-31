@@ -9,6 +9,7 @@ import { AssessmentController } from './assessment.controller.js';
 import { WebhookService } from './webhook.service.js';
 import { WebhookController } from './webhook.controller.js';
 import { IndexationService } from './indexation.service.js';
+import { RemediationService } from './remediation.service.js';
 import { CandidatesModule } from '../candidates/candidates.module.js';
 
 @Module({
@@ -17,7 +18,12 @@ import { CandidatesModule } from '../candidates/candidates.module.js';
     CandidatesModule,
   ],
   controllers: [AssessmentController, WebhookController],
-  providers: [AssessmentService, WebhookService, IndexationService],
+  providers: [
+    AssessmentService,
+    WebhookService,
+    IndexationService,
+    RemediationService,
+  ],
   exports: [
     TypeOrmModule,
     AssessmentService,

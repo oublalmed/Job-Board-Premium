@@ -1,12 +1,14 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Param,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { AssessmentService } from './assessment.service.js';
+import { RemediationService } from './remediation.service.js';
 import { StartAssessmentDto } from './dto/start-assessment.dto.js';
 import { ResumeAssessmentDto } from './dto/resume-assessment.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
@@ -19,7 +21,10 @@ import type { JwtPayload } from '../../common/interfaces/request-with-user.inter
 @Controller('assessments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AssessmentController {
-  constructor(private readonly assessmentService: AssessmentService) {}
+  constructor(
+    private readonly assessmentService: AssessmentService,
+    private readonly remediationService: RemediationService,
+  ) {}
 
   @Post('start')
   @Roles(Role.CANDIDATE)
@@ -50,5 +55,14 @@ export class AssessmentController {
     @Param('id', ParseUUIDPipe) assessmentId: string,
   ) {
     return this.assessmentService.reportIncident(user.sub, assessmentId);
+  }
+
+  @Get(':id/feedback')
+  @Roles(Role.CANDIDATE)
+  async getFeedback(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) assessmentId: string,
+  ) {
+    return this.remediationService.getFeedback(user.sub, assessmentId);
   }
 }

@@ -6,8 +6,14 @@ import { Score, PlagiarismVerdict } from './entities/score.entity.js';
 import { Assessment, AssessmentStatus } from './entities/assessment.entity.js';
 import { SettingsService } from '../settings/settings.service.js';
 
-const DEFAULT_INDEXATION_SCORE_MIN = 40;
-const DEFAULT_INDEXATION_PERCENTILE_MIN = 30;
+// Exported so other consumers of the same "is this score above the
+// indexation threshold" question (e.g. RemediationService, Lot 7) read the
+// exact same settings keys and defaults — never a second, potentially
+// diverging copy of these thresholds.
+export const INDEXATION_SCORE_MIN_KEY = 'indexation_score_min';
+export const INDEXATION_PERCENTILE_MIN_KEY = 'indexation_percentile_min';
+export const DEFAULT_INDEXATION_SCORE_MIN = 40;
+export const DEFAULT_INDEXATION_PERCENTILE_MIN = 30;
 const DEFAULT_FEATURING_PERCENTILE_MIN = 75;
 const DEFAULT_COMPLETENESS_THRESHOLD = 70;
 
@@ -62,10 +68,10 @@ export class IndexationService {
       completenessThreshold,
     ] = await Promise.all([
       this.settingsService
-        .getNumber('indexation_score_min')
+        .getNumber(INDEXATION_SCORE_MIN_KEY)
         .then((v) => v ?? DEFAULT_INDEXATION_SCORE_MIN),
       this.settingsService
-        .getNumber('indexation_percentile_min')
+        .getNumber(INDEXATION_PERCENTILE_MIN_KEY)
         .then((v) => v ?? DEFAULT_INDEXATION_PERCENTILE_MIN),
       this.settingsService
         .getNumber('featuring_percentile_min')

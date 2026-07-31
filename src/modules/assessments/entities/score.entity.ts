@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { Assessment } from './assessment.entity.js';
+import type { DomainFeedbackEntry } from '../../../ports/scoring.port.js';
 
 export enum PlagiarismVerdict {
   CLEAN = 'clean',
@@ -48,6 +49,14 @@ export class Score {
 
   @Column({ name: 'details', type: 'jsonb', nullable: true })
   details!: Record<string, unknown> | null;
+
+  // Lot 7 (EF-REM-01) — per-domain strengths/weaknesses, kept as a
+  // dedicated typed column rather than folded into `details` above: the
+  // "never leak a question/answer" guarantee needs to be structural (the
+  // type only has domain+level), not a discipline someone has to remember
+  // when writing into a free-form jsonb bag.
+  @Column({ name: 'domain_feedback', type: 'jsonb', nullable: true })
+  domainFeedback!: DomainFeedbackEntry[] | null;
 
   @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt!: Date;

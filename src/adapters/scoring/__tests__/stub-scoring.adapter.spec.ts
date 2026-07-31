@@ -41,10 +41,44 @@ describe('StubScoringAdapter', () => {
       expect(result!.maxScore).toBe(100);
     });
 
+    it('returns a deterministic per-domain breakdown whose entries never carry anything beyond {domain, level}', async () => {
+      const first = await adapter.getResult('ext-123');
+      const second = await adapter.getResult('ext-123');
+
+      expect(first!.domainFeedback.length).toBeGreaterThan(0);
+      // Same externalId (same stubbed score) -> same breakdown every time —
+      // never Math.random(), so tests built on top of this stay reproducible.
+      expect(second!.domainFeedback).toEqual(first!.domainFeedback);
+
+      for (const entry of first!.domainFeedback) {
+        expect(Object.keys(entry).sort()).toEqual(['domain', 'level']);
+        expect(typeof entry.domain).toBe('string');
+        expect(['weak', 'medium', 'strong']).toContain(entry.level);
+      }
+    });
+
     it('should cancel without error', async () => {
       await expect(
         adapter.cancelAssessment('ext-123'),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('getResult — domain feedback level distribution', () => {
+    it('skews toward "strong" for a high stubbed score and "weak" for a low one', async () => {
+      // The stub always returns score=65 today, but this test locks in the
+      // *behavior* of levelForIndex (bucketing by score), not just today's
+      // fixed value — it would catch a regression if the stub's score ever
+      // changes without the bucketing logic being reconsidered.
+      const adapter = makeAdapter();
+      const result = await adapter.getResult('ext-456');
+
+      const levels = result!.domainFeedback.map((e) => e.level);
+      const strongCount = levels.filter((l) => l === 'strong').length;
+      const weakCount = levels.filter((l) => l === 'weak').length;
+
+      // score=65 -> more strong domains than weak ones.
+      expect(strongCount).toBeGreaterThan(weakCount);
     });
   });
 

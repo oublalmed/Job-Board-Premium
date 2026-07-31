@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AssessmentController } from '../assessment.controller.js';
 import { AssessmentService } from '../assessment.service.js';
+import { RemediationService } from '../remediation.service.js';
 import type { JwtPayload } from '../../../common/interfaces/request-with-user.interface.js';
 import { Role } from '../../../common/enums/role.enum.js';
 import { AssessmentStatus } from '../entities/assessment.entity.js';
@@ -8,6 +9,7 @@ import { AssessmentStatus } from '../entities/assessment.entity.js';
 describe('AssessmentController', () => {
   let controller: AssessmentController;
   let service: Record<string, jest.Mock>;
+  let remediationService: Record<string, jest.Mock>;
 
   const authenticatedUser: JwtPayload = {
     sub: 'candidate-1',
@@ -46,10 +48,22 @@ describe('AssessmentController', () => {
         status: AssessmentStatus.INCIDENT,
       }),
     };
+    remediationService = {
+      getFeedback: jest.fn().mockResolvedValue({
+        scoreValue: 30,
+        indexationThresholdMet: false,
+        domainFeedback: [{ domain: 'Algorithmes', level: 'weak' }],
+        resources: [],
+        reEligibleAt: new Date().toISOString(),
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AssessmentController],
-      providers: [{ provide: AssessmentService, useValue: service }],
+      providers: [
+        { provide: AssessmentService, useValue: service },
+        { provide: RemediationService, useValue: remediationService },
+      ],
     }).compile();
 
     controller = module.get(AssessmentController);
@@ -129,6 +143,31 @@ describe('AssessmentController', () => {
       await controller.reportIncident(authenticatedUser, 'assessment-1');
 
       expect(service.reportIncident.mock.calls[0][0]).toBe(
+        authenticatedUser.sub,
+      );
+    });
+  });
+
+  describe('getFeedback', () => {
+    it('should return remediation feedback for the authenticated candidate', async () => {
+      const result = await controller.getFeedback(
+        authenticatedUser,
+        'assessment-1',
+      );
+
+      expect(remediationService.getFeedback).toHaveBeenCalledWith(
+        'candidate-1',
+        'assessment-1',
+      );
+      expect(result.domainFeedback).toEqual([
+        { domain: 'Algorithmes', level: 'weak' },
+      ]);
+    });
+
+    it('should always use user.sub, never an external parameter', async () => {
+      await controller.getFeedback(authenticatedUser, 'assessment-1');
+
+      expect(remediationService.getFeedback.mock.calls[0][0]).toBe(
         authenticatedUser.sub,
       );
     });

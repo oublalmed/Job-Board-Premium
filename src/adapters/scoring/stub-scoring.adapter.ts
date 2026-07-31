@@ -6,8 +6,44 @@ import {
   ScoringProvider,
   CreateAssessmentRequest,
   AssessmentResult,
+  DomainFeedbackEntry,
+  DomainFeedbackLevel,
   WebhookVerificationResult,
 } from '../../ports/scoring.port.js';
+
+// Placeholder domain vocabulary for the stub only — a real vendor adapter
+// would report whatever per-topic breakdown its own platform produces, not
+// this fixed list. Deterministic level assignment (bucketed by score, not
+// Math.random()) so stub-driven tests stay reproducible.
+const STUB_DOMAINS = [
+  'Algorithmes',
+  'Structures de données',
+  'Bases de données',
+  'Système & réseaux',
+];
+
+function levelForIndex(
+  score: number,
+  index: number,
+  domainCount: number,
+): DomainFeedbackLevel {
+  // A simple deterministic spread: the higher the overall score, the more
+  // domains land on "strong" first (index 0 upward); the lower the score,
+  // the more land on "weak". Never random — same score always produces the
+  // same breakdown, which is what makes the stub testable.
+  const strongCount = Math.round((score / 100) * domainCount);
+  const weakCount = Math.round(((100 - score) / 100) * domainCount);
+  if (index < strongCount) return 'strong';
+  if (index >= domainCount - weakCount) return 'weak';
+  return 'medium';
+}
+
+function buildStubDomainFeedback(score: number): DomainFeedbackEntry[] {
+  return STUB_DOMAINS.map((domain, index) => ({
+    domain,
+    level: levelForIndex(score, index, STUB_DOMAINS.length),
+  }));
+}
 
 @Injectable()
 export class StubScoringAdapter implements ScoringProvider {
@@ -38,6 +74,7 @@ export class StubScoringAdapter implements ScoringProvider {
       percentile: 55,
       plagiarismVerdict: 'clean',
       details: { stub: true },
+      domainFeedback: buildStubDomainFeedback(score),
     });
   }
 
