@@ -47,7 +47,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background p-8">
+    <div className="flex flex-1 items-center justify-center">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>{t('auth.login.title')}</CardTitle>

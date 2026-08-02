@@ -21,7 +21,7 @@ export function RequireRole({ roles }: RequireRoleProps) {
 
   if (!isAllowed) {
     return (
-      <div className="flex min-h-svh items-center justify-center p-8">
+      <div className="flex flex-1 items-center justify-center p-8">
         <p role="alert" className="text-destructive">
           {t('auth.guard.forbidden')}
         </p>

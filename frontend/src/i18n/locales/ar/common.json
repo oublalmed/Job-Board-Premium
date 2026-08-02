@@ -8,8 +8,14 @@
     "ar": "العربية"
   },
   "nav": {
-    "designSystem": "نظام التصميم",
-    "rtlDemo": "عرض RTL"
+    "label": "التنقل الرئيسي",
+    "dashboard": "لوحة التحكم",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "designSystem": "نظام التصميم"
+  },
+  "layout": {
+    "skipToContent": "الانتقال إلى المحتوى الرئيسي"
   },
   "demo": {
     "designSystem": {

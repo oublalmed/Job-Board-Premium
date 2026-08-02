@@ -8,8 +8,14 @@
     "ar": "العربية"
   },
   "nav": {
-    "designSystem": "Système de design",
-    "rtlDemo": "Démo RTL"
+    "label": "Navigation principale",
+    "dashboard": "Tableau de bord",
+    "login": "Connexion",
+    "register": "Créer un compte",
+    "designSystem": "Système de design"
+  },
+  "layout": {
+    "skipToContent": "Aller au contenu principal"
   },
   "demo": {
     "designSystem": {

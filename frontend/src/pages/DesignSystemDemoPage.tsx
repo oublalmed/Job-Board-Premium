@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { RtlDemoCard } from '@/components/RtlDemoCard';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,11 +20,7 @@ export function DesignSystemDemoPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex min-h-svh flex-col items-center gap-8 bg-background p-8">
-      <div className="flex w-full max-w-sm justify-end">
-        <LanguageSwitcher />
-      </div>
-
+    <div className="flex flex-1 flex-col items-center gap-8">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>{t('app.name')}</CardTitle>
