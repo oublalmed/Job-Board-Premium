@@ -1,0 +1,37 @@
+{
+  "app": {
+    "name": "Job Board Premium"
+  },
+  "language": {
+    "label": "اللغة",
+    "fr": "Français",
+    "ar": "العربية"
+  },
+  "nav": {
+    "designSystem": "نظام التصميم",
+    "rtlDemo": "عرض RTL"
+  },
+  "demo": {
+    "designSystem": {
+      "title": "نظام التصميم",
+      "subtitle": "التحقق من الإصدار التأسيسي للواجهة",
+      "emailLabel": "البريد الإلكتروني",
+      "emailPlaceholder": "you@example.com",
+      "buttonDefault": "أساسي",
+      "buttonSecondary": "ثانوي",
+      "buttonOutline": "محدد",
+      "buttonDestructive": "حذف"
+    },
+    "rtl": {
+      "title": "عرض توضيحي لاتجاه RTL",
+      "description": "يستخدم هذا التخطيط خصائص CSS المنطقية (padding-inline، margin-inline) — وينعكس تلقائيًا حسب اتجاه القراءة، دون فئات مكررة لكل اتجاه.",
+      "jobCardTitle": "مطوّر خلفية أول",
+      "jobCardCompany": "أطلس للتكنولوجيا",
+      "jobCardLocation": "الدار البيضاء، المغرب",
+      "jobCardSalaryLabel": "الراتب",
+      "jobCardPostedLabel": "تاريخ النشر",
+      "startLabel": "البداية (start)",
+      "endLabel": "النهاية (end)"
+    }
+  }
+}

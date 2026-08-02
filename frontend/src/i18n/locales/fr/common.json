@@ -1,0 +1,37 @@
+{
+  "app": {
+    "name": "Job Board Premium"
+  },
+  "language": {
+    "label": "Langue",
+    "fr": "Français",
+    "ar": "العربية"
+  },
+  "nav": {
+    "designSystem": "Système de design",
+    "rtlDemo": "Démo RTL"
+  },
+  "demo": {
+    "designSystem": {
+      "title": "Système de design",
+      "subtitle": "Vérification Front 0",
+      "emailLabel": "Email",
+      "emailPlaceholder": "vous@exemple.com",
+      "buttonDefault": "Principal",
+      "buttonSecondary": "Secondaire",
+      "buttonOutline": "Contour",
+      "buttonDestructive": "Destructif"
+    },
+    "rtl": {
+      "title": "Démonstration RTL",
+      "description": "Cette mise en page utilise des propriétés CSS logiques (padding-inline, margin-inline) — elle retourne automatiquement selon le sens de lecture, sans classes dupliquées par direction.",
+      "jobCardTitle": "Développeur Backend Senior",
+      "jobCardCompany": "Atlas Technologies",
+      "jobCardLocation": "Casablanca, Maroc",
+      "jobCardSalaryLabel": "Salaire",
+      "jobCardPostedLabel": "Publié le",
+      "startLabel": "Début (start)",
+      "endLabel": "Fin (end)"
+    }
+  }
+}
