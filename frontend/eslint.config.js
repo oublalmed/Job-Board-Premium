@@ -13,7 +13,10 @@ import tseslint from 'typescript-eslint';
 // "TS strict, aucun any").
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'eslint.config.js'],
+    // schema.d.ts is generated (`npm run generate:api`) — openapi-typescript
+    // has its own output style (4-space, double-quote), fighting Prettier
+    // over a file neither of us hand-edits isn't worth it.
+    ignores: ['dist/**', 'eslint.config.js', 'src/api/schema.d.ts'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
