@@ -5,6 +5,11 @@ import type { paths } from './schema';
 // `npm run generate:api`, README). Never hand-written: a request/response
 // shape here is only ever as current as the last regeneration against the
 // real backend contract.
+//
+// baseUrl is the bare origin, NOT including /api/v1 — the schema's own
+// path keys already carry the full registered route (NestJS's global
+// prefix is set before the Swagger document is built), so every call site
+// uses the full path, e.g. apiClient.POST('/api/v1/auth/login', ...).
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 if (!baseUrl) {
   throw new Error(

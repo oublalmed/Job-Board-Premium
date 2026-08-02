@@ -33,5 +33,40 @@
       "startLabel": "Début (start)",
       "endLabel": "Fin (end)"
     }
+  },
+  "auth": {
+    "loading": "Chargement…",
+    "emailLabel": "Email",
+    "emailPlaceholder": "vous@exemple.com",
+    "passwordLabel": "Mot de passe",
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Accédez à votre espace Job Board Premium",
+      "submit": "Se connecter",
+      "submitting": "Connexion…",
+      "error": "Email ou mot de passe incorrect.",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "Créer un compte"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Rejoignez Job Board Premium",
+      "passwordHint": "Au moins 10 caractères, avec majuscule, minuscule, chiffre et caractère spécial.",
+      "submit": "Créer mon compte",
+      "submitting": "Création…",
+      "error": "Impossible de créer le compte. Vérifiez les informations saisies.",
+      "success": "Compte créé — vérifiez votre email pour l'activer.",
+      "hasAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter"
+    },
+    "logout": "Déconnexion",
+    "dashboard": {
+      "title": "Tableau de bord",
+      "welcome": "Connecté en tant que {{email}}",
+      "roles": "Rôles : {{roles}}"
+    },
+    "guard": {
+      "forbidden": "Vous n'avez pas accès à cette page."
+    }
   }
 }

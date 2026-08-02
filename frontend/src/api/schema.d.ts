@@ -622,16 +622,36 @@ export interface components {
             password: string;
             roles?: ("candidate" | "recruiter" | "company_admin" | "moderator" | "admin")[];
         };
+        RegisteredUserDto: {
+            id: string;
+            email: string;
+        };
+        RegisterResponseDto: {
+            user: components["schemas"]["RegisteredUserDto"];
+            message: string;
+        };
         VerifyEmailDto: {
             token: string;
+        };
+        MessageResponseDto: {
+            message: string;
         };
         LoginDto: {
             /** Format: email */
             email: string;
             password: string;
         };
+        AuthTokensResponseDto: {
+            accessToken: string;
+            refreshToken: string;
+        };
         RefreshTokenDto: {
             refreshToken: string;
+        };
+        MeResponseDto: {
+            userId: string;
+            email: string;
+            roles: ("candidate" | "recruiter" | "company_admin" | "moderator" | "admin")[];
         };
         UpdateProfileDto: {
             firstName?: string;
@@ -950,7 +970,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RegisterResponseDto"];
+                };
             };
         };
     };
@@ -971,7 +993,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageResponseDto"];
+                };
             };
         };
     };
@@ -993,7 +1017,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["AuthTokensResponseDto"];
                 };
             };
         };
@@ -1016,7 +1040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["AuthTokensResponseDto"];
                 };
             };
         };
@@ -1034,7 +1058,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MeResponseDto"];
+                };
             };
         };
     };
