@@ -1,0 +1,14 @@
+/* Minimal reset only — the design system (Tailwind tokens, typography,
+   spacing scale) lands in the next commit. Nothing here is meant to
+   survive as the app's actual styling. */
+:root {
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+}
