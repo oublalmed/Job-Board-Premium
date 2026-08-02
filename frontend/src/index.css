@@ -1,14 +1,143 @@
-/* Minimal reset only — the design system (Tailwind tokens, typography,
-   spacing scale) lands in the next commit. Nothing here is meant to
-   survive as the app's actual styling. */
+@import 'tailwindcss';
+
+/*
+ * Design tokens — the single centralized source for this app's palette,
+ * typography and spacing. Every color a component uses must resolve to
+ * one of these variables (via the Tailwind utility classes they map to
+ * below, e.g. bg-primary, text-muted-foreground) — never a literal hex/
+ * oklch value inlined in a component's className.
+ *
+ * Direction: sober / corporate B2B — a neutral gray-blue scale, no
+ * saturated brand color dominating the UI. `--primary` is a restrained
+ * corporate blue, everything else is gray with only a hint of the same
+ * blue hue (kept below for a cohesive, non-clashing neutral scale rather
+ * than true achromatic gray).
+ *
+ * oklch() throughout: perceptually uniform (equal lightness deltas look
+ * equally different to the eye, unlike hex/hsl), and makes light/dark
+ * pairs easy to reason about — same hue/chroma, lightness flipped.
+ */
 :root {
-  color-scheme: light dark;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --radius: 0.5rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.17 0.02 250);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.02 250);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0.02 250);
+
+  /* Corporate blue — the one deliberately saturated color in the palette,
+     reserved for primary actions/focus, not decoration. */
+  --primary: oklch(0.42 0.13 255);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.96 0.004 250);
+  --secondary-foreground: oklch(0.17 0.02 250);
+
+  --muted: oklch(0.96 0.004 250);
+  --muted-foreground: oklch(0.47 0.015 250);
+
+  --accent: oklch(0.94 0.008 250);
+  --accent-foreground: oklch(0.17 0.02 250);
+
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.9 0.005 250);
+  --input: oklch(0.9 0.005 250);
+  --ring: oklch(0.52 0.12 255);
 }
 
-body {
-  margin: 0;
+.dark {
+  --background: oklch(0.17 0.02 250);
+  --foreground: oklch(0.97 0.003 250);
+
+  --card: oklch(0.21 0.02 250);
+  --card-foreground: oklch(0.97 0.003 250);
+
+  --popover: oklch(0.21 0.02 250);
+  --popover-foreground: oklch(0.97 0.003 250);
+
+  --primary: oklch(0.7 0.13 255);
+  --primary-foreground: oklch(0.17 0.02 250);
+
+  --secondary: oklch(0.28 0.015 250);
+  --secondary-foreground: oklch(0.97 0.003 250);
+
+  --muted: oklch(0.28 0.015 250);
+  --muted-foreground: oklch(0.68 0.015 250);
+
+  --accent: oklch(0.32 0.02 250);
+  --accent-foreground: oklch(0.97 0.003 250);
+
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.17 0.02 250);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.65 0.12 255);
+}
+
+/* Wires the raw tokens above into Tailwind utilities (bg-primary,
+   text-muted-foreground, border-border, ...) and derives the radius
+   scale every component (button, card, input) reads from. This block —
+   not a tailwind.config.js, Tailwind v4 is CSS-first — is the single
+   point where a token name becomes a class name. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Typography — one font stack for the whole app, system-first (no
+     webfont download, no CLS while it loads, and it already covers Arabic
+     glyphs on every major OS/browser rather than silently falling back to
+     a mismatched serif for AR content). */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
+    'Noto Sans Arabic', sans-serif;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    color-scheme: light dark;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
