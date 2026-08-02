@@ -46,8 +46,15 @@
   --destructive: oklch(0.55 0.2 25);
   --destructive-foreground: oklch(0.985 0 0);
 
-  --border: oklch(0.9 0.005 250);
-  --input: oklch(0.9 0.005 250);
+  /* WCAG 1.4.11 (non-text contrast, >=3:1): the input/outline-button
+     border is often the ONLY visual boundary a form control has (no
+     fill differentiates it from the page) — a lighter gray here reads
+     as sober but is measurably too faint to locate a text input by.
+     0.65 lightness is the value that actually clears 3:1 against
+     --background, verified against real rendered pixels, not assumed
+     from the oklch lightness number. */
+  --border: oklch(0.65 0.01 250);
+  --input: oklch(0.65 0.01 250);
   --ring: oklch(0.52 0.12 255);
 }
 
@@ -76,8 +83,8 @@
   --destructive: oklch(0.65 0.2 25);
   --destructive-foreground: oklch(0.17 0.02 250);
 
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 18%);
+  --border: oklch(1 0 0 / 35%);
+  --input: oklch(1 0 0 / 35%);
   --ring: oklch(0.65 0.12 255);
 }
 
