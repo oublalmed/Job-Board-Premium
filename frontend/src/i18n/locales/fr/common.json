@@ -345,6 +345,7 @@
   },
   "assessments": {
     "title": "Évaluations",
+    "subtitle": "Choisissez un test dans le catalogue pour démarrer une évaluation.",
     "start": "Démarrer une évaluation",
     "testId": "Identifiant du test",
     "testIdPlaceholder": "Entrez l'identifiant du test",
@@ -360,10 +361,38 @@
     "reportIncident": "Signaler un incident",
     "reportButton": "Signaler",
     "incidentReported": "Incident signalé avec succès.",
-    "feedback": "Résultats et feedback",
     "viewFeedback": "Voir le feedback",
     "feedbackResults": "Résultats de l'évaluation",
-    "feedbackError": "Impossible de charger le feedback."
+    "feedbackError": "Impossible de charger le feedback.",
+    "session": {
+      "title": "Évaluation en cours",
+      "testLabel": "Test :",
+      "continueButton": "Continuer le test"
+    },
+    "status": {
+      "pending": "En attente",
+      "inProgress": "En cours",
+      "completed": "Terminée",
+      "cancelled": "Annulée",
+      "incident": "Incident signalé"
+    },
+    "catalog": {
+      "title": "Choisir un test",
+      "empty": "Aucun test disponible pour le moment.",
+      "duration": "{{minutes}} min"
+    },
+    "errors": {
+      "alreadyInProgress": "Vous avez déjà une évaluation en cours pour ce test. Utilisez « Continuer le test » ci-dessus, ou signalez un incident si vous ne pouvez pas y accéder.",
+      "cooldownActive": "Vous pourrez retenter ce test à partir du {{date}}.",
+      "prefixed": "Erreur : {{message}}"
+    },
+    "feedback": {
+      "score": "Score obtenu : {{score}}/100"
+    },
+    "manual": {
+      "title": "Reprendre avec un identifiant (autre session)",
+      "hint": "Si vous avez démarré une évaluation depuis un autre appareil ou navigateur, il n'existe pas de liste retrouvable automatiquement — utilisez l'identifiant et le jeton de reprise reçus au démarrage."
+    }
   },
   "common": {
     "loading": "Chargement…",

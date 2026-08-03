@@ -1,268 +1,489 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
-  Play,
-  RotateCcw,
   AlertTriangle,
-  MessageCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  ExternalLink,
   Loader2,
-  ClipboardList,
+  MessageCircle,
+  Play,
 } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatDateCasablanca } from '@/lib/format';
+import type { components } from '@/api/schema';
+
+type Specialty = components['schemas']['SpecialtySummaryDto'];
+type TestSummary = components['schemas']['TestSummaryDto'];
+type RemediationFeedback = components['schemas']['RemediationFeedbackDto'];
+type AssessmentStatus = components['schemas']['Assessment']['status'];
+
+interface Session {
+  assessmentId: string;
+  resumeToken: string | null;
+  assessmentUrl: string;
+  testId: string;
+  status: AssessmentStatus;
+}
+
+const SESSION_KEY = 'jbp_assessment_session';
+
+// No GET /assessments (list-mine) endpoint exists — confirmed absent
+// (only start/resume/incident/:id/feedback, all requiring an ID the
+// caller already has). sessionStorage is the only way this page can
+// survive a refresh without asking the candidate to retype IDs; it is
+// a real, disclosed limit (a different tab/device genuinely can't
+// recover a session), not something worked around here.
+function loadSession(): Session | null {
+  if (typeof window === 'undefined') return null;
+  const raw = sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Session;
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(session: Session | null) {
+  if (session) {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } else {
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+}
+
+// The backend's error bodies are English, untranslated (a real backend
+// gap, not something this page can paper over) — best-effort maps the
+// two known real conflict shapes to real French copy, falls back to
+// showing the raw backend message rather than a silent/generic error.
+function describeStartError(
+  error: unknown,
+  t: (key: string, vars?: Record<string, string>) => string,
+  locale: 'fr' | 'ar',
+): string {
+  const body = error as { message?: string; reEligibleAt?: string } | undefined;
+  const message = body?.message ?? '';
+  if (body?.reEligibleAt) {
+    return t('assessments.errors.cooldownActive', {
+      date: formatDateCasablanca(new Date(body.reEligibleAt), locale),
+    });
+  }
+  if (message.includes('already in progress')) {
+    return t('assessments.errors.alreadyInProgress');
+  }
+  if (message) {
+    return t('assessments.errors.prefixed', { message });
+  }
+  return t('common.error');
+}
+
+const STATUS_BADGE: Record<
+  AssessmentStatus,
+  { variant: 'default' | 'success' | 'warning' | 'destructive' | 'secondary'; key: string }
+> = {
+  pending: { variant: 'secondary', key: 'assessments.status.pending' },
+  in_progress: { variant: 'default', key: 'assessments.status.inProgress' },
+  completed: { variant: 'success', key: 'assessments.status.completed' },
+  cancelled: { variant: 'secondary', key: 'assessments.status.cancelled' },
+  incident: { variant: 'warning', key: 'assessments.status.incident' },
+};
 
 export default function AssessmentsPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { toast } = useToast();
 
-  const [testId, setTestId] = useState('');
-  const [starting, setStarting] = useState(false);
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [tests, setTests] = useState<TestSummary[]>([]);
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
+  const [startingTestId, setStartingTestId] = useState<string | null>(null);
 
-  const [resumeAssessmentId, setResumeAssessmentId] = useState('');
-  const [resumeToken, setResumeToken] = useState('');
-  const [resuming, setResuming] = useState(false);
-
-  const [incidentId, setIncidentId] = useState('');
+  // Lazy initializer, not a mount effect + setState: sessionStorage is
+  // already available at first client render (this file is 'use
+  // client', loadSession() itself guards the `window === undefined`
+  // SSR case), so there's nothing to "synchronize" here.
+  const [session, setSession] = useState<Session | null>(loadSession);
   const [reportingIncident, setReportingIncident] = useState(false);
-
-  const [feedbackId, setFeedbackId] = useState('');
+  const [feedback, setFeedback] = useState<RemediationFeedback | null>(null);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
-  const [feedback, setFeedback] = useState<Record<string, unknown> | null>(null);
 
-  async function handleStart(e: FormEvent) {
-    e.preventDefault();
-    if (!testId.trim()) return;
-    setStarting(true);
+  const [showManual, setShowManual] = useState(false);
+  const [manualAssessmentId, setManualAssessmentId] = useState('');
+  const [manualResumeToken, setManualResumeToken] = useState('');
+  const [manualBusy, setManualBusy] = useState(false);
+
+  async function loadCatalog() {
+    setLoadingCatalog(true);
     try {
-      const { error } = await apiClient.POST('/api/v1/assessments/start', {
-        body: { testId: testId.trim() },
-      });
-      if (error) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      toast(t('assessments.started'), 'success');
-      setTestId('');
+      const [{ data: specialtiesData }, { data: testsData }] = await Promise.all([
+        apiClient.GET('/api/v1/specialties'),
+        apiClient.GET('/api/v1/tests'),
+      ]);
+      setSpecialties(specialtiesData ?? []);
+      setTests(testsData ?? []);
     } finally {
-      setStarting(false);
+      setLoadingCatalog(false);
     }
   }
 
-  async function handleResume(e: FormEvent) {
-    e.preventDefault();
-    if (!resumeAssessmentId.trim() || !resumeToken.trim()) return;
-    setResuming(true);
+  useEffect(() => {
+    void loadCatalog();
+  }, []);
+
+  function applySession(next: Session) {
+    setSession(next);
+    saveSession(next);
+    setFeedback(null);
+  }
+
+  async function handleStart(testId: string) {
+    setStartingTestId(testId);
     try {
-      const { error } = await apiClient.POST('/api/v1/assessments/resume', {
+      const { data, error } = await apiClient.POST('/api/v1/assessments/start', {
+        body: { testId },
+      });
+      if (error || !data) {
+        toast(describeStartError(error, t, locale), 'error');
+        return;
+      }
+      applySession({
+        assessmentId: data.assessment.id,
+        resumeToken: data.assessment.resumeToken,
+        assessmentUrl: data.assessmentUrl,
+        testId,
+        status: data.assessment.status,
+      });
+      toast(t('assessments.started'), 'success');
+    } finally {
+      setStartingTestId(null);
+    }
+  }
+
+  async function handleManualResume(e: FormEvent) {
+    e.preventDefault();
+    if (!manualAssessmentId.trim() || !manualResumeToken.trim()) return;
+    setManualBusy(true);
+    try {
+      const { data, error } = await apiClient.POST('/api/v1/assessments/resume', {
         body: {
-          assessmentId: resumeAssessmentId.trim(),
-          resumeToken: resumeToken.trim(),
+          assessmentId: manualAssessmentId.trim(),
+          resumeToken: manualResumeToken.trim(),
         },
       });
-      if (error) {
-        toast(t('common.error'), 'error');
+      if (error || !data) {
+        toast(describeStartError(error, t, locale), 'error');
         return;
       }
+      applySession({
+        assessmentId: data.assessment.id,
+        resumeToken: data.assessment.resumeToken,
+        assessmentUrl: data.assessmentUrl,
+        testId: data.assessment.testId,
+        status: data.assessment.status,
+      });
       toast(t('assessments.resumed'), 'success');
-      setResumeAssessmentId('');
-      setResumeToken('');
+      setManualAssessmentId('');
+      setManualResumeToken('');
+      setShowManual(false);
     } finally {
-      setResuming(false);
+      setManualBusy(false);
     }
   }
 
-  async function handleReportIncident(e: FormEvent) {
-    e.preventDefault();
-    if (!incidentId.trim()) return;
+  async function handleReportIncident() {
+    if (!session) return;
     setReportingIncident(true);
     try {
-      const { error } = await apiClient.POST('/api/v1/assessments/{id}/incident', {
-        params: { path: { id: incidentId.trim() } },
-      });
+      const { data, error } = await apiClient.POST(
+        '/api/v1/assessments/{id}/incident',
+        { params: { path: { id: session.assessmentId } } },
+      );
       if (error) {
         toast(t('common.error'), 'error');
         return;
       }
       toast(t('assessments.incidentReported'), 'success');
-      setIncidentId('');
+      if (data) {
+        applySession({ ...session, status: data.status });
+      }
     } finally {
       setReportingIncident(false);
     }
   }
 
-  async function handleGetFeedback(e: FormEvent) {
-    e.preventDefault();
-    if (!feedbackId.trim()) return;
+  async function handleViewFeedback(assessmentId: string) {
     setLoadingFeedback(true);
     setFeedback(null);
     try {
-      const { data, error } = await apiClient.GET('/api/v1/assessments/{id}/feedback', {
-        params: { path: { id: feedbackId.trim() } },
-      });
-      if (error) {
+      const { data, error } = await apiClient.GET(
+        '/api/v1/assessments/{id}/feedback',
+        { params: { path: { id: assessmentId } } },
+      );
+      if (error || !data) {
         toast(t('assessments.feedbackError'), 'error');
         return;
       }
-      setFeedback((data as Record<string, unknown>) ?? {});
+      setFeedback(data);
     } finally {
       setLoadingFeedback(false);
     }
   }
 
+  const specialtyById = new Map(specialties.map((s) => [s.id, s]));
+  const testsBySpecialty = new Map<string, TestSummary[]>();
+  for (const test of tests) {
+    const list = testsBySpecialty.get(test.specialtyId) ?? [];
+    list.push(test);
+    testsBySpecialty.set(test.specialtyId, list);
+  }
+
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold text-foreground">{t('assessments.title')}</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">{t('assessments.title')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t('assessments.subtitle')}
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Play className="size-5" />
-            {t('assessments.start')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleStart(e)} className="flex items-end gap-3">
-            <div className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="test-id">{t('assessments.testId')}</Label>
-              <Input
-                id="test-id"
-                value={testId}
-                onChange={(e) => setTestId(e.target.value)}
-                placeholder={t('assessments.testIdPlaceholder')}
-              />
-            </div>
-            <Button type="submit" disabled={starting || !testId.trim()} className="gap-2">
-              {starting && <Loader2 className="size-4 animate-spin" />}
-              {t('assessments.startButton')}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RotateCcw className="size-5" />
-            {t('assessments.resume')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleResume(e)} className="flex flex-col gap-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="resume-assessment-id">{t('assessments.assessmentId')}</Label>
-                <Input
-                  id="resume-assessment-id"
-                  value={resumeAssessmentId}
-                  onChange={(e) => setResumeAssessmentId(e.target.value)}
-                  placeholder={t('assessments.assessmentIdPlaceholder')}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="resume-token">{t('assessments.resumeToken')}</Label>
-                <Input
-                  id="resume-token"
-                  value={resumeToken}
-                  onChange={(e) => setResumeToken(e.target.value)}
-                  placeholder={t('assessments.resumeTokenPlaceholder')}
-                />
-              </div>
-            </div>
-            <Button
-              type="submit"
-              variant="outline"
-              disabled={resuming || !resumeAssessmentId.trim() || !resumeToken.trim()}
-              className="gap-2 self-start"
-            >
-              {resuming && <Loader2 className="size-4 animate-spin" />}
-              {t('assessments.resumeButton')}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="size-5" />
-            {t('assessments.reportIncident')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleReportIncident(e)} className="flex items-end gap-3">
-            <div className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="incident-id">{t('assessments.assessmentId')}</Label>
-              <Input
-                id="incident-id"
-                value={incidentId}
-                onChange={(e) => setIncidentId(e.target.value)}
-                placeholder={t('assessments.assessmentIdPlaceholder')}
-              />
-            </div>
-            <Button
-              type="submit"
-              variant="destructive"
-              disabled={reportingIncident || !incidentId.trim()}
-              className="gap-2"
-            >
-              {reportingIncident && <Loader2 className="size-4 animate-spin" />}
-              {t('assessments.reportButton')}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="size-5" />
-            {t('assessments.feedback')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleGetFeedback(e)} className="flex flex-col gap-4">
-            <div className="flex items-end gap-3">
-              <div className="flex flex-1 flex-col gap-2">
-                <Label htmlFor="feedback-id">{t('assessments.assessmentId')}</Label>
-                <Input
-                  id="feedback-id"
-                  value={feedbackId}
-                  onChange={(e) => setFeedbackId(e.target.value)}
-                  placeholder={t('assessments.assessmentIdPlaceholder')}
-                />
-              </div>
+      {session && (
+        <Card className="border-primary/30">
+          <CardHeader>
+            <CardTitle className="flex flex-wrap items-center gap-2">
+              <Play className="size-5 text-primary" />
+              {t('assessments.session.title')}
+              <Badge variant={STATUS_BADGE[session.status].variant}>
+                {t(STATUS_BADGE[session.status].key)}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              {t('assessments.session.testLabel')}{' '}
+              <span className="font-medium text-foreground">
+                {specialtyById.get(
+                  tests.find((tt) => tt.id === session.testId)?.specialtyId ?? '',
+                )?.name ?? session.testId}
+              </span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild className="gap-2">
+                <a href={session.assessmentUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="size-4" />
+                  {t('assessments.session.continueButton')}
+                </a>
+              </Button>
               <Button
-                type="submit"
                 variant="outline"
-                disabled={loadingFeedback || !feedbackId.trim()}
                 className="gap-2"
+                onClick={() => void handleReportIncident()}
+                disabled={reportingIncident || session.status !== 'in_progress'}
               >
-                {loadingFeedback && <Loader2 className="size-4 animate-spin" />}
+                {reportingIncident ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <AlertTriangle className="size-4" />
+                )}
+                {t('assessments.reportButton')}
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => void handleViewFeedback(session.assessmentId)}
+                disabled={loadingFeedback}
+              >
+                {loadingFeedback ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <MessageCircle className="size-4" />
+                )}
                 {t('assessments.viewFeedback')}
               </Button>
             </div>
 
             {feedback && (
-              <div className="rounded-xl border border-border bg-muted/30 p-4">
-                <div className="flex items-center gap-2 pb-3">
-                  <ClipboardList className="size-4 text-primary" />
+              <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-primary" />
                   <span className="text-sm font-medium text-foreground">
                     {t('assessments.feedbackResults')}
                   </span>
                 </div>
-                <pre className="overflow-x-auto text-sm text-muted-foreground">
-                  {JSON.stringify(feedback, null, 2)}
-                </pre>
+                <p className="text-sm text-foreground">
+                  {t('assessments.feedback.score', {
+                    score: String(feedback.scoreValue),
+                  })}
+                </p>
+                {feedback.domainFeedback.length > 0 && (
+                  <ul className="flex flex-wrap gap-2">
+                    {feedback.domainFeedback.map((d) => (
+                      <li key={d.domain}>
+                        <Badge
+                          variant={
+                            d.level === 'strong'
+                              ? 'success'
+                              : d.level === 'medium'
+                                ? 'warning'
+                                : 'destructive'
+                          }
+                        >
+                          {d.domain}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {feedback.reEligibleAt && (
+                  <p className="text-xs text-muted-foreground">
+                    {t('assessments.errors.cooldownActive', {
+                      date: formatDateCasablanca(
+                        new Date(feedback.reEligibleAt),
+                        locale,
+                      ),
+                    })}
+                  </p>
+                )}
               </div>
             )}
-          </form>
-        </CardContent>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold text-foreground">
+          {t('assessments.catalog.title')}
+        </h2>
+
+        {loadingCatalog && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </div>
+        )}
+
+        {!loadingCatalog && specialties.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            {t('assessments.catalog.empty')}
+          </p>
+        )}
+
+        {!loadingCatalog && specialties.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {specialties.map((specialty) => {
+              const specialtyTests = testsBySpecialty.get(specialty.id) ?? [];
+              return specialtyTests.map((test, index) => (
+                <Card key={test.id} className="transition-all duration-200 hover:shadow-md">
+                  <CardContent className="flex flex-col gap-3 p-5">
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {specialty.name}
+                        {specialtyTests.length > 1 ? ` — ${index + 1}` : ''}
+                      </h3>
+                      {specialty.description && (
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                          {specialty.description}
+                        </p>
+                      )}
+                    </div>
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock className="size-3.5" />
+                      {t('assessments.catalog.duration', {
+                        minutes: String(test.durationMinutes),
+                      })}
+                    </span>
+                    <Button
+                      className="mt-1 w-fit gap-2"
+                      onClick={() => void handleStart(test.id)}
+                      disabled={startingTestId === test.id}
+                    >
+                      {startingTestId === test.id ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Play className="size-4" />
+                      )}
+                      {t('assessments.startButton')}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ));
+            })}
+          </div>
+        )}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between text-start"
+            onClick={() => setShowManual((prev) => !prev)}
+          >
+            <CardTitle className="text-base">
+              {t('assessments.manual.title')}
+            </CardTitle>
+            {showManual ? (
+              <ChevronUp className="size-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="size-4 text-muted-foreground" />
+            )}
+          </button>
+        </CardHeader>
+        {showManual && (
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-xs text-muted-foreground">
+              {t('assessments.manual.hint')}
+            </p>
+            <form
+              onSubmit={(e) => void handleManualResume(e)}
+              className="flex flex-col gap-4 sm:flex-row sm:items-end"
+            >
+              <div className="flex flex-1 flex-col gap-2">
+                <Label htmlFor="manual-assessment-id">
+                  {t('assessments.assessmentId')}
+                </Label>
+                <Input
+                  id="manual-assessment-id"
+                  value={manualAssessmentId}
+                  onChange={(e) => setManualAssessmentId(e.target.value)}
+                  placeholder={t('assessments.assessmentIdPlaceholder')}
+                />
+              </div>
+              <div className="flex flex-1 flex-col gap-2">
+                <Label htmlFor="manual-resume-token">
+                  {t('assessments.resumeToken')}
+                </Label>
+                <Input
+                  id="manual-resume-token"
+                  value={manualResumeToken}
+                  onChange={(e) => setManualResumeToken(e.target.value)}
+                  placeholder={t('assessments.resumeTokenPlaceholder')}
+                />
+              </div>
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={
+                  manualBusy || !manualAssessmentId.trim() || !manualResumeToken.trim()
+                }
+                className="gap-2"
+              >
+                {manualBusy && <Loader2 className="size-4 animate-spin" />}
+                {t('assessments.resumeButton')}
+              </Button>
+            </form>
+          </CardContent>
+        )}
       </Card>
     </div>
   );

@@ -164,6 +164,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SkillCatalogController_listSkills"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/candidates/experiences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CandidateExperienceController_listMine"];
+        put?: never;
+        post: operations["CandidateExperienceController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/candidates/experiences/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CandidateExperienceController_update"];
+        post?: never;
+        delete: operations["CandidateExperienceController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/candidates/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CandidateLinkController_listMine"];
+        put?: never;
+        post: operations["CandidateLinkController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/candidates/links/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CandidateLinkController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/candidates/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CandidateSkillController_listMine"];
+        put?: never;
+        post: operations["CandidateSkillController_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/candidates/skills/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CandidateSkillController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies": {
         parameters: {
             query?: never;
@@ -382,6 +494,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["WebhookController_handleWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/specialties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CatalogController_listSpecialties"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CatalogController_listTests"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -653,30 +797,6 @@ export interface components {
             email: string;
             roles: ("candidate" | "recruiter" | "company_admin" | "moderator" | "admin")[];
         };
-        UpdateProfileDto: {
-            firstName?: string;
-            lastName?: string;
-            headline?: string;
-            bio?: string;
-            availability?: string;
-            mobility?: string;
-            location?: string;
-            salaryMin?: number;
-            salaryMax?: number;
-            salaryVisible?: boolean;
-            /** @enum {string} */
-            visibility?: "public" | "recruiters_only" | "hidden";
-        };
-        CreateCompanyDto: {
-            name: string;
-            ice: string;
-            registrationNumber?: string;
-        };
-        AddRecruiterDto: {
-            /** Format: email */
-            email: string;
-            position?: string;
-        };
         RefreshToken: {
             id: string;
             tokenHash: string;
@@ -705,6 +825,158 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             refreshTokens: components["schemas"]["RefreshToken"][];
+        };
+        CandidateProfile: {
+            id: string;
+            userId: string;
+            user: components["schemas"]["User"];
+            firstName: string | null;
+            lastName: string | null;
+            headline: string | null;
+            bio: string | null;
+            availability: string | null;
+            mobility: string | null;
+            location: string | null;
+            salaryMin: number | null;
+            salaryMax: number | null;
+            salaryVisible: boolean;
+            /** @enum {string} */
+            visibility: "public" | "recruiters_only" | "hidden";
+            completeness: number;
+            indexedInCvtheque: boolean;
+            featured: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MissingElementDto: {
+            key: string;
+            label: string;
+            weight: number;
+        };
+        CompletenessResultDto: {
+            completeness: number;
+            isPublishable: boolean;
+            missing: components["schemas"]["MissingElementDto"][];
+        };
+        ProfileWithCompletenessDto: {
+            profile: components["schemas"]["CandidateProfile"];
+            completeness: components["schemas"]["CompletenessResultDto"];
+        };
+        UpdateProfileDto: {
+            firstName?: string;
+            lastName?: string;
+            headline?: string;
+            bio?: string;
+            availability?: string;
+            mobility?: string;
+            location?: string;
+            salaryMin?: number;
+            salaryMax?: number;
+            salaryVisible?: boolean;
+            /** @enum {string} */
+            visibility?: "public" | "recruiters_only" | "hidden";
+        };
+        UploadCvResponseDto: {
+            id: string;
+            originalName: string;
+            mimeType: string;
+            size: number;
+            /** @enum {string} */
+            scanStatus: "pending" | "clean" | "infected";
+        };
+        CvDetailDto: {
+            id: string;
+            originalName: string;
+            mimeType: string;
+            size: number;
+            /** @enum {string} */
+            scanStatus: "pending" | "clean" | "infected";
+            /** Format: date-time */
+            createdAt: string;
+        };
+        GetCvResponseDto: {
+            cv: components["schemas"]["CvDetailDto"] | null;
+        };
+        SkillSummaryDto: {
+            id: string;
+            name: string;
+            category: string | null;
+        };
+        Experience: {
+            id: string;
+            profileId: string;
+            profile: components["schemas"]["CandidateProfile"];
+            /** @enum {string} */
+            type: "work" | "education";
+            title: string;
+            organization: string;
+            startDate: string;
+            endDate: string | null;
+            description: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CreateExperienceDto: {
+            /** @enum {string} */
+            type: "work" | "education";
+            title: string;
+            organization: string;
+            startDate: string;
+            endDate?: string;
+            description?: string;
+        };
+        UpdateExperienceDto: {
+            /** @enum {string} */
+            type?: "work" | "education";
+            title?: string;
+            organization?: string;
+            startDate?: string;
+            endDate?: string;
+            description?: string;
+        };
+        ProfileLink: {
+            id: string;
+            profileId: string;
+            profile: components["schemas"]["CandidateProfile"];
+            /** @enum {string} */
+            type: "github" | "portfolio" | "linkedin" | "other";
+            url: string;
+            label: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CreateProfileLinkDto: {
+            /** @enum {string} */
+            type: "github" | "portfolio" | "linkedin" | "other";
+            /** Format: uri */
+            url: string;
+            label?: string;
+        };
+        ProfileSkillSummaryDto: {
+            id: string;
+            skillId: string;
+            name: string;
+            category: string | null;
+            level: string | null;
+        };
+        AddProfileSkillDto: {
+            /** Format: uuid */
+            skillId: string;
+            level?: string;
+        };
+        CreateCompanyDto: {
+            name: string;
+            ice: string;
+            registrationNumber?: string;
+        };
+        AddRecruiterDto: {
+            /** Format: email */
+            email: string;
+            position?: string;
         };
         Company: {
             id: string;
@@ -764,30 +1036,6 @@ export interface components {
             candidateProfileId: string;
             note?: string;
         };
-        CandidateProfile: {
-            id: string;
-            userId: string;
-            user: components["schemas"]["User"];
-            firstName: string | null;
-            lastName: string | null;
-            headline: string | null;
-            bio: string | null;
-            availability: string | null;
-            mobility: string | null;
-            location: string | null;
-            salaryMin: number | null;
-            salaryMax: number | null;
-            salaryVisible: boolean;
-            /** @enum {string} */
-            visibility: "public" | "recruiters_only" | "hidden";
-            completeness: number;
-            indexedInCvtheque: boolean;
-            featured: boolean;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
         ShortlistEntry: {
             id: string;
             companyId: string;
@@ -802,12 +1050,6 @@ export interface components {
         StartAssessmentDto: {
             /** Format: uuid */
             testId: string;
-        };
-        ResumeAssessmentDto: {
-            /** Format: uuid */
-            assessmentId: string;
-            /** Format: uuid */
-            resumeToken: string;
         };
         Specialty: {
             id: string;
@@ -855,6 +1097,42 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        StartAssessmentResponseDto: {
+            assessment: components["schemas"]["Assessment"];
+            assessmentUrl: string;
+        };
+        ResumeAssessmentDto: {
+            /** Format: uuid */
+            assessmentId: string;
+            /** Format: uuid */
+            resumeToken: string;
+        };
+        DomainFeedbackEntryDto: {
+            domain: string;
+            /** @enum {string} */
+            level: "weak" | "medium" | "strong";
+        };
+        RemediationResourceDto: {
+            title: string;
+            url: string;
+        };
+        RemediationFeedbackDto: {
+            scoreValue: number;
+            indexationThresholdMet: boolean;
+            domainFeedback: components["schemas"]["DomainFeedbackEntryDto"][];
+            resources: components["schemas"]["RemediationResourceDto"][];
+            reEligibleAt: string | null;
+        };
+        SpecialtySummaryDto: {
+            id: string;
+            name: string;
+            description: string | null;
+        };
+        TestSummaryDto: {
+            id: string;
+            specialtyId: string;
+            durationMinutes: number;
         };
         Notification: {
             id: string;
@@ -1077,7 +1355,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProfileWithCompletenessDto"];
+                };
             };
         };
     };
@@ -1098,7 +1378,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProfileWithCompletenessDto"];
+                };
             };
         };
     };
@@ -1116,7 +1398,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["CompletenessResultDto"];
                 };
             };
         };
@@ -1135,7 +1417,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["GetCvResponseDto"];
                 };
             };
         };
@@ -1147,13 +1429,22 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file?: string;
+                };
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UploadCvResponseDto"];
+                };
             };
         };
     };
@@ -1170,7 +1461,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageResponseDto"];
+                };
             };
         };
     };
@@ -1196,6 +1489,233 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SkillCatalogController_listSkills: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillSummaryDto"][];
+                };
+            };
+        };
+    };
+    CandidateExperienceController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experience"][];
+                };
+            };
+        };
+    };
+    CandidateExperienceController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExperienceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experience"];
+                };
+            };
+        };
+    };
+    CandidateExperienceController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateExperienceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Experience"];
+                };
+            };
+        };
+    };
+    CandidateExperienceController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CandidateLinkController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileLink"][];
+                };
+            };
+        };
+    };
+    CandidateLinkController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProfileLinkDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileLink"];
+                };
+            };
+        };
+    };
+    CandidateLinkController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CandidateSkillController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSkillSummaryDto"][];
+                };
+            };
+        };
+    };
+    CandidateSkillController_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddProfileSkillDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSkillSummaryDto"];
+                };
+            };
+        };
+    };
+    CandidateSkillController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1477,7 +1997,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StartAssessmentResponseDto"];
+                };
             };
         };
     };
@@ -1498,7 +2020,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StartAssessmentResponseDto"];
+                };
             };
         };
     };
@@ -1539,7 +2063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["RemediationFeedbackDto"];
                 };
             };
         };
@@ -1560,6 +2084,46 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    CatalogController_listSpecialties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialtySummaryDto"][];
+                };
+            };
+        };
+    };
+    CatalogController_listTests: {
+        parameters: {
+            query?: {
+                specialtyId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestSummaryDto"][];
+                };
             };
         };
     };

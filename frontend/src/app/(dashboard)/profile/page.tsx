@@ -30,7 +30,17 @@ interface ProfileData {
     salaryVisible?: boolean;
     visibility?: 'public' | 'recruiters_only' | 'hidden';
   };
-  completeness: number;
+  // The profile endpoint nests the full CompletenessResultDto here, not
+  // a bare number — confirmed against the real backend DTO
+  // (candidate-profile.service.ts). Found by regenerating the OpenAPI
+  // schema after restoring the backend endpoints this page depends on:
+  // the previous (stale) schema silently let `completeness: number` go
+  // uncaught here.
+  completeness: {
+    completeness: number;
+    isPublishable: boolean;
+    missing: { key: string; label: string; weight: number }[];
+  };
 }
 
 interface CvData {
@@ -93,7 +103,7 @@ export default function ProfilePage() {
         setSalaryMax(p.salaryMax != null ? String(p.salaryMax) : '');
         setSalaryVisible(p.salaryVisible ?? false);
         setVisibility(p.visibility ?? 'hidden');
-        setCompleteness(d.completeness ?? 0);
+        setCompleteness(d.completeness?.completeness ?? 0);
       }
 
       if (cvRes.data) {
