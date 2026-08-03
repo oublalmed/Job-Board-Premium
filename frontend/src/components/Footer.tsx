@@ -31,7 +31,7 @@ export function Footer() {
         </nav>
 
         <p className="text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} Job Board Premium. {t('footer.rights')}
+          &copy; {new Date().getFullYear()} Talentiq. {t('footer.rights')}
         </p>
       </div>
     </footer>

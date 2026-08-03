@@ -1,4 +1,4 @@
-# Job Board Premium
+# Talentiq
 
 Plateforme de recrutement tech pour le marche marocain. Monolithe modulaire NestJS avec architecture hexagonale.
 

@@ -81,7 +81,7 @@ export class AuthService {
 
     await this.mailProvider.send({
       to: user.email,
-      subject: 'Vérifiez votre adresse email - Job Board Premium',
+      subject: 'Vérifiez votre adresse email - Talentiq',
       templateId: 'email-verification',
       variables: {
         token: verificationToken,

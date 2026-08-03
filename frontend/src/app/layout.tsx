@@ -22,7 +22,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Job Board Premium — Recrutement au Maroc',
+  title: 'Talentiq — Recrutement au Maroc',
   description:
     'Plateforme de recrutement premium au Maroc. Évaluation technique, scoring intelligent et mise en relation directe.',
 };

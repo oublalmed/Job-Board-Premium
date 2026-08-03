@@ -27,7 +27,7 @@ export class DunningNotificationService {
     manager: EntityManager,
   ): Promise<void> {
     await this.sendToRecruiters(companyId, manager, {
-      subject: 'Échec de paiement — Job Board Premium',
+      subject: 'Échec de paiement — Talentiq',
       templateId: 'subscription-payment-failed',
     });
   }
@@ -37,7 +37,7 @@ export class DunningNotificationService {
     manager: EntityManager,
   ): Promise<void> {
     await this.sendToRecruiters(companyId, manager, {
-      subject: 'Abonnement suspendu — Job Board Premium',
+      subject: 'Abonnement suspendu — Talentiq',
       templateId: 'subscription-cancelled',
     });
   }
@@ -47,7 +47,7 @@ export class DunningNotificationService {
     manager: EntityManager,
   ): Promise<void> {
     await this.sendToRecruiters(companyId, manager, {
-      subject: 'Abonnement réactivé — Job Board Premium',
+      subject: 'Abonnement réactivé — Talentiq',
       templateId: 'subscription-reactivated',
     });
   }

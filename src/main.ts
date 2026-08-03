@@ -59,7 +59,7 @@ async function bootstrap() {
     const swaggerDocument = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()
-        .setTitle('Job Board Premium API')
+        .setTitle('Talentiq API')
         .setDescription('REST API — see CDC for the full functional spec')
         .setVersion('1.0')
         .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })

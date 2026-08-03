@@ -11,8 +11,8 @@ import type { Metadata } from 'next';
 // per-section metadata/loading.tsx, not for the theme mechanism.
 export const metadata: Metadata = {
   title: {
-    template: '%s — Espace recruteur | Job Board Premium',
-    default: 'Espace recruteur | Job Board Premium',
+    template: '%s — Espace recruteur | Talentiq',
+    default: 'Espace recruteur | Talentiq',
   },
 };
 

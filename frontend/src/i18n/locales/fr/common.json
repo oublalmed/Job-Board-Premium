@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Job Board Premium",
+    "name": "Talentiq",
     "tagline": "La plateforme de recrutement premium au Maroc",
     "description": "Connectez les meilleurs talents avec les entreprises qui recrutent. Évaluation, scoring et mise en relation intelligente."
   },
@@ -45,7 +45,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Pourquoi Job Board Premium ?",
+    "title": "Pourquoi Talentiq ?",
     "subtitle": "Une plateforme conçue pour le marché marocain, avec des outils modernes de recrutement.",
     "scoring": {
       "title": "Scoring intelligent",
@@ -107,7 +107,7 @@
     },
     "register": {
       "title": "Créer un compte",
-      "subtitle": "Rejoignez la communauté Job Board Premium",
+      "subtitle": "Rejoignez la communauté Talentiq",
       "roleLabel": "Je suis un(e)",
       "roleCandidate": "Candidat",
       "roleRecruiter": "Recruteur",

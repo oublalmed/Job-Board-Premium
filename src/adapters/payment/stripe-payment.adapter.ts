@@ -83,7 +83,7 @@ export class StripePaymentProvider implements PaymentProvider {
             currency: params.currency.toLowerCase(),
             unit_amount: params.amount,
             recurring: { interval: 'month' },
-            product_data: { name: `Job Board Premium — ${params.plan}` },
+            product_data: { name: `Talentiq — ${params.plan}` },
           },
           quantity: 1,
         },
