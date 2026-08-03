@@ -1,10 +1,7 @@
-import type { SupportedLocale } from '@/i18n';
-
 const CASABLANCA_TIME_ZONE = 'Africa/Casablanca';
 
-// Morocco-specific Intl locale tags (not bare 'fr'/'ar') — these are what
-// actually drive correct digit shapes, grouping, and currency symbol
-// placement for MAD, not just translated UI text.
+export type SupportedLocale = 'fr' | 'ar';
+
 function toIntlLocale(locale: SupportedLocale): string {
   return locale === 'ar' ? 'ar-MA' : 'fr-MA';
 }

@@ -1,43 +1,92 @@
 {
   "app": {
-    "name": "Job Board Premium"
+    "name": "Job Board Premium",
+    "tagline": "منصة التوظيف المتميزة في المغرب",
+    "description": "اربط أفضل الكفاءات بالشركات التي توظف. تقييم وتصنيف وربط ذكي."
   },
   "language": {
     "label": "اللغة",
-    "fr": "Français",
-    "ar": "العربية"
+    "fr": "FR",
+    "ar": "عر"
   },
   "nav": {
     "label": "التنقل الرئيسي",
+    "home": "الرئيسية",
     "dashboard": "لوحة التحكم",
+    "profile": "ملفي الشخصي",
+    "jobs": "العروض",
+    "candidates": "بنك السير الذاتية",
+    "offers": "عروضي",
+    "shortlist": "القائمة المختصرة",
+    "messages": "الرسائل",
+    "notifications": "الإشعارات",
+    "settings": "الإعدادات",
     "login": "تسجيل الدخول",
     "register": "إنشاء حساب",
-    "designSystem": "نظام التصميم"
+    "pricing": "الأسعار"
   },
   "layout": {
     "skipToContent": "الانتقال إلى المحتوى الرئيسي"
   },
-  "demo": {
-    "designSystem": {
-      "title": "نظام التصميم",
-      "subtitle": "التحقق من الإصدار التأسيسي للواجهة",
-      "emailLabel": "البريد الإلكتروني",
-      "emailPlaceholder": "you@example.com",
-      "buttonDefault": "أساسي",
-      "buttonSecondary": "ثانوي",
-      "buttonOutline": "محدد",
-      "buttonDestructive": "حذف"
+  "hero": {
+    "badge": "المنصة الأولى في المغرب",
+    "title": "وظّف أفضل الكفاءات",
+    "titleHighlight": "في المغرب",
+    "subtitle": "تقييم تقني، تصنيف ذكي وربط مباشر بين المرشحين المؤهلين والمسؤولين عن التوظيف.",
+    "cta": "ابدأ مجاناً",
+    "ctaSecondary": "اكتشف الأسعار",
+    "stat1Label": "مرشح تم تقييمه",
+    "stat1Value": "+12,000",
+    "stat2Label": "شركة",
+    "stat2Value": "+850",
+    "stat3Label": "نسبة التوافق",
+    "stat3Value": "94%"
+  },
+  "features": {
+    "title": "لماذا Job Board Premium؟",
+    "subtitle": "منصة مصممة للسوق المغربية، بأدوات توظيف حديثة.",
+    "scoring": {
+      "title": "تصنيف ذكي",
+      "description": "تقييم تقني آلي مع تصنيف موحد. حدد أفضل الملفات الشخصية بسرعة."
     },
-    "rtl": {
-      "title": "عرض توضيحي لاتجاه RTL",
-      "description": "يستخدم هذا التخطيط خصائص CSS المنطقية (padding-inline، margin-inline) — وينعكس تلقائيًا حسب اتجاه القراءة، دون فئات مكررة لكل اتجاه.",
-      "jobCardTitle": "مطوّر خلفية أول",
-      "jobCardCompany": "أطلس للتكنولوجيا",
-      "jobCardLocation": "الدار البيضاء، المغرب",
-      "jobCardSalaryLabel": "الراتب",
-      "jobCardPostedLabel": "تاريخ النشر",
-      "startLabel": "البداية (start)",
-      "endLabel": "النهاية (end)"
+    "cvtheque": {
+      "title": "بنك سير ذاتية متقدم",
+      "description": "بحث متعدد المعايير بين المرشحين المفهرسين. تصفية حسب المهارات والموقع والتصنيف."
+    },
+    "messaging": {
+      "title": "مراسلة مدمجة",
+      "description": "تواصل مباشرة مع المرشحين الذين يهمونك. حصص مدارة حسب الاشتراك."
+    },
+    "compliance": {
+      "title": "متوافق مع CNDP",
+      "description": "بيانات مستضافة في المغرب، تصدير وحذف متوافق مع RGPD/CNDP، فوترة قانونية."
+    }
+  },
+  "pricing": {
+    "title": "أسعار شفافة",
+    "subtitle": "اختر الباقة المناسبة لاحتياجات التوظيف الخاصة بك.",
+    "monthly": "/شهر بدون ضريبة",
+    "currency": "درهم",
+    "contacts": "جهة اتصال/شهر",
+    "cta": "اختر هذه الباقة",
+    "popular": "الأكثر شعبية",
+    "starter": {
+      "name": "Starter",
+      "price": "990",
+      "contacts": "15",
+      "features": ["15 جهة اتصال/شهر", "بحث في بنك السير الذاتية", "مراسلة مدمجة", "مسؤول توظيف واحد"]
+    },
+    "business": {
+      "name": "Business",
+      "price": "2,900",
+      "contacts": "60",
+      "features": ["60 جهة اتصال/شهر", "بحث متقدم", "مراسلة ذات أولوية", "5 مسؤولي توظيف", "عروض غير محدودة"]
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "price": "6,900",
+      "contacts": "200",
+      "features": ["200 جهة اتصال/شهر", "بحث غير محدود", "دعم مخصص", "مسؤولو توظيف غير محدودين", "واجهة برمجة التطبيقات", "فوترة مخصصة"]
     }
   },
   "auth": {
@@ -46,8 +95,8 @@
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "كلمة المرور",
     "login": {
-      "title": "تسجيل الدخول",
-      "subtitle": "ادخل إلى مساحتك في Job Board Premium",
+      "title": "مرحباً بعودتك",
+      "subtitle": "سجّل الدخول إلى حسابك",
       "submit": "تسجيل الدخول",
       "submitting": "جارٍ تسجيل الدخول…",
       "error": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
@@ -56,7 +105,7 @@
     },
     "register": {
       "title": "إنشاء حساب",
-      "subtitle": "انضم إلى Job Board Premium",
+      "subtitle": "انضم إلى مجتمع Job Board Premium",
       "passwordHint": "10 أحرف على الأقل، مع حرف كبير وحرف صغير ورقم ورمز خاص.",
       "submit": "إنشاء حسابي",
       "submitting": "جارٍ الإنشاء…",
@@ -66,13 +115,78 @@
       "loginLink": "تسجيل الدخول"
     },
     "logout": "تسجيل الخروج",
-    "dashboard": {
-      "title": "لوحة التحكم",
-      "welcome": "متصل باسم {{email}}",
-      "roles": "الأدوار: {{roles}}"
-    },
     "guard": {
       "forbidden": "ليس لديك صلاحية الوصول إلى هذه الصفحة."
     }
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcome": "مرحباً",
+    "profileCompletion": "اكتمال الملف الشخصي",
+    "recentActivity": "النشاط الأخير",
+    "quickActions": "إجراءات سريعة",
+    "viewProfile": "عرض ملفي",
+    "editProfile": "تعديل الملف الشخصي",
+    "browseJobs": "تصفح العروض",
+    "searchCandidates": "البحث عن مرشحين",
+    "manageOffers": "إدارة عروضي",
+    "viewMessages": "عرض الرسائل",
+    "noActivity": "لا يوجد نشاط حديث.",
+    "roles": "الأدوار: {{roles}}"
+  },
+  "profile": {
+    "title": "ملفي الشخصي",
+    "personalInfo": "المعلومات الشخصية",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "location": "الموقع",
+    "availability": "التوفر",
+    "salaryExpectation": "الراتب المتوقع",
+    "skills": "المهارات",
+    "experience": "الخبرة",
+    "cv": "السيرة الذاتية",
+    "uploadCv": "تحميل السيرة الذاتية",
+    "deleteCv": "حذف السيرة الذاتية",
+    "completeness": "الاكتمال",
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ…"
+  },
+  "search": {
+    "title": "بنك السير الذاتية",
+    "placeholder": "البحث عن مرشحين…",
+    "filters": "التصفية",
+    "skills": "المهارات",
+    "location": "الموقع",
+    "scoreMin": "الحد الأدنى للتصنيف",
+    "availability": "التوفر",
+    "noResults": "لم يتم العثور على مرشحين.",
+    "addToShortlist": "إضافة إلى القائمة المختصرة",
+    "contact": "تواصل",
+    "viewProfile": "عرض الملف الشخصي"
+  },
+  "offers": {
+    "title": "عروض العمل",
+    "create": "إنشاء عرض",
+    "status": {
+      "pending_moderation": "قيد المراجعة",
+      "published": "منشور",
+      "closed": "مغلق"
+    },
+    "close": "إغلاق",
+    "noOffers": "لا توجد عروض حالياً."
+  },
+  "messages": {
+    "title": "الرسائل",
+    "noConversations": "لا توجد محادثات.",
+    "send": "إرسال",
+    "placeholder": "اكتب رسالة…"
+  },
+  "footer": {
+    "rights": "جميع الحقوق محفوظة.",
+    "privacy": "سياسة الخصوصية",
+    "terms": "شروط الاستخدام",
+    "contact": "تواصل معنا"
   }
 }

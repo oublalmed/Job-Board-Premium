@@ -1,29 +1,35 @@
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+'use client';
+
+import { useLocale } from '@/i18n/locale-context';
 import { SUPPORTED_LOCALES } from '@/i18n';
+import { cn } from '@/lib/utils';
 
 export function LanguageSwitcher() {
-  const { t, i18n } = useTranslation();
+  const { locale, setLocale, t } = useLocale();
 
   return (
     <div
-      className="flex items-center gap-2"
+      className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5"
       role="group"
       aria-label={t('language.label')}
     >
-      {SUPPORTED_LOCALES.map((locale) => {
-        const isActive = i18n.resolvedLanguage === locale;
+      {SUPPORTED_LOCALES.map((loc) => {
+        const isActive = locale === loc;
         return (
-          <Button
-            key={locale}
+          <button
+            key={loc}
             type="button"
-            variant={isActive ? 'default' : 'outline'}
-            size="sm"
             aria-pressed={isActive}
-            onClick={() => void i18n.changeLanguage(locale)}
+            onClick={() => setLocale(loc)}
+            className={cn(
+              'rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-200',
+              isActive
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
           >
-            {t(`language.${locale}`)}
-          </Button>
+            {t(`language.${loc}`)}
+          </button>
         );
       })}
     </div>

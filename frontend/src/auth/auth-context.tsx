@@ -1,3 +1,5 @@
+'use client';
+
 import {
   createContext,
   useCallback,
@@ -21,9 +23,6 @@ export type Role = AuthUser['roles'][number];
 
 interface AuthContextValue {
   user: AuthUser | null;
-  // True only while the initial silent-restore attempt (on app boot) is
-  // in flight — guards do not redirect on a false negative during this
-  // window (a refresh in progress looks like "not logged in" otherwise).
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -47,18 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onSessionExpired(() => setUser(null));
-
-    // Silent restore on boot: the access token never survives a reload
-    // (in-memory only, see token-store.ts), but the refresh token might
-    // (sessionStorage) — if so, mint a fresh access token and hydrate the
-    // user before rendering anything that depends on auth state.
     void (async () => {
       if (getRefreshToken()) {
         await hydrateUser();
       }
       setIsLoading(false);
     })();
-
     return unsubscribe;
   }, [hydrateUser]);
 
@@ -67,12 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await apiClient.POST('/api/v1/auth/login', {
         body: { email, password },
       });
-      // Deliberately not surfacing the backend's own error message here:
-      // it's plain, untranslated English (auth.service.ts throws
-      // UnauthorizedException('Invalid credentials') literally) — showing
-      // it verbatim in an Arabic or French UI would contradict "aucune
-      // string en dur, même le FR". LoginPage maps this failure to a
-      // translated message instead.
       if (error || !data) {
         throw new AuthError();
       }
@@ -93,9 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext value={{ user, isLoading, login, logout }}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }
 
@@ -107,7 +94,4 @@ export function useAuth(): AuthContextValue {
   return context;
 }
 
-// Deliberately carries no message of its own — LoginPage/RegisterPage
-// catch this and render a translated string via t(), never anything
-// read off the error object itself.
 export class AuthError extends Error {}
