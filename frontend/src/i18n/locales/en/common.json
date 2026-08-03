@@ -23,7 +23,6 @@
     "settings": "Settings",
     "login": "Log in",
     "register": "Create an account",
-    "pricing": "Pricing",
     "company": "My company",
     "subscription": "Subscription"
   },
@@ -36,7 +35,6 @@
     "titleHighlight": "in Morocco",
     "subtitle": "Technical assessment, smart scoring and direct matchmaking between qualified candidates and demanding recruiters.",
     "cta": "Get started for free",
-    "ctaSecondary": "See pricing",
     "stat1Label": "Candidates assessed",
     "stat1Value": "12,000+",
     "stat2Label": "Companies",
@@ -64,31 +62,15 @@
       "description": "Data hosted in Morocco, GDPR/CNDP export and deletion, compliant billing."
     }
   },
-  "pricing": {
-    "title": "Transparent pricing",
-    "subtitle": "Choose the plan that fits your hiring needs.",
-    "monthly": "/mo excl. tax",
-    "currency": "MAD",
-    "contacts": "contacts/mo",
-    "cta": "Choose this plan",
-    "popular": "Popular",
-    "starter": {
-      "name": "Starter",
-      "price": "990",
-      "contacts": "15",
-      "features": ["15 contacts/mo", "Candidate search", "Built-in messaging", "1 recruiter"]
-    },
-    "business": {
-      "name": "Business",
-      "price": "2,900",
-      "contacts": "60",
-      "features": ["60 contacts/mo", "Advanced search", "Priority messaging", "5 recruiters", "Unlimited job posts"]
-    },
-    "enterprise": {
-      "name": "Enterprise",
-      "price": "6,900",
-      "contacts": "200",
-      "features": ["200 contacts/mo", "Unlimited search", "Dedicated support", "Unlimited recruiters", "Integration API", "Custom billing"]
+  "trust": {
+    "title": "Trusted by teams across Morocco",
+    "sectors": {
+      "tech": "Tech",
+      "finance": "Finance",
+      "retail": "Retail",
+      "health": "Healthcare",
+      "industry": "Industry",
+      "education": "Education"
     }
   },
   "auth": {

@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   ArrowRight,
   BarChart3,
   Search,
   MessageSquare,
   ShieldCheck,
-  Check,
   Sparkles,
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
@@ -15,10 +15,15 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLocale } from '@/i18n/locale-context';
-import { cn } from '@/lib/utils';
+
+// Below-the-fold on first paint — deferred so it never competes with
+// the hero for the initial bundle/LCP.
+const TrustSection = dynamic(() =>
+  import('@/components/TrustSection').then((m) => m.TrustSection),
+);
 
 export default function HomePage() {
-  const { t, ta } = useLocale();
+  const { t } = useLocale();
 
   return (
     <>
@@ -55,11 +60,6 @@ export default function HomePage() {
                   <Button size="lg" className="gap-2 text-base">
                     {t('hero.cta')}
                     <ArrowRight className="size-4" />
-                  </Button>
-                </Link>
-                <Link href="#pricing">
-                  <Button variant="outline" size="lg" className="text-base">
-                    {t('hero.ctaSecondary')}
                   </Button>
                 </Link>
               </div>
@@ -110,41 +110,18 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Pricing */}
-        <section id="pricing" className="py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                {t('pricing.title')}
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                {t('pricing.subtitle')}
-              </p>
-            </div>
-
-            <div className="mx-auto mt-16 grid max-w-5xl gap-8 lg:grid-cols-3">
-              <PricingCard
-                name={t('pricing.starter.name')}
-                price={t('pricing.starter.price')}
-                features={ta('pricing.starter.features')}
-                t={t}
-              />
-              <PricingCard
-                name={t('pricing.business.name')}
-                price={t('pricing.business.price')}
-                features={ta('pricing.business.features')}
-                popular
-                t={t}
-              />
-              <PricingCard
-                name={t('pricing.enterprise.name')}
-                price={t('pricing.enterprise.price')}
-                features={ta('pricing.enterprise.features')}
-                t={t}
-              />
-            </div>
-          </div>
-        </section>
+        {/* Trust */}
+        <TrustSection
+          title={t('trust.title')}
+          sectorLabels={{
+            tech: t('trust.sectors.tech'),
+            finance: t('trust.sectors.finance'),
+            retail: t('trust.sectors.retail'),
+            health: t('trust.sectors.health'),
+            industry: t('trust.sectors.industry'),
+            education: t('trust.sectors.education'),
+          }}
+        />
       </main>
 
       <Footer />
@@ -179,64 +156,6 @@ function FeatureCard({
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
-    </div>
-  );
-}
-
-function PricingCard({
-  name,
-  price,
-  features,
-  popular,
-  t,
-}: {
-  name: string;
-  price: string;
-  features: string[];
-  popular?: boolean;
-  t: (key: string) => string;
-}) {
-  return (
-    <div
-      className={cn(
-        'relative flex flex-col rounded-2xl border p-8 transition-all duration-300',
-        popular
-          ? 'border-primary bg-primary/[0.02] shadow-lg shadow-primary/10 scale-105'
-          : 'border-border/50 bg-card hover:border-primary/20',
-      )}
-    >
-      {popular && (
-        <Badge className="absolute -top-3 start-1/2 -translate-x-1/2">
-          {t('pricing.popular')}
-        </Badge>
-      )}
-
-      <h3 className="text-xl font-semibold text-foreground">{name}</h3>
-
-      <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-4xl font-bold text-foreground">{price}</span>
-        <span className="text-sm text-muted-foreground">{t('pricing.currency')}</span>
-        <span className="text-sm text-muted-foreground">{t('pricing.monthly')}</span>
-      </div>
-
-      <ul className="mt-8 flex flex-1 flex-col gap-3">
-        {features.map((feature) => (
-          <li key={feature} className="flex items-start gap-3 text-sm">
-            <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-            <span className="text-muted-foreground">{feature}</span>
-          </li>
-        ))}
-      </ul>
-
-      <Link href="/register" className="mt-8">
-        <Button
-          variant={popular ? 'default' : 'outline'}
-          className="w-full"
-          size="lg"
-        >
-          {t('pricing.cta')}
-        </Button>
-      </Link>
     </div>
   );
 }

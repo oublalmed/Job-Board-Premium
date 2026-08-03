@@ -23,7 +23,6 @@
     "settings": "Paramètres",
     "login": "Connexion",
     "register": "Créer un compte",
-    "pricing": "Tarifs",
     "company": "Mon entreprise",
     "subscription": "Abonnement"
   },
@@ -36,7 +35,6 @@
     "titleHighlight": "au Maroc",
     "subtitle": "Évaluation technique, scoring intelligent et mise en relation directe entre candidats qualifiés et recruteurs exigeants.",
     "cta": "Commencer gratuitement",
-    "ctaSecondary": "Découvrir les tarifs",
     "stat1Label": "Candidats évalués",
     "stat1Value": "12 000+",
     "stat2Label": "Entreprises",
@@ -64,31 +62,15 @@
       "description": "Données hébergées au Maroc, export et suppression RGPD/CNDP, facturation conforme."
     }
   },
-  "pricing": {
-    "title": "Tarifs transparents",
-    "subtitle": "Choisissez le forfait adapté à vos besoins de recrutement.",
-    "monthly": "/mois HT",
-    "currency": "MAD",
-    "contacts": "contacts/mois",
-    "cta": "Choisir ce forfait",
-    "popular": "Populaire",
-    "starter": {
-      "name": "Starter",
-      "price": "990",
-      "contacts": "15",
-      "features": ["15 contacts/mois", "Recherche CVthèque", "Messagerie intégrée", "1 recruteur"]
-    },
-    "business": {
-      "name": "Business",
-      "price": "2 900",
-      "contacts": "60",
-      "features": ["60 contacts/mois", "Recherche avancée", "Messagerie prioritaire", "5 recruteurs", "Offres illimitées"]
-    },
-    "enterprise": {
-      "name": "Enterprise",
-      "price": "6 900",
-      "contacts": "200",
-      "features": ["200 contacts/mois", "Recherche illimitée", "Support dédié", "Recruteurs illimités", "API d'intégration", "Facturation personnalisée"]
+  "trust": {
+    "title": "Ils nous ont fait confiance",
+    "sectors": {
+      "tech": "Tech",
+      "finance": "Finance",
+      "retail": "Distribution",
+      "health": "Santé",
+      "industry": "Industrie",
+      "education": "Éducation"
     }
   },
   "auth": {

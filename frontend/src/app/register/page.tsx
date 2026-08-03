@@ -74,7 +74,7 @@ export default function RegisterPage() {
         <div className="flex items-center justify-between p-6">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-foreground lg:hidden">
             <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
-              JB
+              T
             </div>
             {t('app.name')}
           </Link>

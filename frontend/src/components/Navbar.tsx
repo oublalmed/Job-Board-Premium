@@ -38,7 +38,7 @@ export function Navbar() {
           className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground"
         >
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
-            JB
+            T
           </div>
           <span className="hidden sm:inline">{t('app.name')}</span>
         </Link>
@@ -49,7 +49,7 @@ export function Navbar() {
             className="hidden items-center gap-1 md:flex"
           >
             <NavLink href="/#features" label={t('features.title')} active={false} />
-            <NavLink href="/#pricing" label={t('nav.pricing')} active={false} />
+            <NavLink href="/#trust" label={t('trust.title')} active={false} />
           </nav>
         )}
 
