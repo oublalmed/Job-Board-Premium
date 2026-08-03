@@ -1,85 +1,219 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { User, MapPin, Upload, Trash2, Save } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { User, MapPin, Upload, Trash2, Save, FileText } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
+import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getAccessToken } from '@/auth/token-store';
+
+interface ProfileData {
+  profile: {
+    firstName?: string | null;
+    lastName?: string | null;
+    headline?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    availability?: string | null;
+    mobility?: string | null;
+    salaryMin?: number | null;
+    salaryMax?: number | null;
+    salaryVisible?: boolean;
+    visibility?: 'public' | 'recruiters_only' | 'hidden';
+  };
+  completeness: number;
+}
+
+interface CvData {
+  cv: {
+    id: string;
+    originalName: string;
+    mimeType: string;
+    size: number;
+    scanStatus: string;
+  } | null;
+}
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { t } = useLocale();
-  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
-  const [completeness, setCompleteness] = useState<number | null>(null);
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [completeness, setCompleteness] = useState<number>(0);
+  const [cv, setCv] = useState<CvData['cv']>(null);
+  const [uploading, setUploading] = useState(false);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [headline, setHeadline] = useState('');
+  const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
+  const [availability, setAvailability] = useState('');
+  const [mobility, setMobility] = useState('');
+  const [salaryMin, setSalaryMin] = useState('');
+  const [salaryMax, setSalaryMax] = useState('');
+  const [salaryVisible, setSalaryVisible] = useState(false);
+  const [visibility, setVisibility] = useState<'public' | 'recruiters_only' | 'hidden'>('hidden');
 
   useEffect(() => {
-    void loadProfile();
-    void loadCompleteness();
+    void loadAll();
   }, []);
 
-  async function loadProfile() {
-    const { data } = await apiClient.GET('/api/v1/candidates/profile');
-    if (data) {
-      setProfile(data as Record<string, unknown>);
-      setFirstName((data as Record<string, unknown>).firstName as string ?? '');
-      setLastName((data as Record<string, unknown>).lastName as string ?? '');
-      setHeadline((data as Record<string, unknown>).headline as string ?? '');
-      setLocation((data as Record<string, unknown>).location as string ?? '');
-    }
-  }
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const [profileRes, cvRes] = await Promise.all([
+        apiClient.GET('/api/v1/candidates/profile'),
+        apiClient.GET('/api/v1/candidates/cv'),
+      ]);
 
-  async function loadCompleteness() {
-    const { data } = await apiClient.GET('/api/v1/candidates/profile/completeness');
-    if (data) {
-      setCompleteness((data as Record<string, unknown>).completeness as number);
+      if (profileRes.data) {
+        const d = profileRes.data as ProfileData;
+        const p = d.profile;
+        setFirstName(p.firstName ?? '');
+        setLastName(p.lastName ?? '');
+        setHeadline(p.headline ?? '');
+        setBio(p.bio ?? '');
+        setLocation(p.location ?? '');
+        setAvailability(p.availability ?? '');
+        setMobility(p.mobility ?? '');
+        setSalaryMin(p.salaryMin != null ? String(p.salaryMin) : '');
+        setSalaryMax(p.salaryMax != null ? String(p.salaryMax) : '');
+        setSalaryVisible(p.salaryVisible ?? false);
+        setVisibility(p.visibility ?? 'hidden');
+        setCompleteness(d.completeness ?? 0);
+      }
+
+      if (cvRes.data) {
+        setCv((cvRes.data as CvData).cv ?? null);
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleSave() {
     setSaving(true);
     try {
-      await apiClient.PUT('/api/v1/candidates/profile', {
-        body: { firstName, lastName, headline, location } as never,
+      const body: Record<string, unknown> = {
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        headline: headline || undefined,
+        bio: bio || undefined,
+        location: location || undefined,
+        availability: availability || undefined,
+        mobility: mobility || undefined,
+        salaryVisible,
+        visibility,
+      };
+      if (salaryMin) body.salaryMin = Number(salaryMin);
+      if (salaryMax) body.salaryMax = Number(salaryMax);
+
+      const { error } = await apiClient.PUT('/api/v1/candidates/profile', {
+        body: body as never,
       });
-      await loadCompleteness();
+      if (error) {
+        toast(t('profile.saveError'), 'error');
+        return;
+      }
+
+      const { data } = await apiClient.GET('/api/v1/candidates/profile/completeness');
+      if (data) {
+        setCompleteness((data as { completeness: number }).completeness ?? 0);
+      }
+      toast(t('profile.saved'), 'success');
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleUploadCv(file: File) {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const res = await fetch(`${baseUrl}/api/v1/candidates/cv`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getAccessToken()}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        toast(t('common.error'), 'error');
+        return;
+      }
+
+      toast(t('profile.cvUploaded'), 'success');
+      const cvRes = await apiClient.GET('/api/v1/candidates/cv');
+      if (cvRes.data) setCv((cvRes.data as CvData).cv ?? null);
+
+      const compRes = await apiClient.GET('/api/v1/candidates/profile/completeness');
+      if (compRes.data) setCompleteness((compRes.data as { completeness: number }).completeness ?? 0);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDeleteCv() {
+    const { error } = await apiClient.DELETE('/api/v1/candidates/cv');
+    if (error) {
+      toast(t('common.error'), 'error');
+      return;
+    }
+    setCv(null);
+    toast(t('profile.cvDeleted'), 'success');
+
+    const compRes = await apiClient.GET('/api/v1/candidates/profile/completeness');
+    if (compRes.data) setCompleteness((compRes.data as { completeness: number }).completeness ?? 0);
+  }
+
   if (!user) return null;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-8">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Skeleton className="h-48" />
+          <Skeleton className="h-48 lg:col-span-2" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t('profile.title')}</h1>
-          {completeness !== null && (
-            <div className="mt-2 flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">{t('profile.completeness')}</span>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${Math.min(completeness, 100)}%` }}
-                  />
-                </div>
-                <Badge variant={completeness >= 70 ? 'success' : 'warning'}>
-                  {completeness}%
-                </Badge>
+          <div className="mt-2 flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{t('profile.completeness')}</span>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${Math.min(completeness, 100)}%` }}
+                />
               </div>
+              <Badge variant={completeness >= 70 ? 'success' : 'warning'}>
+                {Math.round(completeness)}%
+              </Badge>
             </div>
-          )}
+          </div>
         </div>
         <Button onClick={() => void handleSave()} disabled={saving}>
           <Save className="size-4" />
@@ -88,7 +222,6 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Avatar card */}
         <Card>
           <CardContent className="flex flex-col items-center gap-4 p-6">
             <div className="flex size-24 items-center justify-center rounded-full bg-primary/10">
@@ -111,7 +244,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Personal info */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>{t('profile.personalInfo')}</CardTitle>
@@ -135,11 +267,21 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="flex flex-col gap-2 sm:col-span-2">
-                <Label htmlFor="headline">Headline</Label>
+                <Label htmlFor="headline">{t('profile.headline')}</Label>
                 <Input
                   id="headline"
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <Label htmlFor="bio">{t('profile.bio')}</Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder={t('profile.bioPlaceholder')}
+                  rows={3}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -148,33 +290,138 @@ export default function ProfilePage() {
                   id="location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
+                  placeholder={t('profile.locationPlaceholder')}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="email">{t('profile.email')}</Label>
                 <Input id="email" value={user.email} disabled />
               </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="availability">{t('profile.availability')}</Label>
+                <Input
+                  id="availability"
+                  value={availability}
+                  onChange={(e) => setAvailability(e.target.value)}
+                  placeholder={t('profile.availabilityPlaceholder')}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="mobility">{t('profile.mobility')}</Label>
+                <Input
+                  id="mobility"
+                  value={mobility}
+                  onChange={(e) => setMobility(e.target.value)}
+                  placeholder={t('profile.mobilityPlaceholder')}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* CV Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('profile.salaryExpectation')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="salaryMin">{t('profile.salaryMin')}</Label>
+              <Input
+                id="salaryMin"
+                type="number"
+                min={0}
+                value={salaryMin}
+                onChange={(e) => setSalaryMin(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="salaryMax">{t('profile.salaryMax')}</Label>
+              <Input
+                id="salaryMax"
+                type="number"
+                min={0}
+                value={salaryMax}
+                onChange={(e) => setSalaryMax(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="visibility">{t('profile.visibility')}</Label>
+              <Select
+                id="visibility"
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value as typeof visibility)}
+              >
+                <option value="public">{t('profile.visibilityPublic')}</option>
+                <option value="recruiters_only">{t('profile.visibilityRecruitersOnly')}</option>
+                <option value="hidden">{t('profile.visibilityHidden')}</option>
+              </Select>
+            </div>
+          </div>
+          <label className="mt-4 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={salaryVisible}
+              onChange={(e) => setSalaryVisible(e.target.checked)}
+              className="size-4 rounded border-input accent-primary"
+            />
+            {t('profile.salaryVisible')}
+          </label>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>{t('profile.cv')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" className="gap-2">
-              <Upload className="size-4" />
-              {t('profile.uploadCv')}
-            </Button>
-            <Button variant="ghost" className="gap-2 text-destructive hover:text-destructive">
-              <Trash2 className="size-4" />
-              {t('profile.deleteCv')}
-            </Button>
-          </div>
+          {cv ? (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+                <FileText className="size-5 text-primary" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">{cv.originalName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(cv.size / 1024).toFixed(0)} KB
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="gap-2 text-destructive hover:text-destructive"
+                onClick={() => void handleDeleteCv()}
+              >
+                <Trash2 className="size-4" />
+                {t('profile.deleteCv')}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-muted-foreground">{t('profile.noCv')}</p>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleUploadCv(file);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Upload className="size-4" />
+                  {uploading ? t('common.loading') : t('profile.uploadCv')}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

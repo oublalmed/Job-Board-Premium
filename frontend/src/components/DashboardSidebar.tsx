@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Settings,
   FileText,
+  Bell,
+  Building2,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -35,7 +37,9 @@ export function DashboardSidebar() {
     { href: '/candidates', label: t('nav.candidates'), icon: Search, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/offers', label: t('nav.offers'), icon: FileText, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin', 'admin'] },
+    { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/messages', label: t('nav.messages'), icon: MessageSquare },
+    { href: '/notifications', label: t('nav.notifications'), icon: Bell },
     { href: '/settings', label: t('nav.settings'), icon: Settings },
   ];
 

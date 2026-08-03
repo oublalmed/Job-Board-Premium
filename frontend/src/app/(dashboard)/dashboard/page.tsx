@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   User,
@@ -10,114 +11,167 @@ import {
   Heart,
   ArrowRight,
   BarChart3,
+  Bell,
   TrendingUp,
 } from 'lucide-react';
+import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { components } from '@/api/schema';
+
+type Notification = components['schemas']['Notification'];
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { t } = useLocale();
 
-  if (!user) return null;
+  const [completeness, setCompleteness] = useState<number | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const isRecruiter = user.roles.some((r) =>
+  const isCandidate = user?.roles.includes('candidate');
+  const isRecruiter = user?.roles.some((r) =>
     ['recruiter', 'company_admin', 'admin'].includes(r),
   );
 
+  useEffect(() => {
+    void loadDashboard();
+  }, []);
+
+  async function loadDashboard() {
+    setLoading(true);
+    try {
+      const promises: Promise<unknown>[] = [
+        apiClient.GET('/api/v1/notifications').then(({ data }) => {
+          if (data) setNotifications(data);
+        }),
+      ];
+
+      if (isCandidate) {
+        promises.push(
+          apiClient.GET('/api/v1/candidates/profile/completeness').then(({ data }) => {
+            if (data) setCompleteness((data as { completeness: number }).completeness ?? 0);
+          }),
+        );
+      }
+
+      await Promise.allSettled(promises);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!user) return null;
+
+  const unreadNotifications = notifications.filter((n) => !n.readAt);
+
   return (
     <div className="flex flex-col gap-8">
-      {/* Welcome header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-          {t('dashboard.welcome')}, {user.email.split('@')[0]} 👋
+          {t('dashboard.welcome')}, {user.email.split('@')[0]}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {t('dashboard.roles', { roles: user.roles.join(', ') })}
         </p>
       </div>
 
-      {/* Stats cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={BarChart3}
-          label={t('dashboard.profileCompletion')}
-          value="—"
-          trend=""
-        />
-        <StatCard
-          icon={MessageSquare}
-          label={t('nav.messages')}
-          value="0"
-          trend=""
-        />
-        <StatCard
-          icon={Briefcase}
-          label={t('nav.jobs')}
-          value="—"
-          trend=""
-        />
-        <StatCard
-          icon={TrendingUp}
-          label={t('nav.notifications')}
-          value="0"
-          trend=""
-        />
+        {loading ? (
+          <>
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </>
+        ) : (
+          <>
+            {isCandidate && (
+              <StatCard
+                icon={BarChart3}
+                label={t('dashboard.profileCompletion')}
+                value={completeness != null ? `${Math.round(completeness)}%` : '—'}
+              />
+            )}
+            {isRecruiter && (
+              <StatCard
+                icon={FileText}
+                label={t('nav.offers')}
+                value="—"
+              />
+            )}
+            <StatCard
+              icon={Bell}
+              label={t('nav.notifications')}
+              value={String(unreadNotifications.length)}
+            />
+            <StatCard
+              icon={MessageSquare}
+              label={t('nav.messages')}
+              value="—"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label={t('nav.jobs')}
+              value="—"
+            />
+          </>
+        )}
       </div>
 
-      {/* Quick actions */}
       <div>
         <h2 className="mb-4 text-lg font-semibold text-foreground">
           {t('dashboard.quickActions')}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <QuickAction
-            href="/profile"
-            icon={User}
-            label={t('dashboard.editProfile')}
-          />
+          <QuickAction href="/profile" icon={User} label={t('dashboard.editProfile')} />
           {isRecruiter ? (
             <>
-              <QuickAction
-                href="/candidates"
-                icon={Search}
-                label={t('dashboard.searchCandidates')}
-              />
-              <QuickAction
-                href="/offers"
-                icon={FileText}
-                label={t('dashboard.manageOffers')}
-              />
-              <QuickAction
-                href="/shortlist"
-                icon={Heart}
-                label={t('nav.shortlist')}
-              />
+              <QuickAction href="/candidates" icon={Search} label={t('dashboard.searchCandidates')} />
+              <QuickAction href="/offers" icon={FileText} label={t('dashboard.manageOffers')} />
+              <QuickAction href="/shortlist" icon={Heart} label={t('nav.shortlist')} />
             </>
           ) : (
-            <QuickAction
-              href="/jobs"
-              icon={Briefcase}
-              label={t('dashboard.browseJobs')}
-            />
+            <QuickAction href="/jobs" icon={Briefcase} label={t('dashboard.browseJobs')} />
           )}
-          <QuickAction
-            href="/messages"
-            icon={MessageSquare}
-            label={t('dashboard.viewMessages')}
-          />
+          <QuickAction href="/messages" icon={MessageSquare} label={t('dashboard.viewMessages')} />
         </div>
       </div>
 
-      {/* Recent activity */}
       <Card>
         <CardHeader>
           <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">{t('dashboard.noActivity')}</p>
+          {notifications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('dashboard.noActivity')}</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {notifications.slice(0, 5).map((n) => (
+                <div
+                  key={n.id}
+                  className="flex items-start gap-3 rounded-xl border border-border/50 p-3"
+                >
+                  <div className="mt-0.5 flex size-8 items-center justify-center rounded-full bg-primary/10">
+                    <Bell className="size-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{n.title}</p>
+                    <p className="text-xs text-muted-foreground">{n.body}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Date(n.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {!n.readAt && (
+                    <div className="mt-1 size-2 rounded-full bg-primary" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -132,7 +186,6 @@ function StatCard({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  trend: string;
 }) {
   return (
     <Card>
