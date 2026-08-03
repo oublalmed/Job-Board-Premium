@@ -335,6 +335,36 @@
     "redeemed": "تم تفعيل الرمز التجريبي بنجاح.",
     "redeemError": "رمز غير صالح أو منتهي الصلاحية."
   },
+  "candidateDetail": {
+    "title": "ملف المرشح",
+    "notFound": "المرشح غير موجود أو الملف غير متاح.",
+    "score": "درجة التقييم",
+    "percentile": "أفضل {{value}}% من المرشحين",
+    "salary": "توقعات الراتب",
+    "skills": "المهارات"
+  },
+  "assessments": {
+    "title": "التقييمات",
+    "start": "بدء تقييم",
+    "testId": "معرّف الاختبار",
+    "testIdPlaceholder": "أدخل معرّف الاختبار",
+    "startButton": "بدء",
+    "started": "تم بدء التقييم بنجاح.",
+    "resume": "استئناف تقييم",
+    "assessmentId": "معرّف التقييم",
+    "assessmentIdPlaceholder": "أدخل معرّف التقييم",
+    "resumeToken": "رمز الاستئناف",
+    "resumeTokenPlaceholder": "أدخل رمز الاستئناف",
+    "resumeButton": "استئناف",
+    "resumed": "تم استئناف التقييم بنجاح.",
+    "reportIncident": "الإبلاغ عن حادث",
+    "reportButton": "إبلاغ",
+    "incidentReported": "تم الإبلاغ عن الحادث بنجاح.",
+    "feedback": "النتائج والملاحظات",
+    "viewFeedback": "عرض الملاحظات",
+    "feedbackResults": "نتائج التقييم",
+    "feedbackError": "تعذر تحميل الملاحظات."
+  },
   "common": {
     "loading": "جارٍ التحميل…",
     "error": "حدث خطأ.",

@@ -27,6 +27,7 @@ export function Navbar() {
     pathname.startsWith('/notifications') ||
     pathname.startsWith('/company') ||
     pathname.startsWith('/subscription') ||
+    pathname.startsWith('/assessments') ||
     pathname.startsWith('/settings');
 
   return (

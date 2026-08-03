@@ -335,6 +335,36 @@
     "redeemed": "Code d'essai activé avec succès.",
     "redeemError": "Code invalide ou expiré."
   },
+  "candidateDetail": {
+    "title": "Profil du candidat",
+    "notFound": "Candidat introuvable ou profil non disponible.",
+    "score": "Score d'évaluation",
+    "percentile": "Top {{value}}% des candidats",
+    "salary": "Prétention salariale",
+    "skills": "Compétences"
+  },
+  "assessments": {
+    "title": "Évaluations",
+    "start": "Démarrer une évaluation",
+    "testId": "Identifiant du test",
+    "testIdPlaceholder": "Entrez l'identifiant du test",
+    "startButton": "Démarrer",
+    "started": "Évaluation démarrée avec succès.",
+    "resume": "Reprendre une évaluation",
+    "assessmentId": "Identifiant de l'évaluation",
+    "assessmentIdPlaceholder": "Entrez l'identifiant de l'évaluation",
+    "resumeToken": "Jeton de reprise",
+    "resumeTokenPlaceholder": "Entrez le jeton de reprise",
+    "resumeButton": "Reprendre",
+    "resumed": "Évaluation reprise avec succès.",
+    "reportIncident": "Signaler un incident",
+    "reportButton": "Signaler",
+    "incidentReported": "Incident signalé avec succès.",
+    "feedback": "Résultats et feedback",
+    "viewFeedback": "Voir le feedback",
+    "feedbackResults": "Résultats de l'évaluation",
+    "feedbackError": "Impossible de charger le feedback."
+  },
   "common": {
     "loading": "Chargement…",
     "error": "Une erreur est survenue.",

@@ -9,7 +9,9 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Eye,
 } from 'lucide-react';
+import Link from 'next/link';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -262,6 +264,12 @@ export default function CandidatesPage() {
               </div>
 
               <div className="flex items-center gap-2">
+                <Link href={`/candidates/${candidate.id}`}>
+                  <Button variant="ghost" size="sm" className="gap-1.5">
+                    <Eye className="size-3.5" />
+                    {t('search.viewProfile')}
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"
