@@ -1,18 +1,12 @@
 import fr from './locales/fr/common.json';
-import ar from './locales/ar/common.json';
+import en from './locales/en/common.json';
 
-export const SUPPORTED_LOCALES = ['fr', 'ar'] as const;
+export const SUPPORTED_LOCALES = ['fr', 'en'] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
-
-const RTL_LOCALES: ReadonlySet<SupportedLocale> = new Set(['ar']);
-
-export function isRtl(locale: SupportedLocale): boolean {
-  return RTL_LOCALES.has(locale);
-}
 
 type TranslationTree = typeof fr;
 
-const translations: Record<SupportedLocale, TranslationTree> = { fr, ar };
+const translations: Record<SupportedLocale, TranslationTree> = { fr, en };
 
 function getNestedValue(obj: unknown, path: string): string {
   let current: unknown = obj;

@@ -71,7 +71,7 @@ function saveSession(session: Session | null) {
 function describeStartError(
   error: unknown,
   t: (key: string, vars?: Record<string, string>) => string,
-  locale: 'fr' | 'ar',
+  locale: 'fr' | 'en',
 ): string {
   const body = error as { message?: string; reEligibleAt?: string } | undefined;
   const message = body?.message ?? '';

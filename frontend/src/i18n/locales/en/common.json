@@ -1,0 +1,417 @@
+{
+  "app": {
+    "name": "Talentiq",
+    "tagline": "The premium recruitment platform in Morocco",
+    "description": "Connect top talent with hiring companies. Assessment, scoring and smart matchmaking."
+  },
+  "language": {
+    "label": "Language",
+    "fr": "FR",
+    "en": "EN"
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "My profile",
+    "jobs": "Jobs",
+    "candidates": "Candidates",
+    "offers": "My job posts",
+    "shortlist": "Shortlist",
+    "messages": "Messages",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "login": "Log in",
+    "register": "Create an account",
+    "pricing": "Pricing",
+    "company": "My company",
+    "subscription": "Subscription"
+  },
+  "layout": {
+    "skipToContent": "Skip to main content"
+  },
+  "hero": {
+    "badge": "#1 platform in Morocco",
+    "title": "Hire the best talent",
+    "titleHighlight": "in Morocco",
+    "subtitle": "Technical assessment, smart scoring and direct matchmaking between qualified candidates and demanding recruiters.",
+    "cta": "Get started for free",
+    "ctaSecondary": "See pricing",
+    "stat1Label": "Candidates assessed",
+    "stat1Value": "12,000+",
+    "stat2Label": "Companies",
+    "stat2Value": "850+",
+    "stat3Label": "Matching rate",
+    "stat3Value": "94%"
+  },
+  "features": {
+    "title": "Why Talentiq?",
+    "subtitle": "A platform built for the Moroccan market, with modern recruitment tools.",
+    "scoring": {
+      "title": "Smart scoring",
+      "description": "Automated technical assessment with normalized scoring. Spot the best profiles at a glance."
+    },
+    "cvtheque": {
+      "title": "Advanced candidate search",
+      "description": "Multi-criteria search across indexed candidates. Filter by skills, location and score."
+    },
+    "messaging": {
+      "title": "Built-in messaging",
+      "description": "Contact candidates you're interested in directly. Quotas managed by subscription."
+    },
+    "compliance": {
+      "title": "CNDP compliant",
+      "description": "Data hosted in Morocco, GDPR/CNDP export and deletion, compliant billing."
+    }
+  },
+  "pricing": {
+    "title": "Transparent pricing",
+    "subtitle": "Choose the plan that fits your hiring needs.",
+    "monthly": "/mo excl. tax",
+    "currency": "MAD",
+    "contacts": "contacts/mo",
+    "cta": "Choose this plan",
+    "popular": "Popular",
+    "starter": {
+      "name": "Starter",
+      "price": "990",
+      "contacts": "15",
+      "features": ["15 contacts/mo", "Candidate search", "Built-in messaging", "1 recruiter"]
+    },
+    "business": {
+      "name": "Business",
+      "price": "2,900",
+      "contacts": "60",
+      "features": ["60 contacts/mo", "Advanced search", "Priority messaging", "5 recruiters", "Unlimited job posts"]
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "price": "6,900",
+      "contacts": "200",
+      "features": ["200 contacts/mo", "Unlimited search", "Dedicated support", "Unlimited recruiters", "Integration API", "Custom billing"]
+    }
+  },
+  "auth": {
+    "loading": "Loading…",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Password",
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your account",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "error": "Incorrect email or password.",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Create an account"
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Join the Talentiq community",
+      "roleLabel": "I am a",
+      "roleCandidate": "Candidate",
+      "roleRecruiter": "Recruiter",
+      "passwordHint": "At least 10 characters, with uppercase, lowercase, digit and special character.",
+      "submit": "Create my account",
+      "submitting": "Creating…",
+      "error": "Unable to create the account. Check the information provided.",
+      "success": "Account created — check your email to activate it.",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Log in"
+    },
+    "logout": "Log out",
+    "guard": {
+      "forbidden": "You don't have access to this page."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome",
+    "profileCompletion": "Profile completeness",
+    "recentActivity": "Recent activity",
+    "quickActions": "Quick actions",
+    "viewProfile": "View my profile",
+    "editProfile": "Edit profile",
+    "browseJobs": "Browse jobs",
+    "searchCandidates": "Search candidates",
+    "manageOffers": "Manage my job posts",
+    "viewMessages": "View messages",
+    "noActivity": "No recent activity.",
+    "roles": "Roles: {{roles}}"
+  },
+  "profile": {
+    "title": "My profile",
+    "personalInfo": "Personal information",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "headline": "Headline",
+    "bio": "Bio",
+    "bioPlaceholder": "Describe your background and skills…",
+    "email": "Email",
+    "phone": "Phone",
+    "location": "Location",
+    "locationPlaceholder": "e.g. Casablanca, Morocco",
+    "availability": "Availability",
+    "availabilityPlaceholder": "e.g. Immediate, 1 month",
+    "mobility": "Mobility",
+    "mobilityPlaceholder": "e.g. National, International",
+    "salaryExpectation": "Salary expectation",
+    "salaryMin": "Min salary (MAD)",
+    "salaryMax": "Max salary (MAD)",
+    "salaryVisible": "Make salary visible to recruiters",
+    "visibility": "Profile visibility",
+    "visibilityPublic": "Public",
+    "visibilityRecruitersOnly": "Recruiters only",
+    "visibilityHidden": "Hidden",
+    "skills": "Skills",
+    "experience": "Experience",
+    "cv": "Resume",
+    "uploadCv": "Upload a resume",
+    "deleteCv": "Delete resume",
+    "noCv": "No resume uploaded.",
+    "cvUploaded": "Resume uploaded successfully.",
+    "cvDeleted": "Resume deleted.",
+    "cvFile": "File:",
+    "completeness": "Completeness",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Profile saved.",
+    "saveError": "Error while saving."
+  },
+  "search": {
+    "title": "Candidate search",
+    "placeholder": "Search candidates…",
+    "filters": "Search",
+    "showFilters": "Advanced filters",
+    "hideFilters": "Hide filters",
+    "skills": "Skills",
+    "skillsPlaceholder": "e.g. React, Node.js",
+    "location": "Location",
+    "locationPlaceholder": "e.g. Casablanca",
+    "scoreMin": "Minimum score",
+    "availability": "Availability",
+    "availabilityPlaceholder": "e.g. Immediate",
+    "mobility": "Mobility",
+    "mobilityPlaceholder": "e.g. National",
+    "salaryMin": "Min salary",
+    "salaryMax": "Max salary",
+    "noResults": "No candidates found.",
+    "addToShortlist": "Add to shortlist",
+    "addedToShortlist": "Candidate added to shortlist.",
+    "alreadyInShortlist": "Candidate already in shortlist.",
+    "contact": "Contact",
+    "viewProfile": "View profile",
+    "loadMore": "Load more",
+    "results": "{{count}} results"
+  },
+  "offers": {
+    "title": "My job posts",
+    "create": "Create a job post",
+    "createTitle": "New job post",
+    "createDescription": "Fill in the job post details.",
+    "offerTitle": "Job title",
+    "offerTitlePlaceholder": "e.g. Full Stack Developer",
+    "offerDescription": "Description",
+    "offerDescriptionPlaceholder": "Describe the role, responsibilities and requirements…",
+    "cancel": "Cancel",
+    "submit": "Publish job post",
+    "submitting": "Publishing…",
+    "created": "Job post created successfully.",
+    "createError": "Error while creating the job post.",
+    "closed": "Job post closed.",
+    "closeConfirm": "Are you sure you want to close this job post?",
+    "status": {
+      "pending_moderation": "Under review",
+      "published": "Published",
+      "rejected": "Rejected",
+      "closed": "Closed"
+    },
+    "close": "Close",
+    "noOffers": "No job posts yet."
+  },
+  "shortlist": {
+    "title": "Shortlist",
+    "empty": "No candidates in your shortlist.",
+    "removed": "Candidate removed from shortlist.",
+    "removeConfirm": "Remove this candidate from your shortlist?",
+    "note": "Note",
+    "addedOn": "Added on"
+  },
+  "messages": {
+    "title": "Messages",
+    "noConversations": "No conversations.",
+    "send": "Send",
+    "sending": "Sending…",
+    "placeholder": "Write a message…",
+    "startConversation": "Start conversation",
+    "firstMessage": "First message",
+    "firstMessagePlaceholder": "Introduce yourself and explain why you'd like to contact this candidate…",
+    "sent": "Message sent.",
+    "conversationOpened": "Conversation started."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications.",
+    "markRead": "Mark as read",
+    "cooldownExpired": "Assessment available again",
+    "profileViewed": "Profile viewed"
+  },
+  "company": {
+    "title": "My company",
+    "create": "Create my company",
+    "createTitle": "Register your company",
+    "createDescription": "Provide your company details to start recruiting.",
+    "name": "Company name",
+    "namePlaceholder": "e.g. Tech Solutions Maroc",
+    "ice": "ICE (Common Company Identifier)",
+    "icePlaceholder": "15 digits",
+    "iceHint": "The ICE is made up of 15 digits.",
+    "registrationNumber": "Trade registry number",
+    "registrationNumberPlaceholder": "Optional",
+    "submit": "Register company",
+    "submitting": "Registering…",
+    "created": "Company created successfully.",
+    "createError": "Error while creating the company.",
+    "status": "Status",
+    "verified": "Verified",
+    "pending": "Pending verification",
+    "subscription": "Subscription",
+    "plan": "Plan",
+    "contactsUsed": "Contacts used",
+    "recruiters": "Recruiters",
+    "addRecruiter": "Add a recruiter",
+    "recruiterEmail": "Recruiter email",
+    "recruiterPosition": "Position",
+    "recruiterAdded": "Recruiter added.",
+    "recruiterRemoved": "Recruiter removed.",
+    "noCompany": "You don't have a registered company yet."
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "data": "Personal data",
+    "exportData": "Export my data",
+    "exportDataDescription": "Download a copy of all your data (CNDP/GDPR compliance).",
+    "exporting": "Exporting…",
+    "exported": "Data exported.",
+    "deleteAccount": "Delete my account",
+    "deleteAccountDescription": "This action is irreversible. All your data will be anonymized.",
+    "deleteConfirm": "Are you absolutely sure? This action is irreversible.",
+    "deleted": "Account deleted.",
+    "deleteError": "Error while deleting."
+  },
+  "jobs": {
+    "title": "Job listings",
+    "empty": "No job posts available right now.",
+    "postedBy": "By",
+    "postedOn": "Posted on",
+    "apply": "Apply",
+    "details": "View details"
+  },
+  "verifyEmail": {
+    "verifying": "Verifying your email…",
+    "success": "Email verified",
+    "successDescription": "Your email address has been verified successfully. You can now log in.",
+    "error": "Verification failed",
+    "errorDescription": "The verification link is invalid or has expired. Please register again."
+  },
+  "subscription": {
+    "title": "Subscription",
+    "subscribe": "Subscribe",
+    "choosePlan": "Choose your plan",
+    "created": "Subscription created.",
+    "cancelSubscription": "Cancel subscription",
+    "cancelDescription": "Your subscription will be cancelled at the end of the current period.",
+    "cancelConfirm": "Are you sure you want to cancel your subscription?",
+    "cancel": "Cancel subscription",
+    "cancelled": "Subscription cancelled.",
+    "changePlan": "Change plan",
+    "newPlan": "New plan",
+    "planChanged": "Plan changed successfully.",
+    "trialCode": "Trial code",
+    "trialCodeLabel": "Code",
+    "trialCodePlaceholder": "Enter your trial code",
+    "redeem": "Redeem code",
+    "redeemed": "Trial code activated successfully.",
+    "redeemError": "Invalid or expired code."
+  },
+  "candidateDetail": {
+    "title": "Candidate profile",
+    "notFound": "Candidate not found or profile unavailable.",
+    "score": "Assessment score",
+    "percentile": "Top {{value}}% of candidates",
+    "salary": "Salary expectation",
+    "skills": "Skills"
+  },
+  "assessments": {
+    "title": "Assessments",
+    "subtitle": "Choose a test from the catalog to start an assessment.",
+    "start": "Start an assessment",
+    "testId": "Test ID",
+    "testIdPlaceholder": "Enter the test ID",
+    "startButton": "Start",
+    "started": "Assessment started successfully.",
+    "resume": "Resume an assessment",
+    "assessmentId": "Assessment ID",
+    "assessmentIdPlaceholder": "Enter the assessment ID",
+    "resumeToken": "Resume token",
+    "resumeTokenPlaceholder": "Enter the resume token",
+    "resumeButton": "Resume",
+    "resumed": "Assessment resumed successfully.",
+    "reportIncident": "Report an incident",
+    "reportButton": "Report",
+    "incidentReported": "Incident reported successfully.",
+    "viewFeedback": "View feedback",
+    "feedbackResults": "Assessment results",
+    "feedbackError": "Unable to load feedback.",
+    "session": {
+      "title": "Assessment in progress",
+      "testLabel": "Test:",
+      "continueButton": "Continue test"
+    },
+    "status": {
+      "pending": "Pending",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "incident": "Incident reported"
+    },
+    "catalog": {
+      "title": "Choose a test",
+      "empty": "No tests available right now.",
+      "duration": "{{minutes}} min"
+    },
+    "errors": {
+      "alreadyInProgress": "You already have an assessment in progress for this test. Use \"Continue test\" above, or report an incident if you can't access it.",
+      "cooldownActive": "You'll be able to retake this test starting {{date}}.",
+      "prefixed": "Error: {{message}}"
+    },
+    "feedback": {
+      "score": "Score obtained: {{score}}/100"
+    },
+    "manual": {
+      "title": "Resume with an ID (another session)",
+      "hint": "If you started an assessment from another device or browser, there's no automatically retrievable list — use the assessment ID and resume token you received when starting."
+    }
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "An error occurred.",
+    "retry": "Retry",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "save": "Save",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "contact": "Contact"
+  }
+}

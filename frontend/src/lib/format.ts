@@ -1,9 +1,9 @@
 const CASABLANCA_TIME_ZONE = 'Africa/Casablanca';
 
-export type SupportedLocale = 'fr' | 'ar';
+export type SupportedLocale = 'fr' | 'en';
 
 function toIntlLocale(locale: SupportedLocale): string {
-  return locale === 'ar' ? 'ar-MA' : 'fr-MA';
+  return locale === 'en' ? 'en-GB' : 'fr-MA';
 }
 
 export function formatCurrencyMAD(

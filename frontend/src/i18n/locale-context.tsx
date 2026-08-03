@@ -10,7 +10,6 @@ import {
 } from 'react';
 import {
   SUPPORTED_LOCALES,
-  isRtl,
   t as translate,
   tArray,
   type SupportedLocale,
@@ -21,12 +20,11 @@ interface LocaleContextValue {
   setLocale: (locale: SupportedLocale) => void;
   t: (key: string, vars?: Record<string, string>) => string;
   ta: (key: string) => string[];
-  dir: 'ltr' | 'rtl';
 }
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-const LOCALE_STORAGE_KEY = 'jbp_locale';
+const LOCALE_STORAGE_KEY = 'talentiq_locale';
 
 function detectLocale(): SupportedLocale {
   if (typeof window === 'undefined') return 'fr';
@@ -53,7 +51,6 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!mounted) return;
     document.documentElement.lang = locale;
-    document.documentElement.dir = isRtl(locale) ? 'rtl' : 'ltr';
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
   }, [locale, mounted]);
 
@@ -71,10 +68,8 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     [locale],
   );
 
-  const dir = isRtl(locale) ? 'rtl' : 'ltr';
-
   return (
-    <LocaleContext value={{ locale, setLocale, t, ta, dir }}>
+    <LocaleContext value={{ locale, setLocale, t, ta }}>
       {children}
     </LocaleContext>
   );
