@@ -28,8 +28,6 @@ interface CandidateResult {
   headline?: string;
   location?: string;
   availability?: string;
-  bestScore?: number;
-  bestPercentile?: number;
   featured?: boolean;
 }
 
@@ -47,11 +45,8 @@ export default function CandidatesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [skills, setSkills] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
-  const [scoreMin, setScoreMin] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('');
   const [mobilityFilter, setMobilityFilter] = useState('');
-  const [salaryMin, setSalaryMin] = useState('');
-  const [salaryMax, setSalaryMax] = useState('');
 
   const [candidates, setCandidates] = useState<CandidateResult[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -67,11 +62,8 @@ export default function CandidatesPage() {
         if (query.trim()) params.q = query.trim();
         if (skills.trim()) params.skills = skills.split(',').map((s) => s.trim()).filter(Boolean);
         if (locationFilter.trim()) params.location = locationFilter.trim();
-        if (scoreMin) params.scoreMin = Number(scoreMin);
         if (availabilityFilter.trim()) params.availability = availabilityFilter.trim();
         if (mobilityFilter.trim()) params.mobility = mobilityFilter.trim();
-        if (salaryMin) params.salaryMin = Number(salaryMin);
-        if (salaryMax) params.salaryMax = Number(salaryMax);
         if (cursor) params.cursor = cursor;
         params.limit = 20;
 
@@ -93,7 +85,7 @@ export default function CandidatesPage() {
         setLoading(false);
       }
     },
-    [query, skills, locationFilter, scoreMin, availabilityFilter, mobilityFilter, salaryMin, salaryMax],
+    [query, skills, locationFilter, availabilityFilter, mobilityFilter],
   );
 
   async function handleAddToShortlist(candidateProfileId: string) {
@@ -176,16 +168,6 @@ export default function CandidatesPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">{t('search.scoreMin')}</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={scoreMin}
-                    onChange={(e) => setScoreMin(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
                   <Label className="text-xs">{t('search.availability')}</Label>
                   <Input
                     value={availabilityFilter}
@@ -199,24 +181,6 @@ export default function CandidatesPage() {
                     value={mobilityFilter}
                     onChange={(e) => setMobilityFilter(e.target.value)}
                     placeholder={t('search.mobilityPlaceholder')}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">{t('search.salaryMin')}</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={salaryMin}
-                    onChange={(e) => setSalaryMin(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">{t('search.salaryMax')}</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={salaryMax}
-                    onChange={(e) => setSalaryMax(e.target.value)}
                   />
                 </div>
               </div>
@@ -256,9 +220,6 @@ export default function CandidatesPage() {
                   )}
                   {candidate.availability && (
                     <span>{candidate.availability}</span>
-                  )}
-                  {candidate.bestScore != null && (
-                    <span>Score: {candidate.bestScore}/100</span>
                   )}
                 </div>
               </div>

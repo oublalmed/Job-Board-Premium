@@ -168,13 +168,10 @@
     "skillsPlaceholder": "e.g. React, Node.js",
     "location": "Location",
     "locationPlaceholder": "e.g. Casablanca",
-    "scoreMin": "Minimum score",
     "availability": "Availability",
     "availabilityPlaceholder": "e.g. Immediate",
     "mobility": "Mobility",
     "mobilityPlaceholder": "e.g. National",
-    "salaryMin": "Min salary",
-    "salaryMax": "Max salary",
     "noResults": "No candidates found.",
     "addToShortlist": "Add to shortlist",
     "addedToShortlist": "Candidate added to shortlist.",
@@ -301,9 +298,6 @@
   "candidateDetail": {
     "title": "Candidate profile",
     "notFound": "Candidate not found or profile unavailable.",
-    "score": "Assessment score",
-    "percentile": "Top {{value}}% of candidates",
-    "salary": "Salary expectation",
     "skills": "Skills"
   },
   "assessments": {

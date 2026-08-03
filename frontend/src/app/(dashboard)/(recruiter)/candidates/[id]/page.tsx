@@ -8,11 +8,9 @@ import {
   Star,
   Briefcase,
   Globe,
-  DollarSign,
   UserPlus,
   MessageSquare,
   Loader2,
-  BarChart3,
 } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
@@ -31,11 +29,7 @@ interface CandidateDetail {
   mobility: string | null;
   location: string | null;
   skills: string[];
-  score: number;
-  percentile: number | null;
   featured: boolean;
-  salaryMin: number | null;
-  salaryMax: number | null;
 }
 
 export default function CandidateDetailPage() {
@@ -207,54 +201,6 @@ export default function CandidateDetailPage() {
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="size-5" />
-              {t('candidateDetail.score')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-3">
-              <span className="text-4xl font-bold text-primary">{candidate.score}</span>
-              <span className="text-muted-foreground">/ 100</span>
-            </div>
-            {candidate.percentile != null && (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t('candidateDetail.percentile', { value: String(candidate.percentile) })}
-              </p>
-            )}
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${Math.min(candidate.score, 100)}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {(candidate.salaryMin != null || candidate.salaryMax != null) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <DollarSign className="size-5" />
-                {t('candidateDetail.salary')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-semibold text-foreground">
-                {candidate.salaryMin != null && candidate.salaryMax != null
-                  ? `${candidate.salaryMin.toLocaleString()} — ${candidate.salaryMax.toLocaleString()} MAD`
-                  : candidate.salaryMin != null
-                    ? `${candidate.salaryMin.toLocaleString()}+ MAD`
-                    : `≤ ${candidate.salaryMax!.toLocaleString()} MAD`}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
 
       {candidate.skills.length > 0 && (
         <Card>
