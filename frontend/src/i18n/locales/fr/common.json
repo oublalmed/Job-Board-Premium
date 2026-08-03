@@ -24,7 +24,8 @@
     "login": "Connexion",
     "register": "Créer un compte",
     "pricing": "Tarifs",
-    "company": "Mon entreprise"
+    "company": "Mon entreprise",
+    "subscription": "Abonnement"
   },
   "layout": {
     "skipToContent": "Aller au contenu principal"
@@ -306,6 +307,33 @@
     "postedOn": "Publiée le",
     "apply": "Postuler",
     "details": "Voir les détails"
+  },
+  "verifyEmail": {
+    "verifying": "Vérification de votre email…",
+    "success": "Email vérifié",
+    "successDescription": "Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.",
+    "error": "Vérification échouée",
+    "errorDescription": "Le lien de vérification est invalide ou a expiré. Veuillez vous réinscrire."
+  },
+  "subscription": {
+    "title": "Abonnement",
+    "subscribe": "S'abonner",
+    "choosePlan": "Choisissez votre forfait",
+    "created": "Abonnement créé.",
+    "cancelSubscription": "Annuler l'abonnement",
+    "cancelDescription": "Votre abonnement sera annulé à la fin de la période en cours.",
+    "cancelConfirm": "Êtes-vous sûr de vouloir annuler votre abonnement ?",
+    "cancel": "Annuler l'abonnement",
+    "cancelled": "Abonnement annulé.",
+    "changePlan": "Changer de forfait",
+    "newPlan": "Nouveau forfait",
+    "planChanged": "Forfait modifié avec succès.",
+    "trialCode": "Code d'essai",
+    "trialCodeLabel": "Code",
+    "trialCodePlaceholder": "Entrez votre code d'essai",
+    "redeem": "Utiliser le code",
+    "redeemed": "Code d'essai activé avec succès.",
+    "redeemError": "Code invalide ou expiré."
   },
   "common": {
     "loading": "Chargement…",

@@ -3,6 +3,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Building2, Plus, Trash2, Loader2 } from 'lucide-react';
 import { apiClient } from '@/api/client';
+import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,8 +18,11 @@ type Company = components['schemas']['Company'];
 type Recruiter = components['schemas']['Recruiter'];
 
 export default function CompanyPage() {
+  const { user } = useAuth();
   const { t } = useLocale();
   const { toast } = useToast();
+
+  const isCompanyAdmin = user?.roles.includes('company_admin');
 
   const [company, setCompany] = useState<Company | null>(null);
   const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
@@ -177,7 +181,7 @@ export default function CompanyPage() {
               </div>
               <Button
                 type="submit"
-                disabled={creating || !name.trim() || !/^\d{15}$/.test(ice)}
+                disabled={creating || name.trim().length < 2 || !/^\d{15}$/.test(ice)}
                 className="self-start"
               >
                 {creating ? (
@@ -242,14 +246,16 @@ export default function CompanyPage() {
                   <p className="text-xs text-muted-foreground">{r.position}</p>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-destructive"
-                onClick={() => void handleRemoveRecruiter(r.id)}
-              >
-                <Trash2 className="size-4" />
-              </Button>
+              {isCompanyAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => void handleRemoveRecruiter(r.id)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              )}
             </div>
           ))}
 
@@ -257,43 +263,45 @@ export default function CompanyPage() {
             <p className="text-sm text-muted-foreground">{t('company.noCompany')}</p>
           )}
 
-          <form
-            onSubmit={(e) => void handleAddRecruiter(e)}
-            className="mt-2 flex flex-col gap-3 rounded-xl border border-dashed border-border p-4"
-          >
-            <p className="text-sm font-medium text-foreground">{t('company.addRecruiter')}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">{t('company.recruiterEmail')}</Label>
-                <Input
-                  type="email"
-                  value={recruiterEmail}
-                  onChange={(e) => setRecruiterEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">{t('company.recruiterPosition')}</Label>
-                <Input
-                  value={recruiterPosition}
-                  onChange={(e) => setRecruiterPosition(e.target.value)}
-                />
-              </div>
-            </div>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={addingRecruiter || !recruiterEmail.trim()}
-              className="gap-2 self-start"
+          {isCompanyAdmin && (
+            <form
+              onSubmit={(e) => void handleAddRecruiter(e)}
+              className="mt-2 flex flex-col gap-3 rounded-xl border border-dashed border-border p-4"
             >
-              {addingRecruiter ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Plus className="size-4" />
-              )}
-              {t('company.addRecruiter')}
-            </Button>
-          </form>
+              <p className="text-sm font-medium text-foreground">{t('company.addRecruiter')}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">{t('company.recruiterEmail')}</Label>
+                  <Input
+                    type="email"
+                    value={recruiterEmail}
+                    onChange={(e) => setRecruiterEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">{t('company.recruiterPosition')}</Label>
+                  <Input
+                    value={recruiterPosition}
+                    onChange={(e) => setRecruiterPosition(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={addingRecruiter || !recruiterEmail.trim()}
+                className="gap-2 self-start"
+              >
+                {addingRecruiter ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                {t('company.addRecruiter')}
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>

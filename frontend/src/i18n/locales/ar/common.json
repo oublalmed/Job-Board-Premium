@@ -24,7 +24,8 @@
     "login": "تسجيل الدخول",
     "register": "إنشاء حساب",
     "pricing": "الأسعار",
-    "company": "شركتي"
+    "company": "شركتي",
+    "subscription": "الاشتراك"
   },
   "layout": {
     "skipToContent": "الانتقال إلى المحتوى الرئيسي"
@@ -306,6 +307,33 @@
     "postedOn": "نُشر في",
     "apply": "تقديم طلب",
     "details": "عرض التفاصيل"
+  },
+  "verifyEmail": {
+    "verifying": "جارٍ التحقق من بريدك الإلكتروني…",
+    "success": "تم التحقق من البريد الإلكتروني",
+    "successDescription": "تم التحقق من عنوان بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
+    "error": "فشل التحقق",
+    "errorDescription": "رابط التحقق غير صالح أو منتهي الصلاحية. يرجى إعادة التسجيل."
+  },
+  "subscription": {
+    "title": "الاشتراك",
+    "subscribe": "اشتراك",
+    "choosePlan": "اختر باقتك",
+    "created": "تم إنشاء الاشتراك.",
+    "cancelSubscription": "إلغاء الاشتراك",
+    "cancelDescription": "سيتم إلغاء اشتراكك في نهاية الفترة الحالية.",
+    "cancelConfirm": "هل أنت متأكد أنك تريد إلغاء اشتراكك؟",
+    "cancel": "إلغاء الاشتراك",
+    "cancelled": "تم إلغاء الاشتراك.",
+    "changePlan": "تغيير الباقة",
+    "newPlan": "الباقة الجديدة",
+    "planChanged": "تم تغيير الباقة بنجاح.",
+    "trialCode": "رمز تجريبي",
+    "trialCodeLabel": "الرمز",
+    "trialCodePlaceholder": "أدخل رمزك التجريبي",
+    "redeem": "استخدام الرمز",
+    "redeemed": "تم تفعيل الرمز التجريبي بنجاح.",
+    "redeemError": "رمز غير صالح أو منتهي الصلاحية."
   },
   "common": {
     "loading": "جارٍ التحميل…",

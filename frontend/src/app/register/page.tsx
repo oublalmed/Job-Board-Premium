@@ -20,10 +20,26 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  function validatePassword(pw: string): boolean {
+    return (
+      pw.length >= 10 &&
+      /[A-Z]/.test(pw) &&
+      /[a-z]/.test(pw) &&
+      /\d/.test(pw) &&
+      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pw)
+    );
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setSuccess(null);
+
+    if (!validatePassword(password)) {
+      setError(t('auth.register.passwordHint'));
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { error: apiError } = await apiClient.POST('/api/v1/auth/register', {
