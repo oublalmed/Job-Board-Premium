@@ -1,43 +1,92 @@
 {
   "app": {
-    "name": "Job Board Premium"
+    "name": "Job Board Premium",
+    "tagline": "La plateforme de recrutement premium au Maroc",
+    "description": "Connectez les meilleurs talents avec les entreprises qui recrutent. Évaluation, scoring et mise en relation intelligente."
   },
   "language": {
     "label": "Langue",
-    "fr": "Français",
-    "ar": "العربية"
+    "fr": "FR",
+    "ar": "عر"
   },
   "nav": {
     "label": "Navigation principale",
+    "home": "Accueil",
     "dashboard": "Tableau de bord",
+    "profile": "Mon profil",
+    "jobs": "Offres",
+    "candidates": "CVthèque",
+    "offers": "Mes offres",
+    "shortlist": "Shortlist",
+    "messages": "Messages",
+    "notifications": "Notifications",
+    "settings": "Paramètres",
     "login": "Connexion",
     "register": "Créer un compte",
-    "designSystem": "Système de design"
+    "pricing": "Tarifs"
   },
   "layout": {
     "skipToContent": "Aller au contenu principal"
   },
-  "demo": {
-    "designSystem": {
-      "title": "Système de design",
-      "subtitle": "Vérification Front 0",
-      "emailLabel": "Email",
-      "emailPlaceholder": "vous@exemple.com",
-      "buttonDefault": "Principal",
-      "buttonSecondary": "Secondaire",
-      "buttonOutline": "Contour",
-      "buttonDestructive": "Destructif"
+  "hero": {
+    "badge": "Plateforme N°1 au Maroc",
+    "title": "Recrutez les meilleurs talents",
+    "titleHighlight": "au Maroc",
+    "subtitle": "Évaluation technique, scoring intelligent et mise en relation directe entre candidats qualifiés et recruteurs exigeants.",
+    "cta": "Commencer gratuitement",
+    "ctaSecondary": "Découvrir les tarifs",
+    "stat1Label": "Candidats évalués",
+    "stat1Value": "12 000+",
+    "stat2Label": "Entreprises",
+    "stat2Value": "850+",
+    "stat3Label": "Taux de matching",
+    "stat3Value": "94%"
+  },
+  "features": {
+    "title": "Pourquoi Job Board Premium ?",
+    "subtitle": "Une plateforme conçue pour le marché marocain, avec des outils modernes de recrutement.",
+    "scoring": {
+      "title": "Scoring intelligent",
+      "description": "Évaluation technique automatisée avec scoring normalisé. Identifiez les meilleurs profils en un clin d'œil."
     },
-    "rtl": {
-      "title": "Démonstration RTL",
-      "description": "Cette mise en page utilise des propriétés CSS logiques (padding-inline, margin-inline) — elle retourne automatiquement selon le sens de lecture, sans classes dupliquées par direction.",
-      "jobCardTitle": "Développeur Backend Senior",
-      "jobCardCompany": "Atlas Technologies",
-      "jobCardLocation": "Casablanca, Maroc",
-      "jobCardSalaryLabel": "Salaire",
-      "jobCardPostedLabel": "Publié le",
-      "startLabel": "Début (start)",
-      "endLabel": "Fin (end)"
+    "cvtheque": {
+      "title": "CVthèque avancée",
+      "description": "Recherche multicritère parmi les candidats indexés. Filtres par compétences, localisation et score."
+    },
+    "messaging": {
+      "title": "Messagerie intégrée",
+      "description": "Contactez directement les candidats qui vous intéressent. Quotas gérés par abonnement."
+    },
+    "compliance": {
+      "title": "Conforme CNDP",
+      "description": "Données hébergées au Maroc, export et suppression RGPD/CNDP, facturation conforme."
+    }
+  },
+  "pricing": {
+    "title": "Tarifs transparents",
+    "subtitle": "Choisissez le forfait adapté à vos besoins de recrutement.",
+    "monthly": "/mois HT",
+    "currency": "MAD",
+    "contacts": "contacts/mois",
+    "cta": "Choisir ce forfait",
+    "popular": "Populaire",
+    "starter": {
+      "name": "Starter",
+      "price": "990",
+      "contacts": "15",
+      "features": ["15 contacts/mois", "Recherche CVthèque", "Messagerie intégrée", "1 recruteur"]
+    },
+    "business": {
+      "name": "Business",
+      "price": "2 900",
+      "contacts": "60",
+      "features": ["60 contacts/mois", "Recherche avancée", "Messagerie prioritaire", "5 recruteurs", "Offres illimitées"]
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "price": "6 900",
+      "contacts": "200",
+      "features": ["200 contacts/mois", "Recherche illimitée", "Support dédié", "Recruteurs illimités", "API d'intégration", "Facturation personnalisée"]
     }
   },
   "auth": {
@@ -46,8 +95,8 @@
     "emailPlaceholder": "vous@exemple.com",
     "passwordLabel": "Mot de passe",
     "login": {
-      "title": "Connexion",
-      "subtitle": "Accédez à votre espace Job Board Premium",
+      "title": "Bon retour",
+      "subtitle": "Connectez-vous à votre espace",
       "submit": "Se connecter",
       "submitting": "Connexion…",
       "error": "Email ou mot de passe incorrect.",
@@ -56,7 +105,7 @@
     },
     "register": {
       "title": "Créer un compte",
-      "subtitle": "Rejoignez Job Board Premium",
+      "subtitle": "Rejoignez la communauté Job Board Premium",
       "passwordHint": "Au moins 10 caractères, avec majuscule, minuscule, chiffre et caractère spécial.",
       "submit": "Créer mon compte",
       "submitting": "Création…",
@@ -66,13 +115,78 @@
       "loginLink": "Se connecter"
     },
     "logout": "Déconnexion",
-    "dashboard": {
-      "title": "Tableau de bord",
-      "welcome": "Connecté en tant que {{email}}",
-      "roles": "Rôles : {{roles}}"
-    },
     "guard": {
       "forbidden": "Vous n'avez pas accès à cette page."
     }
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue",
+    "profileCompletion": "Complétude du profil",
+    "recentActivity": "Activité récente",
+    "quickActions": "Actions rapides",
+    "viewProfile": "Voir mon profil",
+    "editProfile": "Éditer le profil",
+    "browseJobs": "Parcourir les offres",
+    "searchCandidates": "Chercher des candidats",
+    "manageOffers": "Gérer mes offres",
+    "viewMessages": "Voir les messages",
+    "noActivity": "Aucune activité récente.",
+    "roles": "Rôles : {{roles}}"
+  },
+  "profile": {
+    "title": "Mon profil",
+    "personalInfo": "Informations personnelles",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "location": "Localisation",
+    "availability": "Disponibilité",
+    "salaryExpectation": "Prétention salariale",
+    "skills": "Compétences",
+    "experience": "Expérience",
+    "cv": "CV",
+    "uploadCv": "Téléverser un CV",
+    "deleteCv": "Supprimer le CV",
+    "completeness": "Complétude",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…"
+  },
+  "search": {
+    "title": "CVthèque",
+    "placeholder": "Rechercher des candidats…",
+    "filters": "Filtres",
+    "skills": "Compétences",
+    "location": "Localisation",
+    "scoreMin": "Score minimum",
+    "availability": "Disponibilité",
+    "noResults": "Aucun candidat trouvé.",
+    "addToShortlist": "Ajouter à la shortlist",
+    "contact": "Contacter",
+    "viewProfile": "Voir le profil"
+  },
+  "offers": {
+    "title": "Mes offres d'emploi",
+    "create": "Créer une offre",
+    "status": {
+      "pending_moderation": "En modération",
+      "published": "Publiée",
+      "closed": "Clôturée"
+    },
+    "close": "Clôturer",
+    "noOffers": "Aucune offre pour le moment."
+  },
+  "messages": {
+    "title": "Messages",
+    "noConversations": "Aucune conversation.",
+    "send": "Envoyer",
+    "placeholder": "Écrivez un message…"
+  },
+  "footer": {
+    "rights": "Tous droits réservés.",
+    "privacy": "Politique de confidentialité",
+    "terms": "Conditions d'utilisation",
+    "contact": "Contact"
   }
 }
