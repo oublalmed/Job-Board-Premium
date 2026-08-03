@@ -15,18 +15,35 @@ export default function RegisterPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'candidate' | 'recruiter'>('candidate');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function validatePassword(pw: string): boolean {
+    return (
+      pw.length >= 10 &&
+      /[A-Z]/.test(pw) &&
+      /[a-z]/.test(pw) &&
+      /\d/.test(pw) &&
+      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pw)
+    );
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setSuccess(null);
+
+    if (!validatePassword(password)) {
+      setError(t('auth.register.passwordHint'));
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { error: apiError } = await apiClient.POST('/api/v1/auth/register', {
-        body: { email, password },
+        body: { email, password, roles: [role] },
       });
       if (apiError) {
         setError(t('auth.register.error'));
@@ -40,7 +57,6 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-dvh">
-      {/* Left panel - branding */}
       <div className="relative hidden w-1/2 bg-primary lg:flex lg:flex-col lg:items-center lg:justify-center">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/80" />
         <div className="relative z-10 flex flex-col items-center gap-6 px-12 text-center text-primary-foreground">
@@ -54,7 +70,6 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* Right panel - form */}
       <div className="flex flex-1 flex-col">
         <div className="flex items-center justify-between p-6">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-foreground lg:hidden">
@@ -84,6 +99,34 @@ export default function RegisterPage() {
               className="flex flex-col gap-5"
               noValidate
             >
+              <div className="flex flex-col gap-2">
+                <Label>{t('auth.register.roleLabel')}</Label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRole('candidate')}
+                    className={`flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                      role === 'candidate'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    {t('auth.register.roleCandidate')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('recruiter')}
+                    className={`flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                      role === 'recruiter'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    {t('auth.register.roleRecruiter')}
+                  </button>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-2">
                 <Label htmlFor="register-email">{t('auth.emailLabel')}</Label>
                 <Input

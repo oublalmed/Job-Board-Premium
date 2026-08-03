@@ -24,6 +24,10 @@ export function Navbar() {
     pathname.startsWith('/offers') ||
     pathname.startsWith('/shortlist') ||
     pathname.startsWith('/messages') ||
+    pathname.startsWith('/notifications') ||
+    pathname.startsWith('/company') ||
+    pathname.startsWith('/subscription') ||
+    pathname.startsWith('/assessments') ||
     pathname.startsWith('/settings');
 
   return (
@@ -54,7 +58,7 @@ export function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-2">
-              <Link href="/dashboard">
+              <Link href="/notifications">
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="size-4" />
                 </Button>
