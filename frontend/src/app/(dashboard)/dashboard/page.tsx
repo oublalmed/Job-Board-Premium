@@ -7,7 +7,6 @@ import {
   Briefcase,
   MessageSquare,
   Search,
-  FileText,
   Heart,
   ArrowRight,
   BarChart3,
@@ -96,13 +95,6 @@ export default function DashboardPage() {
                 value={completeness != null ? `${Math.round(completeness)}%` : '—'}
               />
             )}
-            {isRecruiter && (
-              <StatCard
-                icon={FileText}
-                label={t('nav.offers')}
-                value="—"
-              />
-            )}
             <StatCard
               icon={Bell}
               label={t('nav.notifications')}
@@ -131,7 +123,6 @@ export default function DashboardPage() {
           {isRecruiter ? (
             <>
               <QuickAction href="/candidates" icon={Search} label={t('dashboard.searchCandidates')} />
-              <QuickAction href="/offers" icon={FileText} label={t('dashboard.manageOffers')} />
               <QuickAction href="/shortlist" icon={Heart} label={t('nav.shortlist')} />
             </>
           ) : (

@@ -21,7 +21,6 @@ export function Navbar() {
     pathname.startsWith('/profile') ||
     pathname.startsWith('/jobs') ||
     pathname.startsWith('/candidates') ||
-    pathname.startsWith('/offers') ||
     pathname.startsWith('/shortlist') ||
     pathname.startsWith('/messages') ||
     pathname.startsWith('/notifications') ||

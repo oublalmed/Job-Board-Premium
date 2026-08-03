@@ -16,7 +16,6 @@
     "profile": "Mon profil",
     "jobs": "Offres",
     "candidates": "CVthèque",
-    "offers": "Mes offres",
     "shortlist": "Shortlist",
     "messages": "Messages",
     "notifications": "Notifications",
@@ -116,7 +115,6 @@
     "editProfile": "Éditer le profil",
     "browseJobs": "Parcourir les offres",
     "searchCandidates": "Chercher des candidats",
-    "manageOffers": "Gérer mes offres",
     "viewMessages": "Voir les messages",
     "noActivity": "Aucune activité récente.",
     "roles": "Rôles : {{roles}}"
@@ -187,29 +185,12 @@
     "results": "{{count}} résultats"
   },
   "offers": {
-    "title": "Mes offres d'emploi",
-    "create": "Créer une offre",
-    "createTitle": "Nouvelle offre d'emploi",
-    "createDescription": "Remplissez les informations de l'offre.",
-    "offerTitle": "Titre du poste",
-    "offerTitlePlaceholder": "ex. Développeur Full Stack",
-    "offerDescription": "Description",
-    "offerDescriptionPlaceholder": "Décrivez le poste, les missions et les prérequis…",
-    "cancel": "Annuler",
-    "submit": "Publier l'offre",
-    "submitting": "Publication…",
-    "created": "Offre créée avec succès.",
-    "createError": "Erreur lors de la création de l'offre.",
-    "closed": "Offre clôturée.",
-    "closeConfirm": "Êtes-vous sûr de vouloir clôturer cette offre ?",
     "status": {
       "pending_moderation": "En modération",
       "published": "Publiée",
       "rejected": "Rejetée",
       "closed": "Clôturée"
-    },
-    "close": "Clôturer",
-    "noOffers": "Aucune offre pour le moment."
+    }
   },
   "shortlist": {
     "title": "Shortlist",

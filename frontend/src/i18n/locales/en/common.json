@@ -16,7 +16,6 @@
     "profile": "My profile",
     "jobs": "Jobs",
     "candidates": "Candidates",
-    "offers": "My job posts",
     "shortlist": "Shortlist",
     "messages": "Messages",
     "notifications": "Notifications",
@@ -116,7 +115,6 @@
     "editProfile": "Edit profile",
     "browseJobs": "Browse jobs",
     "searchCandidates": "Search candidates",
-    "manageOffers": "Manage my job posts",
     "viewMessages": "View messages",
     "noActivity": "No recent activity.",
     "roles": "Roles: {{roles}}"
@@ -187,29 +185,12 @@
     "results": "{{count}} results"
   },
   "offers": {
-    "title": "My job posts",
-    "create": "Create a job post",
-    "createTitle": "New job post",
-    "createDescription": "Fill in the job post details.",
-    "offerTitle": "Job title",
-    "offerTitlePlaceholder": "e.g. Full Stack Developer",
-    "offerDescription": "Description",
-    "offerDescriptionPlaceholder": "Describe the role, responsibilities and requirements…",
-    "cancel": "Cancel",
-    "submit": "Publish job post",
-    "submitting": "Publishing…",
-    "created": "Job post created successfully.",
-    "createError": "Error while creating the job post.",
-    "closed": "Job post closed.",
-    "closeConfirm": "Are you sure you want to close this job post?",
     "status": {
       "pending_moderation": "Under review",
       "published": "Published",
       "rejected": "Rejected",
       "closed": "Closed"
-    },
-    "close": "Close",
-    "noOffers": "No job posts yet."
+    }
   },
   "shortlist": {
     "title": "Shortlist",

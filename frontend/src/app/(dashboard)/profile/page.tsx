@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { User, MapPin, Upload, Trash2, Save, FileText } from 'lucide-react';
+import Link from 'next/link';
+import { User, MapPin, Upload, Trash2, Save, FileText, Briefcase, Building2 } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -15,6 +16,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAccessToken } from '@/auth/token-store';
+
+// The generated schema types GET /companies/recruiters as
+// Record<string, never>[] (missing Swagger response decorator on the
+// backend) — this is the real shape returned by
+// RecruiterService.listRecruiters (recruiter.service.ts), a flat
+// summary with no nested user/company relations.
+interface RecruiterSummary {
+  id: string;
+  userId: string;
+  email: string;
+  position: string | null;
+  createdAt: string;
+}
 
 interface ProfileData {
   profile: {
@@ -53,7 +67,114 @@ interface CvData {
   } | null;
 }
 
+// /api/v1/candidates/profile and /api/v1/candidates/cv are guarded
+// @Roles(CANDIDATE) — a recruiter calling them gets a 403. This page
+// used to call them unconditionally for every role, so recruiters saw
+// a silently-blank, half-broken candidate form. Split by role instead:
+// there's no backend concept of a recruiter's own profile beyond their
+// company membership (Recruiter.position), so recruiters get a minimal
+// read-only view rather than a fabricated editable form.
 export default function ProfilePage() {
+  const { user } = useAuth();
+
+  if (!user) return null;
+
+  const isCandidate = user.roles.includes('candidate');
+  const isRecruiter = user.roles.some((r) =>
+    ['recruiter', 'company_admin', 'admin'].includes(r),
+  );
+
+  if (isCandidate) return <CandidateProfile />;
+  if (isRecruiter) return <RecruiterProfile />;
+  return null;
+}
+
+function RecruiterProfile() {
+  const { user } = useAuth();
+  const { t } = useLocale();
+
+  const [loading, setLoading] = useState(true);
+  const [recruiter, setRecruiter] = useState<RecruiterSummary | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+
+  async function loadRecruiter() {
+    setLoading(true);
+    try {
+      const [recruitersRes, companyRes] = await Promise.all([
+        apiClient.GET('/api/v1/companies/recruiters'),
+        apiClient.GET('/api/v1/companies/me'),
+      ]);
+      const list = (recruitersRes.data ?? []) as unknown as RecruiterSummary[];
+      setRecruiter(list.find((r) => r.userId === user?.userId) ?? null);
+      const companyData = companyRes.data as { company?: { name?: string } } | undefined;
+      setCompanyName(companyData?.company?.name ?? null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadRecruiter();
+  }, []);
+
+  if (!user) return null;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-8">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-48" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      <h1 className="text-2xl font-bold text-foreground">{t('profile.title')}</h1>
+
+      <Card>
+        <CardContent className="flex flex-col items-center gap-4 p-6 sm:flex-row sm:items-start">
+          <div className="flex size-24 items-center justify-center rounded-full bg-primary/10">
+            <User className="size-12 text-primary" />
+          </div>
+          <div className="flex flex-1 flex-col gap-4 text-center sm:text-start">
+            <div>
+              <p className="text-lg font-semibold text-foreground">{user.email}</p>
+              {recruiter?.position && (
+                <p className="mt-1 flex items-center justify-center gap-1 text-sm text-muted-foreground sm:justify-start">
+                  <Briefcase className="size-3.5" />
+                  {recruiter.position}
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap justify-center gap-1.5 sm:justify-start">
+                {user.roles.map((role) => (
+                  <Badge key={role} variant="secondary">
+                    {role}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {companyName && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground sm:justify-start">
+                <Building2 className="size-4" />
+                {companyName}
+              </div>
+            )}
+
+            <Link href="/company" className="self-center sm:self-start">
+              <Button variant="outline" size="sm">
+                {t('company.title')}
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CandidateProfile() {
   const { user } = useAuth();
   const { t } = useLocale();
   const { toast } = useToast();
