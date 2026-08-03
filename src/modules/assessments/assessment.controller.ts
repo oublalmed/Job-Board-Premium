@@ -7,10 +7,13 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiResponse } from '@nestjs/swagger';
 import { AssessmentService } from './assessment.service.js';
 import { RemediationService } from './remediation.service.js';
 import { StartAssessmentDto } from './dto/start-assessment.dto.js';
 import { ResumeAssessmentDto } from './dto/resume-assessment.dto.js';
+import { StartAssessmentResponseDto } from './dto/start-assessment-response.dto.js';
+import { RemediationFeedbackDto } from './dto/remediation-feedback.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
@@ -28,6 +31,7 @@ export class AssessmentController {
 
   @Post('start')
   @Roles(Role.CANDIDATE)
+  @ApiResponse({ status: 201, type: StartAssessmentResponseDto })
   async startAssessment(
     @CurrentUser() user: JwtPayload,
     @Body() dto: StartAssessmentDto,
@@ -37,6 +41,7 @@ export class AssessmentController {
 
   @Post('resume')
   @Roles(Role.CANDIDATE)
+  @ApiResponse({ status: 201, type: StartAssessmentResponseDto })
   async resumeAssessment(
     @CurrentUser() user: JwtPayload,
     @Body() dto: ResumeAssessmentDto,
@@ -59,6 +64,7 @@ export class AssessmentController {
 
   @Get(':id/feedback')
   @Roles(Role.CANDIDATE)
+  @ApiResponse({ status: 200, type: RemediationFeedbackDto })
   async getFeedback(
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) assessmentId: string,

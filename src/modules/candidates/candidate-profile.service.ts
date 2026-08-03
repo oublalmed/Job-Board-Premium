@@ -61,6 +61,17 @@ export class CandidateProfileService {
     return this.profileRepo.save(profile);
   }
 
+  // Shared by the experience/link/skill services below (Front 1
+  // prerequisite) — they all need "my profile row, created on first touch
+  // if it doesn't exist yet" exactly like CandidateProfileController's
+  // getMyProfile/updateMyProfile already do inline. Added here rather than
+  // refactoring those two call sites to avoid touching already-tested,
+  // already-shipped controller code for an unrelated change.
+  async findOrCreateProfile(userId: string): Promise<CandidateProfile> {
+    const existing = await this.findByUserId(userId);
+    return existing ?? this.createProfile(userId);
+  }
+
   async updateProfile(
     profileId: string,
     data: Partial<

@@ -13,6 +13,14 @@ import { CandidateDocumentService } from './candidate-document.service.js';
 import { CandidateDocumentController } from './candidate-document.controller.js';
 import { CandidateDataService } from './candidate-data.service.js';
 import { CandidateDataController } from './candidate-data.controller.js';
+import { SkillCatalogService } from './skill-catalog.service.js';
+import { SkillCatalogController } from './skill-catalog.controller.js';
+import { CandidateExperienceService } from './candidate-experience.service.js';
+import { CandidateExperienceController } from './candidate-experience.controller.js';
+import { CandidateLinkService } from './candidate-link.service.js';
+import { CandidateLinkController } from './candidate-link.controller.js';
+import { CandidateSkillService } from './candidate-skill.service.js';
+import { CandidateSkillController } from './candidate-skill.controller.js';
 
 @Module({
   imports: [
@@ -30,11 +38,19 @@ import { CandidateDataController } from './candidate-data.controller.js';
     CandidateProfileController,
     CandidateDocumentController,
     CandidateDataController,
+    SkillCatalogController,
+    CandidateExperienceController,
+    CandidateLinkController,
+    CandidateSkillController,
   ],
   providers: [
     CandidateProfileService,
     CandidateDocumentService,
     CandidateDataService,
+    SkillCatalogService,
+    CandidateExperienceService,
+    CandidateLinkService,
+    CandidateSkillService,
   ],
   exports: [
     CandidateProfileService,

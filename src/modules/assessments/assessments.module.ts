@@ -7,6 +7,8 @@ import { Assessment } from './entities/assessment.entity.js';
 import { Score } from './entities/score.entity.js';
 import { AssessmentService } from './assessment.service.js';
 import { AssessmentController } from './assessment.controller.js';
+import { CatalogService } from './catalog.service.js';
+import { CatalogController } from './catalog.controller.js';
 import { WebhookService } from './webhook.service.js';
 import { WebhookController } from './webhook.controller.js';
 import { IndexationService } from './indexation.service.js';
@@ -27,7 +29,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     UsersModule,
     NotificationsModule,
   ],
-  controllers: [AssessmentController, WebhookController],
+  controllers: [AssessmentController, WebhookController, CatalogController],
   providers: [
     AssessmentService,
     WebhookService,
@@ -36,6 +38,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     RemediationNotificationService,
     CooldownNotificationProcessor,
     CooldownSchedulerService,
+    CatalogService,
   ],
   exports: [
     TypeOrmModule,

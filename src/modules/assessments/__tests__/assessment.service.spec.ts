@@ -110,10 +110,10 @@ describe('AssessmentService', () => {
   });
 
   describe('US-EVAL-02 — Scenario 1: passage nominal', () => {
-    it('should create an assessment with PENDING status, a resume token, and expiry', async () => {
+    it('should create an assessment with IN_PROGRESS status, a resume token, and expiry', async () => {
       const result = await service.startAssessment(candidateId, testId);
 
-      expect(result.assessment.status).toBe(AssessmentStatus.PENDING);
+      expect(result.assessment.status).toBe(AssessmentStatus.IN_PROGRESS);
       expect(result.assessment.resumeToken).toBeDefined();
       expect(result.assessment.expiresAt).toBeDefined();
       expect(result.assessment.candidateId).toBe(candidateId);
@@ -434,6 +434,25 @@ describe('AssessmentService', () => {
       await expect(
         service.reportIncident(candidateId, 'assessment-1'),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    // Regression test for a real bug: a freshly-started assessment used to
+    // be created as PENDING, and nothing ever transitioned it out of that
+    // state — reportIncident (which requires IN_PROGRESS) was therefore
+    // unreachable for any assessment that had never already had an
+    // incident. A test mocking IN_PROGRESS directly (above) could never
+    // have caught this; only chaining the real startAssessment output into
+    // reportIncident does.
+    it('accepts an incident on an assessment exactly as startAssessment created it', async () => {
+      const started = await service.startAssessment(candidateId, testId);
+      assessmentRepo.findOne.mockResolvedValue(started.assessment);
+
+      const result = await service.reportIncident(
+        candidateId,
+        started.assessment.id,
+      );
+
+      expect(result.status).toBe(AssessmentStatus.INCIDENT);
     });
   });
 });

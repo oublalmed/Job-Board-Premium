@@ -77,6 +77,46 @@ describe('GlobalExceptionFilter', () => {
     );
   });
 
+  it('should pass through extra structured fields from the exception body', () => {
+    const exception = new HttpException(
+      { message: 'Cooldown active', reEligibleAt: '2026-10-30T00:00:00.000Z' },
+      HttpStatus.CONFLICT,
+    );
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 409,
+        message: 'Cooldown active',
+        reEligibleAt: '2026-10-30T00:00:00.000Z',
+      }),
+    );
+  });
+
+  it('never lets an extra field shadow the derived statusCode/error/message/path', () => {
+    const exception = new HttpException(
+      {
+        message: 'real message',
+        statusCode: 999,
+        error: 'Fake',
+        path: '/fake',
+        timestamp: 'fake',
+      },
+      HttpStatus.CONFLICT,
+    );
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 409,
+        message: 'real message',
+        path: '/test',
+      }),
+    );
+  });
+
   it('should include timestamp and path', () => {
     filter.catch(new HttpException('test', 400), mockHost);
 

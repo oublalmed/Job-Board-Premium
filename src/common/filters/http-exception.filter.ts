@@ -14,7 +14,20 @@ interface ErrorResponseBody {
   message: string | string[];
   timestamp: string;
   path: string;
+  [key: string]: unknown;
 }
+
+// Keys already surfaced explicitly below — never let an exception's own
+// payload override the filter's own derivation of these (e.g. a stray
+// `statusCode` inside a class-validator body must not shadow the real
+// HTTP status resolved from `exception.getStatus()`).
+const RESERVED_KEYS = new Set([
+  'statusCode',
+  'error',
+  'message',
+  'timestamp',
+  'path',
+]);
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -28,6 +41,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Internal server error';
     let error = 'Internal Server Error';
+    const extra: Record<string, unknown> = {};
 
     if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
@@ -36,6 +50,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         const resp = exceptionResponse as Record<string, unknown>;
         message = (resp['message'] as string | string[]) ?? exception.message;
         error = (resp['error'] as string) ?? 'Error';
+        // Structured, non-secret context an exception deliberately attaches
+        // (e.g. ConflictException({ message, reEligibleAt }) for the
+        // assessment cooldown) — passed through so the client actually
+        // receives it, instead of being silently dropped as it was before.
+        for (const [key, value] of Object.entries(resp)) {
+          if (!RESERVED_KEYS.has(key)) {
+            extra[key] = value;
+          }
+        }
       } else {
         message = exception.message;
       }
@@ -47,6 +70,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     const body: ErrorResponseBody = {
+      ...extra,
       statusCode,
       error,
       message,

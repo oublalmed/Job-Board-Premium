@@ -61,11 +61,21 @@ export class AssessmentService {
       now.getTime() + test.durationMinutes * 60 * 1000,
     );
 
+    // IN_PROGRESS, not PENDING — found building Front 1's session screen:
+    // reportIncident requires status === IN_PROGRESS, and nothing anywhere
+    // in this service ever transitioned a freshly-started assessment out
+    // of PENDING (resumeAssessment only accepts status === INCIDENT).
+    // A PENDING assessment could therefore never validly report an
+    // incident at all — structurally unreachable. There is no distinct
+    // "candidate acknowledged the vendor session" step in this
+    // architecture: once assessmentUrl is issued, the candidate can
+    // immediately begin the test, so the session is genuinely in
+    // progress from creation.
     const assessment = this.assessmentRepo.create({
       candidateId,
       testId,
       externalAssessmentId: externalId,
-      status: AssessmentStatus.PENDING,
+      status: AssessmentStatus.IN_PROGRESS,
       resumeToken: uuidv4(),
       expiresAt,
       startedAt: now,
