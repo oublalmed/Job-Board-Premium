@@ -13,6 +13,7 @@ import {
   Bell,
   TrendingUp,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -22,6 +23,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { components } from '@/api/schema';
 
 type Notification = components['schemas']['Notification'];
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
+
+function timeAgo(dateStr: string): string {
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -68,7 +87,7 @@ export default function DashboardPage() {
   const unreadNotifications = notifications.filter((n) => !n.readAt);
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <div>
         <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
           {t('dashboard.welcome')}, {user.email.split('@')[0]}
@@ -93,22 +112,26 @@ export default function DashboardPage() {
                 icon={BarChart3}
                 label={t('dashboard.profileCompletion')}
                 value={completeness != null ? `${Math.round(completeness)}%` : '—'}
+                color="from-primary/20 to-primary/5"
               />
             )}
             <StatCard
               icon={Bell}
               label={t('nav.notifications')}
               value={String(unreadNotifications.length)}
+              color="from-amber-500/20 to-amber-500/5"
             />
             <StatCard
               icon={MessageSquare}
               label={t('nav.messages')}
               value="—"
+              color="from-emerald-500/20 to-emerald-500/5"
             />
             <StatCard
               icon={TrendingUp}
               label={t('nav.jobs')}
               value="—"
+              color="from-blue-500/20 to-blue-500/5"
             />
           </>
         )}
@@ -144,28 +167,32 @@ export default function DashboardPage() {
               {notifications.slice(0, 5).map((n) => (
                 <div
                   key={n.id}
-                  className="flex items-start gap-3 rounded-xl border border-border/50 p-3"
+                  className={`flex items-start gap-3 rounded-xl border border-border/50 p-3 transition-all ${
+                    !n.readAt ? 'border-primary/20 bg-primary/[0.02]' : ''
+                  }`}
                 >
-                  <div className="mt-0.5 flex size-8 items-center justify-center rounded-full bg-primary/10">
-                    <Bell className="size-4 text-primary" />
+                  <div className="relative mt-0.5">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                      <Bell className="size-4 text-primary" />
+                    </div>
+                    {!n.readAt && (
+                      <div className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">{n.title}</p>
                     <p className="text-xs text-muted-foreground">{n.body}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(n.createdAt).toLocaleDateString()}
+                      {timeAgo(n.createdAt)}
                     </p>
                   </div>
-                  {!n.readAt && (
-                    <div className="mt-1 size-2 rounded-full bg-primary" />
-                  )}
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }
 
@@ -173,16 +200,18 @@ function StatCard({
   icon: Icon,
   label,
   value,
+  color,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
+  color: string;
 }) {
   return (
-    <Card>
+    <Card className="transition-all duration-200 hover:shadow-md">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+          <div className={`flex size-10 items-center justify-center rounded-xl bg-gradient-to-br ${color}`}>
             <Icon className="size-5 text-primary" />
           </div>
         </div>
@@ -208,11 +237,11 @@ function QuickAction({
     <Link href={href}>
       <Button
         variant="outline"
-        className="h-auto w-full justify-between gap-3 px-4 py-4 text-start"
+        className="h-auto w-full justify-between gap-3 px-4 py-4 text-start transition-all hover:shadow-sm"
       >
         <span className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
-            <Icon className="size-4 text-muted-foreground" />
+          <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary/15 to-primary/5">
+            <Icon className="size-4 text-primary" />
           </div>
           <span className="text-sm font-medium">{label}</span>
         </span>

@@ -15,6 +15,7 @@ import {
   Clock,
   ShieldX,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -29,11 +30,6 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAccessToken } from '@/auth/token-store';
 
-// The generated schema types GET /companies/recruiters as
-// Record<string, never>[] (missing Swagger response decorator on the
-// backend) — this is the real shape returned by
-// RecruiterService.listRecruiters (recruiter.service.ts), a flat
-// summary with no nested user/company relations.
 interface RecruiterSummary {
   id: string;
   userId: string;
@@ -55,12 +51,6 @@ interface ProfileData {
     schoolVerified?: boolean;
     visibility?: 'public' | 'recruiters_only' | 'hidden';
   };
-  // The profile endpoint nests the full CompletenessResultDto here, not
-  // a bare number — confirmed against the real backend DTO
-  // (candidate-profile.service.ts). Found by regenerating the OpenAPI
-  // schema after restoring the backend endpoints this page depends on:
-  // the previous (stale) schema silently let `completeness: number` go
-  // uncaught here.
   completeness: {
     completeness: number;
     isPublishable: boolean;
@@ -91,13 +81,12 @@ interface SchoolVerificationData {
   } | null;
 }
 
-// /api/v1/candidates/profile and /api/v1/candidates/cv are guarded
-// @Roles(CANDIDATE) — a recruiter calling them gets a 403. This page
-// used to call them unconditionally for every role, so recruiters saw
-// a silently-blank, half-broken candidate form. Split by role instead:
-// there's no backend concept of a recruiter's own profile beyond their
-// company membership (Recruiter.position), so recruiters get a minimal
-// read-only view rather than a fabricated editable form.
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
+
 export default function ProfilePage() {
   const { user } = useAuth();
 
@@ -153,12 +142,13 @@ function RecruiterProfile() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <h1 className="text-2xl font-bold text-foreground">{t('profile.title')}</h1>
 
-      <Card>
-        <CardContent className="flex flex-col items-center gap-4 p-6 sm:flex-row sm:items-start">
-          <div className="flex size-24 items-center justify-center rounded-full bg-primary/10">
+      <Card className="overflow-hidden">
+        <div className="h-20 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
+        <CardContent className="relative flex flex-col items-center gap-4 p-6 sm:flex-row sm:items-start">
+          <div className="-mt-16 flex size-24 items-center justify-center rounded-full border-4 border-card bg-gradient-to-br from-primary/20 to-primary/5">
             <User className="size-12 text-primary" />
           </div>
           <div className="flex flex-1 flex-col gap-4 text-center sm:text-start">
@@ -194,7 +184,34 @@ function RecruiterProfile() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
+  );
+}
+
+function CompletionRing({ value }: { value: number }) {
+  const r = 36;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (Math.min(value, 100) / 100) * circ;
+  return (
+    <svg width="88" height="88" viewBox="0 0 88 88" className="shrink-0">
+      <circle cx="44" cy="44" r={r} fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/50" />
+      <circle
+        cx="44"
+        cy="44"
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="6"
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="text-primary transition-all duration-700"
+        transform="rotate(-90 44 44)"
+      />
+      <text x="44" y="44" textAnchor="middle" dominantBaseline="central" className="fill-foreground text-sm font-bold">
+        {Math.round(value)}%
+      </text>
+    </svg>
   );
 }
 
@@ -383,23 +400,15 @@ function CandidateProfile() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('profile.title')}</h1>
-          <div className="mt-2 flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{t('profile.completeness')}</span>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
-                  style={{ width: `${Math.min(completeness, 100)}%` }}
-                />
-              </div>
-              <Badge variant={completeness >= 70 ? 'success' : 'warning'}>
-                {Math.round(completeness)}%
-              </Badge>
-            </div>
+        <div className="flex items-center gap-4">
+          <CompletionRing value={completeness} />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{t('profile.title')}</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {t('profile.completeness')}: {Math.round(completeness)}%
+            </p>
           </div>
         </div>
         <Button onClick={() => void handleSave()} disabled={saving}>
@@ -409,9 +418,10 @@ function CandidateProfile() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 p-6">
-            <div className="flex size-24 items-center justify-center rounded-full bg-primary/10">
+        <Card className="overflow-hidden">
+          <div className="h-16 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
+          <CardContent className="relative flex flex-col items-center gap-4 p-6">
+            <div className="-mt-14 flex size-24 items-center justify-center rounded-full border-4 border-card bg-gradient-to-br from-primary/20 to-primary/5">
               <User className="size-12 text-primary" />
             </div>
             <div className="text-center">
@@ -650,6 +660,6 @@ function CandidateProfile() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

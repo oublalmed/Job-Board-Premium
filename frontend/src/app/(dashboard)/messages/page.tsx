@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { MessageSquare, Send, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, Loader2, Inbox } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -11,6 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
 
 export default function MessagesPage() {
   const { user } = useAuth();
@@ -49,13 +56,16 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <h1 className="text-2xl font-bold text-foreground">{t('messages.title')}</h1>
 
       {isRecruiter && (
         <Card>
           <CardHeader>
-            <CardTitle>{t('messages.startConversation')}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Send className="size-5 text-primary" />
+              {t('messages.startConversation')}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={(e) => void handleOpenConversation(e)} className="flex flex-col gap-4">
@@ -98,9 +108,16 @@ export default function MessagesPage() {
       )}
 
       <div className="rounded-2xl border border-dashed border-border p-16 text-center">
-        <MessageSquare className="mx-auto mb-4 size-10 text-muted-foreground/50" />
-        <p className="text-sm text-muted-foreground">{t('messages.noConversations')}</p>
+        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted">
+          <Inbox className="size-8 text-muted-foreground/50" />
+        </div>
+        <p className="text-sm font-medium text-muted-foreground">{t('messages.noConversations')}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {isRecruiter
+            ? 'Start a conversation with a candidate above'
+            : 'Conversations from recruiters will appear here'}
+        </p>
       </div>
-    </div>
+    </motion.div>
   );
 }
