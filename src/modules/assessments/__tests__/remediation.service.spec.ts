@@ -96,9 +96,11 @@ describe('RemediationService', () => {
       [
         'domainFeedback',
         'indexationThresholdMet',
+        'psychotechnicalScore',
         'reEligibleAt',
         'resources',
         'scoreValue',
+        'technicalScore',
       ].sort(),
     );
   });

@@ -20,6 +20,8 @@ import type { DomainFeedbackEntry } from '../../ports/scoring.port.js';
 
 export interface RemediationFeedback {
   scoreValue: number;
+  technicalScore: number | null;
+  psychotechnicalScore: number | null;
   indexationThresholdMet: boolean;
   domainFeedback: DomainFeedbackEntry[];
   resources: RemediationResource[];
@@ -93,6 +95,9 @@ export class RemediationService {
 
     return {
       scoreValue: value,
+      technicalScore: score.technicalScore !== null ? Number(score.technicalScore) : null,
+      psychotechnicalScore:
+        score.psychotechnicalScore !== null ? Number(score.psychotechnicalScore) : null,
       indexationThresholdMet,
       domainFeedback,
       resources,

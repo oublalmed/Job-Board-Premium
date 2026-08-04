@@ -348,13 +348,18 @@
       "empty": "No tests available right now.",
       "duration": "{{minutes}} min"
     },
+    "composition": {
+      "summary": "Each assessment combines {{technique}}% technical test and {{psychotechnique}}% psychotechnical test."
+    },
     "errors": {
       "alreadyInProgress": "You already have an assessment in progress for this test. Use \"Continue test\" above, or report an incident if you can't access it.",
       "cooldownActive": "You'll be able to retake this test starting {{date}}.",
       "prefixed": "Error: {{message}}"
     },
     "feedback": {
-      "score": "Score obtained: {{score}}/100"
+      "score": "Score obtained: {{score}}/100",
+      "technicalScore": "Technical: {{score}}/100",
+      "psychotechnicalScore": "Psychotechnical: {{score}}/100"
     },
     "manual": {
       "title": "Resume with an ID (another session)",

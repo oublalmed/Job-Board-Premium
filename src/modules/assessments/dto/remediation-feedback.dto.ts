@@ -27,6 +27,12 @@ export class RemediationFeedbackDto {
   @ApiProperty()
   scoreValue!: number;
 
+  @ApiProperty({ nullable: true, type: Number })
+  technicalScore!: number | null;
+
+  @ApiProperty({ nullable: true, type: Number })
+  psychotechnicalScore!: number | null;
+
   @ApiProperty()
   indexationThresholdMet!: boolean;
 

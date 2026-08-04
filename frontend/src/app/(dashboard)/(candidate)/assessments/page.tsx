@@ -29,6 +29,12 @@ type TestSummary = components['schemas']['TestSummaryDto'];
 type RemediationFeedback = components['schemas']['RemediationFeedbackDto'];
 type AssessmentStatus = components['schemas']['Assessment']['status'];
 
+interface EvaluationComposition {
+  techniqueWeight: number;
+  psychotechniqueWeight: number;
+  psychotechnicalItemTypes: string[];
+}
+
 interface Session {
   assessmentId: string;
   resumeToken: string | null;
@@ -108,6 +114,7 @@ export default function AssessmentsPage() {
   const [tests, setTests] = useState<TestSummary[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [startingTestId, setStartingTestId] = useState<string | null>(null);
+  const [composition, setComposition] = useState<EvaluationComposition | null>(null);
 
   // Lazy initializer, not a mount effect + setState: sessionStorage is
   // already available at first client render (this file is 'use
@@ -126,12 +133,17 @@ export default function AssessmentsPage() {
   async function loadCatalog() {
     setLoadingCatalog(true);
     try {
-      const [{ data: specialtiesData }, { data: testsData }] = await Promise.all([
-        apiClient.GET('/api/v1/specialties'),
-        apiClient.GET('/api/v1/tests'),
-      ]);
+      const [{ data: specialtiesData }, { data: testsData }, { data: compositionData }] =
+        await Promise.all([
+          apiClient.GET('/api/v1/specialties'),
+          apiClient.GET('/api/v1/tests'),
+          apiClient.GET('/api/v1/assessments/composition'),
+        ]);
       setSpecialties(specialtiesData ?? []);
       setTests(testsData ?? []);
+      if (compositionData) {
+        setComposition(compositionData as unknown as EvaluationComposition);
+      }
     } finally {
       setLoadingCatalog(false);
     }
@@ -325,6 +337,24 @@ export default function AssessmentsPage() {
                     score: String(feedback.scoreValue),
                   })}
                 </p>
+                {(feedback.technicalScore != null || feedback.psychotechnicalScore != null) && (
+                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    {feedback.technicalScore != null && (
+                      <span>
+                        {t('assessments.feedback.technicalScore', {
+                          score: String(feedback.technicalScore),
+                        })}
+                      </span>
+                    )}
+                    {feedback.psychotechnicalScore != null && (
+                      <span>
+                        {t('assessments.feedback.psychotechnicalScore', {
+                          score: String(feedback.psychotechnicalScore),
+                        })}
+                      </span>
+                    )}
+                  </div>
+                )}
                 {feedback.domainFeedback.length > 0 && (
                   <ul className="flex flex-wrap gap-2">
                     {feedback.domainFeedback.map((d) => (
@@ -361,9 +391,30 @@ export default function AssessmentsPage() {
       )}
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          {t('assessments.catalog.title')}
-        </h2>
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">
+            {t('assessments.catalog.title')}
+          </h2>
+          {composition && (
+            <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-border/50 bg-muted/30 p-3">
+              <p className="text-sm text-muted-foreground">
+                {t('assessments.composition.summary', {
+                  technique: String(composition.techniqueWeight),
+                  psychotechnique: String(composition.psychotechniqueWeight),
+                })}
+              </p>
+              {composition.psychotechnicalItemTypes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {composition.psychotechnicalItemTypes.map((item) => (
+                    <Badge key={item} variant="outline">
+                      {item}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {loadingCatalog && (
           <div className="grid gap-4 sm:grid-cols-2">

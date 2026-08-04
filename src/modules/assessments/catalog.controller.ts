@@ -30,4 +30,9 @@ export class CatalogController {
   async listTests(@Query() query: ListTestsQueryDto) {
     return this.catalogService.listTests(query.specialtyId);
   }
+
+  @Get('assessments/composition')
+  async getComposition() {
+    return this.catalogService.getComposition();
+  }
 }

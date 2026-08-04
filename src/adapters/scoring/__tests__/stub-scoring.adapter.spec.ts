@@ -34,10 +34,13 @@ describe('StubScoringAdapter', () => {
       expect(result.assessmentUrl).toContain(result.externalId);
     });
 
-    it('should return a stubbed result', async () => {
+    it('should return a stubbed result composed of technique + psychotechnique sub-scores', async () => {
       const result = await adapter.getResult('ext-123');
       expect(result).not.toBeNull();
-      expect(result!.score).toBe(65);
+      expect(result!.technicalScore).toBe(58);
+      expect(result!.psychotechnicalScore).toBe(10);
+      // 58*0.6 + 10*0.4 = 38.8, rounded to the nearest integer.
+      expect(result!.score).toBe(39);
       expect(result!.maxScore).toBe(100);
     });
 
@@ -66,12 +69,12 @@ describe('StubScoringAdapter', () => {
 
   describe('getResult — domain feedback level distribution', () => {
     it('skews toward "strong" for a high stubbed score and "weak" for a low one', async () => {
-      // The stub always returns score=65 today, but this test locks in the
-      // *behavior* of levelForIndex (bucketing by score), not just today's
-      // fixed value — it would catch a regression if the stub's score ever
-      // changes without the bucketing logic being reconsidered.
+      // 'ext-789' is deterministically hashed to a high composite score
+      // (73) — this test locks in the *behavior* of levelForIndex
+      // (bucketing by score), not a specific externalId's value; it would
+      // catch a regression if the bucketing logic broke.
       const adapter = makeAdapter();
-      const result = await adapter.getResult('ext-456');
+      const result = await adapter.getResult('ext-789');
 
       const levels = result!.domainFeedback.map((e) => e.level);
       const strongCount = levels.filter((l) => l === 'strong').length;

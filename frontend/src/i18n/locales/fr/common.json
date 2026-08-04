@@ -348,13 +348,18 @@
       "empty": "Aucun test disponible pour le moment.",
       "duration": "{{minutes}} min"
     },
+    "composition": {
+      "summary": "Chaque évaluation combine {{technique}}% de test technique et {{psychotechnique}}% de test psychotechnique."
+    },
     "errors": {
       "alreadyInProgress": "Vous avez déjà une évaluation en cours pour ce test. Utilisez « Continuer le test » ci-dessus, ou signalez un incident si vous ne pouvez pas y accéder.",
       "cooldownActive": "Vous pourrez retenter ce test à partir du {{date}}.",
       "prefixed": "Erreur : {{message}}"
     },
     "feedback": {
-      "score": "Score obtenu : {{score}}/100"
+      "score": "Score obtenu : {{score}}/100",
+      "technicalScore": "Technique : {{score}}/100",
+      "psychotechnicalScore": "Psychotechnique : {{score}}/100"
     },
     "manual": {
       "title": "Reprendre avec un identifiant (autre session)",

@@ -27,11 +27,25 @@ export class Score {
   @JoinColumn({ name: 'assessment_id' })
   assessment!: Assessment;
 
+  // The overall composite (0-100) — computed from technicalScore/
+  // psychotechnicalScore below when both are present (weighted 60/40 by
+  // default, see webhook.service.ts), otherwise falls back to the
+  // provider's own already-composited score/maxScore for providers that
+  // don't split their result into the two components.
   @Column({ type: 'decimal', precision: 5, scale: 2 })
   value!: number;
 
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
   percentile!: number | null;
+
+  // Nullable because pre-existing scores (before this composition) never
+  // had a technique/psychotechnique split — only new webhook payloads
+  // populate these.
+  @Column({ name: 'technical_score', type: 'decimal', precision: 5, scale: 2, nullable: true })
+  technicalScore!: number | null;
+
+  @Column({ name: 'psychotechnical_score', type: 'decimal', precision: 5, scale: 2, nullable: true })
+  psychotechnicalScore!: number | null;
 
   @Column({ name: 'bareme_version' })
   baremeVersion!: string;

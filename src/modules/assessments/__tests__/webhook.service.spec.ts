@@ -304,6 +304,68 @@ describe('WebhookService', () => {
     });
   });
 
+  describe('évaluation composition — technique/psychotechnique weighted score', () => {
+    it('derives value from technicalScore/psychotechnicalScore (60/40 default) when the provider supplies them, ignoring score/maxScore', async () => {
+      scoringProvider.getResult.mockResolvedValue({
+        ...mockResult,
+        score: 1,
+        maxScore: 1, // would normalize to 100 if this were used — proves it isn't
+        technicalScore: 80,
+        psychotechnicalScore: 50,
+      });
+
+      await service.processWebhook(validPayload, validSignature);
+
+      // 80*0.6 + 50*0.4 = 68
+      expect(scoreRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ value: 68 }),
+      );
+    });
+
+    it('persists technicalScore and psychotechnicalScore on the Score row', async () => {
+      scoringProvider.getResult.mockResolvedValue({
+        ...mockResult,
+        technicalScore: 80,
+        psychotechnicalScore: 50,
+      });
+
+      await service.processWebhook(validPayload, validSignature);
+
+      expect(scoreRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ technicalScore: 80, psychotechnicalScore: 50 }),
+      );
+    });
+
+    it('honors custom weights from settings instead of the 60/40 default', async () => {
+      settingsService.getNumber.mockImplementation((key: string) => {
+        if (key === 'score_technique_weight') return Promise.resolve(70);
+        if (key === 'score_psychotechnique_weight') return Promise.resolve(30);
+        if (key === 'score_validity_days') return Promise.resolve(365);
+        return Promise.resolve(null);
+      });
+      scoringProvider.getResult.mockResolvedValue({
+        ...mockResult,
+        technicalScore: 80,
+        psychotechnicalScore: 50,
+      });
+
+      await service.processWebhook(validPayload, validSignature);
+
+      // 80*0.7 + 50*0.3 = 71
+      expect(scoreRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ value: 71 }),
+      );
+    });
+
+    it('leaves technicalScore/psychotechnicalScore null when the provider does not split its result', async () => {
+      await service.processWebhook(validPayload, validSignature);
+
+      expect(scoreRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ technicalScore: null, psychotechnicalScore: null }),
+      );
+    });
+  });
+
   describe('US-EVAL-03 — Scenario 2: idempotence', () => {
     it('should not create duplicate score if one already exists', async () => {
       scoreRepo.findOne.mockResolvedValue({

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { v4 as uuidv4 } from 'uuid';
 import {
   ScoringProvider,
@@ -66,7 +66,17 @@ export class StubScoringAdapter implements ScoringProvider {
 
   getResult(externalId: string): Promise<AssessmentResult | null> {
     this.logger.log(`[STUB] Fetching result for assessment ${externalId}`);
-    const score = 65;
+    // Deterministic per externalId (hashed, never Math.random()) — same
+    // assessment always yields the same stubbed sub-scores. `score` is
+    // still the 60/40 weighted composite of the two, so it stays a
+    // meaningful number for anything reading .score/.maxScore directly
+    // (e.g. WebhookService's fallback path when a provider doesn't split
+    // its result — not exercised by this stub itself, but the type
+    // doesn't know that).
+    const hash = createHash('sha256').update(externalId).digest();
+    const technicalScore = hash[0] % 101;
+    const psychotechnicalScore = hash[1] % 101;
+    const score = Math.round(technicalScore * 0.6 + psychotechnicalScore * 0.4);
     return Promise.resolve({
       externalId,
       score,
@@ -75,6 +85,8 @@ export class StubScoringAdapter implements ScoringProvider {
       plagiarismVerdict: 'clean',
       details: { stub: true },
       domainFeedback: buildStubDomainFeedback(score),
+      technicalScore,
+      psychotechnicalScore,
     });
   }
 

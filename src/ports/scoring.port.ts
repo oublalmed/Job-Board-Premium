@@ -18,6 +18,10 @@ export interface DomainFeedbackEntry {
 
 export interface AssessmentResult {
   externalId: string;
+  // Already-composited score, kept for providers that don't split their
+  // result into a technique/psychotechnique breakdown — WebhookService
+  // falls back to score/maxScore when technicalScore/psychotechnicalScore
+  // are absent.
   score: number;
   maxScore: number;
   percentile: number | null;
@@ -28,6 +32,13 @@ export interface AssessmentResult {
   // plausible breakdown); a real vendor adapter would populate this from
   // whatever per-topic rubric their platform actually returns.
   domainFeedback: DomainFeedbackEntry[];
+  // The pivot's évaluation composition (60% technique + 40%
+  // psychotechnique by default, see webhook.service.ts) — both 0-100,
+  // optional so a provider that only returns a single composited score
+  // still works. When present, WebhookService derives `value` from these
+  // instead of score/maxScore.
+  technicalScore?: number;
+  psychotechnicalScore?: number;
 }
 
 export interface WebhookVerificationResult {
