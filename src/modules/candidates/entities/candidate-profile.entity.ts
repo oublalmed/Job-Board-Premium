@@ -51,6 +51,13 @@ export class CandidateProfile {
   @Column({ type: 'varchar', nullable: true })
   school!: string | null;
 
+  // Set true only by SchoolVerificationService.approve() on an
+  // admin/moderator decision — never writable via the candidate's own
+  // profile update endpoint, since it's a claim about someone else's
+  // review, not the candidate's own data.
+  @Column({ name: 'school_verified', default: false })
+  schoolVerified!: boolean;
+
   @Column({
     type: 'enum',
     enum: ProfileVisibility,

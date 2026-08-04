@@ -137,6 +137,7 @@
     "mobilityPlaceholder": "e.g. National, International",
     "school": "School",
     "schoolPlaceholder": "e.g. ENSIAS, EMI, ENSA…",
+    "schoolVerifiedBadge": "Verified",
     "visibility": "Profile visibility",
     "visibilityPublic": "Public",
     "visibilityRecruitersOnly": "Recruiters only",
@@ -154,7 +155,18 @@
     "save": "Save",
     "saving": "Saving…",
     "saved": "Profile saved.",
-    "saveError": "Error while saving."
+    "saveError": "Error while saving.",
+    "diplomaUploaded": "Document submitted, pending verification.",
+    "schoolVerification": {
+      "title": "School verification",
+      "hint": "Upload your diploma or a proof of enrollment to have your school verified by an administrator.",
+      "upload": "Upload a document",
+      "status": {
+        "pending": "Pending verification",
+        "verified": "School verified",
+        "rejected": "Verification rejected"
+      }
+    }
   },
   "search": {
     "title": "Candidate search",
@@ -368,5 +380,31 @@
     "privacy": "Privacy policy",
     "terms": "Terms of use",
     "contact": "Contact"
+  },
+  "admin": {
+    "schoolVerifications": {
+      "navLabel": "School verifications",
+      "title": "Pending school verifications",
+      "unnamedCandidate": "Unnamed candidate",
+      "noMatch": "No school recognized",
+      "confidence": "OCR confidence: {{value}}%",
+      "review": "Review",
+      "empty": "No pending verifications.",
+      "detailTitle": "School verification",
+      "matchTitle": "Detected school",
+      "ocrTitle": "Extracted text (OCR)",
+      "decisionTitle": "Decision",
+      "noteLabel": "Note (optional)",
+      "approve": "Approve",
+      "reject": "Reject",
+      "verified": "School verified.",
+      "rejected": "Verification rejected.",
+      "notFound": "Verification not found.",
+      "status": {
+        "pending": "Pending",
+        "verified": "Verified",
+        "rejected": "Rejected"
+      }
+    }
   }
 }

@@ -16,6 +16,7 @@ import {
   Building2,
   CreditCard,
   ClipboardList,
+  GraduationCap,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -58,6 +59,12 @@ export function MobileSidebar() {
     { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/subscription', label: t('nav.subscription'), icon: CreditCard, roles: ['recruiter', 'company_admin'] },
     { href: '/assessments', label: t('assessments.title'), icon: ClipboardList, roles: ['candidate'] },
+    {
+      href: '/admin/school-verifications',
+      label: t('admin.schoolVerifications.navLabel'),
+      icon: GraduationCap,
+      roles: ['admin', 'moderator'],
+    },
     { href: '/messages', label: t('nav.messages'), icon: MessageSquare },
     { href: '/notifications', label: t('nav.notifications'), icon: Bell },
     { href: '/settings', label: t('nav.settings'), icon: Settings },

@@ -137,6 +137,7 @@
     "mobilityPlaceholder": "ex. National, International",
     "school": "École",
     "schoolPlaceholder": "ex. ENSIAS, EMI, ENSA…",
+    "schoolVerifiedBadge": "Vérifiée",
     "visibility": "Visibilité du profil",
     "visibilityPublic": "Public",
     "visibilityRecruitersOnly": "Recruteurs uniquement",
@@ -154,7 +155,18 @@
     "save": "Enregistrer",
     "saving": "Enregistrement…",
     "saved": "Profil enregistré.",
-    "saveError": "Erreur lors de l'enregistrement."
+    "saveError": "Erreur lors de l'enregistrement.",
+    "diplomaUploaded": "Document envoyé, en attente de vérification.",
+    "schoolVerification": {
+      "title": "Vérification de l'école",
+      "hint": "Téléversez votre diplôme ou une attestation pour faire vérifier votre école par un administrateur.",
+      "upload": "Téléverser un justificatif",
+      "status": {
+        "pending": "En attente de vérification",
+        "verified": "École vérifiée",
+        "rejected": "Vérification refusée"
+      }
+    }
   },
   "search": {
     "title": "CVthèque",
@@ -368,5 +380,31 @@
     "privacy": "Politique de confidentialité",
     "terms": "Conditions d'utilisation",
     "contact": "Contact"
+  },
+  "admin": {
+    "schoolVerifications": {
+      "navLabel": "Vérifications école",
+      "title": "Vérifications d'école en attente",
+      "unnamedCandidate": "Candidat sans nom",
+      "noMatch": "Aucune école reconnue",
+      "confidence": "Confiance OCR : {{value}}%",
+      "review": "Examiner",
+      "empty": "Aucune vérification en attente.",
+      "detailTitle": "Vérification d'école",
+      "matchTitle": "École détectée",
+      "ocrTitle": "Texte extrait (OCR)",
+      "decisionTitle": "Décision",
+      "noteLabel": "Note (optionnelle)",
+      "approve": "Valider",
+      "reject": "Refuser",
+      "verified": "École validée.",
+      "rejected": "Vérification refusée.",
+      "notFound": "Vérification introuvable.",
+      "status": {
+        "pending": "En attente",
+        "verified": "Validée",
+        "rejected": "Refusée"
+      }
+    }
   }
 }

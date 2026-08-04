@@ -12,6 +12,7 @@ export enum DocumentType {
   CV = 'cv',
   CERTIFICATION = 'certification',
   OTHER = 'other',
+  DIPLOMA = 'diploma',
 }
 
 export enum ScanStatus {

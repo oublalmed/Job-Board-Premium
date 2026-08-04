@@ -2,7 +2,19 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { User, MapPin, Upload, Trash2, Save, FileText, Briefcase, Building2 } from 'lucide-react';
+import {
+  User,
+  MapPin,
+  Upload,
+  Trash2,
+  Save,
+  FileText,
+  Briefcase,
+  Building2,
+  ShieldCheck,
+  Clock,
+  ShieldX,
+} from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -40,6 +52,7 @@ interface ProfileData {
     availability?: string | null;
     mobility?: string | null;
     school?: string | null;
+    schoolVerified?: boolean;
     visibility?: 'public' | 'recruiters_only' | 'hidden';
   };
   // The profile endpoint nests the full CompletenessResultDto here, not
@@ -62,6 +75,19 @@ interface CvData {
     mimeType: string;
     size: number;
     scanStatus: string;
+  } | null;
+}
+
+type SchoolVerificationStatus = 'pending' | 'verified' | 'rejected';
+
+interface SchoolVerificationData {
+  verification: {
+    id: string;
+    status: SchoolVerificationStatus;
+    matchedSchool: string | null;
+    reviewNote: string | null;
+    createdAt: string;
+    reviewedAt: string | null;
   } | null;
 }
 
@@ -183,6 +209,10 @@ function CandidateProfile() {
   const [completeness, setCompleteness] = useState<number>(0);
   const [cv, setCv] = useState<CvData['cv']>(null);
   const [uploading, setUploading] = useState(false);
+  const [schoolVerified, setSchoolVerified] = useState(false);
+  const [verification, setVerification] = useState<SchoolVerificationData['verification']>(null);
+  const [uploadingDiploma, setUploadingDiploma] = useState(false);
+  const diplomaInputRef = useRef<HTMLInputElement>(null);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -201,9 +231,10 @@ function CandidateProfile() {
   async function loadAll() {
     setLoading(true);
     try {
-      const [profileRes, cvRes] = await Promise.all([
+      const [profileRes, cvRes, verificationRes] = await Promise.all([
         apiClient.GET('/api/v1/candidates/profile'),
         apiClient.GET('/api/v1/candidates/cv'),
+        apiClient.GET('/api/v1/candidates/school-verification'),
       ]);
 
       if (profileRes.data) {
@@ -217,12 +248,17 @@ function CandidateProfile() {
         setAvailability(p.availability ?? '');
         setMobility(p.mobility ?? '');
         setSchool(p.school ?? '');
+        setSchoolVerified(p.schoolVerified ?? false);
         setVisibility(p.visibility ?? 'hidden');
         setCompleteness(d.completeness?.completeness ?? 0);
       }
 
       if (cvRes.data) {
         setCv((cvRes.data as CvData).cv ?? null);
+      }
+
+      if (verificationRes.data) {
+        setVerification((verificationRes.data as SchoolVerificationData).verification ?? null);
       }
     } finally {
       setLoading(false);
@@ -302,6 +338,34 @@ function CandidateProfile() {
 
     const compRes = await apiClient.GET('/api/v1/candidates/profile/completeness');
     if (compRes.data) setCompleteness((compRes.data as { completeness: number }).completeness ?? 0);
+  }
+
+  async function handleUploadDiploma(file: File) {
+    setUploadingDiploma(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const res = await fetch(`${baseUrl}/api/v1/candidates/school-verification`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getAccessToken()}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        toast(t('common.error'), 'error');
+        return;
+      }
+
+      toast(t('profile.diplomaUploaded'), 'success');
+      const verificationRes = await apiClient.GET('/api/v1/candidates/school-verification');
+      if (verificationRes.data) {
+        setVerification((verificationRes.data as SchoolVerificationData).verification ?? null);
+      }
+    } finally {
+      setUploadingDiploma(false);
+    }
   }
 
   if (!user) return null;
@@ -439,7 +503,15 @@ function CandidateProfile() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="school">{t('profile.school')}</Label>
+                <Label htmlFor="school" className="flex items-center gap-2">
+                  {t('profile.school')}
+                  {schoolVerified && (
+                    <Badge variant="success" className="gap-1">
+                      <ShieldCheck className="size-3" />
+                      {t('profile.schoolVerifiedBadge')}
+                    </Badge>
+                  )}
+                </Label>
                 <Input
                   id="school"
                   value={school}
@@ -511,6 +583,67 @@ function CandidateProfile() {
                 >
                   <Upload className="size-4" />
                   {uploading ? t('common.loading') : t('profile.uploadCv')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('profile.schoolVerification.title')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {verification && (
+            <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+              {verification.status === 'verified' && (
+                <ShieldCheck className="size-5 shrink-0 text-emerald-600" />
+              )}
+              {verification.status === 'pending' && (
+                <Clock className="size-5 shrink-0 text-amber-600" />
+              )}
+              {verification.status === 'rejected' && (
+                <ShieldX className="size-5 shrink-0 text-destructive" />
+              )}
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {t(`profile.schoolVerification.status.${verification.status}`)}
+                  {verification.matchedSchool ? ` — ${verification.matchedSchool}` : ''}
+                </p>
+                {verification.status === 'rejected' && verification.reviewNote && (
+                  <p className="mt-1 text-xs text-muted-foreground">{verification.reviewNote}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(!verification || verification.status === 'rejected') && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-muted-foreground">
+                {t('profile.schoolVerification.hint')}
+              </p>
+              <div>
+                <input
+                  ref={diplomaInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleUploadDiploma(file);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => diplomaInputRef.current?.click()}
+                  disabled={uploadingDiploma}
+                >
+                  <Upload className="size-4" />
+                  {uploadingDiploma
+                    ? t('common.loading')
+                    : t('profile.schoolVerification.upload')}
                 </Button>
               </div>
             </div>

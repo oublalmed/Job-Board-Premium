@@ -28,6 +28,7 @@ import { AuditModule } from './modules/audit/audit.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { SchoolVerificationModule } from './modules/school-verification/school-verification.module.js';
 import { PortsModule } from './ports/ports.module.js';
 
 @Module({
@@ -93,6 +94,7 @@ import { PortsModule } from './ports/ports.module.js';
     SettingsModule,
     HealthModule,
     NotificationsModule,
+    SchoolVerificationModule,
   ],
 })
 export class AppModule {}
