@@ -48,14 +48,8 @@ export class CandidateProfile {
   @Column({ type: 'varchar', nullable: true })
   location!: string | null;
 
-  @Column({ name: 'salary_min', type: 'integer', nullable: true })
-  salaryMin!: number | null;
-
-  @Column({ name: 'salary_max', type: 'integer', nullable: true })
-  salaryMax!: number | null;
-
-  @Column({ name: 'salary_visible', default: false })
-  salaryVisible!: boolean;
+  @Column({ type: 'varchar', nullable: true })
+  school!: string | null;
 
   @Column({
     type: 'enum',

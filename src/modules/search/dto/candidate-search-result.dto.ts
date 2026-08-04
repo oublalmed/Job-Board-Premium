@@ -10,8 +10,6 @@ export interface CandidateSearchResultDto {
   score: number;
   percentile: number | null;
   featured: boolean;
-  salaryMin: number | null;
-  salaryMax: number | null;
 }
 
 export interface SearchCandidatesResult {

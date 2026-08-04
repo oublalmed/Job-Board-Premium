@@ -31,7 +31,7 @@ describe('CandidateProfileService — completeness calculation', () => {
     completeness_weight_cv: '15',
     completeness_weight_links: '15',
     completeness_weight_availability: '10',
-    completeness_weight_salary: '5',
+    completeness_weight_school: '5',
     completeness_threshold_publishable: '70',
     completeness_min_skills: '5',
   };
@@ -87,8 +87,7 @@ describe('CandidateProfileService — completeness calculation', () => {
     bio: null,
     availability: null,
     mobility: null,
-    salaryMin: null,
-    salaryMax: null,
+    school: null,
     completeness: 0,
   };
 
@@ -200,11 +199,10 @@ describe('CandidateProfileService — completeness calculation', () => {
       expect(result.completeness).toBe(0);
     });
 
-    it('should give 5% for salary expectations', async () => {
+    it('should give 5% for school', async () => {
       profileRepo.findOne.mockResolvedValue({
         ...baseProfile,
-        salaryMin: 8000,
-        salaryMax: 12000,
+        school: 'ENSIAS',
       });
 
       const result = await service.calculateCompleteness(profileId);
@@ -221,8 +219,7 @@ describe('CandidateProfileService — completeness calculation', () => {
         bio: 'Experienced',
         availability: 'immediate',
         mobility: 'remote',
-        salaryMin: 8000,
-        salaryMax: 12000,
+        school: 'ENSIAS',
       });
       experienceRepo.count.mockResolvedValue(2);
       skillRepo.count.mockResolvedValue(7);
@@ -279,7 +276,7 @@ describe('CandidateProfileService — completeness calculation', () => {
           expect.objectContaining({ key: 'cv', weight: 15 }),
           expect.objectContaining({ key: 'links', weight: 15 }),
           expect.objectContaining({ key: 'availability', weight: 10 }),
-          expect.objectContaining({ key: 'salary', weight: 5 }),
+          expect.objectContaining({ key: 'school', weight: 5 }),
         ]),
       );
     });
@@ -294,7 +291,7 @@ describe('CandidateProfileService — completeness calculation', () => {
         if (key === 'completeness_weight_links') return Promise.resolve(10);
         if (key === 'completeness_weight_availability')
           return Promise.resolve(25);
-        if (key === 'completeness_weight_salary') return Promise.resolve(15);
+        if (key === 'completeness_weight_school') return Promise.resolve(15);
         if (key === 'completeness_threshold_publishable')
           return Promise.resolve(70);
         if (key === 'completeness_min_skills') return Promise.resolve(5);

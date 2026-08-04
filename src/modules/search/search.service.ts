@@ -99,8 +99,6 @@ export class SearchService {
           ? Number(rawPage[i].bestScorePercentile)
           : null,
       featured: profile.featured,
-      salaryMin: profile.salaryVisible ? profile.salaryMin : null,
-      salaryMax: profile.salaryVisible ? profile.salaryMax : null,
     }));
 
     let nextCursor: string | null = null;
@@ -163,8 +161,6 @@ export class SearchService {
           ? Number(raw[0].bestScorePercentile)
           : null,
       featured: profile.featured,
-      salaryMin: profile.salaryVisible ? profile.salaryMin : null,
-      salaryMax: profile.salaryVisible ? profile.salaryMax : null,
     };
   }
 
@@ -231,22 +227,6 @@ export class SearchService {
       qb.andWhere('profile.location ILIKE :location', {
         location: `%${filters.location}%`,
       });
-    }
-
-    if (filters.salaryMin !== undefined || filters.salaryMax !== undefined) {
-      qb.andWhere('profile.salaryVisible = true');
-      if (filters.salaryMax !== undefined) {
-        qb.andWhere(
-          '(profile.salaryMin IS NULL OR profile.salaryMin <= :reqSalaryMax)',
-          { reqSalaryMax: filters.salaryMax },
-        );
-      }
-      if (filters.salaryMin !== undefined) {
-        qb.andWhere(
-          '(profile.salaryMax IS NULL OR profile.salaryMax >= :reqSalaryMin)',
-          { reqSalaryMin: filters.salaryMin },
-        );
-      }
     }
 
     if (filters.cursor) {

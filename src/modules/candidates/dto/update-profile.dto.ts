@@ -1,11 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsNumber,
-  IsBoolean,
-  IsEnum,
-  Min,
-} from 'class-validator';
+import { IsString, IsOptional, IsEnum } from 'class-validator';
 import { ProfileVisibility } from '../entities/candidate-profile.entity.js';
 
 export class UpdateProfileDto {
@@ -38,18 +31,8 @@ export class UpdateProfileDto {
   location?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  salaryMin?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  salaryMax?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  salaryVisible?: boolean;
+  @IsString()
+  school?: string;
 
   @IsOptional()
   @IsEnum(ProfileVisibility)

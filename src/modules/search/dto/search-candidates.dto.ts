@@ -48,18 +48,6 @@ export class SearchCandidatesDto {
   location?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  salaryMin?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  salaryMax?: number;
-
-  @IsOptional()
   @IsString()
   cursor?: string;
 

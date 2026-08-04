@@ -31,7 +31,7 @@ interface CompletenessWeights {
   cv: number;
   links: number;
   availability: number;
-  salary: number;
+  school: number;
   threshold: number;
   minSkills: number;
 }
@@ -84,9 +84,7 @@ export class CandidateProfileService {
         | 'availability'
         | 'mobility'
         | 'location'
-        | 'salaryMin'
-        | 'salaryMax'
-        | 'salaryVisible'
+        | 'school'
         | 'visibility'
       >
     >,
@@ -195,13 +193,13 @@ export class CandidateProfileService {
       });
     }
 
-    if (profile.salaryMin !== null && profile.salaryMax !== null) {
-      completeness += weights.salary;
+    if (profile.school) {
+      completeness += weights.school;
     } else {
       missing.push({
-        key: 'salary',
-        label: 'Prétentions salariales',
-        weight: weights.salary,
+        key: 'school',
+        label: 'École',
+        weight: weights.school,
       });
     }
 
@@ -223,7 +221,7 @@ export class CandidateProfileService {
       cv,
       links,
       availability,
-      salary,
+      school,
       threshold,
       minSkills,
     ] = await Promise.all([
@@ -233,7 +231,7 @@ export class CandidateProfileService {
       this.settingsService.getNumber('completeness_weight_cv'),
       this.settingsService.getNumber('completeness_weight_links'),
       this.settingsService.getNumber('completeness_weight_availability'),
-      this.settingsService.getNumber('completeness_weight_salary'),
+      this.settingsService.getNumber('completeness_weight_school'),
       this.settingsService.getNumber('completeness_threshold_publishable'),
       this.settingsService.getNumber('completeness_min_skills'),
     ]);
@@ -245,7 +243,7 @@ export class CandidateProfileService {
       cv: cv ?? 15,
       links: links ?? 15,
       availability: availability ?? 10,
-      salary: salary ?? 5,
+      school: school ?? 5,
       threshold: threshold ?? 70,
       minSkills: minSkills ?? 5,
     };

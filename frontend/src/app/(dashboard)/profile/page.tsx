@@ -39,9 +39,7 @@ interface ProfileData {
     location?: string | null;
     availability?: string | null;
     mobility?: string | null;
-    salaryMin?: number | null;
-    salaryMax?: number | null;
-    salaryVisible?: boolean;
+    school?: string | null;
     visibility?: 'public' | 'recruiters_only' | 'hidden';
   };
   // The profile endpoint nests the full CompletenessResultDto here, not
@@ -193,9 +191,7 @@ function CandidateProfile() {
   const [location, setLocation] = useState('');
   const [availability, setAvailability] = useState('');
   const [mobility, setMobility] = useState('');
-  const [salaryMin, setSalaryMin] = useState('');
-  const [salaryMax, setSalaryMax] = useState('');
-  const [salaryVisible, setSalaryVisible] = useState(false);
+  const [school, setSchool] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'recruiters_only' | 'hidden'>('hidden');
 
   useEffect(() => {
@@ -220,9 +216,7 @@ function CandidateProfile() {
         setLocation(p.location ?? '');
         setAvailability(p.availability ?? '');
         setMobility(p.mobility ?? '');
-        setSalaryMin(p.salaryMin != null ? String(p.salaryMin) : '');
-        setSalaryMax(p.salaryMax != null ? String(p.salaryMax) : '');
-        setSalaryVisible(p.salaryVisible ?? false);
+        setSchool(p.school ?? '');
         setVisibility(p.visibility ?? 'hidden');
         setCompleteness(d.completeness?.completeness ?? 0);
       }
@@ -246,11 +240,9 @@ function CandidateProfile() {
         location: location || undefined,
         availability: availability || undefined,
         mobility: mobility || undefined,
-        salaryVisible,
+        school: school || undefined,
         visibility,
       };
-      if (salaryMin) body.salaryMin = Number(salaryMin);
-      if (salaryMax) body.salaryMax = Number(salaryMax);
 
       const { error } = await apiClient.PUT('/api/v1/candidates/profile', {
         body: body as never,
@@ -446,61 +438,31 @@ function CandidateProfile() {
                   placeholder={t('profile.mobilityPlaceholder')}
                 />
               </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="school">{t('profile.school')}</Label>
+                <Input
+                  id="school"
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value)}
+                  placeholder={t('profile.schoolPlaceholder')}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="visibility">{t('profile.visibility')}</Label>
+                <Select
+                  id="visibility"
+                  value={visibility}
+                  onChange={(e) => setVisibility(e.target.value as typeof visibility)}
+                >
+                  <option value="public">{t('profile.visibilityPublic')}</option>
+                  <option value="recruiters_only">{t('profile.visibilityRecruitersOnly')}</option>
+                  <option value="hidden">{t('profile.visibilityHidden')}</option>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('profile.salaryExpectation')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="salaryMin">{t('profile.salaryMin')}</Label>
-              <Input
-                id="salaryMin"
-                type="number"
-                min={0}
-                value={salaryMin}
-                onChange={(e) => setSalaryMin(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="salaryMax">{t('profile.salaryMax')}</Label>
-              <Input
-                id="salaryMax"
-                type="number"
-                min={0}
-                value={salaryMax}
-                onChange={(e) => setSalaryMax(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="visibility">{t('profile.visibility')}</Label>
-              <Select
-                id="visibility"
-                value={visibility}
-                onChange={(e) => setVisibility(e.target.value as typeof visibility)}
-              >
-                <option value="public">{t('profile.visibilityPublic')}</option>
-                <option value="recruiters_only">{t('profile.visibilityRecruitersOnly')}</option>
-                <option value="hidden">{t('profile.visibilityHidden')}</option>
-              </Select>
-            </div>
-          </div>
-          <label className="mt-4 flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={salaryVisible}
-              onChange={(e) => setSalaryVisible(e.target.checked)}
-              className="size-4 rounded border-input accent-primary"
-            />
-            {t('profile.salaryVisible')}
-          </label>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

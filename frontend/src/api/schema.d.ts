@@ -837,9 +837,7 @@ export interface components {
             availability: string | null;
             mobility: string | null;
             location: string | null;
-            salaryMin: number | null;
-            salaryMax: number | null;
-            salaryVisible: boolean;
+            school: string | null;
             /** @enum {string} */
             visibility: "public" | "recruiters_only" | "hidden";
             completeness: number;
@@ -872,9 +870,7 @@ export interface components {
             availability?: string;
             mobility?: string;
             location?: string;
-            salaryMin?: number;
-            salaryMax?: number;
-            salaryVisible?: boolean;
+            school?: string;
             /** @enum {string} */
             visibility?: "public" | "recruiters_only" | "hidden";
         };
@@ -2155,8 +2151,6 @@ export interface operations {
                 availability?: string;
                 mobility?: string;
                 location?: string;
-                salaryMin?: number;
-                salaryMax?: number;
                 cursor?: string;
                 limit?: number;
             };

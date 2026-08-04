@@ -48,9 +48,6 @@ describe('SearchService', () => {
       mobility: 'remote',
       location: 'Casablanca',
       featured: false,
-      salaryMin: 8000,
-      salaryMax: 12000,
-      salaryVisible: true,
       ...overrides,
     };
   }
@@ -160,22 +157,6 @@ describe('SearchService', () => {
         { location: '%Rabat%' },
       );
     });
-
-    it('gates on salaryVisible and applies range overlap when salary filters are provided', async () => {
-      await service.searchCandidates({ salaryMin: 5000, salaryMax: 15000 });
-
-      expect(mainQb.andWhere).toHaveBeenCalledWith(
-        'profile.salaryVisible = true',
-      );
-      expect(mainQb.andWhere).toHaveBeenCalledWith(
-        expect.stringContaining('profile.salaryMin'),
-        { reqSalaryMax: 15000 },
-      );
-      expect(mainQb.andWhere).toHaveBeenCalledWith(
-        expect.stringContaining('profile.salaryMax'),
-        { reqSalaryMin: 5000 },
-      );
-    });
   });
 
   describe('pagination curseur (EF-SRCH-02)', () => {
@@ -238,25 +219,6 @@ describe('SearchService', () => {
   });
 
   describe('mapping du résultat', () => {
-    it('hides salary when the candidate has not made it visible', async () => {
-      mainQb.getRawAndEntities.mockResolvedValue({
-        entities: [
-          makeProfileEntity({
-            id: 'p1',
-            salaryVisible: false,
-            salaryMin: 5000,
-            salaryMax: 9000,
-          }),
-        ],
-        raw: [{ bestScoreValue: '60', bestScorePercentile: '55' }],
-      });
-
-      const result = await service.searchCandidates({});
-
-      expect(result.items[0].salaryMin).toBeNull();
-      expect(result.items[0].salaryMax).toBeNull();
-    });
-
     it('defaults score to 0 and percentile to null when no valid score exists', async () => {
       mainQb.getRawAndEntities.mockResolvedValue({
         entities: [makeProfileEntity({ id: 'p1' })],
@@ -327,7 +289,7 @@ describe('SearchService', () => {
 
     it('returns the same field shape as a search result item, including skills and score', async () => {
       mainQb.getRawAndEntities.mockResolvedValue({
-        entities: [makeProfileEntity({ id: 'p1', salaryVisible: false })],
+        entities: [makeProfileEntity({ id: 'p1' })],
         raw: [{ bestScoreValue: '80', bestScorePercentile: '90' }],
       });
       skillQb.getRawMany.mockResolvedValue([
@@ -348,8 +310,6 @@ describe('SearchService', () => {
         score: 80,
         percentile: 90,
         featured: false,
-        salaryMin: null,
-        salaryMax: null,
       });
     });
   });
