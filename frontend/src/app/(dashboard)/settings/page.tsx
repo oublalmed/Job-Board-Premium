@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Download, Trash2, Loader2 } from 'lucide-react';
+import { UserCog, Mail, Shield, Download, Trash2, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -10,6 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -54,22 +62,34 @@ export default function SettingsPage() {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <h1 className="text-2xl font-bold text-foreground">{t('settings.title')}</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('settings.account')}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <UserCog className="size-5 text-primary" />
+            {t('settings.account')}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label>{t('profile.email')}</Label>
+              <Label className="flex items-center gap-1.5">
+                <Mail className="size-3.5 text-muted-foreground" />
+                {t('profile.email')}
+              </Label>
               <Input value={user.email} disabled />
             </div>
             <div className="flex flex-col gap-2">
               <Label>{t('dashboard.roles', { roles: '' })}</Label>
-              <Input value={user.roles.join(', ')} disabled />
+              <div className="flex flex-wrap gap-1.5 pt-1.5">
+                {user.roles.map((role) => (
+                  <Badge key={role} variant="secondary">
+                    {role}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -78,7 +98,10 @@ export default function SettingsPage() {
       {isCandidate && (
         <Card>
           <CardHeader>
-            <CardTitle>{t('settings.data')}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="size-5 text-primary" />
+              {t('settings.data')}
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
             <div className="flex items-start justify-between gap-4">
@@ -106,7 +129,7 @@ export default function SettingsPage() {
               </Button>
             </div>
 
-            <div className="border-t border-border pt-6">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/[0.02] p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-destructive">
@@ -135,6 +158,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </motion.div>
   );
 }

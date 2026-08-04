@@ -4,9 +4,16 @@ import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { Button } from '@/components/ui/button';
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
 
 function VerifyEmailContent() {
   const { t } = useLocale();
@@ -30,17 +37,21 @@ function VerifyEmailContent() {
   }
 
   return (
-    <div className="w-full max-w-sm text-center">
+    <motion.div className="w-full max-w-sm text-center" {...fadeUp}>
       {status === 'loading' && (
         <>
-          <Loader2 className="mx-auto mb-4 size-10 animate-spin text-primary" />
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10">
+            <Loader2 className="size-8 animate-spin text-primary" />
+          </div>
           <p className="text-sm text-muted-foreground">{t('verifyEmail.verifying')}</p>
         </>
       )}
 
       {status === 'success' && (
         <>
-          <CheckCircle2 className="mx-auto mb-4 size-10 text-emerald-500" />
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
+            <CheckCircle2 className="size-8 text-emerald-500" />
+          </div>
           <h1 className="text-xl font-bold text-foreground">{t('verifyEmail.success')}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {t('verifyEmail.successDescription')}
@@ -53,7 +64,9 @@ function VerifyEmailContent() {
 
       {status === 'error' && (
         <>
-          <XCircle className="mx-auto mb-4 size-10 text-destructive" />
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10">
+            <XCircle className="size-8 text-destructive" />
+          </div>
           <h1 className="text-xl font-bold text-foreground">{t('verifyEmail.error')}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {t('verifyEmail.errorDescription')}
@@ -63,13 +76,16 @@ function VerifyEmailContent() {
           </Link>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-6">
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
+      </div>
       <Suspense
         fallback={
           <div className="text-center">

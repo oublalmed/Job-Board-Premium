@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, type FormEvent } from 'react';
-import { Building2, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Building2, Plus, Trash2, Loader2, Mail } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -16,6 +17,12 @@ import type { components } from '@/api/schema';
 
 type Company = components['schemas']['Company'];
 type Recruiter = components['schemas']['Recruiter'];
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
 
 export default function CompanyPage() {
   const { user } = useAuth();
@@ -137,12 +144,15 @@ export default function CompanyPage() {
 
   if (!hasCompany) {
     return (
-      <div className="flex flex-col gap-8">
+      <motion.div className="flex flex-col gap-8" {...fadeUp}>
         <h1 className="text-2xl font-bold text-foreground">{t('company.title')}</h1>
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('company.createTitle')}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="size-5 text-primary" />
+              {t('company.createTitle')}
+            </CardTitle>
             <p className="text-sm text-muted-foreground">{t('company.createDescription')}</p>
           </CardHeader>
           <CardContent>
@@ -196,15 +206,16 @@ export default function CompanyPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <h1 className="text-2xl font-bold text-foreground">{t('company.title')}</h1>
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-1.5 bg-gradient-to-r from-primary via-primary/60 to-primary/20" />
         <CardHeader>
           <CardTitle>{company?.name}</CardTitle>
         </CardHeader>
@@ -231,26 +242,32 @@ export default function CompanyPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{t('company.recruiters')}</CardTitle>
+          {recruiters.length > 0 && (
+            <Badge variant="secondary">{recruiters.length}</Badge>
+          )}
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {recruiters.map((r) => (
             <div
               key={r.id}
-              className="flex items-center justify-between rounded-xl border border-border/50 p-4"
+              className="group flex items-center justify-between rounded-xl border border-border/50 p-4 transition-all hover:border-border"
             >
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {r.user?.email ?? r.userId}
-                </p>
-                {r.position && (
-                  <p className="text-xs text-muted-foreground">{r.position}</p>
-                )}
+              <div className="flex items-center gap-3">
+                <Mail className="size-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {r.user?.email ?? r.userId}
+                  </p>
+                  {r.position && (
+                    <p className="text-xs text-muted-foreground">{r.position}</p>
+                  )}
+                </div>
               </div>
               {isCompanyAdmin && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:text-destructive"
                   onClick={() => void handleRemoveRecruiter(r.id)}
                 >
                   <Trash2 className="size-4" />
@@ -268,7 +285,10 @@ export default function CompanyPage() {
               onSubmit={(e) => void handleAddRecruiter(e)}
               className="mt-2 flex flex-col gap-3 rounded-xl border border-dashed border-border p-4"
             >
-              <p className="text-sm font-medium text-foreground">{t('company.addRecruiter')}</p>
+              <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Plus className="size-4 text-primary" />
+                {t('company.addRecruiter')}
+              </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs">{t('company.recruiterEmail')}</Label>
@@ -304,6 +324,6 @@ export default function CompanyPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

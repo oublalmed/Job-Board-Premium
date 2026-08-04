@@ -10,8 +10,10 @@ import {
   ChevronUp,
   Loader2,
   Eye,
+  SlidersHorizontal,
 } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -37,6 +39,12 @@ interface SearchResponse {
   total?: number;
 }
 
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
+
 export default function CandidatesPage() {
   const { t } = useLocale();
   const { toast } = useToast();
@@ -53,6 +61,8 @@ export default function CandidatesPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
+
+  const hasActiveFilters = skills || locationFilter || availabilityFilter || mobilityFilter;
 
   const doSearch = useCallback(
     async (cursor?: string) => {
@@ -114,7 +124,7 @@ export default function CandidatesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <h1 className="text-2xl font-bold text-foreground">{t('search.title')}</h1>
 
       <div className="flex flex-col gap-4">
@@ -138,12 +148,15 @@ export default function CandidatesPage() {
             onClick={() => setShowFilters((prev) => !prev)}
             className="gap-1"
           >
+            <SlidersHorizontal className="size-4" />
             {showFilters ? (
               <ChevronUp className="size-4" />
             ) : (
               <ChevronDown className="size-4" />
             )}
-            {showFilters ? t('search.hideFilters') : t('search.showFilters')}
+            {hasActiveFilters && (
+              <div className="size-2 rounded-full bg-primary" />
+            )}
           </Button>
         </div>
 
@@ -193,7 +206,7 @@ export default function CandidatesPage() {
         {candidates.map((candidate) => (
           <Card key={candidate.id} className="transition-all duration-200 hover:shadow-md">
             <CardContent className="flex items-center gap-6 p-5">
-              <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
+              <div className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-lg font-semibold text-primary">
                 {(candidate.firstName?.[0] ?? '?').toUpperCase()}
               </div>
 
@@ -228,7 +241,7 @@ export default function CandidatesPage() {
                 <Link href={`/candidates/${candidate.id}`}>
                   <Button variant="ghost" size="sm" className="gap-1.5">
                     <Eye className="size-3.5" />
-                    {t('search.viewProfile')}
+                    <span className="hidden sm:inline">{t('search.viewProfile')}</span>
                   </Button>
                 </Link>
                 <Button
@@ -239,7 +252,7 @@ export default function CandidatesPage() {
                   disabled={addingIds.has(candidate.id)}
                 >
                   <UserPlus className="size-3.5" />
-                  {t('search.addToShortlist')}
+                  <span className="hidden sm:inline">{t('search.addToShortlist')}</span>
                 </Button>
               </div>
             </CardContent>
@@ -248,7 +261,9 @@ export default function CandidatesPage() {
 
         {searched && !loading && candidates.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-12 text-center">
-            <Search className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+            <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-muted">
+              <Search className="size-7 text-muted-foreground/50" />
+            </div>
             <p className="text-sm text-muted-foreground">{t('search.noResults')}</p>
           </div>
         )}
@@ -266,6 +281,6 @@ export default function CandidatesPage() {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

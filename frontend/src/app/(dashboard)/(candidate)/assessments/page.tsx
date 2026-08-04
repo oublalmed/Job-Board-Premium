@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Play,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -45,12 +46,12 @@ interface Session {
 
 const SESSION_KEY = 'jbp_assessment_session';
 
-// No GET /assessments (list-mine) endpoint exists — confirmed absent
-// (only start/resume/incident/:id/feedback, all requiring an ID the
-// caller already has). sessionStorage is the only way this page can
-// survive a refresh without asking the candidate to retype IDs; it is
-// a real, disclosed limit (a different tab/device genuinely can't
-// recover a session), not something worked around here.
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
+
 function loadSession(): Session | null {
   if (typeof window === 'undefined') return null;
   const raw = sessionStorage.getItem(SESSION_KEY);
@@ -70,10 +71,6 @@ function saveSession(session: Session | null) {
   }
 }
 
-// The backend's error bodies are English, untranslated (a real backend
-// gap, not something this page can paper over) — best-effort maps the
-// two known real conflict shapes to real French copy, falls back to
-// showing the raw backend message rather than a silent/generic error.
 function describeStartError(
   error: unknown,
   t: (key: string, vars?: Record<string, string>) => string,
@@ -116,10 +113,6 @@ export default function AssessmentsPage() {
   const [startingTestId, setStartingTestId] = useState<string | null>(null);
   const [composition, setComposition] = useState<EvaluationComposition | null>(null);
 
-  // Lazy initializer, not a mount effect + setState: sessionStorage is
-  // already available at first client render (this file is 'use
-  // client', loadSession() itself guards the `window === undefined`
-  // SSR case), so there's nothing to "synchronize" here.
   const [session, setSession] = useState<Session | null>(loadSession);
   const [reportingIncident, setReportingIncident] = useState(false);
   const [feedback, setFeedback] = useState<RemediationFeedback | null>(null);
@@ -261,7 +254,7 @@ export default function AssessmentsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('assessments.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -270,7 +263,8 @@ export default function AssessmentsPage() {
       </div>
 
       {session && (
-        <Card className="border-primary/30">
+        <Card className="overflow-hidden border-primary/30">
+          <div className="h-1 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Play className="size-5 text-primary" />
@@ -327,7 +321,7 @@ export default function AssessmentsPage() {
             {feedback && (
               <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-primary" />
+                  <CheckCircle2 className="size-4 text-emerald-500" />
                   <span className="text-sm font-medium text-foreground">
                     {t('assessments.feedbackResults')}
                   </span>
@@ -396,7 +390,7 @@ export default function AssessmentsPage() {
             {t('assessments.catalog.title')}
           </h2>
           {composition && (
-            <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-border/50 bg-muted/30 p-3">
+            <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-primary/20 bg-primary/[0.02] p-3">
               <p className="text-sm text-muted-foreground">
                 {t('assessments.composition.summary', {
                   technique: String(composition.techniqueWeight),
@@ -536,6 +530,6 @@ export default function AssessmentsPage() {
           </CardContent>
         )}
       </Card>
-    </div>
+    </motion.div>
   );
 }

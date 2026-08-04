@@ -11,7 +11,9 @@ import {
   UserPlus,
   MessageSquare,
   Loader2,
+  TrendingUp,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -31,6 +33,12 @@ interface CandidateDetail {
   skills: string[];
   featured: boolean;
 }
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
 
 export default function CandidateDetailPage() {
   const { t } = useLocale();
@@ -124,7 +132,7 @@ export default function CandidateDetailPage() {
   const fullName = [candidate.firstName, candidate.lastName].filter(Boolean).join(' ') || '—';
 
   return (
-    <div className="flex flex-col gap-6">
+    <motion.div className="flex flex-col gap-6" {...fadeUp}>
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="size-5" />
@@ -132,10 +140,11 @@ export default function CandidateDetailPage() {
         <h1 className="text-2xl font-bold text-foreground">{t('candidateDetail.title')}</h1>
       </div>
 
-      <Card>
-        <CardContent className="p-6">
+      <Card className="overflow-hidden">
+        <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
+        <CardContent className="relative p-6">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
-            <div className="flex size-20 shrink-0 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
+            <div className="-mt-16 flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-card bg-gradient-to-br from-primary/20 to-primary/5 text-2xl font-bold text-primary">
               {(candidate.firstName?.[0] ?? '?').toUpperCase()}
             </div>
 
@@ -205,7 +214,10 @@ export default function CandidateDetailPage() {
       {candidate.skills.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t('candidateDetail.skills')}</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="size-4 text-primary" />
+              {t('candidateDetail.skills')}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -218,6 +230,6 @@ export default function CandidateDetailPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </motion.div>
   );
 }

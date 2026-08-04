@@ -1,7 +1,18 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { CreditCard, Loader2, X, ArrowUpDown, Gift } from 'lucide-react';
+import {
+  CreditCard,
+  Loader2,
+  AlertTriangle,
+  ArrowUpDown,
+  Gift,
+  Zap,
+  Rocket,
+  Star,
+  Building2,
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -12,12 +23,18 @@ import { Label } from '@/components/ui/label';
 
 type Plan = 'starter' | 'growth' | 'scale' | 'enterprise';
 
-const PLANS: { plan: Plan; label: string }[] = [
-  { plan: 'starter', label: 'Starter' },
-  { plan: 'growth', label: 'Growth' },
-  { plan: 'scale', label: 'Scale' },
-  { plan: 'enterprise', label: 'Enterprise' },
+const PLANS: { plan: Plan; label: string; icon: typeof Zap; description: string }[] = [
+  { plan: 'starter', label: 'Starter', icon: Zap, description: 'For small teams' },
+  { plan: 'growth', label: 'Growth', icon: Rocket, description: 'Growing companies' },
+  { plan: 'scale', label: 'Scale', icon: Star, description: 'High volume hiring' },
+  { plan: 'enterprise', label: 'Enterprise', icon: Building2, description: 'Custom solutions' },
 ];
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
 
 export default function SubscriptionPage() {
   const { t } = useLocale();
@@ -111,13 +128,13 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <h1 className="text-2xl font-bold text-foreground">{t('subscription.title')}</h1>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CreditCard className="size-5" />
+            <CreditCard className="size-5 text-primary" />
             {t('subscription.subscribe')}
           </CardTitle>
         </CardHeader>
@@ -126,18 +143,22 @@ export default function SubscriptionPage() {
             <div className="flex flex-col gap-2">
               <Label>{t('subscription.choosePlan')}</Label>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {PLANS.map(({ plan, label }) => (
+                {PLANS.map(({ plan, label, icon: Icon, description }) => (
                   <button
                     key={plan}
                     type="button"
                     onClick={() => setSelectedPlan(plan)}
-                    className={`rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                    className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-4 text-sm font-medium transition-all ${
                       selectedPlan === plan
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                   >
+                    <Icon className="size-5" />
                     {label}
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      {description}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -153,7 +174,7 @@ export default function SubscriptionPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ArrowUpDown className="size-5" />
+            <ArrowUpDown className="size-5 text-primary" />
             {t('subscription.changePlan')}
           </CardTitle>
         </CardHeader>
@@ -162,17 +183,18 @@ export default function SubscriptionPage() {
             <div className="flex flex-col gap-2">
               <Label>{t('subscription.newPlan')}</Label>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {PLANS.map(({ plan, label }) => (
+                {PLANS.map(({ plan, label, icon: Icon }) => (
                   <button
                     key={plan}
                     type="button"
                     onClick={() => setChangePlan(plan)}
-                    className={`rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
                       changePlan === plan
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                   >
+                    <Icon className="size-4" />
                     {label}
                   </button>
                 ))}
@@ -189,7 +211,7 @@ export default function SubscriptionPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Gift className="size-5" />
+            <Gift className="size-5 text-primary" />
             {t('subscription.trialCode')}
           </CardTitle>
         </CardHeader>
@@ -212,15 +234,19 @@ export default function SubscriptionPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-destructive/60 to-destructive/20" />
         <CardContent className="flex items-start justify-between gap-4 p-5">
-          <div>
-            <p className="text-sm font-medium text-destructive">
-              {t('subscription.cancelSubscription')}
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {t('subscription.cancelDescription')}
-            </p>
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
+            <div>
+              <p className="text-sm font-medium text-destructive">
+                {t('subscription.cancelSubscription')}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t('subscription.cancelDescription')}
+              </p>
+            </div>
           </div>
           <Button
             variant="destructive"
@@ -229,15 +255,11 @@ export default function SubscriptionPage() {
             onClick={() => void handleCancel()}
             disabled={cancelling}
           >
-            {cancelling ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <X className="size-4" />
-            )}
+            {cancelling && <Loader2 className="size-4 animate-spin" />}
             {t('subscription.cancel')}
           </Button>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }
