@@ -8,8 +8,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { Inject } from '@nestjs/common';
+import { Inject, Optional } from '@nestjs/common';
 import { Assessment, AssessmentStatus } from './entities/assessment.entity.js';
+import { AnalyticsService } from '../analytics/analytics.service.js';
+import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
 import { Test as TestEntity } from './entities/test.entity.js';
 import type { ScoringProvider } from '../../ports/scoring.port.js';
 import { SCORING_PROVIDER } from '../../ports/scoring.port.js';
@@ -33,6 +35,9 @@ export class AssessmentService {
     private readonly scoringProvider: ScoringProvider,
     private readonly settingsService: SettingsService,
     private readonly auditService: AuditService,
+    // Optional so unit tests that construct this service without the (global)
+    // AnalyticsModule keep working — analytics is never a hard dependency.
+    @Optional() private readonly analytics?: AnalyticsService,
   ) {}
 
   async startAssessment(
@@ -89,6 +94,11 @@ export class AssessmentService {
       entityType: 'assessment',
       entityId: saved.id,
       metadata: { testId, externalId },
+    });
+
+    // EF-ADM-05 funnel — fire-and-forget.
+    void this.analytics?.track(AnalyticsEventType.TEST_STARTED, candidateId, {
+      testId,
     });
 
     return { assessment: saved, assessmentUrl };

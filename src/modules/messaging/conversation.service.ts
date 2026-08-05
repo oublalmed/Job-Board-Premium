@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { AnalyticsService } from '../analytics/analytics.service.js';
+import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
 import { DataSource, Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity.js';
 import { Message, MessageSenderRole } from './entities/message.entity.js';
@@ -24,6 +26,8 @@ export class ConversationService {
     private readonly conversationRepo: Repository<Conversation>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
+    // Optional so unit tests need not wire the (global) analytics module.
+    @Optional() private readonly analytics?: AnalyticsService,
   ) {}
 
   async openConversation(
@@ -42,7 +46,7 @@ export class ConversationService {
     }
 
     try {
-      return await this.dataSource.transaction(async (manager) => {
+      const created = await this.dataSource.transaction(async (manager) => {
         // Same transaction as the inserts below: if either insert fails
         // (including the unique-violation path this method handles just
         // below), the whole transaction — decrement included — rolls back.
@@ -68,6 +72,14 @@ export class ConversationService {
 
         return conversation;
       });
+
+      // EF-ADM-05 funnel — only a newly created thread counts as a contact.
+      void this.analytics?.track(
+        AnalyticsEventType.RECRUITER_CONTACT,
+        recruiterUserId,
+        { candidateProfileId },
+      );
+      return created;
     } catch (error) {
       if (!isUniqueViolation(error)) {
         throw error;

@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Inject,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -20,6 +21,8 @@ import { AuditService } from '../audit/audit.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ReferralService } from '../growth/referral.service.js';
+import { AnalyticsService } from '../analytics/analytics.service.js';
+import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
 import { Role } from '../../common/enums/role.enum.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
 import type { MailProvider } from '../../ports/mail.port.js';
@@ -45,6 +48,8 @@ export class AuthService {
     @Inject(MAIL_PROVIDER)
     private readonly mailProvider: MailProvider,
     private readonly referralService: ReferralService,
+    // Optional so the auth unit tests don't need the (global) analytics module.
+    @Optional() private readonly analytics?: AnalyticsService,
   ) {}
 
   async register(
@@ -109,6 +114,9 @@ export class AuthService {
       );
     }
 
+    // EF-ADM-05 funnel — fire-and-forget.
+    void this.analytics?.track(AnalyticsEventType.SIGNUP, user.id, { roles });
+
     return {
       user: { id: user.id, email: user.email },
       message: 'Registration successful. Please verify your email.',
@@ -144,6 +152,9 @@ export class AuthService {
         `Referral conversion tracking failed for ${user.id}: ${(error as Error).message}`,
       );
     }
+
+    // EF-ADM-05 funnel — fire-and-forget.
+    void this.analytics?.track(AnalyticsEventType.EMAIL_VERIFIED, user.id);
 
     return { message: 'Email verified successfully' };
   }
