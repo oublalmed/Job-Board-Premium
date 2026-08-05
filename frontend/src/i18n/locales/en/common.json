@@ -416,6 +416,16 @@
       "beginner": "Beginner"
     }
   },
+  "referral": {
+    "title": "Refer a friend",
+    "subtitle": "Invite candidates with your personal link and track conversions.",
+    "yourLink": "Your referral link",
+    "copyLink": "Copy link",
+    "copied": "Link copied",
+    "signups": "Sign-ups",
+    "conversions": "Conversions",
+    "invited": "You were invited to Talentiq 🎉"
+  },
   "admin": {
     "schoolVerifications": {
       "navLabel": "School verifications",

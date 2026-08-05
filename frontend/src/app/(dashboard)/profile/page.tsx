@@ -54,6 +54,7 @@ import {
   useUploadDiploma,
 } from '@/features/profile/queries';
 import { ScoreBadgeCard } from '@/features/badge/ScoreBadgeCard';
+import { ReferralCard } from '@/features/referral/ReferralCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -582,6 +583,8 @@ function CandidateProfile() {
       </Card>
 
       <ScoreBadgeCard />
+
+      <ReferralCard />
     </motion.div>
   );
 }

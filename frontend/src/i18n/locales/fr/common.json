@@ -416,6 +416,16 @@
       "beginner": "Débutant"
     }
   },
+  "referral": {
+    "title": "Parrainer",
+    "subtitle": "Invitez des candidats avec votre lien personnel et suivez les conversions.",
+    "yourLink": "Votre lien de parrainage",
+    "copyLink": "Copier le lien",
+    "copied": "Lien copié",
+    "signups": "Inscriptions",
+    "conversions": "Conversions",
+    "invited": "Vous avez été invité sur Talentiq 🎉"
+  },
   "admin": {
     "schoolVerifications": {
       "navLabel": "Vérifications école",

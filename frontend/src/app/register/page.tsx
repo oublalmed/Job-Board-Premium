@@ -1,10 +1,25 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { Suspense, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { Briefcase } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Briefcase, Gift } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
+
+// Isolated so its useSearchParams() sits under its own Suspense boundary,
+// keeping the register page statically prerenderable.
+function InvitedBanner() {
+  const { t } = useLocale();
+  const params = useSearchParams();
+  if (!params.get('ref')) return null;
+  return (
+    <div className="mb-6 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-foreground">
+      <Gift className="size-4 shrink-0 text-primary" />
+      {t('referral.invited')}
+    </div>
+  );
+}
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,8 +57,15 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
     try {
+      // referralCode is a real backend field (EF-GROW-02) not yet in the
+      // generated schema — `as never` matches the app's convention for
+      // sending fields the stale client type doesn't know about. Read from
+      // the URL at submit time (no state) to keep the page prerenderable.
+      const referralCode = new URLSearchParams(window.location.search).get('ref');
+      const body: Record<string, unknown> = { email, password, roles: [role] };
+      if (referralCode) body.referralCode = referralCode;
       const { error: apiError } = await apiClient.POST('/api/v1/auth/register', {
-        body: { email, password, roles: [role] },
+        body: body as never,
       });
       if (apiError) {
         setError(t('auth.register.error'));
@@ -93,6 +115,10 @@ export default function RegisterPage() {
                 {t('auth.register.subtitle')}
               </p>
             </div>
+
+            <Suspense fallback={null}>
+              <InvitedBanner />
+            </Suspense>
 
             <form
               onSubmit={(e) => void handleSubmit(e)}
