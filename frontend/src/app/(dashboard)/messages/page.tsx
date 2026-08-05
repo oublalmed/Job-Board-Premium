@@ -1,17 +1,30 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { MessageSquare, Send, Loader2, Inbox } from 'lucide-react';
+import { Send, Loader2, Inbox } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  openConversationSchema,
+  EMPTY_CONVERSATION,
+  type OpenConversationValues,
+} from '@/features/messages/schema';
+import { useOpenConversation } from '@/features/messages/queries';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -28,32 +41,21 @@ export default function MessagesPage() {
     ['recruiter', 'company_admin', 'admin'].includes(r),
   );
 
-  const [candidateProfileId, setCandidateProfileId] = useState('');
-  const [firstMessage, setFirstMessage] = useState('');
-  const [sending, setSending] = useState(false);
+  const openConversation = useOpenConversation();
+  const form = useForm<OpenConversationValues>({
+    resolver: zodResolver(openConversationSchema),
+    defaultValues: EMPTY_CONVERSATION,
+  });
 
-  async function handleOpenConversation(e: FormEvent) {
-    e.preventDefault();
-    if (!candidateProfileId.trim() || !firstMessage.trim()) return;
-    setSending(true);
-    try {
-      const { error } = await apiClient.POST('/api/v1/conversations', {
-        body: {
-          candidateProfileId: candidateProfileId.trim(),
-          message: firstMessage.trim(),
-        },
-      });
-      if (error) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      toast(t('messages.conversationOpened'), 'success');
-      setCandidateProfileId('');
-      setFirstMessage('');
-    } finally {
-      setSending(false);
-    }
-  }
+  const onSubmit = form.handleSubmit((values) => {
+    openConversation.mutate(values, {
+      onSuccess: () => {
+        toast(t('messages.conversationOpened'), 'success');
+        form.reset(EMPTY_CONVERSATION);
+      },
+      onError: () => toast(t('common.error'), 'error'),
+    });
+  });
 
   return (
     <motion.div className="flex flex-col gap-8" {...fadeUp}>
@@ -68,41 +70,52 @@ export default function MessagesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(e) => void handleOpenConversation(e)} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="candidate-id">ID candidat</Label>
-                <Input
-                  id="candidate-id"
-                  value={candidateProfileId}
-                  onChange={(e) => setCandidateProfileId(e.target.value)}
-                  placeholder="UUID du profil candidat"
-                  required
+            <Form {...form}>
+              <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4">
+                <FormField
+                  control={form.control}
+                  name="candidateProfileId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ID candidat</FormLabel>
+                      <FormControl>
+                        <Input placeholder="UUID du profil candidat" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="first-message">{t('messages.firstMessage')}</Label>
-                <Textarea
-                  id="first-message"
-                  value={firstMessage}
-                  onChange={(e) => setFirstMessage(e.target.value)}
-                  placeholder={t('messages.firstMessagePlaceholder')}
-                  rows={4}
-                  required
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('messages.firstMessage')}</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          rows={4}
+                          placeholder={t('messages.firstMessagePlaceholder')}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <Button
-                type="submit"
-                disabled={sending || !candidateProfileId.trim() || !firstMessage.trim()}
-                className="gap-2 self-start"
-              >
-                {sending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Send className="size-4" />
-                )}
-                {sending ? t('messages.sending') : t('messages.send')}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  disabled={openConversation.isPending}
+                  className="gap-2 self-start"
+                >
+                  {openConversation.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Send className="size-4" />
+                  )}
+                  {openConversation.isPending ? t('messages.sending') : t('messages.send')}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       )}
@@ -111,7 +124,9 @@ export default function MessagesPage() {
         <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted">
           <Inbox className="size-8 text-muted-foreground/50" />
         </div>
-        <p className="text-sm font-medium text-muted-foreground">{t('messages.noConversations')}</p>
+        <p className="text-sm font-medium text-muted-foreground">
+          {t('messages.noConversations')}
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">
           {isRecruiter
             ? 'Start a conversation with a candidate above'

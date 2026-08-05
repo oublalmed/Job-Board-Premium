@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import {
   CreditCard,
   Loader2,
@@ -13,22 +13,35 @@ import {
   Building2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { PLANS, trialCodeSchema, type Plan, type TrialCodeValues } from '@/features/subscription/schema';
+import {
+  useCancelSubscription,
+  useChangePlan,
+  useRedeemTrialCode,
+  useSubscribe,
+} from '@/features/subscription/queries';
 
-type Plan = 'starter' | 'growth' | 'scale' | 'enterprise';
-
-const PLANS: { plan: Plan; label: string; icon: typeof Zap; description: string }[] = [
-  { plan: 'starter', label: 'Starter', icon: Zap, description: 'For small teams' },
-  { plan: 'growth', label: 'Growth', icon: Rocket, description: 'Growing companies' },
-  { plan: 'scale', label: 'Scale', icon: Star, description: 'High volume hiring' },
-  { plan: 'enterprise', label: 'Enterprise', icon: Building2, description: 'Custom solutions' },
-];
+const PLAN_META: Record<Plan, { label: string; icon: typeof Zap; description: string }> = {
+  starter: { label: 'Starter', icon: Zap, description: 'For small teams' },
+  growth: { label: 'Growth', icon: Rocket, description: 'Growing companies' },
+  scale: { label: 'Scale', icon: Star, description: 'High volume hiring' },
+  enterprise: { label: 'Enterprise', icon: Building2, description: 'Custom solutions' },
+};
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -41,91 +54,55 @@ export default function SubscriptionPage() {
   const { toast } = useToast();
 
   const [selectedPlan, setSelectedPlan] = useState<Plan>('starter');
-  const [subscribing, setSubscribing] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
+  const [changePlanValue, setChangePlanValue] = useState<Plan>('growth');
 
-  const [changePlan, setChangePlan] = useState<Plan>('growth');
-  const [changingPlan, setChangingPlan] = useState(false);
+  const subscribe = useSubscribe();
+  const changePlan = useChangePlan();
+  const cancel = useCancelSubscription();
+  const redeem = useRedeemTrialCode();
 
-  const [trialCode, setTrialCode] = useState('');
-  const [redeemingCode, setRedeemingCode] = useState(false);
+  const trialForm = useForm<TrialCodeValues>({
+    resolver: zodResolver(trialCodeSchema),
+    defaultValues: { code: '' },
+  });
 
-  async function handleSubscribe(e: FormEvent) {
-    e.preventDefault();
-    setSubscribing(true);
-    try {
-      const { data, error } = await apiClient.POST('/api/v1/subscriptions', {
-        body: {
-          plan: selectedPlan,
-          successUrl: `${window.location.origin}/subscription?status=success`,
-          cancelUrl: `${window.location.origin}/subscription?status=cancelled`,
-        },
-      });
-      if (error) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      const result = data as unknown as { url?: string };
-      if (result?.url) {
-        window.location.href = result.url;
-      } else {
-        toast(t('subscription.created'), 'success');
-      }
-    } finally {
-      setSubscribing(false);
-    }
+  function handleSubscribe() {
+    subscribe.mutate(selectedPlan, {
+      onSuccess: (url) => {
+        if (url) {
+          window.location.href = url;
+        } else {
+          toast(t('subscription.created'), 'success');
+        }
+      },
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
-  async function handleCancel() {
+  function handleChangePlan() {
+    changePlan.mutate(changePlanValue, {
+      onSuccess: () => toast(t('subscription.planChanged'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
+  }
+
+  function handleCancel() {
     if (!confirm(t('subscription.cancelConfirm'))) return;
-    setCancelling(true);
-    try {
-      const { error } = await apiClient.POST('/api/v1/subscriptions/cancel');
-      if (error) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      toast(t('subscription.cancelled'), 'success');
-    } finally {
-      setCancelling(false);
-    }
+    cancel.mutate(undefined, {
+      onSuccess: () => toast(t('subscription.cancelled'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
-  async function handleChangePlan(e: FormEvent) {
-    e.preventDefault();
-    setChangingPlan(true);
-    try {
-      const { error } = await apiClient.POST('/api/v1/subscriptions/plan', {
-        body: { plan: changePlan },
-      });
-      if (error) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      toast(t('subscription.planChanged'), 'success');
-    } finally {
-      setChangingPlan(false);
-    }
-  }
-
-  async function handleRedeemTrialCode(e: FormEvent) {
-    e.preventDefault();
-    if (!trialCode.trim()) return;
-    setRedeemingCode(true);
-    try {
-      const { error } = await apiClient.POST('/api/v1/subscriptions/trial-code/redeem', {
-        body: { code: trialCode.trim() },
-      });
-      if (error) {
-        toast(t('subscription.redeemError'), 'error');
-        return;
-      }
-      toast(t('subscription.redeemed'), 'success');
-      setTrialCode('');
-    } finally {
-      setRedeemingCode(false);
-    }
-  }
+  const onRedeem = trialForm.handleSubmit((values) => {
+    redeem.mutate(values, {
+      onSuccess: () => {
+        toast(t('subscription.redeemed'), 'success');
+        trialForm.reset({ code: '' });
+      },
+      onError: () => toast(t('subscription.redeemError'), 'error'),
+    });
+  });
 
   return (
     <motion.div className="flex flex-col gap-8" {...fadeUp}>
@@ -138,36 +115,40 @@ export default function SubscriptionPage() {
             {t('subscription.subscribe')}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubscribe(e)} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label>{t('subscription.choosePlan')}</Label>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {PLANS.map(({ plan, label, icon: Icon, description }) => (
+        <CardContent className="flex flex-col gap-4">
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-sm font-medium">{t('subscription.choosePlan')}</legend>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {PLANS.map((plan) => {
+                const meta = PLAN_META[plan];
+                const Icon = meta.icon;
+                const active = selectedPlan === plan;
+                return (
                   <button
                     key={plan}
                     type="button"
+                    aria-pressed={active}
                     onClick={() => setSelectedPlan(plan)}
                     className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-4 text-sm font-medium transition-all ${
-                      selectedPlan === plan
+                      active
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                   >
                     <Icon className="size-5" />
-                    {label}
+                    {meta.label}
                     <span className="text-[10px] font-normal text-muted-foreground">
-                      {description}
+                      {meta.description}
                     </span>
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-            <Button type="submit" disabled={subscribing} className="gap-2 self-start">
-              {subscribing && <Loader2 className="size-4 animate-spin" />}
-              {t('subscription.subscribe')}
-            </Button>
-          </form>
+          </fieldset>
+          <Button onClick={handleSubscribe} disabled={subscribe.isPending} className="gap-2 self-start">
+            {subscribe.isPending && <Loader2 className="size-4 animate-spin" />}
+            {t('subscription.subscribe')}
+          </Button>
         </CardContent>
       </Card>
 
@@ -178,33 +159,42 @@ export default function SubscriptionPage() {
             {t('subscription.changePlan')}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleChangePlan(e)} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label>{t('subscription.newPlan')}</Label>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {PLANS.map(({ plan, label, icon: Icon }) => (
+        <CardContent className="flex flex-col gap-4">
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-sm font-medium">{t('subscription.newPlan')}</legend>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {PLANS.map((plan) => {
+                const meta = PLAN_META[plan];
+                const Icon = meta.icon;
+                const active = changePlanValue === plan;
+                return (
                   <button
                     key={plan}
                     type="button"
-                    onClick={() => setChangePlan(plan)}
+                    aria-pressed={active}
+                    onClick={() => setChangePlanValue(plan)}
                     className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
-                      changePlan === plan
+                      active
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border text-muted-foreground hover:border-primary/50'
                     }`}
                   >
                     <Icon className="size-4" />
-                    {label}
+                    {meta.label}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-            <Button type="submit" variant="outline" disabled={changingPlan} className="gap-2 self-start">
-              {changingPlan && <Loader2 className="size-4 animate-spin" />}
-              {t('subscription.changePlan')}
-            </Button>
-          </form>
+          </fieldset>
+          <Button
+            variant="outline"
+            onClick={handleChangePlan}
+            disabled={changePlan.isPending}
+            className="gap-2 self-start"
+          >
+            {changePlan.isPending && <Loader2 className="size-4 animate-spin" />}
+            {t('subscription.changePlan')}
+          </Button>
         </CardContent>
       </Card>
 
@@ -216,21 +206,32 @@ export default function SubscriptionPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(e) => void handleRedeemTrialCode(e)} className="flex items-end gap-3">
-            <div className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="trial-code">{t('subscription.trialCodeLabel')}</Label>
-              <Input
-                id="trial-code"
-                value={trialCode}
-                onChange={(e) => setTrialCode(e.target.value)}
-                placeholder={t('subscription.trialCodePlaceholder')}
+          <Form {...trialForm}>
+            <form onSubmit={(e) => void onRedeem(e)} className="flex items-start gap-3">
+              <FormField
+                control={trialForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>{t('subscription.trialCodeLabel')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('subscription.trialCodePlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <Button type="submit" variant="outline" disabled={redeemingCode || !trialCode.trim()} className="gap-2">
-              {redeemingCode && <Loader2 className="size-4 animate-spin" />}
-              {t('subscription.redeem')}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={redeem.isPending}
+                className="mt-[26px] gap-2"
+              >
+                {redeem.isPending && <Loader2 className="size-4 animate-spin" />}
+                {t('subscription.redeem')}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
 
@@ -252,10 +253,10 @@ export default function SubscriptionPage() {
             variant="destructive"
             size="sm"
             className="shrink-0 gap-2"
-            onClick={() => void handleCancel()}
-            disabled={cancelling}
+            onClick={handleCancel}
+            disabled={cancel.isPending}
           >
-            {cancelling && <Loader2 className="size-4 animate-spin" />}
+            {cancel.isPending && <Loader2 className="size-4 animate-spin" />}
             {t('subscription.cancel')}
           </Button>
         </CardContent>
