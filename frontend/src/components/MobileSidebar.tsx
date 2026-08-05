@@ -38,10 +38,6 @@ export function MobileSidebar() {
   const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
-    close();
-  }, [pathname, close]);
-
-  useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
       return () => {
@@ -113,6 +109,7 @@ export function MobileSidebar() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    onClick={close}
                     className={cn(
                       'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200',
                       isActive
