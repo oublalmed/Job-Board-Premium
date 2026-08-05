@@ -426,6 +426,26 @@
     "conversions": "Conversions",
     "invited": "Vous avez été invité sur Talentiq 🎉"
   },
+  "analytics": {
+    "navLabel": "Analytique",
+    "title": "Tunnel d'acquisition",
+    "subtitle": "KPI d'amorçage sur le parcours candidat → recruteur.",
+    "empty": "Aucun événement pour l'instant.",
+    "ofTop": "du sommet",
+    "range": {
+      "d7": "7 jours",
+      "d30": "30 jours",
+      "all": "Tout"
+    },
+    "steps": {
+      "signup": "Inscriptions",
+      "email_verified": "Email vérifié",
+      "test_started": "Test démarré",
+      "score_obtained": "Score obtenu",
+      "recruiter_contact": "Contact recruteur",
+      "subscription_created": "Abonnement"
+    }
+  },
   "admin": {
     "schoolVerifications": {
       "navLabel": "Vérifications école",

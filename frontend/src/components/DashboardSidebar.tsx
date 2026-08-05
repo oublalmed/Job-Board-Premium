@@ -15,6 +15,7 @@ import {
   CreditCard,
   ClipboardList,
   GraduationCap,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -45,6 +46,12 @@ export function DashboardSidebar() {
       href: '/admin/school-verifications',
       label: t('admin.schoolVerifications.navLabel'),
       icon: GraduationCap,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/analytics',
+      label: t('analytics.navLabel'),
+      icon: BarChart3,
       roles: ['admin', 'moderator'],
     },
     { href: '/messages', label: t('nav.messages'), icon: MessageSquare },

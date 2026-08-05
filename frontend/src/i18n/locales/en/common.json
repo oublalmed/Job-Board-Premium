@@ -426,6 +426,26 @@
     "conversions": "Conversions",
     "invited": "You were invited to Talentiq 🎉"
   },
+  "analytics": {
+    "navLabel": "Analytics",
+    "title": "Acquisition funnel",
+    "subtitle": "Amorçage KPIs across the candidate → recruiter journey.",
+    "empty": "No events tracked yet.",
+    "ofTop": "of top",
+    "range": {
+      "d7": "7 days",
+      "d30": "30 days",
+      "all": "All time"
+    },
+    "steps": {
+      "signup": "Sign-ups",
+      "email_verified": "Email verified",
+      "test_started": "Test started",
+      "score_obtained": "Score obtained",
+      "recruiter_contact": "Recruiter contact",
+      "subscription_created": "Subscription"
+    }
+  },
   "admin": {
     "schoolVerifications": {
       "navLabel": "School verifications",
