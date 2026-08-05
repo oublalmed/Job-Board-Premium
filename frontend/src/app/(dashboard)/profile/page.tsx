@@ -17,7 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -210,7 +210,9 @@ function CandidateProfile() {
   const schoolVerified = profileQuery.data?.profile.schoolVerified ?? false;
   const cv = cvQuery.data ?? null;
   const verification = verificationQuery.data ?? null;
-  const preview = form.watch();
+  // useWatch (a hook) rather than form.watch() (a returned function) so the
+  // live preview subscribes React-Compiler-safely to field changes.
+  const preview = useWatch({ control: form.control });
 
   const onSubmit = form.handleSubmit((values) => {
     updateProfile.mutate(values, {

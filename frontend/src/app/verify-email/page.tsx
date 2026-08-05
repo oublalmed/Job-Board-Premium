@@ -26,15 +26,17 @@ function VerifyEmailContent() {
 
   useEffect(() => {
     if (!token) return;
-    void verify(token);
+    let active = true;
+    void (async () => {
+      const { error } = await apiClient.POST('/api/v1/auth/verify-email', {
+        body: { token },
+      });
+      if (active) setStatus(error ? 'error' : 'success');
+    })();
+    return () => {
+      active = false;
+    };
   }, [token]);
-
-  async function verify(verificationToken: string) {
-    const { error } = await apiClient.POST('/api/v1/auth/verify-email', {
-      body: { token: verificationToken },
-    });
-    setStatus(error ? 'error' : 'success');
-  }
 
   return (
     <motion.div className="w-full max-w-sm text-center" {...fadeUp}>
