@@ -53,6 +53,7 @@ import {
   useUploadCv,
   useUploadDiploma,
 } from '@/features/profile/queries';
+import { ScoreBadgeCard } from '@/features/badge/ScoreBadgeCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -579,6 +580,8 @@ function CandidateProfile() {
           )}
         </CardContent>
       </Card>
+
+      <ScoreBadgeCard />
     </motion.div>
   );
 }

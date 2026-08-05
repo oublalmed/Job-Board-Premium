@@ -386,6 +386,36 @@
     "terms": "Terms of use",
     "contact": "Contact"
   },
+  "badge": {
+    "title": "Score badge",
+    "subtitle": "Share a public showcase of your best score.",
+    "needScore": "Take an assessment to unlock your shareable score badge.",
+    "enable": "Generate my badge",
+    "enabling": "Generating…",
+    "enabled": "Your badge is live",
+    "disabled": "Your badge is disabled",
+    "disable": "Disable",
+    "disabling": "Disabling…",
+    "displayName": "Display name (optional)",
+    "displayNamePlaceholder": "Shown on the public page — leave empty to stay anonymous",
+    "copyLink": "Copy link",
+    "copied": "Link copied",
+    "shareLinkedin": "Share on LinkedIn",
+    "publicLink": "Public link",
+    "anonymous": "Verified candidate",
+    "issuedOn": "Issued on",
+    "percentile": "Percentile {{value}}",
+    "verifiedBy": "Verified by Talentiq",
+    "notFound": "This badge is unavailable",
+    "notFoundHint": "The link may be private or no longer active.",
+    "cta": "Join Talentiq",
+    "level": {
+      "expert": "Expert",
+      "advanced": "Advanced",
+      "intermediate": "Intermediate",
+      "beginner": "Beginner"
+    }
+  },
   "admin": {
     "schoolVerifications": {
       "navLabel": "School verifications",
