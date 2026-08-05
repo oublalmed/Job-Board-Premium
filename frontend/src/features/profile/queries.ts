@@ -71,6 +71,21 @@ export function useCandidateProfile() {
   });
 }
 
+// Lightweight completeness-only fetch for the dashboard, which needs just
+// the percentage and shouldn't pull the whole profile payload.
+export function useCompleteness(enabled: boolean) {
+  return useQuery({
+    queryKey: [...profileKeys.all, 'completeness-number'] as const,
+    enabled,
+    queryFn: async () => {
+      const data = unwrap(
+        await apiClient.GET('/api/v1/candidates/profile/completeness'),
+      ) as { completeness: number };
+      return data.completeness;
+    },
+  });
+}
+
 export function useCandidateCv() {
   return useQuery({
     queryKey: profileKeys.cv(),
