@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   User,
   Briefcase,
@@ -14,15 +14,20 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { components } from '@/api/schema';
+import { useNotifications } from '@/features/notifications/queries';
+import { useCompleteness } from '@/features/profile/queries';
 
-type Notification = components['schemas']['Notification'];
+// Recharts is heavy and client-only — code-split it out of the initial
+// dashboard bundle and skip SSR (it measures the DOM to size itself).
+const ActivityChart = dynamic(
+  () => import('@/features/dashboard/ActivityChart').then((m) => m.ActivityChart),
+  { ssr: false, loading: () => <Skeleton className="h-[200px] w-full" /> },
+);
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -44,47 +49,21 @@ function timeAgo(dateStr: string): string {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
-  const [completeness, setCompleteness] = useState<number | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const isCandidate = user?.roles.includes('candidate') ?? false;
+  const isRecruiter =
+    user?.roles.some((r) => ['recruiter', 'company_admin', 'admin'].includes(r)) ?? false;
 
-  const isCandidate = user?.roles.includes('candidate');
-  const isRecruiter = user?.roles.some((r) =>
-    ['recruiter', 'company_admin', 'admin'].includes(r),
-  );
-
-  useEffect(() => {
-    void loadDashboard();
-  }, []);
-
-  async function loadDashboard() {
-    setLoading(true);
-    try {
-      const promises: Promise<unknown>[] = [
-        apiClient.GET('/api/v1/notifications').then(({ data }) => {
-          if (data) setNotifications(data);
-        }),
-      ];
-
-      if (isCandidate) {
-        promises.push(
-          apiClient.GET('/api/v1/candidates/profile/completeness').then(({ data }) => {
-            if (data) setCompleteness((data as { completeness: number }).completeness ?? 0);
-          }),
-        );
-      }
-
-      await Promise.allSettled(promises);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const notificationsQuery = useNotifications();
+  const completenessQuery = useCompleteness(isCandidate);
 
   if (!user) return null;
 
+  const notifications = notificationsQuery.data ?? [];
   const unreadNotifications = notifications.filter((n) => !n.readAt);
+  const loading = notificationsQuery.isLoading;
+  const completeness = completenessQuery.data ?? null;
 
   return (
     <motion.div className="flex flex-col gap-8" {...fadeUp}>
@@ -137,30 +116,64 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">
-          {t('dashboard.quickActions')}
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <QuickAction href="/profile" icon={User} label={t('dashboard.editProfile')} />
-          {isRecruiter ? (
-            <>
-              <QuickAction href="/candidates" icon={Search} label={t('dashboard.searchCandidates')} />
-              <QuickAction href="/shortlist" icon={Heart} label={t('nav.shortlist')} />
-            </>
-          ) : (
-            <QuickAction href="/jobs" icon={Briefcase} label={t('dashboard.browseJobs')} />
-          )}
-          <QuickAction href="/messages" icon={MessageSquare} label={t('dashboard.viewMessages')} />
-        </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="size-5 text-primary" />
+              {t('dashboard.recentActivity')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : notifications.length === 0 ? (
+              <div className="flex h-[200px] flex-col items-center justify-center gap-2 text-center">
+                <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                  <Bell className="size-6 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm text-muted-foreground">{t('dashboard.noActivity')}</p>
+              </div>
+            ) : (
+              <ActivityChart
+                notifications={notifications}
+                label={t('nav.notifications')}
+                locale={locale}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t('dashboard.quickActions')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <QuickAction href="/profile" icon={User} label={t('dashboard.editProfile')} />
+            {isRecruiter ? (
+              <>
+                <QuickAction href="/candidates" icon={Search} label={t('dashboard.searchCandidates')} />
+                <QuickAction href="/shortlist" icon={Heart} label={t('nav.shortlist')} />
+              </>
+            ) : (
+              <QuickAction href="/jobs" icon={Briefcase} label={t('dashboard.browseJobs')} />
+            )}
+            <QuickAction href="/messages" icon={MessageSquare} label={t('dashboard.viewMessages')} />
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
+          <CardTitle className="text-base">{t('nav.notifications')}</CardTitle>
         </CardHeader>
         <CardContent>
-          {notifications.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-14" />
+              <Skeleton className="h-14" />
+            </div>
+          ) : notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('dashboard.noActivity')}</p>
           ) : (
             <div className="flex flex-col gap-3">
@@ -179,12 +192,10 @@ export default function DashboardPage() {
                       <div className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-primary" />
                     )}
                   </div>
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">{n.title}</p>
-                    <p className="text-xs text-muted-foreground">{n.body}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {timeAgo(n.createdAt)}
-                    </p>
+                    {n.body && <p className="text-xs text-muted-foreground">{n.body}</p>}
+                    <p className="mt-1 text-xs text-muted-foreground">{timeAgo(n.createdAt)}</p>
                   </div>
                 </div>
               ))}
@@ -237,7 +248,7 @@ function QuickAction({
     <Link href={href}>
       <Button
         variant="outline"
-        className="h-auto w-full justify-between gap-3 px-4 py-4 text-start transition-all hover:shadow-sm"
+        className="h-auto w-full justify-between gap-3 px-4 py-3.5 text-start transition-all hover:shadow-sm"
       >
         <span className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary/15 to-primary/5">

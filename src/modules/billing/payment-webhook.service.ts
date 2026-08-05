@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager, In } from 'typeorm';
@@ -35,6 +36,8 @@ import { InvoiceEmissionService } from './invoice-emission.service.js';
 import { DunningNotificationService } from './dunning-notification.service.js';
 import { TrialConversionService } from './trial-conversion.service.js';
 import { addDays } from '../../common/date-utils.js';
+import { AnalyticsService } from '../analytics/analytics.service.js';
+import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
 
 const PROVIDER_NAME = 'stripe';
 const BILLING_PERIOD_DAYS = 30;
@@ -52,6 +55,8 @@ export class PaymentWebhookService {
     private readonly invoiceEmissionService: InvoiceEmissionService,
     private readonly dunningNotificationService: DunningNotificationService,
     private readonly trialConversionService: TrialConversionService,
+    // Optional so unit tests need not wire the (global) analytics module.
+    @Optional() private readonly analytics?: AnalyticsService,
   ) {}
 
   // Order matters and is deliberate:
@@ -94,9 +99,7 @@ export class PaymentWebhookService {
         await this.applyEffect(event, manager);
       });
     } catch (error) {
-      if (
-        isUniqueViolation(error, PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT)
-      ) {
+      if (isUniqueViolation(error, PROCESSED_WEBHOOK_EVENT_UNIQUE_CONSTRAINT)) {
         this.logger.debug(
           `Webhook event ${event.providerEventId} already processed, skipping`,
         );
@@ -241,6 +244,13 @@ export class PaymentWebhookService {
       { subscription, company, stripeEventId: event.providerEventId },
       manager,
     );
+
+    // EF-ADM-05 funnel — bottom of the amorçage funnel (paid conversion).
+    // Fire-and-forget; a rare double-count on webhook retry is acceptable.
+    void this.analytics?.track(AnalyticsEventType.SUBSCRIPTION_CREATED, null, {
+      companyId: event.companyId,
+      plan: event.plan,
+    });
   }
 
   // A recurring cycle payment (Stripe invoice.paid, billing_reason
@@ -368,7 +378,10 @@ export class PaymentWebhookService {
       action: AuditAction.PAYMENT_FAILED,
       entityType: 'subscription',
       entityId: saved.id,
-      metadata: { reason: event.reason, providerEventId: event.providerEventId },
+      metadata: {
+        reason: event.reason,
+        providerEventId: event.providerEventId,
+      },
     });
   }
 

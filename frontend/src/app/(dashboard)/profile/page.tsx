@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   User,
@@ -14,9 +14,11 @@ import {
   ShieldCheck,
   Clock,
   ShieldX,
+  Loader2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -28,58 +30,31 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getAccessToken } from '@/auth/token-store';
-
-interface RecruiterSummary {
-  id: string;
-  userId: string;
-  email: string;
-  position: string | null;
-  createdAt: string;
-}
-
-interface ProfileData {
-  profile: {
-    firstName?: string | null;
-    lastName?: string | null;
-    headline?: string | null;
-    bio?: string | null;
-    location?: string | null;
-    availability?: string | null;
-    mobility?: string | null;
-    school?: string | null;
-    schoolVerified?: boolean;
-    visibility?: 'public' | 'recruiters_only' | 'hidden';
-  };
-  completeness: {
-    completeness: number;
-    isPublishable: boolean;
-    missing: { key: string; label: string; weight: number }[];
-  };
-}
-
-interface CvData {
-  cv: {
-    id: string;
-    originalName: string;
-    mimeType: string;
-    size: number;
-    scanStatus: string;
-  } | null;
-}
-
-type SchoolVerificationStatus = 'pending' | 'verified' | 'rejected';
-
-interface SchoolVerificationData {
-  verification: {
-    id: string;
-    status: SchoolVerificationStatus;
-    matchedSchool: string | null;
-    reviewNote: string | null;
-    createdAt: string;
-    reviewedAt: string | null;
-  } | null;
-}
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  profileSchema,
+  EMPTY_PROFILE_FORM,
+  type ProfileFormValues,
+} from '@/features/profile/schema';
+import {
+  useCandidateCv,
+  useCandidateProfile,
+  useDeleteCv,
+  useRecruiterSelf,
+  useSchoolVerification,
+  useUpdateProfile,
+  useUploadCv,
+  useUploadDiploma,
+} from '@/features/profile/queries';
+import { ScoreBadgeCard } from '@/features/badge/ScoreBadgeCard';
+import { ReferralCard } from '@/features/referral/ReferralCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -105,34 +80,11 @@ export default function ProfilePage() {
 function RecruiterProfile() {
   const { user } = useAuth();
   const { t } = useLocale();
-
-  const [loading, setLoading] = useState(true);
-  const [recruiter, setRecruiter] = useState<RecruiterSummary | null>(null);
-  const [companyName, setCompanyName] = useState<string | null>(null);
-
-  async function loadRecruiter() {
-    setLoading(true);
-    try {
-      const [recruitersRes, companyRes] = await Promise.all([
-        apiClient.GET('/api/v1/companies/recruiters'),
-        apiClient.GET('/api/v1/companies/me'),
-      ]);
-      const list = (recruitersRes.data ?? []) as unknown as RecruiterSummary[];
-      setRecruiter(list.find((r) => r.userId === user?.userId) ?? null);
-      const companyData = companyRes.data as { company?: { name?: string } } | undefined;
-      setCompanyName(companyData?.company?.name ?? null);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void loadRecruiter();
-  }, []);
+  const { data, isLoading } = useRecruiterSelf(user?.userId);
 
   if (!user) return null;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-8">
         <Skeleton className="h-8 w-48" />
@@ -154,10 +106,10 @@ function RecruiterProfile() {
           <div className="flex flex-1 flex-col gap-4 text-center sm:text-start">
             <div>
               <p className="text-lg font-semibold text-foreground">{user.email}</p>
-              {recruiter?.position && (
+              {data?.recruiter?.position && (
                 <p className="mt-1 flex items-center justify-center gap-1 text-sm text-muted-foreground sm:justify-start">
                   <Briefcase className="size-3.5" />
-                  {recruiter.position}
+                  {data.recruiter.position}
                 </p>
               )}
               <div className="mt-2 flex flex-wrap justify-center gap-1.5 sm:justify-start">
@@ -169,10 +121,10 @@ function RecruiterProfile() {
               </div>
             </div>
 
-            {companyName && (
+            {data?.companyName && (
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground sm:justify-start">
                 <Building2 className="size-4" />
-                {companyName}
+                {data.companyName}
               </div>
             )}
 
@@ -193,8 +145,8 @@ function CompletionRing({ value }: { value: number }) {
   const circ = 2 * Math.PI * r;
   const offset = circ - (Math.min(value, 100) / 100) * circ;
   return (
-    <svg width="88" height="88" viewBox="0 0 88 88" className="shrink-0">
-      <circle cx="44" cy="44" r={r} fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/50" />
+    <svg width="88" height="88" viewBox="0 0 88 88" className="shrink-0" role="img" aria-label={`${Math.round(value)}%`}>
+      <circle cx="44" cy="44" r={r} fill="none" stroke="currentColor" strokeWidth="6" className="text-muted" />
       <circle
         cx="44"
         cy="44"
@@ -219,175 +171,82 @@ function CandidateProfile() {
   const { user } = useAuth();
   const { t } = useLocale();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [completeness, setCompleteness] = useState<number>(0);
-  const [cv, setCv] = useState<CvData['cv']>(null);
-  const [uploading, setUploading] = useState(false);
-  const [schoolVerified, setSchoolVerified] = useState(false);
-  const [verification, setVerification] = useState<SchoolVerificationData['verification']>(null);
-  const [uploadingDiploma, setUploadingDiploma] = useState(false);
+  const cvInputRef = useRef<HTMLInputElement>(null);
   const diplomaInputRef = useRef<HTMLInputElement>(null);
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [headline, setHeadline] = useState('');
-  const [bio, setBio] = useState('');
-  const [location, setLocation] = useState('');
-  const [availability, setAvailability] = useState('');
-  const [mobility, setMobility] = useState('');
-  const [school, setSchool] = useState('');
-  const [visibility, setVisibility] = useState<'public' | 'recruiters_only' | 'hidden'>('hidden');
+  const profileQuery = useCandidateProfile();
+  const cvQuery = useCandidateCv();
+  const verificationQuery = useSchoolVerification();
 
+  const updateProfile = useUpdateProfile();
+  const deleteCv = useDeleteCv();
+  const uploadCv = useUploadCv();
+  const uploadDiploma = useUploadDiploma();
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: EMPTY_PROFILE_FORM,
+  });
+
+  // Hydrate the form once the profile query resolves. reset() is the
+  // canonical RHF way to seed async defaults without losing dirty state
+  // tracking.
   useEffect(() => {
-    void loadAll();
-  }, []);
+    const p = profileQuery.data?.profile;
+    if (!p) return;
+    form.reset({
+      firstName: p.firstName ?? '',
+      lastName: p.lastName ?? '',
+      headline: p.headline ?? '',
+      bio: p.bio ?? '',
+      location: p.location ?? '',
+      availability: p.availability ?? '',
+      mobility: p.mobility ?? '',
+      school: p.school ?? '',
+      visibility: p.visibility ?? 'hidden',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileQuery.data]);
 
-  async function loadAll() {
-    setLoading(true);
-    try {
-      const [profileRes, cvRes, verificationRes] = await Promise.all([
-        apiClient.GET('/api/v1/candidates/profile'),
-        apiClient.GET('/api/v1/candidates/cv'),
-        apiClient.GET('/api/v1/candidates/school-verification'),
-      ]);
+  const completeness = profileQuery.data?.completeness.completeness ?? 0;
+  const schoolVerified = profileQuery.data?.profile.schoolVerified ?? false;
+  const cv = cvQuery.data ?? null;
+  const verification = verificationQuery.data ?? null;
+  // useWatch (a hook) rather than form.watch() (a returned function) so the
+  // live preview subscribes React-Compiler-safely to field changes.
+  const preview = useWatch({ control: form.control });
 
-      if (profileRes.data) {
-        const d = profileRes.data as ProfileData;
-        const p = d.profile;
-        setFirstName(p.firstName ?? '');
-        setLastName(p.lastName ?? '');
-        setHeadline(p.headline ?? '');
-        setBio(p.bio ?? '');
-        setLocation(p.location ?? '');
-        setAvailability(p.availability ?? '');
-        setMobility(p.mobility ?? '');
-        setSchool(p.school ?? '');
-        setSchoolVerified(p.schoolVerified ?? false);
-        setVisibility(p.visibility ?? 'hidden');
-        setCompleteness(d.completeness?.completeness ?? 0);
-      }
+  const onSubmit = form.handleSubmit((values) => {
+    updateProfile.mutate(values, {
+      onSuccess: () => toast(t('profile.saved'), 'success'),
+      onError: () => toast(t('profile.saveError'), 'error'),
+    });
+  });
 
-      if (cvRes.data) {
-        setCv((cvRes.data as CvData).cv ?? null);
-      }
-
-      if (verificationRes.data) {
-        setVerification((verificationRes.data as SchoolVerificationData).verification ?? null);
-      }
-    } finally {
-      setLoading(false);
-    }
+  function handleCvSelected(file: File) {
+    uploadCv.mutate(file, {
+      onSuccess: () => toast(t('profile.cvUploaded'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
-  async function handleSave() {
-    setSaving(true);
-    try {
-      const body: Record<string, unknown> = {
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
-        headline: headline || undefined,
-        bio: bio || undefined,
-        location: location || undefined,
-        availability: availability || undefined,
-        mobility: mobility || undefined,
-        school: school || undefined,
-        visibility,
-      };
-
-      const { error } = await apiClient.PUT('/api/v1/candidates/profile', {
-        body: body as never,
-      });
-      if (error) {
-        toast(t('profile.saveError'), 'error');
-        return;
-      }
-
-      const { data } = await apiClient.GET('/api/v1/candidates/profile/completeness');
-      if (data) {
-        setCompleteness((data as { completeness: number }).completeness ?? 0);
-      }
-      toast(t('profile.saved'), 'success');
-    } finally {
-      setSaving(false);
-    }
+  function handleDeleteCv() {
+    deleteCv.mutate(undefined, {
+      onSuccess: () => toast(t('profile.cvDeleted'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
-  async function handleUploadCv(file: File) {
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      const res = await fetch(`${baseUrl}/api/v1/candidates/cv`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getAccessToken()}` },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-
-      toast(t('profile.cvUploaded'), 'success');
-      const cvRes = await apiClient.GET('/api/v1/candidates/cv');
-      if (cvRes.data) setCv((cvRes.data as CvData).cv ?? null);
-
-      const compRes = await apiClient.GET('/api/v1/candidates/profile/completeness');
-      if (compRes.data) setCompleteness((compRes.data as { completeness: number }).completeness ?? 0);
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function handleDeleteCv() {
-    const { error } = await apiClient.DELETE('/api/v1/candidates/cv');
-    if (error) {
-      toast(t('common.error'), 'error');
-      return;
-    }
-    setCv(null);
-    toast(t('profile.cvDeleted'), 'success');
-
-    const compRes = await apiClient.GET('/api/v1/candidates/profile/completeness');
-    if (compRes.data) setCompleteness((compRes.data as { completeness: number }).completeness ?? 0);
-  }
-
-  async function handleUploadDiploma(file: File) {
-    setUploadingDiploma(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      const res = await fetch(`${baseUrl}/api/v1/candidates/school-verification`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getAccessToken()}` },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-
-      toast(t('profile.diplomaUploaded'), 'success');
-      const verificationRes = await apiClient.GET('/api/v1/candidates/school-verification');
-      if (verificationRes.data) {
-        setVerification((verificationRes.data as SchoolVerificationData).verification ?? null);
-      }
-    } finally {
-      setUploadingDiploma(false);
-    }
+  function handleDiplomaSelected(file: File) {
+    uploadDiploma.mutate(file, {
+      onSuccess: () => toast(t('profile.diplomaUploaded'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
   if (!user) return null;
 
-  if (loading) {
+  if (profileQuery.isLoading) {
     return (
       <div className="flex flex-col gap-8">
         <Skeleton className="h-8 w-48" />
@@ -411,140 +270,189 @@ function CandidateProfile() {
             </p>
           </div>
         </div>
-        <Button onClick={() => void handleSave()} disabled={saving}>
-          <Save className="size-4" />
-          {saving ? t('profile.saving') : t('profile.save')}
+        <Button onClick={() => void onSubmit()} disabled={updateProfile.isPending}>
+          {updateProfile.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Save className="size-4" />
+          )}
+          {updateProfile.isPending ? t('profile.saving') : t('profile.save')}
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="overflow-hidden">
-          <div className="h-16 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
-          <CardContent className="relative flex flex-col items-center gap-4 p-6">
-            <div className="-mt-14 flex size-24 items-center justify-center rounded-full border-4 border-card bg-gradient-to-br from-primary/20 to-primary/5">
-              <User className="size-12 text-primary" />
-            </div>
-            <div className="text-center">
-              <p className="font-semibold text-foreground">
-                {firstName || lastName ? `${firstName} ${lastName}`.trim() : user.email}
-              </p>
-              {headline && (
-                <p className="mt-1 text-sm text-muted-foreground">{headline}</p>
-              )}
-              {location && (
-                <p className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="size-3" />
-                  {location}
+      <Form {...form}>
+        <form onSubmit={(e) => void onSubmit(e)} className="grid gap-6 lg:grid-cols-3">
+          <Card className="h-fit overflow-hidden">
+            <div className="h-16 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
+            <CardContent className="relative flex flex-col items-center gap-4 p-6">
+              <div className="-mt-14 flex size-24 items-center justify-center rounded-full border-4 border-card bg-gradient-to-br from-primary/20 to-primary/5">
+                <User className="size-12 text-primary" />
+              </div>
+              <div className="text-center">
+                <p className="font-semibold text-foreground">
+                  {preview.firstName || preview.lastName
+                    ? `${preview.firstName} ${preview.lastName}`.trim()
+                    : user.email}
                 </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                {preview.headline && (
+                  <p className="mt-1 text-sm text-muted-foreground">{preview.headline}</p>
+                )}
+                {preview.location && (
+                  <p className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="size-3" />
+                    {preview.location}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{t('profile.personalInfo')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="firstName">{t('profile.firstName')}</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="lastName">{t('profile.lastName')}</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-2 sm:col-span-2">
-                <Label htmlFor="headline">{t('profile.headline')}</Label>
-                <Input
-                  id="headline"
-                  value={headline}
-                  onChange={(e) => setHeadline(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-2 sm:col-span-2">
-                <Label htmlFor="bio">{t('profile.bio')}</Label>
-                <Textarea
-                  id="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder={t('profile.bioPlaceholder')}
-                  rows={3}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="location">{t('profile.location')}</Label>
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder={t('profile.locationPlaceholder')}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="email">{t('profile.email')}</Label>
-                <Input id="email" value={user.email} disabled />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="availability">{t('profile.availability')}</Label>
-                <Input
-                  id="availability"
-                  value={availability}
-                  onChange={(e) => setAvailability(e.target.value)}
-                  placeholder={t('profile.availabilityPlaceholder')}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="mobility">{t('profile.mobility')}</Label>
-                <Input
-                  id="mobility"
-                  value={mobility}
-                  onChange={(e) => setMobility(e.target.value)}
-                  placeholder={t('profile.mobilityPlaceholder')}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="school" className="flex items-center gap-2">
-                  {t('profile.school')}
-                  {schoolVerified && (
-                    <Badge variant="success" className="gap-1">
-                      <ShieldCheck className="size-3" />
-                      {t('profile.schoolVerifiedBadge')}
-                    </Badge>
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>{t('profile.personalInfo')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.firstName')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </Label>
-                <Input
-                  id="school"
-                  value={school}
-                  onChange={(e) => setSchool(e.target.value)}
-                  placeholder={t('profile.schoolPlaceholder')}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.lastName')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="headline"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>{t('profile.headline')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>{t('profile.bio')}</FormLabel>
+                      <FormControl>
+                        <Textarea rows={3} placeholder={t('profile.bioPlaceholder')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.location')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t('profile.locationPlaceholder')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormItem>
+                  <Label htmlFor="profile-email">{t('profile.email')}</Label>
+                  <Input id="profile-email" value={user.email} disabled />
+                </FormItem>
+                <FormField
+                  control={form.control}
+                  name="availability"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.availability')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t('profile.availabilityPlaceholder')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mobility"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.mobility')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t('profile.mobilityPlaceholder')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="school"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        {t('profile.school')}
+                        {schoolVerified && (
+                          <Badge variant="success" className="gap-1">
+                            <ShieldCheck className="size-3" />
+                            {t('profile.schoolVerifiedBadge')}
+                          </Badge>
+                        )}
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder={t('profile.schoolPlaceholder')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="visibility"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.visibility')}</FormLabel>
+                      <FormControl>
+                        <Select {...field}>
+                          <option value="public">{t('profile.visibilityPublic')}</option>
+                          <option value="recruiters_only">
+                            {t('profile.visibilityRecruitersOnly')}
+                          </option>
+                          <option value="hidden">{t('profile.visibilityHidden')}</option>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="visibility">{t('profile.visibility')}</Label>
-                <Select
-                  id="visibility"
-                  value={visibility}
-                  onChange={(e) => setVisibility(e.target.value as typeof visibility)}
-                >
-                  <option value="public">{t('profile.visibilityPublic')}</option>
-                  <option value="recruiters_only">{t('profile.visibilityRecruitersOnly')}</option>
-                  <option value="hidden">{t('profile.visibilityHidden')}</option>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </form>
+      </Form>
 
       <Card>
         <CardHeader>
@@ -565,9 +473,14 @@ function CandidateProfile() {
               <Button
                 variant="ghost"
                 className="gap-2 text-destructive hover:text-destructive"
-                onClick={() => void handleDeleteCv()}
+                onClick={handleDeleteCv}
+                disabled={deleteCv.isPending}
               >
-                <Trash2 className="size-4" />
+                {deleteCv.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
                 {t('profile.deleteCv')}
               </Button>
             </div>
@@ -576,23 +489,27 @@ function CandidateProfile() {
               <p className="text-sm text-muted-foreground">{t('profile.noCv')}</p>
               <div>
                 <input
-                  ref={fileInputRef}
+                  ref={cvInputRef}
                   type="file"
                   accept=".pdf,.doc,.docx"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) void handleUploadCv(file);
+                    if (file) handleCvSelected(file);
                   }}
                 />
                 <Button
                   variant="outline"
                   className="gap-2"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
+                  onClick={() => cvInputRef.current?.click()}
+                  disabled={uploadCv.isPending}
                 >
-                  <Upload className="size-4" />
-                  {uploading ? t('common.loading') : t('profile.uploadCv')}
+                  {uploadCv.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Upload className="size-4" />
+                  )}
+                  {uploadCv.isPending ? t('common.loading') : t('profile.uploadCv')}
                 </Button>
               </div>
             </div>
@@ -641,17 +558,21 @@ function CandidateProfile() {
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) void handleUploadDiploma(file);
+                    if (file) handleDiplomaSelected(file);
                   }}
                 />
                 <Button
                   variant="outline"
                   className="gap-2"
                   onClick={() => diplomaInputRef.current?.click()}
-                  disabled={uploadingDiploma}
+                  disabled={uploadDiploma.isPending}
                 >
-                  <Upload className="size-4" />
-                  {uploadingDiploma
+                  {uploadDiploma.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Upload className="size-4" />
+                  )}
+                  {uploadDiploma.isPending
                     ? t('common.loading')
                     : t('profile.schoolVerification.upload')}
                 </Button>
@@ -660,6 +581,10 @@ function CandidateProfile() {
           )}
         </CardContent>
       </Card>
+
+      <ScoreBadgeCard />
+
+      <ReferralCard />
     </motion.div>
   );
 }

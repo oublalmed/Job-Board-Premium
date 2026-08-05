@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { AuthService } from '../auth.service.js';
+import { ReferralService } from '../../growth/referral.service.js';
 import { UsersService } from '../../users/users.service.js';
 import { AuditService } from '../../audit/audit.service.js';
 import { RefreshToken } from '../../users/entities/refresh-token.entity.js';
@@ -97,6 +98,13 @@ describe('AuthService', () => {
           useValue: { log: jest.fn().mockResolvedValue({}) },
         },
         { provide: MAIL_PROVIDER, useValue: mailProvider },
+        {
+          provide: ReferralService,
+          useValue: {
+            recordSignup: jest.fn().mockResolvedValue(undefined),
+            markConverted: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

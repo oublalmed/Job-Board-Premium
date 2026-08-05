@@ -1,22 +1,41 @@
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
 import { Building2, Plus, Trash2, Loader2, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { components } from '@/api/schema';
-
-type Company = components['schemas']['Company'];
-type Recruiter = components['schemas']['Recruiter'];
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  addRecruiterSchema,
+  createCompanySchema,
+  EMPTY_COMPANY,
+  EMPTY_RECRUITER,
+  type AddRecruiterValues,
+  type CreateCompanyValues,
+} from '@/features/company/schema';
+import {
+  useAddRecruiter,
+  useCompany,
+  useCreateCompany,
+  useRecruiters,
+  useRemoveRecruiter,
+} from '@/features/company/queries';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -31,108 +50,56 @@ export default function CompanyPage() {
 
   const isCompanyAdmin = user?.roles.includes('company_admin');
 
-  const [company, setCompany] = useState<Company | null>(null);
-  const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasCompany, setHasCompany] = useState<boolean | null>(null);
+  const companyQuery = useCompany();
+  const company = companyQuery.data ?? null;
+  const hasCompany = company !== null;
 
-  const [name, setName] = useState('');
-  const [ice, setIce] = useState('');
-  const [registrationNumber, setRegistrationNumber] = useState('');
-  const [creating, setCreating] = useState(false);
+  const recruitersQuery = useRecruiters(hasCompany);
+  const recruiters = recruitersQuery.data ?? [];
 
-  const [recruiterEmail, setRecruiterEmail] = useState('');
-  const [recruiterPosition, setRecruiterPosition] = useState('');
-  const [addingRecruiter, setAddingRecruiter] = useState(false);
+  const createCompany = useCreateCompany();
+  const addRecruiter = useAddRecruiter();
+  const removeRecruiter = useRemoveRecruiter();
 
-  useEffect(() => {
-    void loadCompany();
-  }, []);
+  const createForm = useForm<CreateCompanyValues>({
+    resolver: zodResolver(createCompanySchema),
+    defaultValues: EMPTY_COMPANY,
+  });
+  const recruiterForm = useForm<AddRecruiterValues>({
+    resolver: zodResolver(addRecruiterSchema),
+    defaultValues: EMPTY_RECRUITER,
+  });
 
-  async function loadCompany() {
-    setLoading(true);
-    try {
-      const { data, error } = await apiClient.GET('/api/v1/companies/me');
-      if (error || !data) {
-        setHasCompany(false);
-        return;
-      }
-      setCompany(data as unknown as Company);
-      setHasCompany(true);
-
-      const { data: recruiterData } = await apiClient.GET('/api/v1/companies/recruiters');
-      if (recruiterData) {
-        setRecruiters(recruiterData as unknown as Recruiter[]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleCreate(e: FormEvent) {
-    e.preventDefault();
-    if (!/^\d{15}$/.test(ice)) return;
-    setCreating(true);
-    try {
-      const body: Record<string, unknown> = { name: name.trim(), ice };
-      if (registrationNumber.trim()) body.registrationNumber = registrationNumber.trim();
-
-      const { error } = await apiClient.POST('/api/v1/companies', {
-        body: body as never,
-      });
-      if (error) {
-        toast(t('company.createError'), 'error');
-        return;
-      }
-      toast(t('company.created'), 'success');
-      setName('');
-      setIce('');
-      setRegistrationNumber('');
-      void loadCompany();
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  async function handleAddRecruiter(e: FormEvent) {
-    e.preventDefault();
-    if (!recruiterEmail.trim()) return;
-    setAddingRecruiter(true);
-    try {
-      const body: Record<string, unknown> = { email: recruiterEmail.trim() };
-      if (recruiterPosition.trim()) body.position = recruiterPosition.trim();
-
-      const { data, error } = await apiClient.POST('/api/v1/companies/recruiters', {
-        body: body as never,
-      });
-      if (error) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      toast(t('company.recruiterAdded'), 'success');
-      if (data) {
-        setRecruiters((prev) => [...prev, data as Recruiter]);
-      }
-      setRecruiterEmail('');
-      setRecruiterPosition('');
-    } finally {
-      setAddingRecruiter(false);
-    }
-  }
-
-  async function handleRemoveRecruiter(id: string) {
-    const { error } = await apiClient.DELETE('/api/v1/companies/recruiters/{id}', {
-      params: { path: { id } },
+  const onCreate = createForm.handleSubmit((values) => {
+    createCompany.mutate(values, {
+      onSuccess: () => {
+        toast(t('company.created'), 'success');
+        createForm.reset(EMPTY_COMPANY);
+      },
+      onError: () => toast(t('company.createError'), 'error'),
     });
-    if (error) {
-      toast(t('common.error'), 'error');
-      return;
-    }
-    toast(t('company.recruiterRemoved'), 'success');
-    setRecruiters((prev) => prev.filter((r) => r.id !== id));
+  });
+
+  const onAddRecruiter = recruiterForm.handleSubmit((values) => {
+    addRecruiter.mutate(values, {
+      onSuccess: () => {
+        toast(t('company.recruiterAdded'), 'success');
+        recruiterForm.reset(EMPTY_RECRUITER);
+      },
+      onError: () => toast(t('common.error'), 'error'),
+    });
+  });
+
+  const removingId = removeRecruiter.isPending ? removeRecruiter.variables : null;
+
+  function handleRemoveRecruiter(id: string) {
+    removeRecruiter.mutate(id, {
+      onSuccess: () => toast(t('company.recruiterRemoved'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
-  if (loading) {
+  if (companyQuery.isLoading) {
     return (
       <div className="flex flex-col gap-8">
         <h1 className="text-2xl font-bold text-foreground">{t('company.title')}</h1>
@@ -156,54 +123,65 @@ export default function CompanyPage() {
             <p className="text-sm text-muted-foreground">{t('company.createDescription')}</p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(e) => void handleCreate(e)} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="company-name">{t('company.name')}</Label>
-                <Input
-                  id="company-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={t('company.namePlaceholder')}
-                  required
+            <Form {...createForm}>
+              <form onSubmit={(e) => void onCreate(e)} className="flex flex-col gap-4">
+                <FormField
+                  control={createForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('company.name')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t('company.namePlaceholder')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="company-ice">{t('company.ice')}</Label>
-                <Input
-                  id="company-ice"
-                  value={ice}
-                  onChange={(e) => setIce(e.target.value.replace(/\D/g, '').slice(0, 15))}
-                  placeholder={t('company.icePlaceholder')}
-                  required
-                  maxLength={15}
-                  pattern="\d{15}"
+                <FormField
+                  control={createForm.control}
+                  name="ice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('company.ice')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          inputMode="numeric"
+                          maxLength={15}
+                          placeholder={t('company.icePlaceholder')}
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.replace(/\D/g, '').slice(0, 15))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>{t('company.iceHint')}</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <p className="text-xs text-muted-foreground">{t('company.iceHint')}</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="company-reg">{t('company.registrationNumber')}</Label>
-                <Input
-                  id="company-reg"
-                  value={registrationNumber}
-                  onChange={(e) => setRegistrationNumber(e.target.value)}
-                  placeholder={t('company.registrationNumberPlaceholder')}
+                <FormField
+                  control={createForm.control}
+                  name="registrationNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('company.registrationNumber')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t('company.registrationNumberPlaceholder')}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <Button
-                type="submit"
-                disabled={creating || name.trim().length < 2 || !/^\d{15}$/.test(ice)}
-                className="self-start"
-              >
-                {creating ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    {t('company.submitting')}
-                  </>
-                ) : (
-                  t('company.submit')
-                )}
-              </Button>
-            </form>
+                <Button type="submit" disabled={createCompany.isPending} className="gap-2 self-start">
+                  {createCompany.isPending && <Loader2 className="size-4 animate-spin" />}
+                  {createCompany.isPending ? t('company.submitting') : t('company.submit')}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </motion.div>
@@ -227,12 +205,8 @@ export default function CompanyPage() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{t('company.status')}</p>
-              <Badge
-                variant={company?.status === 'active' ? 'success' : 'warning'}
-              >
-                {company?.status === 'active'
-                  ? t('company.verified')
-                  : t('company.pending')}
+              <Badge variant={company?.status === 'active' ? 'success' : 'warning'}>
+                {company?.status === 'active' ? t('company.verified') : t('company.pending')}
               </Badge>
             </div>
           </div>
@@ -242,9 +216,7 @@ export default function CompanyPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{t('company.recruiters')}</CardTitle>
-          {recruiters.length > 0 && (
-            <Badge variant="secondary">{recruiters.length}</Badge>
-          )}
+          {recruiters.length > 0 && <Badge variant="secondary">{recruiters.length}</Badge>}
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {recruiters.map((r) => (
@@ -258,19 +230,23 @@ export default function CompanyPage() {
                   <p className="text-sm font-medium text-foreground">
                     {r.user?.email ?? r.userId}
                   </p>
-                  {r.position && (
-                    <p className="text-xs text-muted-foreground">{r.position}</p>
-                  )}
+                  {r.position && <p className="text-xs text-muted-foreground">{r.position}</p>}
                 </div>
               </div>
               {isCompanyAdmin && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:text-destructive"
-                  onClick={() => void handleRemoveRecruiter(r.id)}
+                  aria-label={t('common.delete')}
+                  className="text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
+                  onClick={() => handleRemoveRecruiter(r.id)}
+                  disabled={removingId === r.id}
                 >
-                  <Trash2 className="size-4" />
+                  {removingId === r.id ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
                 </Button>
               )}
             </div>
@@ -281,46 +257,58 @@ export default function CompanyPage() {
           )}
 
           {isCompanyAdmin && (
-            <form
-              onSubmit={(e) => void handleAddRecruiter(e)}
-              className="mt-2 flex flex-col gap-3 rounded-xl border border-dashed border-border p-4"
-            >
-              <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Plus className="size-4 text-primary" />
-                {t('company.addRecruiter')}
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">{t('company.recruiterEmail')}</Label>
-                  <Input
-                    type="email"
-                    value={recruiterEmail}
-                    onChange={(e) => setRecruiterEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">{t('company.recruiterPosition')}</Label>
-                  <Input
-                    value={recruiterPosition}
-                    onChange={(e) => setRecruiterPosition(e.target.value)}
-                  />
-                </div>
-              </div>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={addingRecruiter || !recruiterEmail.trim()}
-                className="gap-2 self-start"
+            <Form {...recruiterForm}>
+              <form
+                onSubmit={(e) => void onAddRecruiter(e)}
+                className="mt-2 flex flex-col gap-3 rounded-xl border border-dashed border-border p-4"
               >
-                {addingRecruiter ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
-                {t('company.addRecruiter')}
-              </Button>
-            </form>
+                <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Plus className="size-4 text-primary" />
+                  {t('company.addRecruiter')}
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FormField
+                    control={recruiterForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">{t('company.recruiterEmail')}</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={recruiterForm.control}
+                    name="position"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">{t('company.recruiterPosition')}</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={addRecruiter.isPending}
+                  className="gap-2 self-start"
+                >
+                  {addRecruiter.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Plus className="size-4" />
+                  )}
+                  {t('company.addRecruiter')}
+                </Button>
+              </form>
+            </Form>
           )}
         </CardContent>
       </Card>

@@ -8,10 +8,12 @@ import { AuthService } from './auth.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { UsersModule } from '../users/users.module.js';
 import { RefreshToken } from '../users/entities/refresh-token.entity.js';
+import { GrowthModule } from '../growth/growth.module.js';
 
 @Module({
   imports: [
     UsersModule,
+    GrowthModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { UserCog, Mail, Shield, Download, Trash2, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -12,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { useDeleteAccount, useExportData } from '@/features/settings/queries';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -24,39 +23,27 @@ export default function SettingsPage() {
   const { t } = useLocale();
   const { toast } = useToast();
 
-  const [exporting, setExporting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const exportData = useExportData();
+  const deleteAccount = useDeleteAccount();
 
   const isCandidate = user?.roles.includes('candidate');
 
-  async function handleExport() {
-    setExporting(true);
-    try {
-      const { error } = await apiClient.GET('/api/v1/candidates/data/export');
-      if (error) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      toast(t('settings.exported'), 'success');
-    } finally {
-      setExporting(false);
-    }
+  function handleExport() {
+    exportData.mutate(undefined, {
+      onSuccess: () => toast(t('settings.exported'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!confirm(t('settings.deleteConfirm'))) return;
-    setDeleting(true);
-    try {
-      const { error } = await apiClient.DELETE('/api/v1/candidates/data');
-      if (error) {
-        toast(t('settings.deleteError'), 'error');
-        return;
-      }
-      toast(t('settings.deleted'), 'success');
-      logout();
-    } finally {
-      setDeleting(false);
-    }
+    deleteAccount.mutate(undefined, {
+      onSuccess: () => {
+        toast(t('settings.deleted'), 'success');
+        logout();
+      },
+      onError: () => toast(t('settings.deleteError'), 'error'),
+    });
   }
 
   if (!user) return null;
@@ -106,9 +93,7 @@ export default function SettingsPage() {
           <CardContent className="flex flex-col gap-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-foreground">
-                  {t('settings.exportData')}
-                </p>
+                <p className="text-sm font-medium text-foreground">{t('settings.exportData')}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {t('settings.exportDataDescription')}
                 </p>
@@ -117,15 +102,15 @@ export default function SettingsPage() {
                 variant="outline"
                 size="sm"
                 className="shrink-0 gap-2"
-                onClick={() => void handleExport()}
-                disabled={exporting}
+                onClick={handleExport}
+                disabled={exportData.isPending}
               >
-                {exporting ? (
+                {exportData.isPending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <Download className="size-4" />
                 )}
-                {exporting ? t('settings.exporting') : t('settings.exportData')}
+                {exportData.isPending ? t('settings.exporting') : t('settings.exportData')}
               </Button>
             </div>
 
@@ -143,15 +128,15 @@ export default function SettingsPage() {
                   variant="destructive"
                   size="sm"
                   className="shrink-0 gap-2"
-                  onClick={() => void handleDelete()}
-                  disabled={deleting}
+                  onClick={handleDelete}
+                  disabled={deleteAccount.isPending}
                 >
-                  {deleting ? (
+                  {deleteAccount.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
                     <Trash2 className="size-4" />
                   )}
-                  {deleting ? t('common.loading') : t('settings.deleteAccount')}
+                  {deleteAccount.isPending ? t('common.loading') : t('settings.deleteAccount')}
                 </Button>
               </div>
             </div>

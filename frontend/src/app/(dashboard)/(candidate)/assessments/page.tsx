@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -12,39 +11,43 @@ import {
   MessageCircle,
   Play,
 } from 'lucide-react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { ApiError } from '@/lib/api';
 import { formatDateCasablanca } from '@/lib/format';
-import type { components } from '@/api/schema';
-
-type Specialty = components['schemas']['SpecialtySummaryDto'];
-type TestSummary = components['schemas']['TestSummaryDto'];
-type RemediationFeedback = components['schemas']['RemediationFeedbackDto'];
-type AssessmentStatus = components['schemas']['Assessment']['status'];
-
-interface EvaluationComposition {
-  techniqueWeight: number;
-  psychotechniqueWeight: number;
-  psychotechnicalItemTypes: string[];
-}
-
-interface Session {
-  assessmentId: string;
-  resumeToken: string | null;
-  assessmentUrl: string;
-  testId: string;
-  status: AssessmentStatus;
-}
-
-const SESSION_KEY = 'jbp_assessment_session';
+import {
+  useAssessmentCatalog,
+  useAssessmentFeedback,
+  useReportIncident,
+  useResumeAssessment,
+  useStartAssessment,
+} from '@/features/assessments/queries';
+import {
+  useAssessmentSession,
+  type AssessmentStatus,
+} from '@/features/assessments/session-store';
+import {
+  manualResumeSchema,
+  EMPTY_MANUAL_RESUME,
+  type ManualResumeValues,
+} from '@/features/assessments/schema';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -52,35 +55,19 @@ const fadeUp = {
   transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
 };
 
-function loadSession(): Session | null {
-  if (typeof window === 'undefined') return null;
-  const raw = sessionStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as Session;
-  } catch {
-    return null;
-  }
-}
-
-function saveSession(session: Session | null) {
-  if (session) {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  } else {
-    sessionStorage.removeItem(SESSION_KEY);
-  }
-}
-
+// The backend's error bodies are English and untranslated — best-effort
+// map the two known conflict shapes (cooldown, already-in-progress) to
+// real French/English copy, falling back to the raw message.
 function describeStartError(
-  error: unknown,
+  body: unknown,
   t: (key: string, vars?: Record<string, string>) => string,
   locale: 'fr' | 'en',
 ): string {
-  const body = error as { message?: string; reEligibleAt?: string } | undefined;
-  const message = body?.message ?? '';
-  if (body?.reEligibleAt) {
+  const b = body as { message?: string; reEligibleAt?: string } | undefined;
+  const message = b?.message ?? '';
+  if (b?.reEligibleAt) {
     return t('assessments.errors.cooldownActive', {
-      date: formatDateCasablanca(new Date(body.reEligibleAt), locale),
+      date: formatDateCasablanca(new Date(b.reEligibleAt), locale),
     });
   }
   if (message.includes('already in progress')) {
@@ -107,159 +94,101 @@ export default function AssessmentsPage() {
   const { t, locale } = useLocale();
   const { toast } = useToast();
 
-  const [specialties, setSpecialties] = useState<Specialty[]>([]);
-  const [tests, setTests] = useState<TestSummary[]>([]);
-  const [loadingCatalog, setLoadingCatalog] = useState(true);
-  const [startingTestId, setStartingTestId] = useState<string | null>(null);
-  const [composition, setComposition] = useState<EvaluationComposition | null>(null);
+  const catalog = useAssessmentCatalog();
+  const specialties = catalog.data?.specialties ?? [];
+  const tests = catalog.data?.tests ?? [];
+  const composition = catalog.data?.composition ?? null;
 
-  const [session, setSession] = useState<Session | null>(loadSession);
-  const [reportingIncident, setReportingIncident] = useState(false);
-  const [feedback, setFeedback] = useState<RemediationFeedback | null>(null);
-  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const { session, setSession, updateStatus } = useAssessmentSession();
+
+  const start = useStartAssessment();
+  const resume = useResumeAssessment();
+  const incident = useReportIncident();
+  const feedback = useAssessmentFeedback();
 
   const [showManual, setShowManual] = useState(false);
-  const [manualAssessmentId, setManualAssessmentId] = useState('');
-  const [manualResumeToken, setManualResumeToken] = useState('');
-  const [manualBusy, setManualBusy] = useState(false);
+  const manualForm = useForm<ManualResumeValues>({
+    resolver: zodResolver(manualResumeSchema),
+    defaultValues: EMPTY_MANUAL_RESUME,
+  });
 
-  async function loadCatalog() {
-    setLoadingCatalog(true);
-    try {
-      const [{ data: specialtiesData }, { data: testsData }, { data: compositionData }] =
-        await Promise.all([
-          apiClient.GET('/api/v1/specialties'),
-          apiClient.GET('/api/v1/tests'),
-          apiClient.GET('/api/v1/assessments/composition'),
-        ]);
-      setSpecialties(specialtiesData ?? []);
-      setTests(testsData ?? []);
-      if (compositionData) {
-        setComposition(compositionData as unknown as EvaluationComposition);
-      }
-    } finally {
-      setLoadingCatalog(false);
-    }
+  const startingTestId = start.isPending ? start.variables : null;
+
+  function handleStart(testId: string) {
+    start.mutate(testId, {
+      onSuccess: (data) => {
+        setSession({
+          assessmentId: data.assessment.id,
+          resumeToken: data.assessment.resumeToken,
+          assessmentUrl: data.assessmentUrl,
+          testId,
+          status: data.assessment.status,
+        });
+        feedback.reset();
+        toast(t('assessments.started'), 'success');
+      },
+      onError: (err) => {
+        const body = err instanceof ApiError ? err.body : undefined;
+        toast(describeStartError(body, t, locale), 'error');
+      },
+    });
   }
 
-  useEffect(() => {
-    void loadCatalog();
-  }, []);
+  const onManualResume = manualForm.handleSubmit((values) => {
+    resume.mutate(values, {
+      onSuccess: (data) => {
+        setSession({
+          assessmentId: data.assessment.id,
+          resumeToken: data.assessment.resumeToken,
+          assessmentUrl: data.assessmentUrl,
+          testId: data.assessment.testId,
+          status: data.assessment.status,
+        });
+        feedback.reset();
+        toast(t('assessments.resumed'), 'success');
+        manualForm.reset(EMPTY_MANUAL_RESUME);
+        setShowManual(false);
+      },
+      onError: (err) => {
+        const body = err instanceof ApiError ? err.body : undefined;
+        toast(describeStartError(body, t, locale), 'error');
+      },
+    });
+  });
 
-  function applySession(next: Session) {
-    setSession(next);
-    saveSession(next);
-    setFeedback(null);
-  }
-
-  async function handleStart(testId: string) {
-    setStartingTestId(testId);
-    try {
-      const { data, error } = await apiClient.POST('/api/v1/assessments/start', {
-        body: { testId },
-      });
-      if (error || !data) {
-        toast(describeStartError(error, t, locale), 'error');
-        return;
-      }
-      applySession({
-        assessmentId: data.assessment.id,
-        resumeToken: data.assessment.resumeToken,
-        assessmentUrl: data.assessmentUrl,
-        testId,
-        status: data.assessment.status,
-      });
-      toast(t('assessments.started'), 'success');
-    } finally {
-      setStartingTestId(null);
-    }
-  }
-
-  async function handleManualResume(e: FormEvent) {
-    e.preventDefault();
-    if (!manualAssessmentId.trim() || !manualResumeToken.trim()) return;
-    setManualBusy(true);
-    try {
-      const { data, error } = await apiClient.POST('/api/v1/assessments/resume', {
-        body: {
-          assessmentId: manualAssessmentId.trim(),
-          resumeToken: manualResumeToken.trim(),
-        },
-      });
-      if (error || !data) {
-        toast(describeStartError(error, t, locale), 'error');
-        return;
-      }
-      applySession({
-        assessmentId: data.assessment.id,
-        resumeToken: data.assessment.resumeToken,
-        assessmentUrl: data.assessmentUrl,
-        testId: data.assessment.testId,
-        status: data.assessment.status,
-      });
-      toast(t('assessments.resumed'), 'success');
-      setManualAssessmentId('');
-      setManualResumeToken('');
-      setShowManual(false);
-    } finally {
-      setManualBusy(false);
-    }
-  }
-
-  async function handleReportIncident() {
+  function handleReportIncident() {
     if (!session) return;
-    setReportingIncident(true);
-    try {
-      const { data, error } = await apiClient.POST(
-        '/api/v1/assessments/{id}/incident',
-        { params: { path: { id: session.assessmentId } } },
-      );
-      if (error) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      toast(t('assessments.incidentReported'), 'success');
-      if (data) {
-        applySession({ ...session, status: data.status });
-      }
-    } finally {
-      setReportingIncident(false);
-    }
+    incident.mutate(session.assessmentId, {
+      onSuccess: (data) => {
+        updateStatus(data.status);
+        toast(t('assessments.incidentReported'), 'success');
+      },
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
-  async function handleViewFeedback(assessmentId: string) {
-    setLoadingFeedback(true);
-    setFeedback(null);
-    try {
-      const { data, error } = await apiClient.GET(
-        '/api/v1/assessments/{id}/feedback',
-        { params: { path: { id: assessmentId } } },
-      );
-      if (error || !data) {
-        toast(t('assessments.feedbackError'), 'error');
-        return;
-      }
-      setFeedback(data);
-    } finally {
-      setLoadingFeedback(false);
-    }
+  function handleViewFeedback() {
+    if (!session) return;
+    feedback.mutate(session.assessmentId, {
+      onError: () => toast(t('assessments.feedbackError'), 'error'),
+    });
   }
 
   const specialtyById = new Map(specialties.map((s) => [s.id, s]));
-  const testsBySpecialty = new Map<string, TestSummary[]>();
+  const testsBySpecialty = new Map<string, typeof tests>();
   for (const test of tests) {
     const list = testsBySpecialty.get(test.specialtyId) ?? [];
     list.push(test);
     testsBySpecialty.set(test.specialtyId, list);
   }
 
+  const feedbackData = feedback.data;
+
   return (
     <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('assessments.title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t('assessments.subtitle')}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('assessments.subtitle')}</p>
       </div>
 
       {session && (
@@ -293,10 +222,10 @@ export default function AssessmentsPage() {
               <Button
                 variant="outline"
                 className="gap-2"
-                onClick={() => void handleReportIncident()}
-                disabled={reportingIncident || session.status !== 'in_progress'}
+                onClick={handleReportIncident}
+                disabled={incident.isPending || session.status !== 'in_progress'}
               >
-                {reportingIncident ? (
+                {incident.isPending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <AlertTriangle className="size-4" />
@@ -306,10 +235,10 @@ export default function AssessmentsPage() {
               <Button
                 variant="outline"
                 className="gap-2"
-                onClick={() => void handleViewFeedback(session.assessmentId)}
-                disabled={loadingFeedback}
+                onClick={handleViewFeedback}
+                disabled={feedback.isPending}
               >
-                {loadingFeedback ? (
+                {feedback.isPending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <MessageCircle className="size-4" />
@@ -318,7 +247,7 @@ export default function AssessmentsPage() {
               </Button>
             </div>
 
-            {feedback && (
+            {feedbackData && (
               <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="size-4 text-emerald-500" />
@@ -327,31 +256,30 @@ export default function AssessmentsPage() {
                   </span>
                 </div>
                 <p className="text-sm text-foreground">
-                  {t('assessments.feedback.score', {
-                    score: String(feedback.scoreValue),
-                  })}
+                  {t('assessments.feedback.score', { score: String(feedbackData.scoreValue) })}
                 </p>
-                {(feedback.technicalScore != null || feedback.psychotechnicalScore != null) && (
+                {(feedbackData.technicalScore != null ||
+                  feedbackData.psychotechnicalScore != null) && (
                   <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                    {feedback.technicalScore != null && (
+                    {feedbackData.technicalScore != null && (
                       <span>
                         {t('assessments.feedback.technicalScore', {
-                          score: String(feedback.technicalScore),
+                          score: String(feedbackData.technicalScore),
                         })}
                       </span>
                     )}
-                    {feedback.psychotechnicalScore != null && (
+                    {feedbackData.psychotechnicalScore != null && (
                       <span>
                         {t('assessments.feedback.psychotechnicalScore', {
-                          score: String(feedback.psychotechnicalScore),
+                          score: String(feedbackData.psychotechnicalScore),
                         })}
                       </span>
                     )}
                   </div>
                 )}
-                {feedback.domainFeedback.length > 0 && (
+                {feedbackData.domainFeedback.length > 0 && (
                   <ul className="flex flex-wrap gap-2">
-                    {feedback.domainFeedback.map((d) => (
+                    {feedbackData.domainFeedback.map((d) => (
                       <li key={d.domain}>
                         <Badge
                           variant={
@@ -368,13 +296,10 @@ export default function AssessmentsPage() {
                     ))}
                   </ul>
                 )}
-                {feedback.reEligibleAt && (
+                {feedbackData.reEligibleAt && (
                   <p className="text-xs text-muted-foreground">
                     {t('assessments.errors.cooldownActive', {
-                      date: formatDateCasablanca(
-                        new Date(feedback.reEligibleAt),
-                        locale,
-                      ),
+                      date: formatDateCasablanca(new Date(feedbackData.reEligibleAt), locale),
                     })}
                   </p>
                 )}
@@ -410,20 +335,18 @@ export default function AssessmentsPage() {
           )}
         </div>
 
-        {loadingCatalog && (
+        {catalog.isLoading && (
           <div className="grid gap-4 sm:grid-cols-2">
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
           </div>
         )}
 
-        {!loadingCatalog && specialties.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            {t('assessments.catalog.empty')}
-          </p>
+        {!catalog.isLoading && specialties.length === 0 && (
+          <p className="text-sm text-muted-foreground">{t('assessments.catalog.empty')}</p>
         )}
 
-        {!loadingCatalog && specialties.length > 0 && (
+        {!catalog.isLoading && specialties.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2">
             {specialties.map((specialty) => {
               const specialtyTests = testsBySpecialty.get(specialty.id) ?? [];
@@ -449,7 +372,7 @@ export default function AssessmentsPage() {
                     </span>
                     <Button
                       className="mt-1 w-fit gap-2"
-                      onClick={() => void handleStart(test.id)}
+                      onClick={() => handleStart(test.id)}
                       disabled={startingTestId === test.id}
                     >
                       {startingTestId === test.id ? (
@@ -472,11 +395,10 @@ export default function AssessmentsPage() {
           <button
             type="button"
             className="flex w-full items-center justify-between text-start"
-            onClick={() => setShowManual((prev) => !prev)}
+            onClick={() => setShowManual((p) => !p)}
+            aria-expanded={showManual}
           >
-            <CardTitle className="text-base">
-              {t('assessments.manual.title')}
-            </CardTitle>
+            <CardTitle className="text-base">{t('assessments.manual.title')}</CardTitle>
             {showManual ? (
               <ChevronUp className="size-4 text-muted-foreground" />
             ) : (
@@ -486,47 +408,49 @@ export default function AssessmentsPage() {
         </CardHeader>
         {showManual && (
           <CardContent className="flex flex-col gap-4">
-            <p className="text-xs text-muted-foreground">
-              {t('assessments.manual.hint')}
-            </p>
-            <form
-              onSubmit={(e) => void handleManualResume(e)}
-              className="flex flex-col gap-4 sm:flex-row sm:items-end"
-            >
-              <div className="flex flex-1 flex-col gap-2">
-                <Label htmlFor="manual-assessment-id">
-                  {t('assessments.assessmentId')}
-                </Label>
-                <Input
-                  id="manual-assessment-id"
-                  value={manualAssessmentId}
-                  onChange={(e) => setManualAssessmentId(e.target.value)}
-                  placeholder={t('assessments.assessmentIdPlaceholder')}
-                />
-              </div>
-              <div className="flex flex-1 flex-col gap-2">
-                <Label htmlFor="manual-resume-token">
-                  {t('assessments.resumeToken')}
-                </Label>
-                <Input
-                  id="manual-resume-token"
-                  value={manualResumeToken}
-                  onChange={(e) => setManualResumeToken(e.target.value)}
-                  placeholder={t('assessments.resumeTokenPlaceholder')}
-                />
-              </div>
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={
-                  manualBusy || !manualAssessmentId.trim() || !manualResumeToken.trim()
-                }
-                className="gap-2"
+            <p className="text-xs text-muted-foreground">{t('assessments.manual.hint')}</p>
+            <Form {...manualForm}>
+              <form
+                onSubmit={(e) => void onManualResume(e)}
+                className="flex flex-col gap-4 sm:flex-row sm:items-start"
               >
-                {manualBusy && <Loader2 className="size-4 animate-spin" />}
-                {t('assessments.resumeButton')}
-              </Button>
-            </form>
+                <FormField
+                  control={manualForm.control}
+                  name="assessmentId"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>{t('assessments.assessmentId')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t('assessments.assessmentIdPlaceholder')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={manualForm.control}
+                  name="resumeToken"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>{t('assessments.resumeToken')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t('assessments.resumeTokenPlaceholder')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={resume.isPending}
+                  className="gap-2 sm:mt-[26px]"
+                >
+                  {resume.isPending && <Loader2 className="size-4 animate-spin" />}
+                  {t('assessments.resumeButton')}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         )}
       </Card>

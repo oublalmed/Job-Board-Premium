@@ -1,16 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { components } from '@/api/schema';
-
-type Notification = components['schemas']['Notification'];
+import { useNotifications } from '@/features/notifications/queries';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -32,35 +29,18 @@ function timeAgo(dateStr: string): string {
 
 export default function NotificationsPage() {
   const { t } = useLocale();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    void loadNotifications();
-  }, []);
-
-  async function loadNotifications() {
-    setLoading(true);
-    try {
-      const { data } = await apiClient.GET('/api/v1/notifications');
-      if (data) setNotifications(data);
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  const { data, isLoading, isError, refetch } = useNotifications();
+  const notifications = data ?? [];
   const unreadCount = notifications.filter((n) => !n.readAt).length;
 
   return (
     <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">{t('notifications.title')}</h1>
-        {!loading && notifications.length > 0 && (
+        {!isLoading && !isError && notifications.length > 0 && (
           <div className="flex items-center gap-2">
             {unreadCount > 0 ? (
-              <Badge variant="default" className="gap-1">
-                {unreadCount} new
-              </Badge>
+              <Badge variant="default">{unreadCount} new</Badge>
             ) : (
               <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <CheckCheck className="size-4" />
@@ -72,7 +52,7 @@ export default function NotificationsPage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        {loading && (
+        {isLoading && (
           <>
             <Skeleton className="h-20" />
             <Skeleton className="h-20" />
@@ -80,7 +60,22 @@ export default function NotificationsPage() {
           </>
         )}
 
-        {!loading &&
+        {isError && (
+          <Card className="border-destructive/30">
+            <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
+                <AlertCircle className="size-6 text-destructive" />
+              </div>
+              <p className="text-sm text-muted-foreground">{t('common.error')}</p>
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                {t('common.retry')}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading &&
+          !isError &&
           notifications.map((n) => (
             <Card
               key={n.id}
@@ -94,23 +89,19 @@ export default function NotificationsPage() {
                     <Bell className="size-5 text-primary" />
                   </div>
                   {!n.readAt && (
-                    <div className="absolute -end-0.5 -top-0.5 size-3 rounded-full border-2 border-card bg-primary animate-pulse" />
+                    <div className="absolute -end-0.5 -top-0.5 size-3 animate-pulse rounded-full border-2 border-card bg-primary" />
                   )}
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p className="font-medium text-foreground">{n.title}</p>
-                  {n.body && (
-                    <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>
-                  )}
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {timeAgo(n.createdAt)}
-                  </p>
+                  {n.body && <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>}
+                  <p className="mt-1 text-xs text-muted-foreground">{timeAgo(n.createdAt)}</p>
                 </div>
               </CardContent>
             </Card>
           ))}
 
-        {!loading && notifications.length === 0 && (
+        {!isLoading && !isError && notifications.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-16 text-center">
             <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted">
               <Bell className="size-8 text-muted-foreground/50" />

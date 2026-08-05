@@ -1,31 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Check, X, FileText, ExternalLink } from 'lucide-react';
-import { apiClient } from '@/api/client';
+import { ArrowLeft, Check, X, FileText, ExternalLink, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
+import { reviewNoteSchema, type ReviewNoteValues } from '@/features/admin/schema';
+import {
+  useReviewVerification,
+  useVerificationDetail,
+} from '@/features/admin/queries';
 
-interface VerificationDetail {
-  id: string;
-  status: 'pending' | 'verified' | 'rejected';
-  candidateName: string | null;
-  ocrExtractedText: string | null;
-  matchedSchool: string | null;
-  confidence: number | string | null;
-  documentUrl: string;
-  documentName: string;
-  createdAt: string;
-  reviewedAt: string | null;
-  reviewNote: string | null;
-}
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
 
 export default function AdminSchoolVerificationDetailPage() {
   const { t } = useLocale();
@@ -34,68 +38,35 @@ export default function AdminSchoolVerificationDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [detail, setDetail] = useState<VerificationDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [note, setNote] = useState('');
-  const [submitting, setSubmitting] = useState<'verify' | 'reject' | null>(null);
+  const { data: detail, isLoading, isError } = useVerificationDetail(id);
+  const review = useReviewVerification();
 
-  async function loadDetail() {
-    setLoading(true);
-    setError(false);
-    try {
-      const { data, error: apiError } = await apiClient.GET(
-        '/api/v1/admin/school-verifications/{id}',
-        { params: { path: { id } } },
+  const form = useForm<ReviewNoteValues>({
+    resolver: zodResolver(reviewNoteSchema),
+    defaultValues: { note: '' },
+  });
+
+  function submit(decision: 'verify' | 'reject') {
+    return form.handleSubmit((values) => {
+      review.mutate(
+        { id, decision, note: values.note },
+        {
+          onSuccess: () => {
+            toast(
+              decision === 'verify'
+                ? t('admin.schoolVerifications.verified')
+                : t('admin.schoolVerifications.rejected'),
+              'success',
+            );
+            router.push('/admin/school-verifications');
+          },
+          onError: () => toast(t('common.error'), 'error'),
+        },
       );
-      if (apiError || !data) {
-        setError(true);
-        return;
-      }
-      setDetail(data as unknown as VerificationDetail);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
-  useEffect(() => {
-    if (!id) return;
-    void loadDetail();
-  }, [id]);
-
-  async function handleDecision(decision: 'verify' | 'reject') {
-    setSubmitting(decision);
-    try {
-      const body = { note: note.trim() || undefined };
-      const { error: apiError } =
-        decision === 'verify'
-          ? await apiClient.PATCH('/api/v1/admin/school-verifications/{id}/verify', {
-              params: { path: { id } },
-              body,
-            })
-          : await apiClient.PATCH('/api/v1/admin/school-verifications/{id}/reject', {
-              params: { path: { id } },
-              body,
-            });
-      if (apiError) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      toast(
-        decision === 'verify'
-          ? t('admin.schoolVerifications.verified')
-          : t('admin.schoolVerifications.rejected'),
-        'success',
-      );
-      router.push('/admin/school-verifications');
-    } finally {
-      setSubmitting(null);
-    }
-  }
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <Skeleton className="h-8 w-48" />
@@ -104,14 +75,14 @@ export default function AdminSchoolVerificationDetailPage() {
     );
   }
 
-  if (error || !detail) {
+  if (isError || !detail) {
     return (
       <div className="flex flex-col items-center gap-4 py-12">
         <p className="text-sm text-muted-foreground">
           {t('admin.schoolVerifications.notFound')}
         </p>
         <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 size-4" />
+          <ArrowLeft className="me-2 size-4" />
           {t('common.back')}
         </Button>
       </div>
@@ -119,11 +90,12 @@ export default function AdminSchoolVerificationDetailPage() {
   }
 
   const isPending = detail.status === 'pending';
+  const submitting = review.isPending ? review.variables?.decision : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <motion.div className="flex flex-col gap-6" {...fadeUp}>
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label={t('common.back')}>
           <ArrowLeft className="size-5" />
         </Button>
         <h1 className="text-2xl font-bold text-foreground">
@@ -211,35 +183,52 @@ export default function AdminSchoolVerificationDetailPage() {
               {t('admin.schoolVerifications.decisionTitle')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="note">{t('admin.schoolVerifications.noteLabel')}</Label>
-              <Textarea
-                id="note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div className="flex gap-3">
-              <Button
-                className="gap-2"
-                onClick={() => void handleDecision('verify')}
-                disabled={submitting !== null}
-              >
-                <Check className="size-4" />
-                {t('admin.schoolVerifications.approve')}
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2 text-destructive hover:text-destructive"
-                onClick={() => void handleDecision('reject')}
-                disabled={submitting !== null}
-              >
-                <X className="size-4" />
-                {t('admin.schoolVerifications.reject')}
-              </Button>
-            </div>
+          <CardContent>
+            <Form {...form}>
+              <form className="flex flex-col gap-4">
+                <FormField
+                  control={form.control}
+                  name="note"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('admin.schoolVerifications.noteLabel')}</FormLabel>
+                      <FormControl>
+                        <Textarea rows={3} {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    className="gap-2"
+                    onClick={() => void submit('verify')()}
+                    disabled={review.isPending}
+                  >
+                    {submitting === 'verify' ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Check className="size-4" />
+                    )}
+                    {t('admin.schoolVerifications.approve')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="gap-2 text-destructive hover:text-destructive"
+                    onClick={() => void submit('reject')()}
+                    disabled={review.isPending}
+                  >
+                    {submitting === 'reject' ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <X className="size-4" />
+                    )}
+                    {t('admin.schoolVerifications.reject')}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       ) : (
@@ -256,6 +245,6 @@ export default function AdminSchoolVerificationDetailPage() {
           </Card>
         )
       )}
-    </div>
+    </motion.div>
   );
 }

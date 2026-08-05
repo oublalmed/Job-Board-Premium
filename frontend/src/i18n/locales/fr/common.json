@@ -386,6 +386,66 @@
     "terms": "Conditions d'utilisation",
     "contact": "Contact"
   },
+  "badge": {
+    "title": "Badge de score",
+    "subtitle": "Partagez une vitrine publique de votre meilleur score.",
+    "needScore": "Passez une évaluation pour débloquer votre badge de score partageable.",
+    "enable": "Générer mon badge",
+    "enabling": "Génération…",
+    "enabled": "Votre badge est actif",
+    "disabled": "Votre badge est désactivé",
+    "disable": "Désactiver",
+    "disabling": "Désactivation…",
+    "displayName": "Nom affiché (facultatif)",
+    "displayNamePlaceholder": "Affiché sur la page publique — laissez vide pour rester anonyme",
+    "copyLink": "Copier le lien",
+    "copied": "Lien copié",
+    "shareLinkedin": "Partager sur LinkedIn",
+    "publicLink": "Lien public",
+    "anonymous": "Candidat vérifié",
+    "issuedOn": "Émis le",
+    "percentile": "Percentile {{value}}",
+    "verifiedBy": "Vérifié par Talentiq",
+    "notFound": "Ce badge est indisponible",
+    "notFoundHint": "Le lien est peut-être privé ou n'est plus actif.",
+    "cta": "Rejoindre Talentiq",
+    "level": {
+      "expert": "Expert",
+      "advanced": "Avancé",
+      "intermediate": "Intermédiaire",
+      "beginner": "Débutant"
+    }
+  },
+  "referral": {
+    "title": "Parrainer",
+    "subtitle": "Invitez des candidats avec votre lien personnel et suivez les conversions.",
+    "yourLink": "Votre lien de parrainage",
+    "copyLink": "Copier le lien",
+    "copied": "Lien copié",
+    "signups": "Inscriptions",
+    "conversions": "Conversions",
+    "invited": "Vous avez été invité sur Talentiq 🎉"
+  },
+  "analytics": {
+    "navLabel": "Analytique",
+    "title": "Tunnel d'acquisition",
+    "subtitle": "KPI d'amorçage sur le parcours candidat → recruteur.",
+    "empty": "Aucun événement pour l'instant.",
+    "ofTop": "du sommet",
+    "range": {
+      "d7": "7 jours",
+      "d30": "30 jours",
+      "all": "Tout"
+    },
+    "steps": {
+      "signup": "Inscriptions",
+      "email_verified": "Email vérifié",
+      "test_started": "Test démarré",
+      "score_obtained": "Score obtenu",
+      "recruiter_contact": "Contact recruteur",
+      "subscription_created": "Abonnement"
+    }
+  },
   "admin": {
     "schoolVerifications": {
       "navLabel": "Vérifications école",

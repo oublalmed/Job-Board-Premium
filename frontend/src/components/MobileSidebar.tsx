@@ -17,6 +17,7 @@ import {
   CreditCard,
   ClipboardList,
   GraduationCap,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -36,10 +37,6 @@ export function MobileSidebar() {
   const pathname = usePathname();
 
   const close = useCallback(() => setOpen(false), []);
-
-  useEffect(() => {
-    close();
-  }, [pathname, close]);
 
   useEffect(() => {
     if (open) {
@@ -63,6 +60,12 @@ export function MobileSidebar() {
       href: '/admin/school-verifications',
       label: t('admin.schoolVerifications.navLabel'),
       icon: GraduationCap,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/analytics',
+      label: t('analytics.navLabel'),
+      icon: BarChart3,
       roles: ['admin', 'moderator'],
     },
     { href: '/messages', label: t('nav.messages'), icon: MessageSquare },
@@ -113,6 +116,7 @@ export function MobileSidebar() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    onClick={close}
                     className={cn(
                       'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200',
                       isActive

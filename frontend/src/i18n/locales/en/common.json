@@ -386,6 +386,66 @@
     "terms": "Terms of use",
     "contact": "Contact"
   },
+  "badge": {
+    "title": "Score badge",
+    "subtitle": "Share a public showcase of your best score.",
+    "needScore": "Take an assessment to unlock your shareable score badge.",
+    "enable": "Generate my badge",
+    "enabling": "Generating…",
+    "enabled": "Your badge is live",
+    "disabled": "Your badge is disabled",
+    "disable": "Disable",
+    "disabling": "Disabling…",
+    "displayName": "Display name (optional)",
+    "displayNamePlaceholder": "Shown on the public page — leave empty to stay anonymous",
+    "copyLink": "Copy link",
+    "copied": "Link copied",
+    "shareLinkedin": "Share on LinkedIn",
+    "publicLink": "Public link",
+    "anonymous": "Verified candidate",
+    "issuedOn": "Issued on",
+    "percentile": "Percentile {{value}}",
+    "verifiedBy": "Verified by Talentiq",
+    "notFound": "This badge is unavailable",
+    "notFoundHint": "The link may be private or no longer active.",
+    "cta": "Join Talentiq",
+    "level": {
+      "expert": "Expert",
+      "advanced": "Advanced",
+      "intermediate": "Intermediate",
+      "beginner": "Beginner"
+    }
+  },
+  "referral": {
+    "title": "Refer a friend",
+    "subtitle": "Invite candidates with your personal link and track conversions.",
+    "yourLink": "Your referral link",
+    "copyLink": "Copy link",
+    "copied": "Link copied",
+    "signups": "Sign-ups",
+    "conversions": "Conversions",
+    "invited": "You were invited to Talentiq 🎉"
+  },
+  "analytics": {
+    "navLabel": "Analytics",
+    "title": "Acquisition funnel",
+    "subtitle": "Amorçage KPIs across the candidate → recruiter journey.",
+    "empty": "No events tracked yet.",
+    "ofTop": "of top",
+    "range": {
+      "d7": "7 days",
+      "d30": "30 days",
+      "all": "All time"
+    },
+    "steps": {
+      "signup": "Sign-ups",
+      "email_verified": "Email verified",
+      "test_started": "Test started",
+      "score_obtained": "Score obtained",
+      "recruiter_contact": "Recruiter contact",
+      "subscription_created": "Subscription"
+    }
+  },
   "admin": {
     "schoolVerifications": {
       "navLabel": "School verifications",

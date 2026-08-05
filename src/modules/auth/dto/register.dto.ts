@@ -31,4 +31,9 @@ export class RegisterDto {
   @IsOptional()
   @IsEnum(Role, { each: true })
   roles?: Role[];
+
+  // EF-GROW-02 — optional referral code captured from the invite link.
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }

@@ -5,18 +5,24 @@ import {
   NotFoundException,
   Inject,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Assessment, AssessmentStatus } from './entities/assessment.entity.js';
 import { Score, PlagiarismVerdict } from './entities/score.entity.js';
 import { Test as TestEntity } from './entities/test.entity.js';
-import type { ScoringProvider, AssessmentResult } from '../../ports/scoring.port.js';
+import type {
+  ScoringProvider,
+  AssessmentResult,
+} from '../../ports/scoring.port.js';
 import { SCORING_PROVIDER } from '../../ports/scoring.port.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
 import { IndexationService } from './indexation.service.js';
+import { AnalyticsService } from '../analytics/analytics.service.js';
+import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
 
 const DEFAULT_SCORE_VALIDITY_DAYS = 365;
 const DEFAULT_BAREME_VERSION = '1.0';
@@ -51,6 +57,8 @@ export class WebhookService {
     private readonly settingsService: SettingsService,
     private readonly auditService: AuditService,
     private readonly indexationService: IndexationService,
+    // Optional so unit tests need not wire the (global) analytics module.
+    @Optional() private readonly analytics?: AnalyticsService,
   ) {}
 
   async processWebhook(
@@ -160,6 +168,13 @@ export class WebhookService {
       },
     });
 
+    // EF-ADM-05 funnel — fire-and-forget.
+    void this.analytics?.track(
+      AnalyticsEventType.SCORE_OBTAINED,
+      assessment.candidateId,
+      { value: normalizedScore },
+    );
+
     await this.indexationService.applyThresholds(assessment.candidateId);
 
     return { alreadyProcessed: false, scoreId: savedScore.id };
@@ -172,10 +187,7 @@ export class WebhookService {
   private async computeCompositeScore(
     result: AssessmentResult,
   ): Promise<number> {
-    if (
-      result.technicalScore != null &&
-      result.psychotechnicalScore != null
-    ) {
+    if (result.technicalScore != null && result.psychotechnicalScore != null) {
       const [techWeight, psychoWeight] = await Promise.all([
         this.settingsService
           .getNumber(TECHNIQUE_WEIGHT_KEY)

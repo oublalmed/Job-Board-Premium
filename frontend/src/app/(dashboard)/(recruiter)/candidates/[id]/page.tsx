@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -14,25 +13,16 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface CandidateDetail {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  headline: string | null;
-  availability: string | null;
-  mobility: string | null;
-  location: string | null;
-  skills: string[];
-  featured: boolean;
-}
+import {
+  useAddToShortlist,
+  useCandidateDetail,
+} from '@/features/candidates/queries';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -47,66 +37,31 @@ export default function CandidateDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [candidate, setCandidate] = useState<CandidateDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [addingToShortlist, setAddingToShortlist] = useState(false);
+  const { data: candidate, isLoading, isError } = useCandidateDetail(id);
+  const addToShortlist = useAddToShortlist();
 
-  useEffect(() => {
-    if (!id) return;
-    void loadCandidate();
-  }, [id]);
-
-  async function loadCandidate() {
-    setLoading(true);
-    setError(false);
-    try {
-      const { data, error: apiError } = await apiClient.GET(
-        '/api/v1/search/candidates/{id}',
-        { params: { path: { id } } },
-      );
-      if (apiError || !data) {
-        setError(true);
-        return;
-      }
-      setCandidate(data as unknown as CandidateDetail);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleAddToShortlist() {
+  function handleAdd() {
     if (!candidate) return;
-    setAddingToShortlist(true);
-    try {
-      const { error: apiError } = await apiClient.POST('/api/v1/companies/shortlist', {
-        body: { candidateProfileId: candidate.id },
-      });
-      if (apiError) {
-        const msg = (apiError as { message?: string }).message ?? '';
-        if (msg.includes('already') || msg.includes('duplicate') || msg.includes('unique')) {
-          toast(t('search.alreadyInShortlist'), 'info');
-        } else {
-          toast(t('common.error'), 'error');
-        }
-        return;
-      }
-      toast(t('search.addedToShortlist'), 'success');
-    } finally {
-      setAddingToShortlist(false);
-    }
+    addToShortlist.mutate(candidate.id, {
+      onSuccess: (res) =>
+        toast(
+          res.duplicate
+            ? t('search.alreadyInShortlist')
+            : t('search.addedToShortlist'),
+          res.duplicate ? 'info' : 'success',
+        ),
+      onError: () => toast(t('common.error'), 'error'),
+    });
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <Skeleton className="h-8 w-48" />
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col gap-4">
-              <Skeleton className="h-16 w-16 rounded-full" />
+              <Skeleton className="size-16 rounded-full" />
               <Skeleton className="h-6 w-64" />
               <Skeleton className="h-4 w-48" />
               <Skeleton className="h-4 w-32" />
@@ -117,24 +72,25 @@ export default function CandidateDetailPage() {
     );
   }
 
-  if (error || !candidate) {
+  if (isError || !candidate) {
     return (
       <div className="flex flex-col items-center gap-4 py-12">
         <p className="text-sm text-muted-foreground">{t('candidateDetail.notFound')}</p>
         <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 size-4" />
+          <ArrowLeft className="me-2 size-4" />
           {t('common.back')}
         </Button>
       </div>
     );
   }
 
-  const fullName = [candidate.firstName, candidate.lastName].filter(Boolean).join(' ') || '—';
+  const fullName =
+    [candidate.firstName, candidate.lastName].filter(Boolean).join(' ') || '—';
 
   return (
     <motion.div className="flex flex-col gap-6" {...fadeUp}>
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label={t('common.back')}>
           <ArrowLeft className="size-5" />
         </Button>
         <h1 className="text-2xl font-bold text-foreground">{t('candidateDetail.title')}</h1>
@@ -186,12 +142,8 @@ export default function CandidateDetailPage() {
             </div>
 
             <div className="flex shrink-0 gap-2 sm:flex-col">
-              <Button
-                className="gap-2"
-                onClick={() => void handleAddToShortlist()}
-                disabled={addingToShortlist}
-              >
-                {addingToShortlist ? (
+              <Button className="gap-2" onClick={handleAdd} disabled={addToShortlist.isPending}>
+                {addToShortlist.isPending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <UserPlus className="size-4" />
