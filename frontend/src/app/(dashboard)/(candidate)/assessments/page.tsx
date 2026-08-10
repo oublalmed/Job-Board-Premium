@@ -250,7 +250,7 @@ export default function AssessmentsPage() {
             {feedbackData && (
               <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-500" />
+                  <CheckCircle2 className="size-4 text-success" />
                   <span className="text-sm font-medium text-foreground">
                     {t('assessments.feedbackResults')}
                   </span>

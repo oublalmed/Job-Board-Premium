@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { APP_NAME } from '@/lib/brand';
 
-// Same reasoning as the recruiter group's layout — see its comment.
+// Server Component for per-section metadata. Single unified Cobalt theme.
 export const metadata: Metadata = {
   title: {
-    template: '%s — Espace candidat | Talentiq',
-    default: 'Espace candidat | Talentiq',
+    template: `%s — Espace candidat | ${APP_NAME}`,
+    default: `Espace candidat | ${APP_NAME}`,
   },
 };
 

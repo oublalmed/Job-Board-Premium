@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { APP_NAME } from './common/brand.js';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -59,7 +60,7 @@ async function bootstrap() {
     const swaggerDocument = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()
-        .setTitle('Talentiq API')
+        .setTitle(`${APP_NAME} API`)
         .setDescription('REST API — see CDC for the full functional spec')
         .setVersion('1.0')
         .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })

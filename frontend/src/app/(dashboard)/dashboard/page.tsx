@@ -98,19 +98,19 @@ export default function DashboardPage() {
               icon={Bell}
               label={t('nav.notifications')}
               value={String(unreadNotifications.length)}
-              color="from-amber-500/20 to-amber-500/5"
+              color="from-warning/20 to-warning/5"
             />
             <StatCard
               icon={MessageSquare}
               label={t('nav.messages')}
               value="—"
-              color="from-emerald-500/20 to-emerald-500/5"
+              color="from-success/20 to-success/5"
             />
             <StatCard
               icon={TrendingUp}
               label={t('nav.jobs')}
               value="—"
-              color="from-blue-500/20 to-blue-500/5"
+              color="from-primary/20 to-primary/5"
             />
           </>
         )}

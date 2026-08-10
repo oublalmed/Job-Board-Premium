@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { APP_NAME } from '../../common/brand.js';
 import { EntityManager } from 'typeorm';
 import { Recruiter } from '../companies/entities/recruiter.entity.js';
 import type { MailProvider } from '../../ports/mail.port.js';
@@ -27,7 +28,7 @@ export class DunningNotificationService {
     manager: EntityManager,
   ): Promise<void> {
     await this.sendToRecruiters(companyId, manager, {
-      subject: 'Échec de paiement — Talentiq',
+      subject: `Échec de paiement — ${APP_NAME}`,
       templateId: 'subscription-payment-failed',
     });
   }
@@ -37,7 +38,7 @@ export class DunningNotificationService {
     manager: EntityManager,
   ): Promise<void> {
     await this.sendToRecruiters(companyId, manager, {
-      subject: 'Abonnement suspendu — Talentiq',
+      subject: `Abonnement suspendu — ${APP_NAME}`,
       templateId: 'subscription-cancelled',
     });
   }
@@ -47,7 +48,7 @@ export class DunningNotificationService {
     manager: EntityManager,
   ): Promise<void> {
     await this.sendToRecruiters(companyId, manager, {
-      subject: 'Abonnement réactivé — Talentiq',
+      subject: `Abonnement réactivé — ${APP_NAME}`,
       templateId: 'subscription-reactivated',
     });
   }

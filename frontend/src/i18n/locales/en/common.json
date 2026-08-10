@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Talentiq",
+    "name": "Cobalt",
     "tagline": "The premium recruitment platform in Morocco",
     "description": "Connect top talent with hiring companies. Assessment, scoring and smart matchmaking."
   },
@@ -42,7 +42,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Why Talentiq?",
+    "title": "Why Cobalt?",
     "subtitle": "A platform built for the Moroccan market, with modern recruitment tools.",
     "scoring": {
       "title": "Smart scoring",
@@ -88,7 +88,7 @@
     },
     "register": {
       "title": "Create an account",
-      "subtitle": "Join the Talentiq community",
+      "subtitle": "Join the Cobalt community",
       "roleLabel": "I am a",
       "roleCandidate": "Candidate",
       "roleRecruiter": "Recruiter",
@@ -405,10 +405,10 @@
     "anonymous": "Verified candidate",
     "issuedOn": "Issued on",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Verified by Talentiq",
+    "verifiedBy": "Verified by Cobalt",
     "notFound": "This badge is unavailable",
     "notFoundHint": "The link may be private or no longer active.",
-    "cta": "Join Talentiq",
+    "cta": "Join Cobalt",
     "level": {
       "expert": "Expert",
       "advanced": "Advanced",
@@ -424,7 +424,7 @@
     "copied": "Link copied",
     "signups": "Sign-ups",
     "conversions": "Conversions",
-    "invited": "You were invited to Talentiq 🎉"
+    "invited": "You were invited to Cobalt 🎉"
   },
   "analytics": {
     "navLabel": "Analytics",

@@ -525,10 +525,10 @@ function CandidateProfile() {
           {verification && (
             <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
               {verification.status === 'verified' && (
-                <ShieldCheck className="size-5 shrink-0 text-emerald-600" />
+                <ShieldCheck className="size-5 shrink-0 text-success" />
               )}
               {verification.status === 'pending' && (
-                <Clock className="size-5 shrink-0 text-amber-600" />
+                <Clock className="size-5 shrink-0 text-warning" />
               )}
               {verification.status === 'rejected' && (
                 <ShieldX className="size-5 shrink-0 text-destructive" />

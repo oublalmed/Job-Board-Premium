@@ -85,7 +85,7 @@ export function ScoreBadgeCard() {
               <div className="flex gap-2">
                 <Input value={shareUrl} readOnly className="font-mono text-xs" />
                 <Button variant="outline" size="icon" onClick={() => void handleCopy()} aria-label={t('badge.copyLink')}>
-                  {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
+                  {copied ? <Check className="size-4 text-success" /> : <Copy className="size-4" />}
                 </Button>
               </div>
             </div>

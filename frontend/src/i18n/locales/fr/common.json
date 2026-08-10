@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Talentiq",
+    "name": "Cobalt",
     "tagline": "La plateforme de recrutement premium au Maroc",
     "description": "Connectez les meilleurs talents avec les entreprises qui recrutent. Évaluation, scoring et mise en relation intelligente."
   },
@@ -42,7 +42,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Pourquoi Talentiq ?",
+    "title": "Pourquoi Cobalt ?",
     "subtitle": "Une plateforme conçue pour le marché marocain, avec des outils modernes de recrutement.",
     "scoring": {
       "title": "Scoring intelligent",
@@ -88,7 +88,7 @@
     },
     "register": {
       "title": "Créer un compte",
-      "subtitle": "Rejoignez la communauté Talentiq",
+      "subtitle": "Rejoignez la communauté Cobalt",
       "roleLabel": "Je suis un(e)",
       "roleCandidate": "Candidat",
       "roleRecruiter": "Recruteur",
@@ -405,10 +405,10 @@
     "anonymous": "Candidat vérifié",
     "issuedOn": "Émis le",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Vérifié par Talentiq",
+    "verifiedBy": "Vérifié par Cobalt",
     "notFound": "Ce badge est indisponible",
     "notFoundHint": "Le lien est peut-être privé ou n'est plus actif.",
-    "cta": "Rejoindre Talentiq",
+    "cta": "Rejoindre Cobalt",
     "level": {
       "expert": "Expert",
       "advanced": "Avancé",
@@ -424,7 +424,7 @@
     "copied": "Lien copié",
     "signups": "Inscriptions",
     "conversions": "Conversions",
-    "invited": "Vous avez été invité sur Talentiq 🎉"
+    "invited": "Vous avez été invité sur Cobalt 🎉"
   },
   "analytics": {
     "navLabel": "Analytique",

@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { APP_NAME } from '../../common/brand.js';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import {
@@ -83,7 +84,7 @@ export class StripePaymentProvider implements PaymentProvider {
             currency: params.currency.toLowerCase(),
             unit_amount: params.amount,
             recurring: { interval: 'month' },
-            product_data: { name: `Talentiq — ${params.plan}` },
+            product_data: { name: `${APP_NAME} — ${params.plan}` },
           },
           quantity: 1,
         },
