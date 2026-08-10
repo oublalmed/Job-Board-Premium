@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   User,
-  Briefcase,
   Search,
   Heart,
   MessageSquare,
@@ -36,7 +35,6 @@ export function DashboardSidebar() {
   const links: SidebarLink[] = [
     { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { href: '/profile', label: t('nav.profile'), icon: User },
-    { href: '/jobs', label: t('nav.jobs'), icon: Briefcase, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/candidates', label: t('nav.candidates'), icon: Search, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin', 'admin'] },

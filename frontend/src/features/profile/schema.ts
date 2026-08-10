@@ -14,8 +14,6 @@ export const profileSchema = z.object({
   headline: z.string(),
   bio: z.string(),
   location: z.string(),
-  availability: z.string(),
-  mobility: z.string(),
   school: z.string(),
   visibility: z.enum(VISIBILITY_OPTIONS),
 });
@@ -28,8 +26,6 @@ export const EMPTY_PROFILE_FORM: ProfileFormValues = {
   headline: '',
   bio: '',
   location: '',
-  availability: '',
-  mobility: '',
   school: '',
   visibility: 'hidden',
 };
@@ -41,8 +37,6 @@ export function toUpdatePayload(v: ProfileFormValues): Record<string, unknown> {
     headline: v.headline || undefined,
     bio: v.bio || undefined,
     location: v.location || undefined,
-    availability: v.availability || undefined,
-    mobility: v.mobility || undefined,
     school: v.school || undefined,
     visibility: v.visibility,
   };

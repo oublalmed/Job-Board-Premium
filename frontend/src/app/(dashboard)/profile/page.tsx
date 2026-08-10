@@ -200,8 +200,6 @@ function CandidateProfile() {
       headline: p.headline ?? '',
       bio: p.bio ?? '',
       location: p.location ?? '',
-      availability: p.availability ?? '',
-      mobility: p.mobility ?? '',
       school: p.school ?? '',
       visibility: p.visibility ?? 'hidden',
     });
@@ -382,32 +380,6 @@ function CandidateProfile() {
                   <Label htmlFor="profile-email">{t('profile.email')}</Label>
                   <Input id="profile-email" value={user.email} disabled />
                 </FormItem>
-                <FormField
-                  control={form.control}
-                  name="availability"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('profile.availability')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('profile.availabilityPlaceholder')} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="mobility"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('profile.mobility')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('profile.mobilityPlaceholder')} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="school"

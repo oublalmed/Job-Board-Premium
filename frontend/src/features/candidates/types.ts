@@ -4,7 +4,6 @@ export interface CandidateResult {
   lastName?: string;
   headline?: string;
   location?: string;
-  availability?: string;
   featured?: boolean;
 }
 
@@ -19,8 +18,6 @@ export interface CandidateDetail {
   firstName: string | null;
   lastName: string | null;
   headline: string | null;
-  availability: string | null;
-  mobility: string | null;
   location: string | null;
   skills: string[];
   featured: boolean;
@@ -31,18 +28,14 @@ export interface CandidateFilters {
   q: string;
   skills: string;
   location: string;
-  availability: string;
-  mobility: string;
 }
 
 export const EMPTY_FILTERS: CandidateFilters = {
   q: '',
   skills: '',
   location: '',
-  availability: '',
-  mobility: '',
 };
 
 export function activeFilterCount(f: CandidateFilters): number {
-  return [f.skills, f.location, f.availability, f.mobility].filter((v) => v.trim()).length;
+  return [f.skills, f.location].filter((v) => v.trim()).length;
 }
