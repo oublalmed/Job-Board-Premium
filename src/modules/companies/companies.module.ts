@@ -7,6 +7,7 @@ import { JobOffer } from './entities/job-offer.entity.js';
 import { ShortlistEntry } from './entities/shortlist-entry.entity.js';
 import { CompanyService } from './company.service.js';
 import { CompanyController } from './company.controller.js';
+import { PublicCompanyController } from './public-company.controller.js';
 import { RecruiterService } from './recruiter.service.js';
 import { RecruiterController } from './recruiter.controller.js';
 import { SubscriptionGuardService } from './subscription-guard.service.js';
@@ -33,6 +34,7 @@ import { CONTACT_QUOTA_PORT } from '../../ports/contact-quota.port.js';
   ],
   controllers: [
     CompanyController,
+    PublicCompanyController,
     RecruiterController,
     JobOfferController,
     ShortlistController,

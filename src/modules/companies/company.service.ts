@@ -5,8 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Company } from './entities/company.entity.js';
+import { Repository, IsNull, Not } from 'typeorm';
+import { Company, CompanyStatus } from './entities/company.entity.js';
 import { Recruiter } from './entities/recruiter.entity.js';
 import {
   Subscription,
@@ -26,6 +26,13 @@ const DEFAULT_STARTER_CONTACT_QUOTA = 15;
 export interface CompanyWithSubscription {
   company: Company;
   subscription: Subscription | null;
+}
+
+export interface PartnerCompany {
+  id: string;
+  name: string;
+  logo: string | null;
+  sector: string | null;
 }
 
 @Injectable()
@@ -149,5 +156,26 @@ export class CompanyService {
     });
 
     return { company: recruiter.company, subscription };
+  }
+
+  // Public showcase for the landing "Ils nous ont fait confiance" section:
+  // only active, verified companies that have actually uploaded a logo, so we
+  // never render a broken tile or claim an endorsement a company didn't set up.
+  async listPartners(): Promise<PartnerCompany[]> {
+    const companies = await this.companyRepo.find({
+      where: {
+        status: CompanyStatus.ACTIVE,
+        verified: true,
+        logo: Not(IsNull()),
+      },
+      order: { name: 'ASC' },
+    });
+
+    return companies.map((c) => ({
+      id: c.id,
+      name: c.name,
+      logo: c.logo,
+      sector: c.sector,
+    }));
   }
 }

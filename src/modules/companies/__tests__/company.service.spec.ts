@@ -41,6 +41,7 @@ describe('CompanyService', () => {
   beforeEach(async () => {
     companyRepo = {
       findOne: jest.fn().mockResolvedValue(null),
+      find: jest.fn().mockResolvedValue([]),
       create: jest.fn().mockImplementation((e: Record<string, unknown>) => ({
         id: 'company-1',
         createdAt: new Date(),
@@ -278,6 +279,44 @@ describe('CompanyService', () => {
       await expect(service.getMyCompany(userId)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('listPartners — landing showcase', () => {
+    it('should return only active, verified companies that have a logo, sorted by name', async () => {
+      companyRepo.find.mockResolvedValue([
+        {
+          id: 'company-1',
+          name: 'Atlas Digital',
+          logo: 'data:image/svg+xml;utf8,<svg/>',
+          sector: 'IT',
+          ice: '000000000000001',
+        },
+      ]);
+
+      const result = await service.listPartners();
+
+      // Only public-safe fields are projected — no ICE / registration data.
+      expect(result).toEqual([
+        {
+          id: 'company-1',
+          name: 'Atlas Digital',
+          logo: 'data:image/svg+xml;utf8,<svg/>',
+          sector: 'IT',
+        },
+      ]);
+      expect(companyRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ verified: true }),
+          order: { name: 'ASC' },
+        }),
+      );
+    });
+
+    it('should return an empty list when no company has opted in', async () => {
+      companyRepo.find.mockResolvedValue([]);
+
+      await expect(service.listPartners()).resolves.toEqual([]);
     });
   });
 });
