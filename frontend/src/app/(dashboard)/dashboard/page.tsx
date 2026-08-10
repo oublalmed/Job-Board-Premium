@@ -11,7 +11,6 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
-  TrendingUp,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/auth/auth-context';
@@ -98,20 +97,22 @@ export default function DashboardPage() {
               icon={Bell}
               label={t('nav.notifications')}
               value={String(unreadNotifications.length)}
-              color="from-amber-500/20 to-amber-500/5"
+              color="from-warning/20 to-warning/5"
             />
             <StatCard
               icon={MessageSquare}
               label={t('nav.messages')}
               value="—"
-              color="from-emerald-500/20 to-emerald-500/5"
+              color="from-success/20 to-success/5"
             />
-            <StatCard
-              icon={TrendingUp}
-              label={t('nav.jobs')}
-              value="—"
-              color="from-blue-500/20 to-blue-500/5"
-            />
+            {isRecruiter && (
+              <StatCard
+                icon={Heart}
+                label={t('nav.shortlist')}
+                value="—"
+                color="from-primary/20 to-primary/5"
+              />
+            )}
           </>
         )}
       </div>
@@ -156,7 +157,7 @@ export default function DashboardPage() {
                 <QuickAction href="/shortlist" icon={Heart} label={t('nav.shortlist')} />
               </>
             ) : (
-              <QuickAction href="/jobs" icon={Briefcase} label={t('dashboard.browseJobs')} />
+              <QuickAction href="/assessments" icon={Briefcase} label={t('assessments.title')} />
             )}
             <QuickAction href="/messages" icon={MessageSquare} label={t('dashboard.viewMessages')} />
           </CardContent>

@@ -68,8 +68,7 @@ const icons: Record<ToastVariant, typeof Info> = {
 };
 
 const styles: Record<ToastVariant, string> = {
-  success:
-    'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100',
+  success: 'border-success/40 bg-success/10 text-foreground',
   error:
     'border-destructive/30 bg-destructive/5 text-destructive dark:border-destructive/50 dark:bg-destructive/10',
   info: 'border-border bg-background text-foreground',

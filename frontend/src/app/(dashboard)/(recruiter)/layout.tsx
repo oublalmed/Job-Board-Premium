@@ -1,18 +1,12 @@
 import type { Metadata } from 'next';
+import { APP_NAME } from '@/lib/brand';
 
-// Server Component (no 'use client') — the group boundary doesn't
-// need client interactivity itself, and being a Server Component is
-// what lets it export metadata (a 'use client' file can't). The
-// data-theme itself is applied once, higher up, at the shared
-// (dashboard)/layout.tsx based on the logged-in user's role — not
-// here — since shared routes (/dashboard, /profile...) are visited by
-// both roles under the same page.tsx and can't be themed by which
-// route-group folder a file happens to live in. This group exists for
-// per-section metadata/loading.tsx, not for the theme mechanism.
+// Server Component (no 'use client') so it can export per-section
+// metadata. No theming here — the app uses a single unified Cobalt theme.
 export const metadata: Metadata = {
   title: {
-    template: '%s — Espace recruteur | Talentiq',
-    default: 'Espace recruteur | Talentiq',
+    template: `%s — Espace recruteur | ${APP_NAME}`,
+    default: `Espace recruteur | ${APP_NAME}`,
   },
 };
 

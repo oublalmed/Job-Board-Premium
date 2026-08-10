@@ -19,7 +19,6 @@ export function Navbar() {
   const isDashboard =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/profile') ||
-    pathname.startsWith('/jobs') ||
     pathname.startsWith('/candidates') ||
     pathname.startsWith('/shortlist') ||
     pathname.startsWith('/messages') ||

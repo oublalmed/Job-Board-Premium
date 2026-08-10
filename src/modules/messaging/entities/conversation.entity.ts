@@ -34,8 +34,7 @@ export class Conversation {
   candidate!: CandidateProfile;
 
   // The recruiter (User.id) who opened the thread — not a Recruiter row FK,
-  // consistent with JobOffer.createdBy / ShortlistEntry.addedBy elsewhere
-  // in this module.
+  // consistent with ShortlistEntry.addedBy elsewhere in this module.
   @Column({ name: 'recruiter_id' })
   recruiterId!: string;
 

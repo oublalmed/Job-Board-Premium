@@ -84,8 +84,6 @@ export class CandidateDataService {
             lastName: profile.lastName,
             headline: profile.headline,
             bio: profile.bio,
-            availability: profile.availability,
-            mobility: profile.mobility,
             school: profile.school,
             completeness: profile.completeness,
             createdAt: profile.createdAt,

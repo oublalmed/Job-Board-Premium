@@ -81,7 +81,7 @@ export function ReferralCard() {
                   aria-label={t('referral.copyLink')}
                 >
                   {copied ? (
-                    <Check className="size-4 text-emerald-500" />
+                    <Check className="size-4 text-success" />
                   ) : (
                     <Copy className="size-4" />
                   )}

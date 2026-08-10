@@ -51,8 +51,8 @@ function VerifyEmailContent() {
 
       {status === 'success' && (
         <>
-          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
-            <CheckCircle2 className="size-8 text-emerald-500" />
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success/10">
+            <CheckCircle2 className="size-8 text-success" />
           </div>
           <h1 className="text-xl font-bold text-foreground">{t('verifyEmail.success')}</h1>
           <p className="mt-2 text-sm text-muted-foreground">

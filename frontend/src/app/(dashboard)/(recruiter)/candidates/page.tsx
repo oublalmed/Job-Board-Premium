@@ -126,11 +126,6 @@ export default function CandidatesPage() {
         cell: ({ row }) => row.original.location ?? '—',
       },
       {
-        accessorKey: 'availability',
-        header: t('search.availability'),
-        cell: ({ row }) => row.original.availability ?? '—',
-      },
-      {
         id: 'actions',
         header: '',
         enableSorting: false,
@@ -263,24 +258,6 @@ export default function CandidatesPage() {
                     placeholder={t('search.locationPlaceholder')}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">{t('search.availability')}</Label>
-                  <Input
-                    value={draft.availability}
-                    onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value }))}
-                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-                    placeholder={t('search.availabilityPlaceholder')}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs">{t('search.mobility')}</Label>
-                  <Input
-                    value={draft.mobility}
-                    onChange={(e) => setDraft((d) => ({ ...d, mobility: e.target.value }))}
-                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-                    placeholder={t('search.mobilityPlaceholder')}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -343,7 +320,6 @@ export default function CandidatesPage() {
                           <MapPin className="size-3" /> {candidate.location}
                         </span>
                       )}
-                      {candidate.availability && <span>{candidate.availability}</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

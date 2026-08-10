@@ -47,7 +47,7 @@ export default function PublicBadgePage() {
             <CardContent className="flex flex-col items-center gap-6 p-8">
               <ScoreShowcase badge={data} />
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <ShieldCheck className="size-3.5 text-emerald-500" />
+                <ShieldCheck className="size-3.5 text-success" />
                 {t('badge.verifiedBy')}
               </div>
             </CardContent>

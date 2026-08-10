@@ -3,8 +3,6 @@ export interface CandidateSearchResultDto {
   firstName: string | null;
   lastName: string | null;
   headline: string | null;
-  availability: string | null;
-  mobility: string | null;
   location: string | null;
   skills: string[];
   score: number;

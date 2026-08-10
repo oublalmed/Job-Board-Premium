@@ -1,6 +1,7 @@
 'use client';
 
-import { Send, Loader2, Inbox } from 'lucide-react';
+import { useState } from 'react';
+import { Send, Loader2, MessagesSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +26,8 @@ import {
   type OpenConversationValues,
 } from '@/features/messages/schema';
 import { useOpenConversation } from '@/features/messages/queries';
+import { ConversationList } from '@/features/messages/ConversationList';
+import { MessageThread } from '@/features/messages/MessageThread';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -41,6 +44,8 @@ export default function MessagesPage() {
     ['recruiter', 'company_admin', 'admin'].includes(r),
   );
 
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
   const openConversation = useOpenConversation();
   const form = useForm<OpenConversationValues>({
     resolver: zodResolver(openConversationSchema),
@@ -49,9 +54,10 @@ export default function MessagesPage() {
 
   const onSubmit = form.handleSubmit((values) => {
     openConversation.mutate(values, {
-      onSuccess: () => {
+      onSuccess: (conversation) => {
         toast(t('messages.conversationOpened'), 'success');
         form.reset(EMPTY_CONVERSATION);
+        setSelectedId(conversation.id);
       },
       onError: () => toast(t('common.error'), 'error'),
     });
@@ -77,9 +83,9 @@ export default function MessagesPage() {
                   name="candidateProfileId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>ID candidat</FormLabel>
+                      <FormLabel>{t('messages.candidateId')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="UUID du profil candidat" {...field} />
+                        <Input placeholder={t('messages.candidateIdPlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -120,18 +126,29 @@ export default function MessagesPage() {
         </Card>
       )}
 
-      <div className="rounded-2xl border border-dashed border-border p-16 text-center">
-        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted">
-          <Inbox className="size-8 text-muted-foreground/50" />
-        </div>
-        <p className="text-sm font-medium text-muted-foreground">
-          {t('messages.noConversations')}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {isRecruiter
-            ? 'Start a conversation with a candidate above'
-            : 'Conversations from recruiters will appear here'}
-        </p>
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <Card className="overflow-hidden p-0">
+          <ConversationList selectedId={selectedId} onSelect={setSelectedId} />
+        </Card>
+
+        <Card className="min-h-[420px]">
+          <CardContent className="flex h-full flex-col p-4">
+            {selectedId ? (
+              <div className="flex h-[420px] flex-col">
+                <MessageThread conversationId={selectedId} />
+              </div>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+                <div className="flex size-14 items-center justify-center rounded-full bg-muted">
+                  <MessagesSquare className="size-7 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t('messages.selectThread')}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </motion.div>
   );

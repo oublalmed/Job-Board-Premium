@@ -30,7 +30,6 @@ interface CompletenessWeights {
   skills: number;
   cv: number;
   links: number;
-  availability: number;
   school: number;
   threshold: number;
   minSkills: number;
@@ -81,8 +80,6 @@ export class CandidateProfileService {
         | 'lastName'
         | 'headline'
         | 'bio'
-        | 'availability'
-        | 'mobility'
         | 'location'
         | 'school'
         | 'visibility'
@@ -183,16 +180,6 @@ export class CandidateProfileService {
       });
     }
 
-    if (profile.availability && profile.mobility) {
-      completeness += weights.availability;
-    } else {
-      missing.push({
-        key: 'availability',
-        label: 'Disponibilité + mobilité',
-        weight: weights.availability,
-      });
-    }
-
     if (profile.school) {
       completeness += weights.school;
     } else {
@@ -220,7 +207,6 @@ export class CandidateProfileService {
       skills,
       cv,
       links,
-      availability,
       school,
       threshold,
       minSkills,
@@ -230,20 +216,20 @@ export class CandidateProfileService {
       this.settingsService.getNumber('completeness_weight_skills'),
       this.settingsService.getNumber('completeness_weight_cv'),
       this.settingsService.getNumber('completeness_weight_links'),
-      this.settingsService.getNumber('completeness_weight_availability'),
       this.settingsService.getNumber('completeness_weight_school'),
       this.settingsService.getNumber('completeness_threshold_publishable'),
       this.settingsService.getNumber('completeness_min_skills'),
     ]);
 
+    // Dispo/mobilité removed — its 10 points fold into `school` (default
+    // 5 → 15) so a fully-filled profile still totals 100.
     return {
       identity: identity ?? 15,
       experience: experience ?? 20,
       skills: skills ?? 20,
       cv: cv ?? 15,
       links: links ?? 15,
-      availability: availability ?? 10,
-      school: school ?? 5,
+      school: school ?? 15,
       threshold: threshold ?? 70,
       minSkills: minSkills ?? 5,
     };

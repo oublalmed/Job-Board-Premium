@@ -13,8 +13,6 @@ export interface CandidateProfileData {
     headline?: string | null;
     bio?: string | null;
     location?: string | null;
-    availability?: string | null;
-    mobility?: string | null;
     school?: string | null;
     schoolVerified?: boolean;
     visibility?: 'public' | 'recruiters_only' | 'hidden';

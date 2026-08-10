@@ -189,7 +189,7 @@ export default function RegisterPage() {
                 </p>
               )}
               {success && (
-                <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+                <p role="status" className="rounded-xl border border-success/30 bg-success/10 p-3 text-sm text-foreground">
                   {success}
                 </p>
               )}

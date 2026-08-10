@@ -33,8 +33,6 @@ function buildQuery(
     .filter(Boolean);
   if (skills.length) params.skills = skills;
   if (filters.location.trim()) params.location = filters.location.trim();
-  if (filters.availability.trim()) params.availability = filters.availability.trim();
-  if (filters.mobility.trim()) params.mobility = filters.mobility.trim();
   if (cursor) params.cursor = cursor;
   return params;
 }

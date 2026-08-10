@@ -1,12 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   MapPin,
   Star,
-  Briefcase,
-  Globe,
   UserPlus,
   MessageSquare,
   Loader2,
@@ -23,6 +22,7 @@ import {
   useAddToShortlist,
   useCandidateDetail,
 } from '@/features/candidates/queries';
+import { MessagePopup } from '@/features/messages/MessagePopup';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -39,6 +39,7 @@ export default function CandidateDetailPage() {
 
   const { data: candidate, isLoading, isError } = useCandidateDetail(id);
   const addToShortlist = useAddToShortlist();
+  const [messageOpen, setMessageOpen] = useState(false);
 
   function handleAdd() {
     if (!candidate) return;
@@ -126,18 +127,6 @@ export default function CandidateDetailPage() {
                     {candidate.location}
                   </span>
                 )}
-                {candidate.availability && (
-                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Briefcase className="size-4" />
-                    {candidate.availability}
-                  </span>
-                )}
-                {candidate.mobility && (
-                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Globe className="size-4" />
-                    {candidate.mobility}
-                  </span>
-                )}
               </div>
             </div>
 
@@ -153,7 +142,7 @@ export default function CandidateDetailPage() {
               <Button
                 variant="outline"
                 className="gap-2"
-                onClick={() => router.push('/messages')}
+                onClick={() => setMessageOpen(true)}
               >
                 <MessageSquare className="size-4" />
                 {t('search.contact')}
@@ -182,6 +171,16 @@ export default function CandidateDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <MessagePopup
+        open={messageOpen}
+        onOpenChange={setMessageOpen}
+        candidateProfileId={candidate.id}
+        candidateName={
+          [candidate.firstName, candidate.lastName].filter(Boolean).join(' ') ||
+          null
+        }
+      />
     </motion.div>
   );
 }

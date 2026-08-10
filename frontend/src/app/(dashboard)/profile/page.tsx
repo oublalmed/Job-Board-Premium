@@ -200,8 +200,6 @@ function CandidateProfile() {
       headline: p.headline ?? '',
       bio: p.bio ?? '',
       location: p.location ?? '',
-      availability: p.availability ?? '',
-      mobility: p.mobility ?? '',
       school: p.school ?? '',
       visibility: p.visibility ?? 'hidden',
     });
@@ -384,32 +382,6 @@ function CandidateProfile() {
                 </FormItem>
                 <FormField
                   control={form.control}
-                  name="availability"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('profile.availability')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('profile.availabilityPlaceholder')} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="mobility"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('profile.mobility')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('profile.mobilityPlaceholder')} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
                   name="school"
                   render={({ field }) => (
                     <FormItem>
@@ -525,10 +497,10 @@ function CandidateProfile() {
           {verification && (
             <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
               {verification.status === 'verified' && (
-                <ShieldCheck className="size-5 shrink-0 text-emerald-600" />
+                <ShieldCheck className="size-5 shrink-0 text-success" />
               )}
               {verification.status === 'pending' && (
-                <Clock className="size-5 shrink-0 text-amber-600" />
+                <Clock className="size-5 shrink-0 text-warning" />
               )}
               {verification.status === 'rejected' && (
                 <ShieldX className="size-5 shrink-0 text-destructive" />

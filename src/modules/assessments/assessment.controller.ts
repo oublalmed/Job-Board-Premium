@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 import { AssessmentService } from './assessment.service.js';
+import { AssessmentHistoryService } from './assessment-history.service.js';
 import { RemediationService } from './remediation.service.js';
 import { StartAssessmentDto } from './dto/start-assessment.dto.js';
 import { ResumeAssessmentDto } from './dto/resume-assessment.dto.js';
@@ -26,8 +27,15 @@ import type { JwtPayload } from '../../common/interfaces/request-with-user.inter
 export class AssessmentController {
   constructor(
     private readonly assessmentService: AssessmentService,
+    private readonly assessmentHistoryService: AssessmentHistoryService,
     private readonly remediationService: RemediationService,
   ) {}
+
+  @Get('mine')
+  @Roles(Role.CANDIDATE)
+  async getMyHistory(@CurrentUser() user: JwtPayload) {
+    return this.assessmentHistoryService.getHistory(user.sub);
+  }
 
   @Post('start')
   @Roles(Role.CANDIDATE)

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
+import { getAccessToken } from '@/auth/token-store';
 import { unwrap } from '@/lib/api';
 import type { components } from '@/api/schema';
 import type { ManualResumeValues } from './schema';
@@ -16,10 +17,49 @@ export interface EvaluationComposition {
   psychotechnicalItemTypes: string[];
 }
 
+export interface AssessmentHistoryItem {
+  id: string;
+  testId: string;
+  specialtyName: string | null;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'incident';
+  startedAt: string | null;
+  completedAt: string | null;
+  score: {
+    value: number;
+    percentile: number | null;
+    technicalScore: number | null;
+    psychotechnicalScore: number | null;
+  } | null;
+}
+
+export interface AssessmentHistory {
+  items: AssessmentHistoryItem[];
+  cooldownDays: number;
+  eligibleNow: boolean;
+  nextEligibleAt: string | null;
+}
+
 export const assessmentKeys = {
   all: ['assessments'] as const,
   catalog: () => [...assessmentKeys.all, 'catalog'] as const,
+  history: () => [...assessmentKeys.all, 'history'] as const,
 };
+
+// Post-dates the last OpenAPI generation, so it uses fetch + bearer token
+// rather than the generated client (regenerate with `npm run generate:api`).
+export function useAssessmentHistory() {
+  return useQuery({
+    queryKey: assessmentKeys.history(),
+    queryFn: async (): Promise<AssessmentHistory> => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/assessments/mine`,
+        { headers: { Authorization: `Bearer ${getAccessToken()}` } },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as AssessmentHistory;
+    },
+  });
+}
 
 // One query for the whole catalog: specialties + tests + evaluation
 // composition are always shown together, so they share a cache entry and

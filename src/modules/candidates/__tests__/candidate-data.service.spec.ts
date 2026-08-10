@@ -47,8 +47,6 @@ describe('CandidateDataService', () => {
     lastName: 'El Amrani',
     headline: 'Développeur Full Stack',
     bio: 'Passionné par le web',
-    availability: 'immediate',
-    mobility: 'Casablanca',
     school: 'ENSIAS',
     completeness: 85,
     createdAt: new Date('2026-01-20'),

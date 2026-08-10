@@ -4,9 +4,9 @@ import { useLocale } from '@/i18n/locale-context';
 import type { BadgeLevel, PublicBadge } from './types';
 
 const LEVEL_STYLES: Record<BadgeLevel, string> = {
-  expert: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+  expert: 'bg-success/15 text-success',
   advanced: 'bg-primary/15 text-primary',
-  intermediate: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  intermediate: 'bg-warning/15 text-warning',
   beginner: 'bg-muted text-muted-foreground',
 };
 

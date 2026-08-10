@@ -88,8 +88,6 @@ export class SearchService {
       firstName: profile.firstName,
       lastName: profile.lastName,
       headline: profile.headline,
-      availability: profile.availability,
-      mobility: profile.mobility,
       location: profile.location,
       skills: skillsByProfile.get(profile.id) ?? [],
       score: Number(rawPage[i]?.bestScoreValue ?? 0),
@@ -150,8 +148,6 @@ export class SearchService {
       firstName: profile.firstName,
       lastName: profile.lastName,
       headline: profile.headline,
-      availability: profile.availability,
-      mobility: profile.mobility,
       location: profile.location,
       skills: skillsByProfile.get(profile.id) ?? [],
       score: Number(raw[0]?.bestScoreValue ?? 0),
@@ -208,18 +204,6 @@ export class SearchService {
     if (filters.scoreMin !== undefined) {
       qb.andWhere('COALESCE(best_score.best_value, 0) >= :scoreMin', {
         scoreMin: filters.scoreMin,
-      });
-    }
-
-    if (filters.availability) {
-      qb.andWhere('profile.availability ILIKE :availability', {
-        availability: `%${filters.availability}%`,
-      });
-    }
-
-    if (filters.mobility) {
-      qb.andWhere('profile.mobility ILIKE :mobility', {
-        mobility: `%${filters.mobility}%`,
       });
     }
 

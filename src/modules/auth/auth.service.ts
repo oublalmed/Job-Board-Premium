@@ -21,6 +21,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ReferralService } from '../growth/referral.service.js';
+import { APP_NAME } from '../../common/brand.js';
 import { AnalyticsService } from '../analytics/analytics.service.js';
 import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
 import { Role } from '../../common/enums/role.enum.js';
@@ -88,7 +89,7 @@ export class AuthService {
 
     await this.mailProvider.send({
       to: user.email,
-      subject: 'Vérifiez votre adresse email - Talentiq',
+      subject: `Vérifiez votre adresse email - ${APP_NAME}`,
       templateId: 'email-verification',
       variables: {
         token: verificationToken,
