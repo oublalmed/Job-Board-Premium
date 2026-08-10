@@ -364,6 +364,18 @@
     "manual": {
       "title": "Resume with an ID (another session)",
       "hint": "If you started an assessment from another device or browser, there's no automatically retrievable list — use the assessment ID and resume token you received when starting."
+    },
+    "history": {
+      "title": "Assessment history",
+      "empty": "You haven't taken any assessment yet.",
+      "composite": "Overall score",
+      "technical": "Technical",
+      "psychotechnical": "Psychotechnical",
+      "percentile": "{{value}}th percentile",
+      "completedOn": "Completed on {{date}}",
+      "eligibleNow": "You are eligible to retake an assessment.",
+      "nextEligible": "Next attempt available from {{date}}.",
+      "cooldownInfo": "An assessment can be retaken every {{days}} days."
     }
   },
   "common": {

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AssessmentController } from '../assessment.controller.js';
 import { AssessmentService } from '../assessment.service.js';
+import { AssessmentHistoryService } from '../assessment-history.service.js';
 import { RemediationService } from '../remediation.service.js';
 import type { JwtPayload } from '../../../common/interfaces/request-with-user.interface.js';
 import { Role } from '../../../common/enums/role.enum.js';
@@ -9,6 +10,7 @@ import { AssessmentStatus } from '../entities/assessment.entity.js';
 describe('AssessmentController', () => {
   let controller: AssessmentController;
   let service: Record<string, jest.Mock>;
+  let historyService: Record<string, jest.Mock>;
   let remediationService: Record<string, jest.Mock>;
 
   const authenticatedUser: JwtPayload = {
@@ -48,6 +50,14 @@ describe('AssessmentController', () => {
         status: AssessmentStatus.INCIDENT,
       }),
     };
+    historyService = {
+      getHistory: jest.fn().mockResolvedValue({
+        items: [],
+        cooldownDays: 90,
+        eligibleNow: true,
+        nextEligibleAt: null,
+      }),
+    };
     remediationService = {
       getFeedback: jest.fn().mockResolvedValue({
         scoreValue: 30,
@@ -62,6 +72,7 @@ describe('AssessmentController', () => {
       controllers: [AssessmentController],
       providers: [
         { provide: AssessmentService, useValue: service },
+        { provide: AssessmentHistoryService, useValue: historyService },
         { provide: RemediationService, useValue: remediationService },
       ],
     }).compile();
@@ -143,6 +154,24 @@ describe('AssessmentController', () => {
       await controller.reportIncident(authenticatedUser, 'assessment-1');
 
       expect(service.reportIncident.mock.calls[0][0]).toBe(
+        authenticatedUser.sub,
+      );
+    });
+  });
+
+  describe('getMyHistory', () => {
+    it('should return the history for the authenticated candidate only', async () => {
+      const result = await controller.getMyHistory(authenticatedUser);
+
+      expect(historyService.getHistory).toHaveBeenCalledWith('candidate-1');
+      expect(result.eligibleNow).toBe(true);
+      expect(result.cooldownDays).toBe(90);
+    });
+
+    it('should always use user.sub, never an external parameter', async () => {
+      await controller.getMyHistory(authenticatedUser);
+
+      expect(historyService.getHistory.mock.calls[0][0]).toBe(
         authenticatedUser.sub,
       );
     });

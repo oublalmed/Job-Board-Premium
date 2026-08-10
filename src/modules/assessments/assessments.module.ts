@@ -6,6 +6,7 @@ import { Test } from './entities/test.entity.js';
 import { Assessment } from './entities/assessment.entity.js';
 import { Score } from './entities/score.entity.js';
 import { AssessmentService } from './assessment.service.js';
+import { AssessmentHistoryService } from './assessment-history.service.js';
 import { AssessmentController } from './assessment.controller.js';
 import { CatalogService } from './catalog.service.js';
 import { CatalogController } from './catalog.controller.js';
@@ -32,6 +33,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
   controllers: [AssessmentController, WebhookController, CatalogController],
   providers: [
     AssessmentService,
+    AssessmentHistoryService,
     WebhookService,
     IndexationService,
     RemediationService,

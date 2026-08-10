@@ -35,9 +35,11 @@ import { formatDateCasablanca } from '@/lib/format';
 import {
   useAssessmentCatalog,
   useAssessmentFeedback,
+  useAssessmentHistory,
   useReportIncident,
   useResumeAssessment,
   useStartAssessment,
+  type AssessmentHistoryItem,
 } from '@/features/assessments/queries';
 import {
   useAssessmentSession,
@@ -390,6 +392,8 @@ export default function AssessmentsPage() {
         )}
       </div>
 
+      <AssessmentHistorySection />
+
       <Card>
         <CardHeader>
           <button
@@ -455,5 +459,128 @@ export default function AssessmentsPage() {
         )}
       </Card>
     </motion.div>
+  );
+}
+
+function ScoreStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col rounded-lg border border-border/60 px-3 py-2">
+      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
+  const { t, locale } = useLocale();
+  const badge = STATUS_BADGE[item.status];
+  return (
+    <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-col">
+          <span className="font-medium text-foreground">
+            {item.specialtyName ?? t('assessments.title')}
+          </span>
+          {item.completedAt && (
+            <span className="text-xs text-muted-foreground">
+              {t('assessments.history.completedOn', {
+                date: formatDateCasablanca(new Date(item.completedAt), locale),
+              })}
+            </span>
+          )}
+        </div>
+        <Badge variant={badge.variant}>{t(badge.key)}</Badge>
+      </div>
+      {item.score && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <ScoreStat
+            label={t('assessments.history.composite')}
+            value={`${Math.round(item.score.value)}/100`}
+          />
+          {item.score.technicalScore != null && (
+            <ScoreStat
+              label={t('assessments.history.technical')}
+              value={`${Math.round(item.score.technicalScore)}/100`}
+            />
+          )}
+          {item.score.psychotechnicalScore != null && (
+            <ScoreStat
+              label={t('assessments.history.psychotechnical')}
+              value={`${Math.round(item.score.psychotechnicalScore)}/100`}
+            />
+          )}
+          {item.score.percentile != null && (
+            <ScoreStat
+              label="%"
+              value={t('assessments.history.percentile', {
+                value: String(Math.round(item.score.percentile)),
+              })}
+            />
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
+function AssessmentHistorySection() {
+  const { t, locale } = useLocale();
+  const { data, isLoading } = useAssessmentHistory();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{t('assessments.history.title')}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {isLoading ? (
+          <div className="flex flex-col gap-3">
+            <Skeleton className="h-20" />
+            <Skeleton className="h-20" />
+          </div>
+        ) : !data || data.items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {t('assessments.history.empty')}
+          </p>
+        ) : (
+          <>
+            <div
+              className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${
+                data.eligibleNow
+                  ? 'border-success/30 bg-success/10 text-foreground'
+                  : 'border-warning/30 bg-warning/10 text-foreground'
+              }`}
+            >
+              {data.eligibleNow ? (
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
+              ) : (
+                <Clock className="mt-0.5 size-4 shrink-0 text-warning" />
+              )}
+              <span>
+                {data.eligibleNow
+                  ? t('assessments.history.eligibleNow')
+                  : data.nextEligibleAt
+                    ? t('assessments.history.nextEligible', {
+                        date: formatDateCasablanca(
+                          new Date(data.nextEligibleAt),
+                          locale,
+                        ),
+                      })
+                    : t('assessments.history.cooldownInfo', {
+                        days: String(data.cooldownDays),
+                      })}
+              </span>
+            </div>
+            <ul className="flex flex-col gap-3">
+              {data.items.map((item) => (
+                <HistoryRow key={item.id} item={item} />
+              ))}
+            </ul>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

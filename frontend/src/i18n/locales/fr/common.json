@@ -364,6 +364,18 @@
     "manual": {
       "title": "Reprendre avec un identifiant (autre session)",
       "hint": "Si vous avez démarré une évaluation depuis un autre appareil ou navigateur, il n'existe pas de liste retrouvable automatiquement — utilisez l'identifiant et le jeton de reprise reçus au démarrage."
+    },
+    "history": {
+      "title": "Historique des évaluations",
+      "empty": "Vous n'avez pas encore passé d'évaluation.",
+      "composite": "Score global",
+      "technical": "Technique",
+      "psychotechnical": "Psychotechnique",
+      "percentile": "{{value}}ᵉ percentile",
+      "completedOn": "Terminée le {{date}}",
+      "eligibleNow": "Vous êtes éligible pour repasser une évaluation.",
+      "nextEligible": "Prochaine tentative possible à partir du {{date}}.",
+      "cooldownInfo": "Une évaluation peut être repassée tous les {{days}} jours."
     }
   },
   "common": {
