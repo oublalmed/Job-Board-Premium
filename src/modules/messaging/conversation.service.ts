@@ -2,7 +2,7 @@ import { Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalyticsService } from '../analytics/analytics.service.js';
 import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, In, IsNull, Not } from 'typeorm';
 import { Conversation } from './entities/conversation.entity.js';
 import { Message, MessageSenderRole } from './entities/message.entity.js';
 import { CandidateProfile } from '../candidates/entities/candidate-profile.entity.js';
@@ -13,6 +13,34 @@ import {
   CandidateProfileNotFoundException,
   ConversationNotFoundException,
 } from './messaging.exceptions.js';
+
+export interface ConversationSummary {
+  id: string;
+  status: string;
+  companyId: string;
+  companyName: string | null;
+  companyLogo: string | null;
+  candidateProfileId: string;
+  candidateName: string | null;
+  // The label of the party the current viewer is talking to.
+  counterpartName: string | null;
+  lastMessage: {
+    body: string;
+    senderRole: MessageSenderRole;
+    createdAt: string;
+  } | null;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+export interface MessageView {
+  id: string;
+  body: string;
+  senderRole: MessageSenderRole;
+  mine: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
 
 @Injectable()
 export class ConversationService {
@@ -119,6 +147,115 @@ export class ConversationService {
         body,
       }),
     );
+  }
+
+  // Lists every thread the caller can see — as the recruiter of their
+  // company and/or as the candidate behind their profile — newest activity
+  // first, with the counterpart's name, the last message and an unread count.
+  async listConversations(userId: string): Promise<ConversationSummary[]> {
+    const companyId = await this.subscriptionGuard
+      .resolveCompanyId(userId)
+      .catch(() => null);
+    const candidateProfile = await this.candidateProfileRepo.findOne({
+      where: { userId },
+    });
+
+    const where: ({ companyId: string } | { candidateId: string })[] = [];
+    if (companyId) where.push({ companyId });
+    if (candidateProfile) where.push({ candidateId: candidateProfile.id });
+    if (where.length === 0) return [];
+
+    const conversations = await this.conversationRepo.find({
+      where,
+      relations: { company: true, candidate: true },
+      order: { updatedAt: 'DESC' },
+    });
+    if (conversations.length === 0) return [];
+
+    const ids = conversations.map((c) => c.id);
+    const messages = await this.messageRepo.find({
+      where: { conversationId: In(ids) },
+      order: { createdAt: 'ASC' },
+    });
+
+    const lastByConversation = new Map<string, Message>();
+    const unreadByConversation = new Map<string, number>();
+    for (const m of messages) {
+      lastByConversation.set(m.conversationId, m);
+      if (m.senderId !== userId && m.readAt === null) {
+        unreadByConversation.set(
+          m.conversationId,
+          (unreadByConversation.get(m.conversationId) ?? 0) + 1,
+        );
+      }
+    }
+
+    const viewerIsRecruiter = !!companyId;
+    return conversations.map((c) => {
+      const candidateName = c.candidate
+        ? [c.candidate.firstName, c.candidate.lastName]
+            .filter(Boolean)
+            .join(' ') || null
+        : null;
+      const companyName = c.company?.name ?? null;
+      const last = lastByConversation.get(c.id) ?? null;
+      return {
+        id: c.id,
+        status: c.status,
+        companyId: c.companyId,
+        companyName,
+        companyLogo: c.company?.logo ?? null,
+        candidateProfileId: c.candidateId,
+        candidateName,
+        // Recruiter sees the candidate; candidate sees the company.
+        counterpartName: viewerIsRecruiter ? candidateName : companyName,
+        lastMessage: last
+          ? {
+              body: last.body,
+              senderRole: last.senderRole,
+              createdAt: last.createdAt.toISOString(),
+            }
+          : null,
+        unreadCount: unreadByConversation.get(c.id) ?? 0,
+        updatedAt: c.updatedAt.toISOString(),
+      };
+    });
+  }
+
+  // Returns an authorized thread's messages oldest-first, and marks the
+  // caller's incoming (not-yet-read) messages as read in the same call —
+  // opening a thread is what "reading" means in this UI.
+  async listMessages(
+    conversationId: string,
+    userId: string,
+  ): Promise<MessageView[]> {
+    const { conversation } = await this.findAuthorizedConversation(
+      conversationId,
+      userId,
+    );
+
+    await this.messageRepo.update(
+      {
+        conversationId: conversation.id,
+        senderId: Not(userId),
+        readAt: IsNull(),
+      },
+      { readAt: new Date() },
+    );
+
+    const messages = await this.messageRepo.find({
+      where: { conversationId: conversation.id },
+      order: { createdAt: 'ASC' },
+    });
+
+    return messages.map((m) => ({
+      id: m.id,
+      body: m.body,
+      senderRole: m.senderRole,
+      mine: m.senderId === userId,
+      readAt: m.readAt ? m.readAt.toISOString() : null,
+      createdAt: m.createdAt.toISOString(),
+    }));
   }
 
   // Resolves who the caller is (recruiter of some company, and/or the

@@ -37,14 +37,6 @@ export class SearchCandidatesDto {
 
   @IsOptional()
   @IsString()
-  availability?: string;
-
-  @IsOptional()
-  @IsString()
-  mobility?: string;
-
-  @IsOptional()
-  @IsString()
   location?: string;
 
   @IsOptional()

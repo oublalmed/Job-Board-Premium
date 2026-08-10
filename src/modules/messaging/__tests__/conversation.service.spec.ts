@@ -29,8 +29,13 @@ describe('ConversationService', () => {
   let subscriptionGuard: { assertActiveSubscription: jest.Mock; resolveCompanyId: jest.Mock };
   let contactQuotaService: { consumeOneContact: jest.Mock };
   let candidateProfileRepo: { findOne: jest.Mock };
-  let conversationRepo: { findOne: jest.Mock };
-  let messageRepo: { create: jest.Mock; save: jest.Mock };
+  let conversationRepo: { findOne: jest.Mock; find: jest.Mock };
+  let messageRepo: {
+    create: jest.Mock;
+    save: jest.Mock;
+    find: jest.Mock;
+    update: jest.Mock;
+  };
 
   let managerConversationRepo: { create: jest.Mock; save: jest.Mock };
   let managerMessageRepo: { create: jest.Mock; save: jest.Mock };
@@ -78,12 +83,15 @@ describe('ConversationService', () => {
     };
     conversationRepo = {
       findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
     };
     messageRepo = {
       create: jest.fn((data: unknown) => data),
       save: jest.fn((data: unknown) =>
         Promise.resolve({ id: 'message-1', ...(data as object) }),
       ),
+      find: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({ affected: 0 }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -274,6 +282,103 @@ describe('ConversationService', () => {
 
       await expect(
         service.sendMessage('conversation-1', 'other-recruiter', 'x'),
+      ).rejects.toThrow(ConversationNotFoundException);
+    });
+  });
+
+  describe('listConversations', () => {
+    it('returns the recruiter’s threads with counterpart = candidate, last message and unread count', async () => {
+      conversationRepo.find.mockResolvedValue([
+        {
+          id: 'conversation-1',
+          status: 'open',
+          companyId,
+          candidateId: candidateProfileId,
+          company: { name: 'Atlas Digital', logo: 'logo.svg' },
+          candidate: { firstName: 'Sara', lastName: 'El Amrani' },
+          updatedAt: new Date('2026-02-01T00:00:00.000Z'),
+        },
+      ]);
+      messageRepo.find.mockResolvedValue([
+        {
+          conversationId: 'conversation-1',
+          body: 'Bonjour',
+          senderId: recruiterUserId,
+          senderRole: MessageSenderRole.RECRUITER,
+          readAt: null,
+          createdAt: new Date('2026-01-30T00:00:00.000Z'),
+        },
+        {
+          conversationId: 'conversation-1',
+          body: 'Merci !',
+          senderId: 'candidate-user-1',
+          senderRole: MessageSenderRole.CANDIDATE,
+          readAt: null,
+          createdAt: new Date('2026-01-31T00:00:00.000Z'),
+        },
+      ]);
+
+      const result = await service.listConversations(recruiterUserId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: 'conversation-1',
+          counterpartName: 'Sara El Amrani',
+          companyName: 'Atlas Digital',
+          unreadCount: 1,
+        }),
+      );
+      expect(result[0].lastMessage?.body).toBe('Merci !');
+    });
+
+    it('returns an empty list for a user who is neither a recruiter nor a candidate', async () => {
+      subscriptionGuard.resolveCompanyId.mockRejectedValue(new Error('nope'));
+      candidateProfileRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.listConversations('ghost-user');
+
+      expect(result).toEqual([]);
+      expect(conversationRepo.find).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listMessages', () => {
+    it('marks the caller’s incoming messages read, then returns the thread oldest-first with a `mine` flag', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      });
+      messageRepo.find.mockResolvedValue([
+        {
+          id: 'm1',
+          body: 'Bonjour',
+          senderId: recruiterUserId,
+          senderRole: MessageSenderRole.RECRUITER,
+          readAt: new Date('2026-01-30T00:00:00.000Z'),
+          createdAt: new Date('2026-01-30T00:00:00.000Z'),
+        },
+      ]);
+
+      const result = await service.listMessages('conversation-1', recruiterUserId);
+
+      expect(messageRepo.update).toHaveBeenCalledWith(
+        expect.objectContaining({ conversationId: 'conversation-1' }),
+        expect.objectContaining({ readAt: expect.any(Date) }),
+      );
+      expect(result[0]).toEqual(
+        expect.objectContaining({ id: 'm1', mine: true }),
+      );
+    });
+
+    it('throws ConversationNotFoundException for a thread the caller cannot access', async () => {
+      subscriptionGuard.resolveCompanyId.mockResolvedValue('other-company');
+      conversationRepo.findOne.mockResolvedValue(null);
+      candidateProfileRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.listMessages('conversation-1', 'stranger'),
       ).rejects.toThrow(ConversationNotFoundException);
     });
   });

@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Param,
   ParseUUIDPipe,
@@ -34,6 +35,21 @@ export class ConversationController {
       dto.candidateProfileId,
       dto.message,
     );
+  }
+
+  @Get()
+  @Roles(Role.RECRUITER, Role.COMPANY_ADMIN, Role.CANDIDATE)
+  async listConversations(@CurrentUser() user: JwtPayload) {
+    return this.conversationService.listConversations(user.sub);
+  }
+
+  @Get(':id/messages')
+  @Roles(Role.RECRUITER, Role.COMPANY_ADMIN, Role.CANDIDATE)
+  async listMessages(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) conversationId: string,
+  ) {
+    return this.conversationService.listMessages(conversationId, user.sub);
   }
 
   @Post(':id/messages')

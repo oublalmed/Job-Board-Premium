@@ -18,8 +18,7 @@ import { ReviewDecisionDto } from './dto/review-decision.dto.js';
 
 // A content-review action (does this document actually show what it
 // claims), not a financial-policy one — Role.ADMIN and Role.MODERATOR
-// both allowed, same split already used for job-offer moderation
-// (job-offer.controller.ts) and deliberately different from
+// both allowed, deliberately different from
 // trial-code-admin.controller.ts, which excludes MODERATOR.
 @Controller('admin/school-verifications')
 @UseGuards(JwtAuthGuard, RolesGuard)

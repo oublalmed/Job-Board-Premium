@@ -30,8 +30,7 @@ describe('CandidateProfileService — completeness calculation', () => {
     completeness_weight_skills: '20',
     completeness_weight_cv: '15',
     completeness_weight_links: '15',
-    completeness_weight_availability: '10',
-    completeness_weight_school: '5',
+    completeness_weight_school: '15',
     completeness_threshold_publishable: '70',
     completeness_min_skills: '5',
   };
@@ -85,8 +84,6 @@ describe('CandidateProfileService — completeness calculation', () => {
     lastName: null,
     headline: null,
     bio: null,
-    availability: null,
-    mobility: null,
     school: null,
     completeness: 0,
   };
@@ -99,7 +96,7 @@ describe('CandidateProfileService — completeness calculation', () => {
 
       expect(result.completeness).toBe(0);
       expect(result.isPublishable).toBe(false);
-      expect(result.missing).toHaveLength(7);
+      expect(result.missing).toHaveLength(6);
     });
 
     it('should give 15% for identity (firstName + lastName + headline + bio)', async () => {
@@ -175,31 +172,7 @@ describe('CandidateProfileService — completeness calculation', () => {
       expect(result.completeness).toBe(15);
     });
 
-    it('should give 10% for availability + mobility', async () => {
-      profileRepo.findOne.mockResolvedValue({
-        ...baseProfile,
-        availability: 'immediate',
-        mobility: 'remote',
-      });
-
-      const result = await service.calculateCompleteness(profileId);
-
-      expect(result.completeness).toBe(10);
-    });
-
-    it('should give 0% if only availability without mobility', async () => {
-      profileRepo.findOne.mockResolvedValue({
-        ...baseProfile,
-        availability: 'immediate',
-        mobility: null,
-      });
-
-      const result = await service.calculateCompleteness(profileId);
-
-      expect(result.completeness).toBe(0);
-    });
-
-    it('should give 5% for school', async () => {
+    it('should give 15% for school', async () => {
       profileRepo.findOne.mockResolvedValue({
         ...baseProfile,
         school: 'ENSIAS',
@@ -207,7 +180,7 @@ describe('CandidateProfileService — completeness calculation', () => {
 
       const result = await service.calculateCompleteness(profileId);
 
-      expect(result.completeness).toBe(5);
+      expect(result.completeness).toBe(15);
     });
 
     it('should reach 100% for a fully completed profile', async () => {
@@ -217,8 +190,6 @@ describe('CandidateProfileService — completeness calculation', () => {
         lastName: 'Benali',
         headline: 'Dev Full Stack',
         bio: 'Experienced',
-        availability: 'immediate',
-        mobility: 'remote',
         school: 'ENSIAS',
       });
       experienceRepo.count.mockResolvedValue(2);
@@ -275,8 +246,7 @@ describe('CandidateProfileService — completeness calculation', () => {
           expect.objectContaining({ key: 'skills', weight: 20 }),
           expect.objectContaining({ key: 'cv', weight: 15 }),
           expect.objectContaining({ key: 'links', weight: 15 }),
-          expect.objectContaining({ key: 'availability', weight: 10 }),
-          expect.objectContaining({ key: 'school', weight: 5 }),
+          expect.objectContaining({ key: 'school', weight: 15 }),
         ]),
       );
     });
@@ -289,8 +259,6 @@ describe('CandidateProfileService — completeness calculation', () => {
         if (key === 'completeness_weight_skills') return Promise.resolve(10);
         if (key === 'completeness_weight_cv') return Promise.resolve(10);
         if (key === 'completeness_weight_links') return Promise.resolve(10);
-        if (key === 'completeness_weight_availability')
-          return Promise.resolve(25);
         if (key === 'completeness_weight_school') return Promise.resolve(15);
         if (key === 'completeness_threshold_publishable')
           return Promise.resolve(70);

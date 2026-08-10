@@ -8,7 +8,7 @@ import { AnalyticsService } from './analytics.service.js';
 import { FunnelDto } from './dto/funnel.dto.js';
 
 // EF-ADM-05 (Lot 8) — the internal amorçage KPI dashboard. Same admin/
-// moderator split used by school-verification and job-offer moderation.
+// moderator split used by school-verification moderation.
 @Controller('admin/analytics')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.MODERATOR)

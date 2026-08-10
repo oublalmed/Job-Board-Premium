@@ -40,12 +40,6 @@ export class CandidateProfile {
   bio!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  availability!: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
-  mobility!: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
   location!: string | null;
 
   @Column({ type: 'varchar', nullable: true })

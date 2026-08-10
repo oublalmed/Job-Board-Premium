@@ -44,8 +44,6 @@ describe('SearchService', () => {
       firstName: 'Amine',
       lastName: 'K',
       headline: 'Backend dev',
-      availability: 'immediate',
-      mobility: 'remote',
       location: 'Casablanca',
       featured: false,
       ...overrides,
@@ -137,21 +135,11 @@ describe('SearchService', () => {
       );
     });
 
-    it('applies availability, mobility and location as ILIKE filters', async () => {
+    it('applies location as an ILIKE filter', async () => {
       await service.searchCandidates({
-        availability: 'immediate',
-        mobility: 'remote',
         location: 'Rabat',
       });
 
-      expect(mainQb.andWhere).toHaveBeenCalledWith(
-        'profile.availability ILIKE :availability',
-        { availability: '%immediate%' },
-      );
-      expect(mainQb.andWhere).toHaveBeenCalledWith(
-        'profile.mobility ILIKE :mobility',
-        { mobility: '%remote%' },
-      );
       expect(mainQb.andWhere).toHaveBeenCalledWith(
         'profile.location ILIKE :location',
         { location: '%Rabat%' },
@@ -303,8 +291,6 @@ describe('SearchService', () => {
         firstName: 'Amine',
         lastName: 'K',
         headline: 'Backend dev',
-        availability: 'immediate',
-        mobility: 'remote',
         location: 'Casablanca',
         skills: ['React'],
         score: 80,
