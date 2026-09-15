@@ -135,4 +135,63 @@ describe('ContactQuotaService', () => {
       expect(updateQb.execute).not.toHaveBeenCalled();
     });
   });
+
+  describe('getQuotaStatus (EF-RECR-05)', () => {
+    it('returns the remaining allowance for a single active subscription', async () => {
+      subscriptionRepo.find.mockResolvedValue([
+        {
+          id: 'sub-1',
+          plan: 'growth',
+          status: SubscriptionStatus.ACTIVE,
+          endsAt: null,
+          contactQuota: 60,
+          contactsUsed: 12,
+          quotaResetAt: null,
+        },
+      ]);
+
+      const result = await service.getQuotaStatus(companyId);
+
+      expect(result.active).toBe(true);
+      expect(result.contactQuota).toBe(60);
+      expect(result.contactsUsed).toBe(12);
+      expect(result.contactsRemaining).toBe(48);
+    });
+
+    it('clamps remaining to zero and never goes negative', async () => {
+      subscriptionRepo.find.mockResolvedValue([
+        {
+          id: 'sub-1',
+          plan: 'starter',
+          status: SubscriptionStatus.ACTIVE,
+          endsAt: null,
+          contactQuota: 15,
+          contactsUsed: 15,
+          quotaResetAt: null,
+        },
+      ]);
+
+      const result = await service.getQuotaStatus(companyId);
+      expect(result.contactsRemaining).toBe(0);
+    });
+
+    it('reports inactive (no throw) when there is no active subscription', async () => {
+      subscriptionRepo.find.mockResolvedValue([]);
+
+      const result = await service.getQuotaStatus(companyId);
+
+      expect(result.active).toBe(false);
+      expect(result.contactsRemaining).toBeNull();
+    });
+
+    it('reports inactive when the active-subscription invariant is violated', async () => {
+      subscriptionRepo.find.mockResolvedValue([
+        activeSubscription('sub-1'),
+        activeSubscription('sub-2'),
+      ]);
+
+      const result = await service.getQuotaStatus(companyId);
+      expect(result.active).toBe(false);
+    });
+  });
 });
