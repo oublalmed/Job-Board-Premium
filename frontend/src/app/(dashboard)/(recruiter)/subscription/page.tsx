@@ -35,6 +35,7 @@ import {
   useRedeemTrialCode,
   useSubscribe,
 } from '@/features/subscription/queries';
+import { InvoicesCard } from '@/features/billing/InvoicesCard';
 
 const PLAN_META: Record<Plan, { label: string; icon: typeof Zap; description: string }> = {
   starter: { label: 'Starter', icon: Zap, description: 'For small teams' },
@@ -234,6 +235,8 @@ export default function SubscriptionPage() {
           </Form>
         </CardContent>
       </Card>
+
+      <InvoicesCard />
 
       <Card className="overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-destructive/60 to-destructive/20" />

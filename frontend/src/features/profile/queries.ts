@@ -51,11 +51,28 @@ export interface RecruiterSummary {
   createdAt: string;
 }
 
+export type ProfileLinkType = 'github' | 'portfolio' | 'linkedin' | 'other';
+
+export interface ProfileLink {
+  id: string;
+  type: ProfileLinkType;
+  url: string;
+  label: string | null;
+  createdAt: string;
+}
+
+export interface CreateProfileLinkInput {
+  type: ProfileLinkType;
+  url: string;
+  label?: string;
+}
+
 export const profileKeys = {
   all: ['profile'] as const,
   me: () => [...profileKeys.all, 'me'] as const,
   cv: () => [...profileKeys.all, 'cv'] as const,
   schoolVerification: () => [...profileKeys.all, 'school-verification'] as const,
+  links: () => [...profileKeys.all, 'links'] as const,
   recruiterSelf: (userId?: string) => ['recruiter', 'self', userId] as const,
 };
 
@@ -170,6 +187,49 @@ export function useUploadDiploma() {
       void queryClient.invalidateQueries({
         queryKey: profileKeys.schoolVerification(),
       });
+    },
+  });
+}
+
+// EF-CAND-04 — external profile links (github/portfolio/linkedin/other).
+// The backend CRUD existed but no UI ever called it.
+export function useProfileLinks() {
+  return useQuery({
+    queryKey: profileKeys.links(),
+    queryFn: async () =>
+      (unwrap(await apiClient.GET('/api/v1/candidates/links')) ??
+        []) as unknown as ProfileLink[],
+  });
+}
+
+export function useAddProfileLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateProfileLinkInput) =>
+      unwrap(
+        await apiClient.POST('/api/v1/candidates/links', {
+          body: input as never,
+        }),
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.links() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+export function useDeleteProfileLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await apiClient.DELETE('/api/v1/candidates/links/{id}', {
+          params: { path: { id } },
+        }),
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.links() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
     },
   });
 }

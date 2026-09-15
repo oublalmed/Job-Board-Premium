@@ -55,6 +55,7 @@ import {
 } from '@/features/profile/queries';
 import { ScoreBadgeCard } from '@/features/badge/ScoreBadgeCard';
 import { ReferralCard } from '@/features/referral/ReferralCard';
+import { ProfileLinksCard } from '@/features/profile/ProfileLinksCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -553,6 +554,8 @@ function CandidateProfile() {
           )}
         </CardContent>
       </Card>
+
+      <ProfileLinksCard />
 
       <ScoreBadgeCard />
 
