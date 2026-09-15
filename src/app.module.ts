@@ -63,6 +63,15 @@ import { PortsModule } from './ports/ports.module.js';
         database: config.getOrThrow<string>('database.database'),
         synchronize: config.get<boolean>('database.synchronize', false),
         logging: config.get<boolean>('database.logging', false),
+        // ENF-05 — TLS to Postgres when DB_SSL=true.
+        ssl: config.get<boolean>('database.ssl', false)
+          ? {
+              rejectUnauthorized: config.get<boolean>(
+                'database.sslRejectUnauthorized',
+                true,
+              ),
+            }
+          : false,
         autoLoadEntities: true,
         migrations: ['dist/database/migrations/*.js'],
         migrationsRun: false,

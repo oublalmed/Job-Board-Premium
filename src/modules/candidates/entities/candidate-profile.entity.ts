@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity.js';
 
@@ -15,6 +16,13 @@ export enum ProfileVisibility {
   HIDDEN = 'hidden',
 }
 
+// ENF-01 — every CVthèque read gates on `indexed_in_cvtheque = true AND
+// visibility IN (...)` (see SearchService). This composite index keeps that
+// hottest predicate off a sequential scan as the profile table grows.
+@Index('IDX_candidate_profiles_indexed_visibility', [
+  'indexedInCvtheque',
+  'visibility',
+])
 @Entity('candidate_profiles')
 export class CandidateProfile {
   @PrimaryGeneratedColumn('uuid')

@@ -17,6 +17,8 @@ export const configValidationSchema = Joi.object({
   DB_DATABASE: Joi.string().required(),
   DB_SYNCHRONIZE: Joi.boolean().default(false),
   DB_LOGGING: Joi.boolean().default(false),
+  DB_SSL: Joi.boolean().default(false),
+  DB_SSL_REJECT_UNAUTHORIZED: Joi.boolean().default(true),
 
   // Redis
   REDIS_HOST: Joi.string().required(),
