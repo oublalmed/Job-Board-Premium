@@ -125,7 +125,13 @@ describe('RemediationNotificationService.runCooldownSweep (e2e) — cooldown not
             autoLoadEntities: true,
           }),
         }),
-        TypeOrmModule.forFeature([User, RefreshToken, Specialty, TestEntity, Assessment]),
+        TypeOrmModule.forFeature([
+          User,
+          RefreshToken,
+          Specialty,
+          TestEntity,
+          Assessment,
+        ]),
       ],
       providers: [
         RemediationNotificationService,
@@ -144,7 +150,9 @@ describe('RemediationNotificationService.runCooldownSweep (e2e) — cooldown not
         },
         {
           provide: GrowthNotificationService,
-          useValue: { notifyCooldownExpired: jest.fn().mockResolvedValue(undefined) },
+          useValue: {
+            notifyCooldownExpired: jest.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();
@@ -169,16 +177,21 @@ describe('RemediationNotificationService.runCooldownSweep (e2e) — cooldown not
   });
 
   it('notifies once for a candidate whose cooldown has genuinely expired, and marks cooldownNotifiedAt', async () => {
-    const { assessmentId, candidateId } = await seedExpiredCompletedAssessment();
+    const { assessmentId, candidateId } =
+      await seedExpiredCompletedAssessment();
 
     const result = await service.runCooldownSweep();
 
     expect(result.notifiedCount).toBeGreaterThanOrEqual(1);
-    expect(growthNotificationService.notifyCooldownExpired).toHaveBeenCalledWith(
+    expect(
+      growthNotificationService.notifyCooldownExpired,
+    ).toHaveBeenCalledWith(
       expect.objectContaining({ recipientUserId: candidateId }),
     );
 
-    const reloaded = await assessmentRepo.findOne({ where: { id: assessmentId } });
+    const reloaded = await assessmentRepo.findOne({
+      where: { id: assessmentId },
+    });
     expect(reloaded?.cooldownNotifiedAt).not.toBeNull();
   });
 
@@ -192,10 +205,18 @@ describe('RemediationNotificationService.runCooldownSweep (e2e) — cooldown not
       }),
     );
     const specialty = await specialtyRepo.save(
-      specialtyRepo.create({ name: `E2E fresh specialty ${Date.now()}`, active: true }),
+      specialtyRepo.create({
+        name: `E2E fresh specialty ${Date.now()}`,
+        active: true,
+      }),
     );
     const test = await testRepo.save(
-      testRepo.create({ specialtyId: specialty.id, version: '1.0', durationMinutes: 60, active: true }),
+      testRepo.create({
+        specialtyId: specialty.id,
+        version: '1.0',
+        durationMinutes: 60,
+        active: true,
+      }),
     );
     const recentCompletedAt = new Date();
     recentCompletedAt.setDate(recentCompletedAt.getDate() - 1); // well within cooldown
@@ -213,16 +234,21 @@ describe('RemediationNotificationService.runCooldownSweep (e2e) — cooldown not
 
     await service.runCooldownSweep();
 
-    expect(growthNotificationService.notifyCooldownExpired).not.toHaveBeenCalledWith(
+    expect(
+      growthNotificationService.notifyCooldownExpired,
+    ).not.toHaveBeenCalledWith(
       expect.objectContaining({ recipientUserId: user.id }),
     );
-    const reloaded = await assessmentRepo.findOne({ where: { id: assessment.id } });
+    const reloaded = await assessmentRepo.findOne({
+      where: { id: assessment.id },
+    });
     expect(reloaded?.cooldownNotifiedAt).toBeNull();
   });
 
   describe('Concurrency — the key idempotence proof', () => {
     it('two parallel sweeps over the same expired, unnotified assessment produce exactly one notification and one cooldownNotifiedAt write', async () => {
-      const { assessmentId, candidateId } = await seedExpiredCompletedAssessment();
+      const { assessmentId, candidateId } =
+        await seedExpiredCompletedAssessment();
 
       const [first, second] = await Promise.all([
         service.runCooldownSweep(),
@@ -235,12 +261,17 @@ describe('RemediationNotificationService.runCooldownSweep (e2e) — cooldown not
       // runs interleaved.
       const callsForThisCandidate =
         growthNotificationService.notifyCooldownExpired.mock.calls.filter(
-          (call) => call[0]?.recipientUserId === candidateId,
+          (call: [{ recipientUserId?: string }?]) =>
+            call[0]?.recipientUserId === candidateId,
         );
       expect(callsForThisCandidate).toHaveLength(1);
-      expect(first.notifiedCount + second.notifiedCount).toBeGreaterThanOrEqual(1);
+      expect(first.notifiedCount + second.notifiedCount).toBeGreaterThanOrEqual(
+        1,
+      );
 
-      const reloaded = await assessmentRepo.findOne({ where: { id: assessmentId } });
+      const reloaded = await assessmentRepo.findOne({
+        where: { id: assessmentId },
+      });
       expect(reloaded?.cooldownNotifiedAt).not.toBeNull();
     });
 
@@ -254,7 +285,8 @@ describe('RemediationNotificationService.runCooldownSweep (e2e) — cooldown not
 
       const callsForThisCandidate =
         growthNotificationService.notifyCooldownExpired.mock.calls.filter(
-          (call) => call[0]?.recipientUserId === candidateId,
+          (call: [{ recipientUserId?: string }?]) =>
+            call[0]?.recipientUserId === candidateId,
         );
       expect(callsForThisCandidate).toHaveLength(0);
       expect(second.notifiedCount).toBe(0);
