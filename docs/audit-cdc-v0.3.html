@@ -236,9 +236,9 @@
     </div>
     <div class="score-card">
       <div class="label">Reste ouvert</div>
-      <div class="num">~7<small>items</small></div>
-      <div class="bar"><span style="width:35%;background:var(--sev-mid-ink)"></span></div>
-      <div class="foot">Anti-triche (4/6 couches), e2e visibilité CVthèque, notifs messages, écran admin audit, antivirus, et l'infra (sauvegardes, observabilité) — cadrée dans <code style="font-size:11px">docs/HARDENING.md</code>.</div>
+      <div class="num">~5<small>items</small></div>
+      <div class="bar"><span style="width:25%;background:var(--sev-mid-ink)"></span></div>
+      <div class="foot">Anti-triche (dépend d'un fournisseur), écrans admin (audit + file de signalements), compléments messagerie (email, partage doc), antivirus, et l'infra (sauvegardes, observabilité) — cadrée dans <code style="font-size:11px">docs/HARDENING.md</code>.</div>
     </div>
   </div>
 
@@ -290,10 +290,9 @@
   <div class="callout" style="margin-top:20px">
     <strong>Ce qui reste ouvert (inchangé par cette passe) :</strong>
     <span style="display:block;margin-top:8px">
-      • <strong>Anti-triche §5.3</strong> — 4 des 6 couches toujours déléguées à un stub (plagiat, signaux comportementaux, rotation de sujets, blocage multi-compte).<br>
-      • <strong>EF-SRCH-03</strong> — toujours pas d'e2e réel prouvant qu'un profil masqué n'apparaît jamais (vérifié seulement contre un query-builder mocké).<br>
-      • <strong>EF-MSG-02 / EF-MSG-05</strong> — notifications de nouveaux messages et signalement d'abus : absents.<br>
-      • <strong>EF-ADM-04 (frontend)</strong> — l'API de lecture existe ; l'écran admin de consultation reste à construire. Idem file de modération profils/messages (EF-ADM-01).<br>
+      • <strong>Anti-triche §5.3</strong> — 4 des 6 couches toujours déléguées à un stub (plagiat, signaux comportementaux, rotation de sujets, blocage multi-compte). <em>Dépend d'un vrai fournisseur d'évaluation.</em><br>
+      • <strong>Écrans admin</strong> — l'API de lecture des journaux d'audit (EF-ADM-04) et la file de signalements (EF-MSG-05) existent côté backend ; les écrans admin qui les consomment (dont EF-ADM-01) restent à construire.<br>
+      • <strong>Compléments messagerie</strong> — volet email des notifications (EF-MSG-02), partage de documents (EF-MSG-03), bouton « signaler » côté écran.<br>
       • <strong>Antivirus upload</strong> — adaptateur toujours stub ; <strong>rate-limiting <code>/auth/login</code></strong> — absent.<br>
       • <strong>Infra (ENF-08 sauvegardes/PITR, ENF-09 observabilité, ENF-07 coffre-fort de secrets)</strong> — dépendantes de l'hébergement ; guidage concret + exemples dans <code>docs/HARDENING.md</code> et <code>deploy/k8s/</code>.
     </span>
@@ -307,20 +306,20 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Cœur MVP (exigences « Must »)</div>
-      <div class="num">80<small>% backend</small></div>
-      <div class="num" style="font-size:20px;margin-top:-2px">60<small>% frontend</small></div>
+      <div class="num">85<small>% backend</small></div>
+      <div class="num" style="font-size:20px;margin-top:-2px">62<small>% frontend</small></div>
       <div class="foot">Base 3 août : 74 % / 49 %. Le frontend « Must » rattrape le backend après la remédiation.</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), backend</div>
-      <div class="num">75<small>%</small></div>
-      <div class="bar"><span style="width:75%;background:var(--sev-good-ink)"></span></div>
+      <div class="num">78<small>%</small></div>
+      <div class="bar"><span style="width:78%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">51 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">51<small>%</small></div>
-      <div class="bar"><span style="width:51%;background:var(--sev-mid-ink)"></span></div>
+      <div class="num">52<small>%</small></div>
+      <div class="bar"><span style="width:52%;background:var(--sev-mid-ink)"></span></div>
       <div class="foot">48 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
@@ -336,7 +335,7 @@
   </div>
 
   <p style="color:var(--ink-muted);font-size:13.5px;max-width:78ch">
-    Lecture rapide (V0.3) : <strong>le squelette métier tient et le frontend a largement rattrapé le backend.</strong> Le retard « écran » qui définissait l'audit du 3 août est en grande partie résorbé : factures, bannière d'accès restreint, quota de contacts, liens externes et vue de conversation sont désormais à l'écran ; côté API, recalcul de percentile, lecture des journaux d'audit et MFA staff sont livrés et testés. <strong>Ce qui reste vraiment bas :</strong> la messagerie (notifications/signalement toujours absents → module à ~19 %), la CVthèque (garantie de visibilité non prouvée en e2e → 45/31 %) et l'anti-triche (2/6 couches). Le reste non-fonctionnel (57 %) est de l'infra : sauvegardes, observabilité, coffre-fort de secrets.
+    Lecture rapide (V0.3) : <strong>le squelette métier tient et le frontend a largement rattrapé le backend.</strong> Le retard « écran » qui définissait l'audit du 3 août est en grande partie résorbé : factures, bannière d'accès restreint, quota de contacts, liens externes et vue de conversation sont désormais à l'écran ; côté API, recalcul de percentile, lecture des journaux d'audit et MFA staff sont livrés et testés. La messagerie a aussi rattrapé (vue de conversation, notifications in-app, signalement d'abus → 56/31 %) et la garantie de visibilité CVthèque est désormais prouvée en e2e réel. <strong>Ce qui reste vraiment bas :</strong> l'anti-triche (2/6 couches, dépend d'un fournisseur externe) et les écrans admin qui consomment les API déjà livrées (audit, file de signalements). Le reste non-fonctionnel (57 %) est de l'infra : sauvegardes, observabilité, coffre-fort de secrets.
   </p>
 </section>
 
@@ -456,9 +455,9 @@
 <section id="cvtheque">
   <div class="sec-head">
     <h2>4 · CVthèque & recherche <span style="color:var(--ink-faint);font-weight:500">§4.4</span></h2>
-    <div class="sec-avg">backend <b>45 %</b> · frontend <b>31 %</b> <span style="color:var(--ink-faint)">(inchangé)</span></div>
+    <div class="sec-avg">backend <b>50 %</b> · frontend <b>31 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
   </div>
-  <p class="sec-intro">Le moteur de recherche lui-même (filtres combinables, tri, pagination curseur) est réel et fonctionne des deux côtés. Mais la preuve la plus stricte du CDC — <strong>« un profil masqué n'apparaît JAMAIS »</strong> — n'est vérifiée que contre un query-builder mocké, jamais contre une vraie base Postgres en e2e.</p>
+  <p class="sec-intro">Le moteur de recherche (filtres combinables, tri, pagination curseur) est réel des deux côtés. <strong>V0.3 :</strong> la preuve la plus stricte du CDC — <strong>« un profil masqué n'apparaît JAMAIS »</strong> — est désormais couverte par un e2e réel contre Postgres (liste + détail). Restent en écart : recherches sauvegardées/alertes (EF-SRCH-04).</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
@@ -468,9 +467,9 @@
       <tr><td class="id">EF-SRCH-02<span class="prio M">M</span></td><td class="req"><div class="name">Recherche full-text + filtres</div></td><span class="pivot-flag">⚑ colonnes score/salaire — retrait prévu, état actuel</span>
         <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>search.service.ts:171</code> — filtres combinables, tri, pagination curseur</td><td class="gap">Pas de e2e HTTP complet, seulement unitaire sur query-builder mocké</td></tr>
-      <tr><td class="id">EF-SRCH-03<span class="prio M">M</span></td><td class="req"><div class="name">Respect visibilité</div><div class="rule">contrôle serveur</div></td>
-        <td><span class="pill n">50%</span></td><td><span class="pill n">50%</span></td>
-        <td class="evid"><code>search.service.ts:184</code> — filtre serveur réel</td><td class="gap"><strong>Aucun e2e ne seed un profil masqué en base réelle et vérifie son absence via HTTP</strong> — la garantie la plus critique du module n'est prouvée qu'indirectement</td></tr>
+      <tr><td class="id">EF-SRCH-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Respect visibilité</div><div class="rule">contrôle serveur</div></td>
+        <td><span class="pill m">75%</span></td><td><span class="pill n">50%</span></td>
+        <td class="evid"><code>search.service.ts:184</code> + <strong>e2e réel</strong> <code>test/search-visibility.e2e-spec.ts</code></td><td class="gap"><s>Prouvé seulement contre un mock</s> → <strong>e2e réel (V0.3)</strong> : profil masqué et non-indexé seedés en base, absence vérifiée via HTTP (liste + détail 404).</td></tr>
       <tr><td class="id">EF-SRCH-04<span class="prio S">S</span></td><td class="req"><div class="name">Recherches sauvegardées / alertes</div></td>
         <td><span class="pill b">0%</span></td><td><span class="pill b">0%</span></td>
         <td class="evid">Aucune trace</td><td class="gap">Pas d'entité, pas de job d'alerte email</td></tr>
@@ -518,27 +517,27 @@
 <section id="messagerie">
   <div class="sec-head">
     <h2>6 · Messagerie <span style="color:var(--ink-faint);font-weight:500">§4.6</span></h2>
-    <div class="sec-avg">backend <b>19 %</b> · frontend <b>19 %</b> <span style="color:var(--ink-faint)">(base 19/6)</span></div>
+    <div class="sec-avg">backend <b>56 %</b> · frontend <b>31 %</b> <span style="color:var(--ink-faint)">(base 19/6)</span></div>
   </div>
-  <p class="sec-intro"><strong>Base 3 août :</strong> le fil existait côté backend mais le frontend n'avait qu'un formulaire d'ouverture. <strong>Depuis (V0.3)</strong>, une vraie vue de conversation a été livrée (<code>ConversationList.tsx</code> + <code>MessageThread.tsx</code>) — liste des fils et lecture des messages pour les deux rôles. <strong>Restent</strong> les notifications de nouveaux messages (EF-MSG-02) et le signalement d'abus (EF-MSG-05).</p>
+  <p class="sec-intro"><strong>Base 3 août :</strong> le point le plus faible du produit. <strong>Depuis (V0.3) :</strong> vue de conversation livrée (<code>ConversationList.tsx</code> + <code>MessageThread.tsx</code>), <strong>notifications de nouveaux messages</strong> (EF-MSG-02, in-app) et <strong>signalement d'abus</strong> (EF-MSG-05, API + file de modération) livrés et testés. <strong>Restent</strong> : le volet email des notifications, le partage de documents (EF-MSG-03), et le bouton « signaler » côté écran + la vue admin de la file.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
       <tr><td class="id">EF-MSG-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Fil recruteur ↔ candidat</div></td>
         <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>conversation.service.ts:29</code> ; front <code>ConversationList.tsx</code> + <code>MessageThread.tsx</code></td><td class="gap"><s>Formulaire seul</s> → <strong>vue de conversation livrée</strong> : liste des fils + lecture des messages, deux rôles.</td></tr>
-      <tr><td class="id">EF-MSG-02<span class="prio M">M</span></td><td class="req"><div class="name">Notification nouveaux messages</div></td>
-        <td><span class="pill b">0%</span></td><td><span class="pill b">0%</span></td>
-        <td class="evid">Commenté explicitement absent dans <code>notification.entity.ts:16</code></td><td class="gap">Ni type de notification dédié, ni préférences par utilisateur</td></tr>
+      <tr><td class="id">EF-MSG-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Notification nouveaux messages</div></td>
+        <td><span class="pill m">75%</span></td><td><span class="pill n">50%</span></td>
+        <td class="evid"><code>NotificationType.NEW_MESSAGE</code> émis à l'ouverture/réponse (<code>conversation.service.ts</code>), testé</td><td class="gap"><s>Absent</s> → <strong>notification in-app livrée (V0.3)</strong>, affichée dans la liste générique. Reste : le volet email et les préférences par utilisateur.</td></tr>
       <tr><td class="id">EF-MSG-03<span class="prio S">S</span></td><td class="req"><div class="name">Partage de documents</div></td>
         <td><span class="pill b">0%</span></td><td><span class="pill b">0%</span></td>
         <td class="evid">Aucun champ pièce-jointe sur <code>Message</code></td><td class="gap">—</td></tr>
       <tr><td class="id">EF-MSG-04<span class="prio C">C</span></td><td class="req"><div class="name">Planification d'entretien</div></td>
         <td><span class="pill na">reporté V1</span></td><td><span class="pill na">reporté V1</span></td>
         <td class="evid">—</td><td class="gap">Conforme au CDC — reporté volontairement, pas un écart</td></tr>
-      <tr><td class="id">EF-MSG-05<span class="prio M">M</span></td><td class="req"><div class="name">Signaler un abus</div></td>
-        <td><span class="pill b">0%</span></td><td><span class="pill b">0%</span></td>
-        <td class="evid">Aucune trace de file de modération pour les messages</td><td class="gap">—</td></tr>
+      <tr><td class="id">EF-MSG-05<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Signaler un abus</div></td>
+        <td><span class="pill m">75%</span></td><td><span class="pill b">0%</span></td>
+        <td class="evid"><code>POST /conversations/:id/report</code>, entité <code>MessageReport</code> + journal d'audit, testé</td><td class="gap"><s>Aucune trace</s> → <strong>signalement livré côté API (V0.3)</strong> (file de modération). Reste : le bouton « signaler » côté écran et la vue admin de la file.</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -687,10 +686,10 @@
   <div class="sec-head"><h2>Priorités — les 10 écarts qui comptent le plus</h2></div>
   <p class="sec-intro">Classés par impact sur un lancement MVP (liste du 3 août). <strong>Statut V0.3 annoté ci-dessous :</strong> 6 des 10 sont fermés, 2 partiellement, 2 restent (dont l'infra sauvegardes).</p>
   <ol class="gap-list" style="list-style:none">
-    <li><span class="gap-rank">1</span><div class="gap-body"><span class="tag">EF-MSG-01/02</span><br><span class="pill m" style="padding:1px 6px">◑ partiel V0.3</span> <b>La messagerie n'a pas d'écran de conversation.</b> <em>Vue de conversation (liste + fil) désormais livrée ; restent les notifications de nouveaux messages.</em><p>Le backend gère fils et quotas correctement, mais le frontend ne propose qu'un formulaire d'envoi initial — aucune liste de fils, aucune lecture de réponse, pour aucun rôle. Le CDC positionne pourtant la mise en relation comme un critère d'acceptation MVP à part entière.</p></div></li>
+    <li><span class="gap-rank">1</span><div class="gap-body"><span class="tag">EF-MSG-01/02</span><br><span class="pill m" style="padding:1px 6px">◑ largement traité V0.3</span> <b>La messagerie n'a pas d'écran de conversation.</b> <em>Vue de conversation, notifications de nouveaux messages (in-app) et signalement d'abus désormais livrés ; restent le volet email et le partage de documents.</em><p>Le backend gère fils et quotas correctement, mais le frontend ne propose qu'un formulaire d'envoi initial — aucune liste de fils, aucune lecture de réponse, pour aucun rôle. Le CDC positionne pourtant la mise en relation comme un critère d'acceptation MVP à part entière.</p></div></li>
     <li><span class="gap-rank">2</span><div class="gap-body"><span class="tag">EF-ADM-*</span><br><span class="pill m" style="padding:1px 6px">◑ partiel V0.3</span> <b>Aucune administration n'existe côté écran, et presque rien côté backend.</b> <em>Espace /admin (analytics, vérif. d'école), dashboard KPI et API de lecture d'audit livrés ; reste l'écran de consultation d'audit + file de modération unifiée.</em><p>Zéro route <code>/admin</code>. Modération limitée aux offres. Journaux d'audit écrits mais jamais consultables. Le Lot 8 du CDC reste à l'état de squelette.</p></div></li>
     <li><span class="gap-rank">3</span><div class="gap-body"><span class="tag">§5.3 anti-triche</span><br><span class="pill b" style="padding:1px 6px">reste ouvert</span> <b>4 des 6 couches anti-triche annoncées comme différenciateur n°1 n'existent pas dans cette base de code.</b><p>Plagiat, signaux comportementaux, rotation de sujets et blocage multi-compte sont délégués à un fournisseur externe qui n'est aujourd'hui qu'un stub déterministe — le score n'a donc, à ce stade, aucune des garanties anti-triche que le CDC promet comme cœur de crédibilité.</p></div></li>
-    <li><span class="gap-rank">4</span><div class="gap-body"><span class="tag">EF-SRCH-03</span><br><span class="pill b" style="padding:1px 6px">reste ouvert</span> <b>La règle la plus critique de la CVthèque n'a pas de preuve e2e réelle.</b><p>"Un profil masqué n'apparaît jamais" n'est vérifié que contre un query-builder mocké — pas contre une vraie base Postgres via une vraie requête HTTP. C'est exactement le genre de règle qu'un futur changement de code pourrait silencieusement casser sans qu'aucun test ne le détecte.</p></div></li>
+    <li><span class="gap-rank">4</span><div class="gap-body"><span class="tag">EF-SRCH-03</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>La règle la plus critique de la CVthèque n'a pas de preuve e2e réelle.</b> <em>e2e réel ajouté : profil masqué/non-indexé seedé en base, absence vérifiée via HTTP (liste + détail 404).</em><p>"Un profil masqué n'apparaît jamais" n'est vérifié que contre un query-builder mocké — pas contre une vraie base Postgres via une vraie requête HTTP. C'est exactement le genre de règle qu'un futur changement de code pourrait silencieusement casser sans qu'aucun test ne le détecte.</p></div></li>
     <li><span class="gap-rank">5</span><div class="gap-body"><span class="tag">ENF-06 / MFA</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Aucune authentification à deux facteurs pour le staff.</b> <em>MFA/TOTP livrée (enrôlement, codes de secours, login step-up, garde staff).</em><p>Exigence explicite du CDC pour les comptes admin/modérateur, absente à 100 %.</p></div></li>
     <li><span class="gap-rank">6</span><div class="gap-body"><span class="tag">EF-BILL-03/04</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Un recruteur bloqué ne sait pas pourquoi, et ne voit jamais ses factures.</b> <em>Bannière d'accès restreint + liste/téléchargement de factures livrés.</em><p>Le backend restreint correctement l'accès et génère des factures conformes ICE/TVA — mais rien à l'écran n'explique la restriction ni ne permet de consulter une facture.</p></div></li>
     <li><span class="gap-rank">7</span><div class="gap-body"><span class="tag">EF-RECR-05</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Le quota de contacts recruteur est invisible.</b> <em>« X contacts restants » affiché sur toutes les pages recruteur (+ endpoint dédié).</em><p>La décrémentation atomique est réelle et testée sous concurrence côté backend, mais aucun "X contacts restants" n'existe côté écran — un recruteur découvre la limite en se faisant bloquer.</p></div></li>
