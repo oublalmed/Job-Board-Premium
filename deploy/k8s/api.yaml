@@ -1,0 +1,74 @@
+# Example Kubernetes manifest for the Cobalt API — adapt before use.
+# See docs/HARDENING.md (ENF-03, ENF-05, ENF-13).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cobalt-api
+  labels: { app: cobalt-api }
+spec:
+  # Stateless (JWT auth, shared Redis for BullMQ) → safe to scale horizontally.
+  replicas: 3
+  selector:
+    matchLabels: { app: cobalt-api }
+  template:
+    metadata:
+      labels: { app: cobalt-api }
+    spec:
+      containers:
+        - name: api
+          image: cobalt-api:latest # replace with your registry/tag
+          ports:
+            - containerPort: 3000
+          # All configuration comes from the environment (Joi-validated at boot).
+          envFrom:
+            - secretRef: { name: cobalt-secrets }
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: DB_SSL
+              value: "true"
+            - name: MFA_ENFORCE_STAFF
+              value: "true"
+          readinessProbe:
+            httpGet: { path: /api/v1/health, port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/v1/health, port: 3000 }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests: { cpu: "250m", memory: "256Mi" }
+            limits: { cpu: "1", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cobalt-api
+spec:
+  selector: { app: cobalt-api }
+  ports:
+    - port: 80
+      targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cobalt-api
+  annotations:
+    # TLS in transit for clients (ENF-05); adjust to your ingress controller.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts: [api.cobalt.example]
+      secretName: cobalt-api-tls
+  rules:
+    - host: api.cobalt.example
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cobalt-api
+                port: { number: 80 }
