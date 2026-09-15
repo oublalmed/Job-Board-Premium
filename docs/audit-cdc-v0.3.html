@@ -219,8 +219,8 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Écarts fermés — passe de remédiation</div>
-      <div class="num">8<small>exigences</small></div>
-      <div class="foot">EF-ADM-04, EF-EVAL-04, ENF-06, ENF-01/05, EF-BILL-03, EF-BILL-04, EF-RECR-05, EF-CAND-04 — tous avec preuve fichier + tests unitaires.</div>
+      <div class="num">9<small>exigences</small></div>
+      <div class="foot">EF-ADM-04, EF-EVAL-04, ENF-06, ENF-01/05, EF-BILL-03, EF-BILL-04, EF-RECR-05, EF-CAND-04, ENF-12 (consentement) — tous avec preuve fichier + tests.</div>
     </div>
     <div class="score-card">
       <div class="label">Livrés entre le 3 août et le 15 sept.</div>
@@ -238,7 +238,7 @@
       <div class="label">Reste ouvert</div>
       <div class="num">~7<small>items</small></div>
       <div class="bar"><span style="width:35%;background:var(--sev-mid-ink)"></span></div>
-      <div class="foot">Anti-triche (4/6 couches), e2e visibilité CVthèque, notifs messages, écran admin audit, et l'infra (sauvegardes, observabilité, consentement) — documentée dans <code style="font-size:11px">docs/HARDENING.md</code>.</div>
+      <div class="foot">Anti-triche (4/6 couches), e2e visibilité CVthèque, notifs messages, écran admin audit, antivirus, et l'infra (sauvegardes, observabilité) — cadrée dans <code style="font-size:11px">docs/HARDENING.md</code>.</div>
     </div>
   </div>
 
@@ -269,6 +269,9 @@
       <tr><td class="id">EF-CAND-04</td><td class="req"><div class="name">UI liens externes (GitHub/Portfolio)</div></td>
         <td><span class="pill b">FE 0%</span></td><td><span class="pill m">FE ✓</span></td>
         <td class="evid"><code>ProfileLinksCard.tsx</code> — branché sur le CRUD <code>candidates/links</code> existant</td></tr>
+      <tr><td class="id">ENF-12</td><td class="req"><div class="name">Consentement CNDP/RGPD à l'inscription</div></td>
+        <td><span class="pill n">50%</span></td><td><span class="pill m">75%</span></td>
+        <td class="evid"><code>RegisterDto</code> (<code>consentAccepted</code> requis), <code>users.consent_at</code>, case à cocher + page <code>/privacy</code></td></tr>
       <tr><td class="id" style="border-top:2px solid var(--border-strong)">EF-MSG-01</td><td class="req" style="border-top:2px solid var(--border-strong)"><div class="name">Vue de conversation</div><div class="rule">livré entre-temps</div></td>
         <td style="border-top:2px solid var(--border-strong)"><span class="pill n">FE 25%</span></td><td style="border-top:2px solid var(--border-strong)"><span class="pill m">FE ~75%</span></td>
         <td class="evid" style="border-top:2px solid var(--border-strong)"><code>features/messages/ConversationList.tsx</code>, <code>MessageThread.tsx</code></td></tr>
@@ -292,7 +295,7 @@
       • <strong>EF-MSG-02 / EF-MSG-05</strong> — notifications de nouveaux messages et signalement d'abus : absents.<br>
       • <strong>EF-ADM-04 (frontend)</strong> — l'API de lecture existe ; l'écran admin de consultation reste à construire. Idem file de modération profils/messages (EF-ADM-01).<br>
       • <strong>Antivirus upload</strong> — adaptateur toujours stub ; <strong>rate-limiting <code>/auth/login</code></strong> — absent.<br>
-      • <strong>Infra (ENF-08 sauvegardes/PITR, ENF-09 observabilité) et ENF-12 consentement</strong> — dépendants de l'hébergement ou laissés en suivi cadré ; guidage concret + exemples dans <code>docs/HARDENING.md</code> et <code>deploy/k8s/</code>.
+      • <strong>Infra (ENF-08 sauvegardes/PITR, ENF-09 observabilité, ENF-07 coffre-fort de secrets)</strong> — dépendantes de l'hébergement ; guidage concret + exemples dans <code>docs/HARDENING.md</code> et <code>deploy/k8s/</code>.
     </span>
   </div>
 </section>
@@ -630,7 +633,7 @@
     <h2>10 · Exigences non-fonctionnelles <span style="color:var(--ink-faint);font-weight:500">§10</span></h2>
     <div class="sec-avg">backend <b>40 %</b></div>
   </div>
-  <p class="sec-intro">Couverture de tests toujours au-dessus de la cible (79 % lignes mesurées, seuil CI 70 %). <strong>Maj V0.3 :</strong> le durcissement a commencé — MFA staff livrée (ENF-06), index sur le chemin chaud + TLS Postgres en option (ENF-01/05), exemple k8s ajouté (ENF-13). Restent purement infra/hébergement : sauvegardes/PITR (ENF-08), coffre-fort de secrets (ENF-07), observabilité/métriques (ENF-09), et le consentement à l'inscription (ENF-12) — tous cadrés dans <code>docs/HARDENING.md</code>.</p>
+  <p class="sec-intro">Couverture de tests toujours au-dessus de la cible (79 % lignes mesurées, seuil CI 70 %). <strong>Maj V0.3 :</strong> le durcissement a commencé — MFA staff livrée (ENF-06), index sur le chemin chaud + TLS Postgres en option (ENF-01/05), exemple k8s ajouté (ENF-13). consentement à l'inscription livré (ENF-12). Restent purement infra/hébergement : sauvegardes/PITR (ENF-08), coffre-fort de secrets (ENF-07), observabilité/métriques (ENF-09) — cadrés dans <code>docs/HARDENING.md</code>.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Cible CDC</th><th>État</th><th>Preuve / écart</th></tr></thead>
     <tbody>
@@ -645,7 +648,7 @@
       <tr><td class="id">ENF-09</td><td class="req">Observabilité</td><td>logs/métriques/alertes centralisés</td><td><span class="pill n">25%</span></td><td class="evid">Endpoint <code>/health</code> + journal d'audit lisible (V0.3) ; métriques/tracing encore à ajouter — plan détaillé (prom-client, OTel) dans <code>docs/HARDENING.md</code></td></tr>
       <tr><td class="id">ENF-10</td><td class="req">Couverture de tests</td><td>≥70 % cœur métier</td><td><span class="pill g">100%</span></td><td class="evid"><strong>Mesuré</strong> : 95,4 % lignes, seuil CI appliqué (<code>package.json</code>), 61 fichiers de tests unitaires + 19 e2e</td></tr>
       <tr><td class="id">ENF-11</td><td class="req">Accessibilité WCAG 2.1 AA</td><td>—</td><td><span class="pill na">non audité</span></td><td class="evid">Hors périmètre de cette passe (audit backend) — à couvrir dans un passage frontend dédié</td></tr>
-      <tr><td class="id">ENF-12</td><td class="req">Protection données perso</td><td>CNDP/RGPD</td><td><span class="pill n">50%</span></td><td class="evid">Droit d'accès/effacement réels et audités ; <strong>aucun recueil de consentement à l'inscription</strong>, pas de politique de rétention par type de donnée en code</td></tr>
+      <tr><td class="id">ENF-12 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req">Protection données perso</td><td>CNDP/RGPD</td><td><span class="pill m">75%</span></td><td class="evid">Droit d'accès/effacement réels et audités ; <strong>V0.3 : recueil de consentement à l'inscription livré</strong> (<code>RegisterDto</code> exige <code>consentAccepted</code>, <code>users.consent_at</code>, case à cocher + page <code>/privacy</code>). Rétention par type documentée dans <code>docs/HARDENING.md</code></td></tr>
       <tr><td class="id">ENF-13 <span class="pill g" style="padding:1px 6px">↑ V0.3</span></td><td class="req">Conteneurisé, infra as code</td><td>—</td><td><span class="pill m">75%</span></td><td class="evid">Dockerfile + docker-compose + CI réels ; <strong>V0.3 : manifeste k8s exemple ajouté</strong> (<code>deploy/k8s/</code> — Deployment 3 réplicas, Service, Ingress TLS). Promotion Helm/Terraform à suivre</td></tr>
       <tr><td class="id">ENF-14</td><td class="req">Bilingue FR/AR + RTL</td><td>—</td><td><span class="pill m">75%</span></td><td class="evid">Fichiers de traduction parallèles réels (417 lignes chacun), <code>dir</code> basculé en RTL au runtime. <code>&lt;html&gt;</code> racine figé <code>lang="fr" dir="ltr"</code> → léger flash avant application du RTL</td></tr>
     </tbody>
