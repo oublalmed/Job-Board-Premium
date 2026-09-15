@@ -35,6 +35,11 @@ export const businessConfig = registerAs('business', () => ({
   // Lot 7 (EF-REM-03) — when the daily cooldown-expiry sweep job runs.
   // Standard 5-field cron pattern, default daily at 03:00.
   cooldownSweepCron: process.env['COOLDOWN_SWEEP_CRON'] ?? '0 3 * * *',
+  // EF-EVAL-04 — the daily percentile/ranking recalculation. Percentiles
+  // are otherwise frozen at webhook time; this re-derives each active
+  // score's standing against the current live cohort. Default daily at
+  // 02:30, i.e. before the 03:00 cooldown sweep and indexation reads.
+  percentileRecalcCron: process.env['PERCENTILE_RECALC_CRON'] ?? '30 2 * * *',
   // Lot 7 (EF-GROW-04) — anti-spam window: N views by the same recruiter
   // on the same candidate within this window produce at most 1
   // notification (the view itself is still always recorded).

@@ -18,6 +18,10 @@ import { RemediationNotificationService } from './remediation-notification.servi
 import { CooldownNotificationProcessor } from './cooldown-notification.processor.js';
 import { CooldownSchedulerService } from './cooldown-scheduler.service.js';
 import { COOLDOWN_QUEUE } from './cooldown-queue.constants.js';
+import { PercentileRecalcService } from './percentile-recalc.service.js';
+import { PercentileRecalcProcessor } from './percentile-recalc.processor.js';
+import { PercentileRecalcSchedulerService } from './percentile-recalc-scheduler.service.js';
+import { PERCENTILE_RECALC_QUEUE } from './percentile-recalc.constants.js';
 import { CandidatesModule } from '../candidates/candidates.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
@@ -26,6 +30,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
   imports: [
     TypeOrmModule.forFeature([Specialty, Test, Assessment, Score]),
     BullModule.registerQueue({ name: COOLDOWN_QUEUE }),
+    BullModule.registerQueue({ name: PERCENTILE_RECALC_QUEUE }),
     CandidatesModule,
     UsersModule,
     NotificationsModule,
@@ -40,6 +45,9 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     RemediationNotificationService,
     CooldownNotificationProcessor,
     CooldownSchedulerService,
+    PercentileRecalcService,
+    PercentileRecalcProcessor,
+    PercentileRecalcSchedulerService,
     CatalogService,
   ],
   exports: [
