@@ -4,7 +4,11 @@ import { DataSource, QueryFailedError } from 'typeorm';
 import { ConversationService } from '../conversation.service.js';
 import { Conversation } from '../entities/conversation.entity.js';
 import { Message, MessageSenderRole } from '../entities/message.entity.js';
+import { MessageReport } from '../entities/message-report.entity.js';
 import { CandidateProfile } from '../../candidates/entities/candidate-profile.entity.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { NotificationService } from '../../notifications/notification.service.js';
+import { NotificationType } from '../../notifications/entities/notification.entity.js';
 import { SubscriptionGuardService } from '../../companies/subscription-guard.service.js';
 import { ContactQuotaService } from '../../companies/contact-quota.service.js';
 import { ContactQuotaExceededException } from '../../companies/contact-quota.exceptions.js';
@@ -20,13 +24,20 @@ function uniqueViolation(): QueryFailedError {
     ),
     { code: '23505' },
   );
-  return new QueryFailedError('INSERT INTO "conversations" ...', [], driverError);
+  return new QueryFailedError(
+    'INSERT INTO "conversations" ...',
+    [],
+    driverError,
+  );
 }
 
 describe('ConversationService', () => {
   let service: ConversationService;
   let dataSource: { transaction: jest.Mock };
-  let subscriptionGuard: { assertActiveSubscription: jest.Mock; resolveCompanyId: jest.Mock };
+  let subscriptionGuard: {
+    assertActiveSubscription: jest.Mock;
+    resolveCompanyId: jest.Mock;
+  };
   let contactQuotaService: { consumeOneContact: jest.Mock };
   let candidateProfileRepo: { findOne: jest.Mock };
   let conversationRepo: { findOne: jest.Mock; find: jest.Mock };
@@ -40,9 +51,13 @@ describe('ConversationService', () => {
   let managerConversationRepo: { create: jest.Mock; save: jest.Mock };
   let managerMessageRepo: { create: jest.Mock; save: jest.Mock };
   let manager: { getRepository: jest.Mock };
+  let notificationService: { create: jest.Mock };
+  let messageReportRepo: { create: jest.Mock; save: jest.Mock };
+  let auditService: { log: jest.Mock };
 
   const recruiterUserId = 'recruiter-user-1';
   const candidateProfileId = 'candidate-profile-1';
+  const candidateUserId = 'candidate-user-1';
   const companyId = 'company-1';
 
   beforeEach(async () => {
@@ -79,8 +94,24 @@ describe('ConversationService', () => {
       consumeOneContact: jest.fn().mockResolvedValue(undefined),
     };
     candidateProfileRepo = {
-      findOne: jest.fn().mockResolvedValue({ id: candidateProfileId }),
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: candidateProfileId, userId: candidateUserId }),
     };
+    notificationService = {
+      create: jest.fn().mockResolvedValue(undefined),
+    };
+    messageReportRepo = {
+      create: jest.fn((data: unknown) => data),
+      save: jest.fn((data: unknown) =>
+        Promise.resolve({
+          id: 'report-1',
+          status: 'open',
+          ...(data as object),
+        }),
+      ),
+    };
+    auditService = { log: jest.fn().mockResolvedValue(undefined) };
     conversationRepo = {
       findOne: jest.fn(),
       find: jest.fn().mockResolvedValue([]),
@@ -104,8 +135,17 @@ describe('ConversationService', () => {
           provide: getRepositoryToken(CandidateProfile),
           useValue: candidateProfileRepo,
         },
-        { provide: getRepositoryToken(Conversation), useValue: conversationRepo },
+        {
+          provide: getRepositoryToken(Conversation),
+          useValue: conversationRepo,
+        },
         { provide: getRepositoryToken(Message), useValue: messageRepo },
+        {
+          provide: getRepositoryToken(MessageReport),
+          useValue: messageReportRepo,
+        },
+        { provide: AuditService, useValue: auditService },
+        { provide: NotificationService, useValue: notificationService },
       ],
     }).compile();
 
@@ -141,9 +181,7 @@ describe('ConversationService', () => {
           body: 'Bonjour, votre profil nous intéresse',
         }),
       );
-      expect(result).toEqual(
-        expect.objectContaining({ id: 'conversation-1' }),
-      );
+      expect(result).toEqual(expect.objectContaining({ id: 'conversation-1' }));
     });
 
     it('throws CandidateProfileNotFoundException and never opens a transaction when the profile does not exist', async () => {
@@ -226,7 +264,11 @@ describe('ConversationService', () => {
 
   describe('sendMessage', () => {
     it('lets a recruiter of the conversation’s own company send a message, scoping the lookup to companyId in the WHERE', async () => {
-      const conversation = { id: 'conversation-1', companyId, candidateId: candidateProfileId };
+      const conversation = {
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      };
       conversationRepo.findOne.mockResolvedValue(conversation);
 
       await service.sendMessage('conversation-1', recruiterUserId, 'reply');
@@ -246,8 +288,14 @@ describe('ConversationService', () => {
       subscriptionGuard.resolveCompanyId.mockRejectedValue(
         new Error('not a recruiter'),
       );
-      candidateProfileRepo.findOne.mockResolvedValue({ id: candidateProfileId });
-      const conversation = { id: 'conversation-1', companyId, candidateId: candidateProfileId };
+      candidateProfileRepo.findOne.mockResolvedValue({
+        id: candidateProfileId,
+      });
+      const conversation = {
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      };
       conversationRepo.findOne.mockResolvedValue(conversation);
 
       await service.sendMessage('conversation-1', 'candidate-user-1', 'reply');
@@ -283,6 +331,116 @@ describe('ConversationService', () => {
       await expect(
         service.sendMessage('conversation-1', 'other-recruiter', 'x'),
       ).rejects.toThrow(ConversationNotFoundException);
+    });
+  });
+
+  describe('new-message notifications (EF-MSG-02)', () => {
+    it('notifies the candidate when a recruiter opens a conversation', async () => {
+      await service.openConversation(recruiterUserId, candidateProfileId, 'hi');
+
+      expect(notificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientUserId: candidateUserId,
+          type: NotificationType.NEW_MESSAGE,
+        }),
+      );
+    });
+
+    it('notifies the candidate when the recruiter replies', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+
+      await service.sendMessage('conversation-1', recruiterUserId, 'reply');
+
+      expect(notificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientUserId: candidateUserId,
+          type: NotificationType.NEW_MESSAGE,
+        }),
+      );
+    });
+
+    it('notifies the opening recruiter when the candidate replies', async () => {
+      subscriptionGuard.resolveCompanyId.mockRejectedValue(
+        new Error('not a recruiter'),
+      );
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+
+      await service.sendMessage('conversation-1', candidateUserId, 'reply');
+
+      expect(notificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientUserId: recruiterUserId,
+          type: NotificationType.NEW_MESSAGE,
+        }),
+      );
+    });
+
+    it('never lets a notification failure break sending a message', async () => {
+      notificationService.create.mockRejectedValue(new Error('notif down'));
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+
+      await expect(
+        service.sendMessage('conversation-1', recruiterUserId, 'reply'),
+      ).resolves.toEqual(expect.objectContaining({ id: 'message-1' }));
+    });
+  });
+
+  describe('reportConversation (EF-MSG-05)', () => {
+    it('lets an authorized participant file a report and records an audit entry', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+
+      const result = await service.reportConversation(
+        'conversation-1',
+        recruiterUserId,
+        'Contenu inapproprié',
+      );
+
+      expect(messageReportRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversationId: 'conversation-1',
+          reporterUserId: recruiterUserId,
+          reason: 'Contenu inapproprié',
+        }),
+      );
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorId: recruiterUserId,
+          entityType: 'conversation',
+          entityId: 'conversation-1',
+        }),
+      );
+      expect(result).toEqual({ id: 'report-1', status: 'open' });
+    });
+
+    it('rejects a report from a non-participant (same 404 as isolation)', async () => {
+      subscriptionGuard.resolveCompanyId.mockResolvedValue('other-company');
+      conversationRepo.findOne.mockResolvedValue(null);
+      candidateProfileRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.reportConversation('conversation-1', 'stranger', 'spam'),
+      ).rejects.toThrow(ConversationNotFoundException);
+      expect(messageReportRepo.save).not.toHaveBeenCalled();
     });
   });
 
@@ -361,7 +519,10 @@ describe('ConversationService', () => {
         },
       ]);
 
-      const result = await service.listMessages('conversation-1', recruiterUserId);
+      const result = await service.listMessages(
+        'conversation-1',
+        recruiterUserId,
+      );
 
       expect(messageRepo.update).toHaveBeenCalledWith(
         expect.objectContaining({ conversationId: 'conversation-1' }),

@@ -16,6 +16,7 @@ import type { JwtPayload } from '../../common/interfaces/request-with-user.inter
 import { ConversationService } from './conversation.service.js';
 import { OpenConversationDto } from './dto/open-conversation.dto.js';
 import { SendMessageDto } from './dto/send-message.dto.js';
+import { ReportConversationDto } from './dto/report-conversation.dto.js';
 
 @Controller('conversations')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -63,6 +64,21 @@ export class ConversationController {
       conversationId,
       user.sub,
       dto.body,
+    );
+  }
+
+  // EF-MSG-05 — flag a conversation for abuse.
+  @Post(':id/report')
+  @Roles(Role.RECRUITER, Role.COMPANY_ADMIN, Role.CANDIDATE)
+  async reportConversation(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) conversationId: string,
+    @Body() dto: ReportConversationDto,
+  ) {
+    return this.conversationService.reportConversation(
+      conversationId,
+      user.sub,
+      dto.reason,
     );
   }
 }

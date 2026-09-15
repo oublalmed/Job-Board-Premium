@@ -11,6 +11,8 @@ import { User } from '../../users/entities/user.entity.js';
 export enum NotificationType {
   COOLDOWN_EXPIRED = 'cooldown_expired',
   PROFILE_VIEWED = 'profile_viewed',
+  // EF-MSG-02 — a new message arrived in one of the recipient's threads.
+  NEW_MESSAGE = 'new_message',
 }
 
 // The in-app half of "in-app + email" — neither EF-REM-03 nor EF-GROW-04

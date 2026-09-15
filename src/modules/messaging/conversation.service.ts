@@ -1,11 +1,16 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalyticsService } from '../analytics/analytics.service.js';
 import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
+import { NotificationService } from '../notifications/notification.service.js';
+import { NotificationType } from '../notifications/entities/notification.entity.js';
 import { DataSource, Repository, In, IsNull, Not } from 'typeorm';
 import { Conversation } from './entities/conversation.entity.js';
 import { Message, MessageSenderRole } from './entities/message.entity.js';
+import { MessageReport } from './entities/message-report.entity.js';
 import { CandidateProfile } from '../candidates/entities/candidate-profile.entity.js';
+import { AuditService } from '../audit/audit.service.js';
+import { AuditAction } from '../../common/enums/audit-action.enum.js';
 import { SubscriptionGuardService } from '../companies/subscription-guard.service.js';
 import { ContactQuotaService } from '../companies/contact-quota.service.js';
 import { isUniqueViolation } from '../../common/typeorm/is-unique-violation.js';
@@ -44,6 +49,8 @@ export interface MessageView {
 
 @Injectable()
 export class ConversationService {
+  private readonly logger = new Logger(ConversationService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly subscriptionGuard: SubscriptionGuardService,
@@ -54,8 +61,14 @@ export class ConversationService {
     private readonly conversationRepo: Repository<Conversation>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
+    @InjectRepository(MessageReport)
+    private readonly messageReportRepo: Repository<MessageReport>,
+    private readonly auditService: AuditService,
     // Optional so unit tests need not wire the (global) analytics module.
     @Optional() private readonly analytics?: AnalyticsService,
+    // Optional for the same reason — messaging works without it, the in-app
+    // notification is a best-effort side effect (EF-MSG-02).
+    @Optional() private readonly notifications?: NotificationService,
   ) {}
 
   async openConversation(
@@ -107,6 +120,11 @@ export class ConversationService {
         recruiterUserId,
         { candidateProfileId },
       );
+      // EF-MSG-02 — the candidate is the recipient of the recruiter's opener.
+      void this.notifyNewMessage(
+        candidateProfile.userId,
+        MessageSenderRole.RECRUITER,
+      );
       return created;
     } catch (error) {
       if (!isUniqueViolation(error)) {
@@ -139,7 +157,7 @@ export class ConversationService {
       senderUserId,
     );
 
-    return this.messageRepo.save(
+    const message = await this.messageRepo.save(
       this.messageRepo.create({
         conversationId: conversation.id,
         senderId: senderUserId,
@@ -147,6 +165,89 @@ export class ConversationService {
         body,
       }),
     );
+
+    // EF-MSG-02 — notify the counterpart. Recruiter → candidate (user behind
+    // the profile); candidate → the recruiter who opened the thread.
+    const recipientUserId = await this.resolveRecipient(
+      conversation,
+      senderRole,
+    );
+    if (recipientUserId) {
+      void this.notifyNewMessage(recipientUserId, senderRole);
+    }
+
+    return message;
+  }
+
+  private async resolveRecipient(
+    conversation: Conversation,
+    senderRole: MessageSenderRole,
+  ): Promise<string | null> {
+    if (senderRole === MessageSenderRole.CANDIDATE) {
+      return conversation.recruiterId;
+    }
+    const candidateProfile = await this.candidateProfileRepo.findOne({
+      where: { id: conversation.candidateId },
+    });
+    return candidateProfile?.userId ?? null;
+  }
+
+  // Best-effort in-app notification: a failure here must never fail sending
+  // or opening a thread, so it is fire-and-forget with a logged warning.
+  private async notifyNewMessage(
+    recipientUserId: string,
+    senderRole: MessageSenderRole,
+  ): Promise<void> {
+    if (!this.notifications) return;
+    const fromLabel =
+      senderRole === MessageSenderRole.RECRUITER
+        ? 'un recruteur'
+        : 'un candidat';
+    try {
+      await this.notifications.create({
+        recipientUserId,
+        type: NotificationType.NEW_MESSAGE,
+        title: 'Nouveau message',
+        body: `Vous avez reçu un nouveau message de ${fromLabel}.`,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to create new-message notification for ${recipientUserId}: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  // EF-MSG-05 — a participant flags a conversation for abuse. Authorization
+  // reuses the same participant check as sending/reading, so a stranger gets
+  // the same 404 as a nonexistent thread. Recorded as a moderation-queue row
+  // and in the audit trail.
+  async reportConversation(
+    conversationId: string,
+    reporterUserId: string,
+    reason: string,
+  ): Promise<{ id: string; status: string }> {
+    const { conversation } = await this.findAuthorizedConversation(
+      conversationId,
+      reporterUserId,
+    );
+
+    const report = await this.messageReportRepo.save(
+      this.messageReportRepo.create({
+        conversationId: conversation.id,
+        reporterUserId,
+        reason,
+      }),
+    );
+
+    await this.auditService.log({
+      actorId: reporterUserId,
+      action: AuditAction.MODERATION_ACTION,
+      entityType: 'conversation',
+      entityId: conversation.id,
+      metadata: { kind: 'message_abuse_report', reportId: report.id },
+    });
+
+    return { id: report.id, status: report.status };
   }
 
   // Lists every thread the caller can see — as the recruiter of their
