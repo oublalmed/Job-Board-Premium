@@ -5,6 +5,8 @@ import {
   Matches,
   IsEnum,
   IsOptional,
+  IsBoolean,
+  Equals,
 } from 'class-validator';
 import { Role } from '../../../common/enums/role.enum.js';
 
@@ -36,4 +38,11 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   referralCode?: string;
+
+  // ENF-12 (CNDP/RGPD) — explicit consent must be given at sign-up. Must be
+  // literally true; a missing or false value fails validation, so account
+  // creation cannot proceed without it.
+  @IsBoolean()
+  @Equals(true, { message: 'Consent to the privacy policy is required' })
+  consentAccepted!: boolean;
 }

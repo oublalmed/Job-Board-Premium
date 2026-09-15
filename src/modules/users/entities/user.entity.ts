@@ -71,6 +71,12 @@ export class User {
   @Column({ name: 'mfa_backup_codes', type: 'jsonb', nullable: true })
   mfaBackupCodes!: string[] | null;
 
+  // ENF-12 (CNDP/RGPD) — timestamp of the privacy-policy consent captured at
+  // registration. Nullable because accounts created before this existed have
+  // no recorded consent; new sign-ups always set it.
+  @Column({ name: 'consent_at', type: 'timestamptz', nullable: true })
+  consentAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

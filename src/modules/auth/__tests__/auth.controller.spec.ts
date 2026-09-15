@@ -54,6 +54,7 @@ describe('AuthController', () => {
     const result = await controller.register({
       email: 'test@example.com',
       password: 'StrongP@ss1',
+      consentAccepted: true,
     });
     expect(result.user.email).toBe('test@example.com');
     expect(authService.register).toHaveBeenCalled();

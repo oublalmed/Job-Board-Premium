@@ -36,6 +36,7 @@ describe('AuthService', () => {
     mfaEnabled: false,
     mfaSecret: null,
     mfaBackupCodes: null,
+    consentAt: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),
     refreshTokens: [],
@@ -134,6 +135,7 @@ describe('AuthService', () => {
       const result = await service.register({
         email: 'new@example.com',
         password: 'StrongP@ss1',
+        consentAccepted: true,
       });
 
       expect(result.user.email).toBe(mockUser.email);
@@ -153,6 +155,7 @@ describe('AuthService', () => {
         service.register({
           email: 'test@example.com',
           password: 'StrongP@ss1',
+          consentAccepted: true,
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -165,6 +168,7 @@ describe('AuthService', () => {
         email: 'new@example.com',
         password: 'StrongP@ss1',
         roles: [Role.ADMIN, Role.CANDIDATE],
+        consentAccepted: true,
       });
 
       expect(usersService['create']).toHaveBeenCalledWith(

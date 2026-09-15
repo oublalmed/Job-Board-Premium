@@ -98,6 +98,8 @@ export class AuthService {
       emailVerified: false,
       emailVerificationToken: verificationToken,
       emailVerificationExpires: verificationExpires,
+      // ENF-12 — record when consent was given (the DTO guarantees it was).
+      consentAt: new Date(),
     });
 
     await this.mailProvider.send({
