@@ -301,33 +301,33 @@
 </section>
 
 <section id="summary">
-  <div class="callout" style="border-color:var(--sev-mid-line);background:var(--sev-mid-bg);color:var(--sev-mid-ink)">
-    <strong>Base de référence — 3 août 2026.</strong> Les chiffres et tableaux de cette section reflètent l'audit initial. Pour l'état actuel et ce qui a été fermé depuis, voir <a href="#delta">Mise à jour V0.3</a> ci-dessus. Les cellules corrigées dans les tableaux détaillés portent la mention <span class="pill g" style="padding:1px 6px">✓ V0.3</span>.
+  <div class="callout" style="border-color:var(--sev-good-line);background:var(--sev-good-bg);color:var(--sev-good-ink)">
+    <strong>Chiffres à jour au 15 sept. 2026 (V0.3).</strong> Les pourcentages ci-dessous sont recalculés sur l'état actuel du code (base du 3 août rappelée entre parenthèses). Même barème : moyenne arithmétique non pondérée des exigences listées, n/a exclus ; les cartes « Must » ne moyennent que les exigences Must ; ENF-02/04/11 exclus du numérique. Détail des écarts fermés : <a href="#delta">Mise à jour V0.3</a>.
   </div>
   <div class="score-grid">
     <div class="score-card accent">
-      <div class="label">Cœur MVP (exigences « Must ») — base 3 août</div>
-      <div class="num">74<small>% backend</small></div>
-      <div class="num" style="font-size:20px;margin-top:-2px">49<small>% frontend</small></div>
-      <div class="foot">Ce qui compte vraiment pour un lancement — bien plus solide côté API que côté écran.</div>
+      <div class="label">Cœur MVP (exigences « Must »)</div>
+      <div class="num">80<small>% backend</small></div>
+      <div class="num" style="font-size:20px;margin-top:-2px">60<small>% frontend</small></div>
+      <div class="foot">Base 3 août : 74 % / 49 %. Le frontend « Must » rattrape le backend après la remédiation.</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), backend</div>
-      <div class="num">66<small>%</small></div>
-      <div class="bar"><span style="width:66%;background:var(--sev-mid-ink)"></span></div>
-      <div class="foot">51 exigences EF-*, moyenne non pondérée</div>
+      <div class="num">75<small>%</small></div>
+      <div class="bar"><span style="width:75%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">51 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">39<small>%</small></div>
-      <div class="bar"><span style="width:39%;background:var(--sev-bad-ink)"></span></div>
-      <div class="foot">48 exigences EF-*, moyenne non pondérée</div>
+      <div class="num">51<small>%</small></div>
+      <div class="bar"><span style="width:51%;background:var(--sev-mid-ink)"></span></div>
+      <div class="foot">48 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
       <div class="label">Non-fonctionnel (perf/sécu/infra)</div>
-      <div class="num">40<small>%</small></div>
-      <div class="bar"><span style="width:40%;background:var(--sev-bad-ink)"></span></div>
-      <div class="foot">Cohérent avec le CDC : le Lot 9 « durcissement » est planifié en dernier, pas encore fait</div>
+      <div class="num">57<small>%</small></div>
+      <div class="bar"><span style="width:57%;background:var(--sev-mid-ink)"></span></div>
+      <div class="foot">11 items ENF numériques · base 3 août : 40 % — durcissement entamé (MFA, index, TLS, k8s)</div>
     </div>
   </div>
 
@@ -336,7 +336,7 @@
   </div>
 
   <p style="color:var(--ink-muted);font-size:13.5px;max-width:78ch">
-    Lecture rapide : <strong>le squelette métier tient</strong> — auth, complétude de profil, pipeline de scoring/webhook, cycle d'abonnement, quotas de contact, modération d'offres sont réels, testés, et pour la plupart au-dessus de 75 %. <strong>Trois zones sont clairement en retard</strong> sur les deux couches : la messagerie (un formulaire d'envoi sans aucune vue de conversation), l'administration (aucune route <code>/admin</code> n'existe côté frontend, et côté backend seule la modération d'offres est réelle), et l'amorçage/croissance candidat (badge partageable, parrainage : zéro trace de code). Le frontend est systématiquement en retard sur le backend — beaucoup d'endpoints réels existent sans écran pour les utiliser (quota de contacts, factures, accès restreint si abonnement inactif).
+    Lecture rapide (V0.3) : <strong>le squelette métier tient et le frontend a largement rattrapé le backend.</strong> Le retard « écran » qui définissait l'audit du 3 août est en grande partie résorbé : factures, bannière d'accès restreint, quota de contacts, liens externes et vue de conversation sont désormais à l'écran ; côté API, recalcul de percentile, lecture des journaux d'audit et MFA staff sont livrés et testés. <strong>Ce qui reste vraiment bas :</strong> la messagerie (notifications/signalement toujours absents → module à ~19 %), la CVthèque (garantie de visibilité non prouvée en e2e → 45/31 %) et l'anti-triche (2/6 couches). Le reste non-fonctionnel (57 %) est de l'infra : sauvegardes, observabilité, coffre-fort de secrets.
   </p>
 </section>
 
@@ -344,7 +344,7 @@
 <section id="candidat">
   <div class="sec-head">
     <h2>1 · Gestion du candidat <span style="color:var(--ink-faint);font-weight:500">§4.1</span></h2>
-    <div class="sec-avg">backend <b>72 %</b> · frontend <b>53 %</b></div>
+    <div class="sec-avg">backend <b>75 %</b> · frontend <b>61 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
   </div>
   <p class="sec-intro">Le cœur (compte, complétude, export/effacement RGPD) est solide des deux côtés. Le vrai trou : <strong>les liens externes (GitHub/Portfolio) ont un CRUD backend complet que le frontend n'appelle jamais</strong> — champ entièrement absent de l'écran de profil.</p>
   <div class="tbl-scroll"><table>
@@ -385,7 +385,7 @@
 <section id="evaluation">
   <div class="sec-head">
     <h2>2 · Évaluation & scoring <span style="color:var(--ink-faint);font-weight:500">§4.2, §5.2–5.3</span></h2>
-    <div class="sec-avg">backend <b>73 %</b> · frontend <b>69 %</b></div>
+    <div class="sec-avg">backend <b>80 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base 73/69)</span></div>
   </div>
   <p class="sec-intro">Le pipeline de score (webhook, versioning, cooldown, incidents) est le module le mieux testé du projet. Mais <strong>l'anti-triche multicouche, présenté par le CDC comme le différenciateur n°1, n'a que 2 de ses 6 couches réellement construites</strong> côté plateforme — les 4 autres sont déléguées à un fournisseur externe qui n'est aujourd'hui qu'un stub déterministe.</p>
   <div class="tbl-scroll"><table>
@@ -430,7 +430,7 @@
 <section id="remediation">
   <div class="sec-head">
     <h2>3 · Remédiation candidat <span style="color:var(--ink-faint);font-weight:500">§4.3 — nouveau vs V0.1</span></h2>
-    <div class="sec-avg">backend <b>88 %</b> · frontend <b>25 %</b></div>
+    <div class="sec-avg">backend <b>88 %</b> · frontend <b>25 %</b> <span style="color:var(--ink-faint)">(inchangé)</span></div>
   </div>
   <p class="sec-intro">Le module le mieux construit du backend — la non-fuite de la banque de sujets est garantie <em>structurellement</em> par le typage (pas juste par convention), et la notification J-90 est un vrai cron BullMQ testé sous concurrence. Le frontend est très en retard : le feedback par domaine s'affiche, mais les ressources ciblées et la notification de fin de cooldown n'ont pas d'écran dédié.</p>
   <div class="tbl-scroll"><table>
@@ -456,7 +456,7 @@
 <section id="cvtheque">
   <div class="sec-head">
     <h2>4 · CVthèque & recherche <span style="color:var(--ink-faint);font-weight:500">§4.4</span></h2>
-    <div class="sec-avg">backend <b>45 %</b> · frontend <b>31 %</b></div>
+    <div class="sec-avg">backend <b>45 %</b> · frontend <b>31 %</b> <span style="color:var(--ink-faint)">(inchangé)</span></div>
   </div>
   <p class="sec-intro">Le moteur de recherche lui-même (filtres combinables, tri, pagination curseur) est réel et fonctionne des deux côtés. Mais la preuve la plus stricte du CDC — <strong>« un profil masqué n'apparaît JAMAIS »</strong> — n'est vérifiée que contre un query-builder mocké, jamais contre une vraie base Postgres en e2e.</p>
   <div class="tbl-scroll"><table>
@@ -486,7 +486,7 @@
 <section id="recruteur">
   <div class="sec-head">
     <h2>5 · Espace recruteur & offres <span style="color:var(--ink-faint);font-weight:500">§4.5</span></h2>
-    <div class="sec-avg">backend <b>100 %</b> · frontend <b>58 %</b></div>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>71 %</b> <span style="color:var(--ink-faint)">(base 100/58)</span></div>
   </div>
   <p class="sec-intro"><strong>Seul module où chaque exigence backend atteint 100 %</strong>, avec e2e sur l'isolation inter-entreprise et la décrémentation atomique du quota de contacts sous concurrence. Le frontend, lui, oublie complètement d'afficher le quota au recruteur — il peut être bloqué sans jamais avoir vu venir la limite.</p>
   <div class="tbl-scroll"><table>
@@ -518,7 +518,7 @@
 <section id="messagerie">
   <div class="sec-head">
     <h2>6 · Messagerie <span style="color:var(--ink-faint);font-weight:500">§4.6</span></h2>
-    <div class="sec-avg">base <b>19/6 %</b> · maj V0.3 : vue de conversation livrée</div>
+    <div class="sec-avg">backend <b>19 %</b> · frontend <b>19 %</b> <span style="color:var(--ink-faint)">(base 19/6)</span></div>
   </div>
   <p class="sec-intro"><strong>Base 3 août :</strong> le fil existait côté backend mais le frontend n'avait qu'un formulaire d'ouverture. <strong>Depuis (V0.3)</strong>, une vraie vue de conversation a été livrée (<code>ConversationList.tsx</code> + <code>MessageThread.tsx</code>) — liste des fils et lecture des messages pour les deux rôles. <strong>Restent</strong> les notifications de nouveaux messages (EF-MSG-02) et le signalement d'abus (EF-MSG-05).</p>
   <div class="tbl-scroll"><table>
@@ -547,7 +547,7 @@
 <section id="billing">
   <div class="sec-head">
     <h2>7 · Abonnement & facturation <span style="color:var(--ink-faint);font-weight:500">§4.7, §5.4</span></h2>
-    <div class="sec-avg">backend <b>90 %</b> · frontend <b>30 %</b></div>
+    <div class="sec-avg">backend <b>90 %</b> · frontend <b>60 %</b> <span style="color:var(--ink-faint)">(base 90/30)</span></div>
   </div>
   <p class="sec-intro">Backend très mature — idempotence webhook, arithmétique TVA/proration en centimes exacts, numérotation de facture sans trou. Le frontend couvre la souscription mais <strong>rien pour consulter une facture, ni pour prévenir un recruteur que son accès est restreint</strong> faute d'abonnement actif.</p>
   <div class="tbl-scroll"><table>
@@ -576,7 +576,7 @@
 <section id="admin">
   <div class="sec-head">
     <h2>8 · Administration & modération <span style="color:var(--ink-faint);font-weight:500">§4.8</span></h2>
-    <div class="sec-avg">base <b>30/0 %</b> · maj V0.3 : /admin existe</div>
+    <div class="sec-avg">backend <b>65 %</b> · frontend <b>20 %</b> <span style="color:var(--ink-faint)">(base 30/0)</span></div>
   </div>
   <p class="sec-intro"><strong>Base 3 août :</strong> aucune route <code>/admin</code>, Lot 8 à peine démarré. <strong>Depuis (V0.3) :</strong> le frontend a désormais un espace <code>/admin</code> (analytics, vérifications d'école), le dashboard KPI est livré (EF-ADM-05), et l'API de lecture des journaux d'audit existe (EF-ADM-04, ma passe). <strong>Restent</strong> : l'écran admin de consultation des journaux, et une file de modération unifiée profils/messages (EF-ADM-01).</p>
   <div class="tbl-scroll"><table>
@@ -605,7 +605,7 @@
 <section id="growth">
   <div class="sec-head">
     <h2>9 · Amorçage & croissance <span style="color:var(--ink-faint);font-weight:500">§4.9, §2.3 — nouveau vs V0.1</span></h2>
-    <div class="sec-avg">base <b>44/19 %</b> · maj V0.3 : badge + parrainage livrés</div>
+    <div class="sec-avg">backend <b>81 %</b> · frontend <b>56 %</b> <span style="color:var(--ink-faint)">(base 44/19)</span></div>
   </div>
   <p class="sec-intro"><strong>Base 3 août :</strong> seul l'essai recruteur existait ; badge et parrainage étaient à zéro. <strong>Depuis (V0.3) :</strong> les deux leviers côté offre sont livrés — badge de score partageable (<code>features/badge</code>, page vitrine <code>/badge/[token]</code>) et parrainage avec suivi de conversion (<code>features/referral</code>, <code>referral.service.ts</code>).</p>
   <div class="tbl-scroll"><table>
@@ -631,7 +631,7 @@
 <section id="enf">
   <div class="sec-head">
     <h2>10 · Exigences non-fonctionnelles <span style="color:var(--ink-faint);font-weight:500">§10</span></h2>
-    <div class="sec-avg">backend <b>40 %</b></div>
+    <div class="sec-avg"><b>57 %</b> <span style="color:var(--ink-faint)">(base 40 %)</span></div>
   </div>
   <p class="sec-intro">Couverture de tests toujours au-dessus de la cible (79 % lignes mesurées, seuil CI 70 %). <strong>Maj V0.3 :</strong> le durcissement a commencé — MFA staff livrée (ENF-06), index sur le chemin chaud + TLS Postgres en option (ENF-01/05), exemple k8s ajouté (ENF-13). consentement à l'inscription livré (ENF-12). Restent purement infra/hébergement : sauvegardes/PITR (ENF-08), coffre-fort de secrets (ENF-07), observabilité/métriques (ENF-09) — cadrés dans <code>docs/HARDENING.md</code>.</p>
   <div class="tbl-scroll"><table>
