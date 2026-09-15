@@ -13,17 +13,30 @@ import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { VerifyEmailDto } from './dto/verify-email.dto.js';
-import { AuthTokensResponseDto } from './dto/auth-tokens-response.dto.js';
+import {
+  AuthTokensResponseDto,
+  LoginResponseDto,
+} from './dto/auth-tokens-response.dto.js';
 import { MeResponseDto } from './dto/me-response.dto.js';
 import { MessageResponseDto } from './dto/message-response.dto.js';
 import { RegisterResponseDto } from './dto/register-response.dto.js';
+import {
+  MfaCodeDto,
+  MfaLoginDto,
+  MfaSetupResponseDto,
+  MfaEnableResponseDto,
+} from './dto/mfa.dto.js';
+import { MfaService } from './mfa.service.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../common/interfaces/request-with-user.interface.js';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly mfaService: MfaService,
+  ) {}
 
   @Post('register')
   @ApiResponse({ status: 201, type: RegisterResponseDto })
@@ -40,9 +53,44 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiResponse({ status: 200, type: AuthTokensResponseDto })
+  @ApiResponse({ status: 200, type: LoginResponseDto })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  // ENF-06 — second step of an MFA login: exchange the challenge token + code
+  // for session tokens.
+  @Post('login/mfa')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, type: AuthTokensResponseDto })
+  async loginMfa(@Body() dto: MfaLoginDto) {
+    return this.authService.verifyMfaChallenge(dto.mfaToken, dto.code);
+  }
+
+  // ENF-06 — MFA enrollment/management (authenticated user acting on self).
+  @UseGuards(JwtAuthGuard)
+  @Post('mfa/setup')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, type: MfaSetupResponseDto })
+  async mfaSetup(@CurrentUser() user: JwtPayload) {
+    return this.mfaService.beginSetup(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('mfa/enable')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, type: MfaEnableResponseDto })
+  async mfaEnable(@CurrentUser() user: JwtPayload, @Body() dto: MfaCodeDto) {
+    return this.mfaService.enable(user.sub, dto.code);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('mfa/disable')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, type: MessageResponseDto })
+  async mfaDisable(@CurrentUser() user: JwtPayload, @Body() dto: MfaCodeDto) {
+    await this.mfaService.disable(user.sub, dto.code);
+    return { message: 'MFA disabled' };
   }
 
   @Post('refresh')

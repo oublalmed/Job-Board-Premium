@@ -29,6 +29,11 @@ export const configValidationSchema = Joi.object({
   JWT_REFRESH_SECRET: Joi.string().min(16).required(),
   JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
 
+  // MFA / TOTP (ENF-06)
+  MFA_ISSUER: Joi.string().default('Cobalt'),
+  MFA_ENCRYPTION_KEY: Joi.string().allow('').default(''),
+  MFA_ENFORCE_STAFF: Joi.boolean().default(false),
+
   // Storage
   STORAGE_ENDPOINT: Joi.string().uri().required(),
   STORAGE_ACCESS_KEY: Joi.string().required(),
@@ -47,6 +52,7 @@ export const configValidationSchema = Joi.object({
   TRIAL_DURATION_DAYS: Joi.number().min(1).default(14),
   SUBSCRIPTION_GRACE_PERIOD_DAYS: Joi.number().min(0).default(7),
   COOLDOWN_SWEEP_CRON: Joi.string().default('0 3 * * *'),
+  PERCENTILE_RECALC_CRON: Joi.string().default('30 2 * * *'),
   PROFILE_VIEW_NOTIFICATION_COOLDOWN_HOURS: Joi.number().min(0).default(24),
   PASSWORD_MIN_LENGTH: Joi.number().min(8).default(10),
   MAX_CV_SIZE_BYTES: Joi.number().default(5242880),

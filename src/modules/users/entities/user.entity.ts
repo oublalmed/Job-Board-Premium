@@ -57,6 +57,20 @@ export class User {
   })
   emailVerificationExpires!: Date | null;
 
+  // ENF-06 — MFA/TOTP. `mfaSecret` holds the base32 shared secret encrypted
+  // at rest (AES-256-GCM, see secret-box.ts); it is set at enrollment start
+  // and `mfaEnabled` only flips true once the user proves possession by
+  // entering a valid code. Backup codes are stored argon2-hashed (never
+  // plaintext), same treatment as passwords, and consumed one-time.
+  @Column({ name: 'mfa_enabled', default: false })
+  mfaEnabled!: boolean;
+
+  @Column({ name: 'mfa_secret', type: 'text', nullable: true })
+  mfaSecret!: string | null;
+
+  @Column({ name: 'mfa_backup_codes', type: 'jsonb', nullable: true })
+  mfaBackupCodes!: string[] | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from '../auth.controller.js';
 import { AuthService } from '../auth.service.js';
+import { MfaService } from '../mfa.service.js';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: jest.Mocked<Partial<AuthService>>;
+  let mfaService: jest.Mocked<Partial<MfaService>>;
 
   beforeEach(async () => {
     authService = {
@@ -23,11 +25,26 @@ describe('AuthController', () => {
         accessToken: 'new-jwt-access',
         refreshToken: 'new-refresh-opaque',
       }),
+      verifyMfaChallenge: jest.fn().mockResolvedValue({
+        accessToken: 'mfa-access',
+        refreshToken: 'mfa-refresh',
+      }),
+    };
+
+    mfaService = {
+      beginSetup: jest
+        .fn()
+        .mockResolvedValue({ secret: 'SECRET', otpauthUri: 'otpauth://x' }),
+      enable: jest.fn().mockResolvedValue({ backupCodes: ['a', 'b'] }),
+      disable: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: authService }],
+      providers: [
+        { provide: AuthService, useValue: authService },
+        { provide: MfaService, useValue: mfaService },
+      ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
@@ -43,12 +60,51 @@ describe('AuthController', () => {
   });
 
   it('should login a user', async () => {
-    const result = await controller.login({
+    const result = (await controller.login({
       email: 'test@example.com',
       password: 'StrongP@ss1',
-    });
+    })) as { accessToken?: string };
     expect(result.accessToken).toBeDefined();
     expect(authService.login).toHaveBeenCalled();
+  });
+
+  it('should complete an MFA login', async () => {
+    const result = await controller.loginMfa({
+      mfaToken: 'challenge',
+      code: '123456',
+    });
+    expect(result.accessToken).toBe('mfa-access');
+    expect(authService.verifyMfaChallenge).toHaveBeenCalledWith(
+      'challenge',
+      '123456',
+    );
+  });
+
+  it('should start MFA setup', async () => {
+    const result = await controller.mfaSetup({
+      sub: 'uuid',
+      email: 'test@example.com',
+      roles: [],
+    });
+    expect(result.otpauthUri).toBeDefined();
+    expect(mfaService.beginSetup).toHaveBeenCalledWith('uuid');
+  });
+
+  it('should enable MFA', async () => {
+    const result = await controller.mfaEnable(
+      { sub: 'uuid', email: 'test@example.com', roles: [] },
+      { code: '123456' },
+    );
+    expect(result.backupCodes).toHaveLength(2);
+  });
+
+  it('should disable MFA', async () => {
+    const result = await controller.mfaDisable(
+      { sub: 'uuid', email: 'test@example.com', roles: [] },
+      { code: '123456' },
+    );
+    expect(result.message).toContain('disabled');
+    expect(mfaService.disable).toHaveBeenCalledWith('uuid', '123456');
   });
 
   it('should verify email', async () => {

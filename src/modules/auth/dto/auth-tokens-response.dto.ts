@@ -13,3 +13,26 @@ export class AuthTokensResponseDto {
   @ApiProperty()
   refreshToken!: string;
 }
+
+// Documentation-only shape for POST /auth/login, which returns EITHER session
+// tokens (no MFA) OR an MFA challenge. All fields are optional because only
+// one of the two shapes is present on any given response.
+export class LoginResponseDto {
+  @ApiProperty({ required: false })
+  accessToken?: string;
+
+  @ApiProperty({ required: false })
+  refreshToken?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Present and true when a second factor is required.',
+  })
+  mfaRequired?: boolean;
+
+  @ApiProperty({
+    required: false,
+    description: 'Interim token to submit to POST /auth/login/mfa with a code.',
+  })
+  mfaToken?: string;
+}

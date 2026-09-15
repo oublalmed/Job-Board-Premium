@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { AuthService } from '../auth.service.js';
+import { MfaService } from '../mfa.service.js';
 import { ReferralService } from '../../growth/referral.service.js';
 import { UsersService } from '../../users/users.service.js';
 import { AuditService } from '../../audit/audit.service.js';
@@ -32,6 +33,9 @@ describe('AuthService', () => {
     emailVerified: true,
     emailVerificationToken: null,
     emailVerificationExpires: null,
+    mfaEnabled: false,
+    mfaSecret: null,
+    mfaBackupCodes: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     refreshTokens: [],
@@ -72,7 +76,12 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: usersService },
         {
           provide: JwtService,
-          useValue: { sign: jest.fn().mockReturnValue('mock-jwt-token') },
+          useValue: {
+            sign: jest.fn().mockReturnValue('mock-jwt-token'),
+            verify: jest
+              .fn()
+              .mockReturnValue({ sub: mockUser.id, purpose: 'mfa_challenge' }),
+          },
         },
         {
           provide: ConfigService,
@@ -103,6 +112,12 @@ describe('AuthService', () => {
           useValue: {
             recordSignup: jest.fn().mockResolvedValue(undefined),
             markConverted: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: MfaService,
+          useValue: {
+            verifyForLogin: jest.fn().mockResolvedValue(true),
           },
         },
       ],
@@ -164,13 +179,27 @@ describe('AuthService', () => {
     it('should return tokens on valid credentials', async () => {
       usersService['findByEmail'].mockResolvedValue(mockUser);
 
-      const result = await service.login({
+      const result = (await service.login({
         email: 'test@example.com',
         password: 'Test1234!@',
-      });
+      })) as { accessToken?: string; refreshToken?: string };
 
       expect(result.accessToken).toBeDefined();
       expect(result.refreshToken).toBeDefined();
+    });
+
+    it('should return an MFA challenge (not tokens) when MFA is enabled', async () => {
+      const mfaUser = { ...mockUser, mfaEnabled: true };
+      usersService['findByEmail'].mockResolvedValue(mfaUser);
+
+      const result = (await service.login({
+        email: 'test@example.com',
+        password: 'Test1234!@',
+      })) as { mfaRequired?: boolean; mfaToken?: string; accessToken?: string };
+
+      expect(result.mfaRequired).toBe(true);
+      expect(result.mfaToken).toBeDefined();
+      expect(result.accessToken).toBeUndefined();
     });
 
     it('should throw UnauthorizedException on invalid password', async () => {
@@ -216,6 +245,38 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'Test1234!@',
         }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('verifyMfaChallenge', () => {
+    it('issues MFA-authenticated tokens when the code is valid', async () => {
+      const mfaUser = { ...mockUser, mfaEnabled: true };
+      usersService['findById'].mockResolvedValue(mfaUser);
+
+      const result = await service.verifyMfaChallenge('challenge', '123456');
+
+      expect(result.accessToken).toBeDefined();
+      expect(result.refreshToken).toBeDefined();
+    });
+
+    it('rejects an invalid code', async () => {
+      const mfaUser = { ...mockUser, mfaEnabled: true };
+      usersService['findById'].mockResolvedValue(mfaUser);
+      (service as unknown as { mfaService: { verifyForLogin: jest.Mock } })[
+        'mfaService'
+      ].verifyForLogin.mockResolvedValueOnce(false);
+
+      await expect(
+        service.verifyMfaChallenge('challenge', '000000'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('rejects a challenge for a user without MFA enabled', async () => {
+      usersService['findById'].mockResolvedValue(mockUser); // mfaEnabled false
+
+      await expect(
+        service.verifyMfaChallenge('challenge', '123456'),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
