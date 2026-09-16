@@ -19,6 +19,7 @@ import {
   BarChart3,
   ScrollText,
   Flag,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -78,6 +79,12 @@ export function MobileSidebar() {
       href: '/admin/audit-logs',
       label: t('auditLog.navLabel'),
       icon: ScrollText,
+      roles: ['admin'],
+    },
+    {
+      href: '/admin/settings',
+      label: t('adminSettings.navLabel'),
+      icon: SlidersHorizontal,
       roles: ['admin'],
     },
     { href: '/messages', label: t('nav.messages'), icon: MessageSquare },

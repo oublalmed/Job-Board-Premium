@@ -441,6 +441,15 @@
     "colEntity": "Entité",
     "colIp": "IP"
   },
+  "adminSettings": {
+    "navLabel": "Paramètres",
+    "title": "Données de référence",
+    "subtitle": "Seuils et valeurs de référence de la plateforme.",
+    "empty": "Aucun paramètre pour le moment.",
+    "value": "Valeur",
+    "save": "Enregistrer",
+    "saved": "Paramètre enregistré."
+  },
   "moderation": {
     "navLabel": "Signalements",
     "title": "Signalements d'abus",

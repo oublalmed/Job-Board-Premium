@@ -441,6 +441,15 @@
     "colEntity": "Entity",
     "colIp": "IP"
   },
+  "adminSettings": {
+    "navLabel": "Settings",
+    "title": "Reference data",
+    "subtitle": "Platform thresholds and reference values.",
+    "empty": "No settings yet.",
+    "value": "Value",
+    "save": "Save",
+    "saved": "Setting saved."
+  },
   "moderation": {
     "navLabel": "Reports",
     "title": "Abuse reports",
