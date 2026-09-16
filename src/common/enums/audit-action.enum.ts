@@ -31,4 +31,6 @@ export enum AuditAction {
   PAYMENT_FAILED = 'payment.failed',
   SETTINGS_CHANGED = 'settings.changed',
   MODERATION_ACTION = 'moderation.action',
+  DATA_REQUEST_CREATED = 'data_request.created',
+  DATA_REQUEST_RESOLVED = 'data_request.resolved',
 }

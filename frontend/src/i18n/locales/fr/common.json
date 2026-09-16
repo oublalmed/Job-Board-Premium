@@ -465,6 +465,43 @@
       "dismissed": "Rejetés"
     }
   },
+  "dataRequests": {
+    "navLabel": "Demandes CNDP",
+    "title": "Demandes CNDP / RGPD",
+    "subtitle": "Traitement des demandes des personnes concernées, dans le délai légal de 30 jours.",
+    "empty": "Aucune demande dans cette file.",
+    "subject": "Personne",
+    "due": "Échéance",
+    "overdue": "en retard",
+    "note": "Note",
+    "notePlaceholder": "Note de résolution (facultative)",
+    "destructive": "Effacement définitif",
+    "confirmErasure": "Confirmer l'effacement ? Le compte sera anonymisé de façon irréversible.",
+    "start": "Prendre en charge",
+    "complete": "Clôturer",
+    "reject": "Rejeter",
+    "updated": "Demande mise à jour.",
+    "tab": {
+      "pending": "En attente",
+      "in_progress": "En cours",
+      "completed": "Clôturées",
+      "rejected": "Rejetées",
+      "all": "Toutes"
+    },
+    "status": {
+      "pending": "En attente",
+      "in_progress": "En cours",
+      "completed": "Clôturée",
+      "rejected": "Rejetée"
+    },
+    "type": {
+      "access": "Accès",
+      "portability": "Portabilité",
+      "erasure": "Effacement",
+      "rectification": "Rectification",
+      "objection": "Opposition"
+    }
+  },
   "footer": {
     "rights": "Tous droits réservés.",
     "privacy": "Politique de confidentialité",

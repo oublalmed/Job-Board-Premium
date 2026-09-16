@@ -465,6 +465,43 @@
       "dismissed": "Dismissed"
     }
   },
+  "dataRequests": {
+    "navLabel": "CNDP requests",
+    "title": "CNDP / GDPR requests",
+    "subtitle": "Process data-subject requests within the 30-day legal deadline.",
+    "empty": "No requests in this queue.",
+    "subject": "Subject",
+    "due": "Due",
+    "overdue": "overdue",
+    "note": "Note",
+    "notePlaceholder": "Resolution note (optional)",
+    "destructive": "Permanent erasure",
+    "confirmErasure": "Confirm erasure? The account will be irreversibly anonymized.",
+    "start": "Take in charge",
+    "complete": "Complete",
+    "reject": "Reject",
+    "updated": "Request updated.",
+    "tab": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "rejected": "Rejected",
+      "all": "All"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
+    "type": {
+      "access": "Access",
+      "portability": "Portability",
+      "erasure": "Erasure",
+      "rectification": "Rectification",
+      "objection": "Objection"
+    }
+  },
   "footer": {
     "rights": "All rights reserved.",
     "privacy": "Privacy policy",

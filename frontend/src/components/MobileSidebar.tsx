@@ -20,6 +20,7 @@ import {
   ScrollText,
   Flag,
   SlidersHorizontal,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -79,6 +80,12 @@ export function MobileSidebar() {
       href: '/admin/audit-logs',
       label: t('auditLog.navLabel'),
       icon: ScrollText,
+      roles: ['admin'],
+    },
+    {
+      href: '/admin/data-requests',
+      label: t('dataRequests.navLabel'),
+      icon: ShieldCheck,
       roles: ['admin'],
     },
     {

@@ -6,6 +6,7 @@ import { ProfileSkill } from './entities/profile-skill.entity.js';
 import { Document } from './entities/document.entity.js';
 import { Experience } from './entities/experience.entity.js';
 import { ProfileLink } from './entities/profile-link.entity.js';
+import { DataRequest } from './entities/data-request.entity.js';
 import { User } from '../users/entities/user.entity.js';
 import { CandidateProfileService } from './candidate-profile.service.js';
 import { CandidateProfileController } from './candidate-profile.controller.js';
@@ -13,6 +14,8 @@ import { CandidateDocumentService } from './candidate-document.service.js';
 import { CandidateDocumentController } from './candidate-document.controller.js';
 import { CandidateDataService } from './candidate-data.service.js';
 import { CandidateDataController } from './candidate-data.controller.js';
+import { DataRequestService } from './data-request.service.js';
+import { DataRequestAdminController } from './data-request-admin.controller.js';
 import { SkillCatalogService } from './skill-catalog.service.js';
 import { SkillCatalogController } from './skill-catalog.controller.js';
 import { CandidateExperienceService } from './candidate-experience.service.js';
@@ -31,6 +34,7 @@ import { CandidateSkillController } from './candidate-skill.controller.js';
       Document,
       Experience,
       ProfileLink,
+      DataRequest,
       User,
     ]),
   ],
@@ -38,6 +42,7 @@ import { CandidateSkillController } from './candidate-skill.controller.js';
     CandidateProfileController,
     CandidateDocumentController,
     CandidateDataController,
+    DataRequestAdminController,
     SkillCatalogController,
     CandidateExperienceController,
     CandidateLinkController,
@@ -47,6 +52,7 @@ import { CandidateSkillController } from './candidate-skill.controller.js';
     CandidateProfileService,
     CandidateDocumentService,
     CandidateDataService,
+    DataRequestService,
     SkillCatalogService,
     CandidateExperienceService,
     CandidateLinkService,
@@ -56,6 +62,7 @@ import { CandidateSkillController } from './candidate-skill.controller.js';
     CandidateProfileService,
     CandidateDocumentService,
     CandidateDataService,
+    DataRequestService,
     TypeOrmModule,
   ],
 })
