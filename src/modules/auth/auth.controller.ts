@@ -8,6 +8,7 @@ import {
   Get,
 } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -31,7 +32,11 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../common/interfaces/request-with-user.interface.js';
 
+// §11 (OWASP) — brute-force protection. The controller is guarded by
+// ThrottlerGuard; the credential-checking endpoints below carry a strict
+// per-route limit, well under the app-wide default.
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -39,6 +44,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiResponse({ status: 201, type: RegisterResponseDto })
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -52,6 +58,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ status: 200, type: LoginResponseDto })
   async login(@Body() dto: LoginDto) {
@@ -59,8 +66,9 @@ export class AuthController {
   }
 
   // ENF-06 — second step of an MFA login: exchange the challenge token + code
-  // for session tokens.
+  // for session tokens. Strict limit — this verifies one-time codes.
   @Post('login/mfa')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ status: 200, type: AuthTokensResponseDto })
   async loginMfa(@Body() dto: MfaLoginDto) {

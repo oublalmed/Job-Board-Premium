@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthController } from '../auth.controller.js';
 import { AuthService } from '../auth.service.js';
 import { MfaService } from '../mfa.service.js';
@@ -45,7 +46,10 @@ describe('AuthController', () => {
         { provide: AuthService, useValue: authService },
         { provide: MfaService, useValue: mfaService },
       ],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });

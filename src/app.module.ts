@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { RedisConnectionModule } from './redis/redis-connection.module.js';
 import { SharedRedisConnectionService } from './redis/shared-redis-connection.service.js';
 import {
@@ -51,6 +52,11 @@ import { PortsModule } from './ports/ports.module.js';
       validationSchema: configValidationSchema,
       validationOptions: { abortEarly: true },
     }),
+    // §11 (OWASP) — rate-limiting store. A generous global default; the
+    // sensitive auth endpoints apply a much stricter per-route limit via
+    // @Throttle + ThrottlerGuard (see AuthController). In-memory storage is
+    // fine for a single instance; back it with Redis for multi-instance.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
