@@ -24,3 +24,6 @@ coverage/
 # Logs
 *.log
 logs/
+
+# Claude Code agent worktrees (ephemeral, harness-managed)
+.claude/worktrees/
