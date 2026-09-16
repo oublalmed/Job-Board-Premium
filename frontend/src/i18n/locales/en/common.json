@@ -219,7 +219,12 @@
     "unknownParty": "Contact",
     "popupTitle": "Message {{name}}",
     "popupHint": "Your first message will open a conversation with this candidate.",
-    "quotaExceeded": "Contact quota reached for your subscription."
+    "quotaExceeded": "Contact quota reached for your subscription.",
+    "report": "Report",
+    "reportReasonLabel": "Reason for report",
+    "reportPlaceholder": "Describe the issue (inappropriate content, spam, harassment…)",
+    "reportSubmit": "Send report",
+    "reportSent": "Report sent. Our team will review it."
   },
   "notifications": {
     "title": "Notifications",
@@ -420,8 +425,36 @@
     "close": "Close",
     "back": "Back",
     "next": "Next",
+    "previous": "Previous",
     "yes": "Yes",
     "no": "No"
+  },
+  "auditLog": {
+    "navLabel": "Audit logs",
+    "title": "Audit logs",
+    "subtitle": "Security and compliance trail — read-only.",
+    "empty": "No audit entries.",
+    "system": "system",
+    "colDate": "Date",
+    "colAction": "Action",
+    "colActor": "Actor",
+    "colEntity": "Entity",
+    "colIp": "IP"
+  },
+  "moderation": {
+    "navLabel": "Reports",
+    "title": "Abuse reports",
+    "subtitle": "Conversations flagged by participants.",
+    "empty": "No reports in this queue.",
+    "conversation": "Conversation",
+    "updated": "Report updated.",
+    "markReviewed": "Mark reviewed",
+    "dismiss": "Dismiss",
+    "status": {
+      "open": "Open",
+      "reviewed": "Reviewed",
+      "dismissed": "Dismissed"
+    }
   },
   "footer": {
     "rights": "All rights reserved.",

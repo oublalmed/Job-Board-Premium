@@ -15,6 +15,8 @@ import {
   ClipboardList,
   GraduationCap,
   BarChart3,
+  ScrollText,
+  Flag,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -51,6 +53,18 @@ export function DashboardSidebar() {
       label: t('analytics.navLabel'),
       icon: BarChart3,
       roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/message-reports',
+      label: t('moderation.navLabel'),
+      icon: Flag,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/audit-logs',
+      label: t('auditLog.navLabel'),
+      icon: ScrollText,
+      roles: ['admin'],
     },
     { href: '/messages', label: t('nav.messages'), icon: MessageSquare },
     { href: '/notifications', label: t('nav.notifications'), icon: Bell },

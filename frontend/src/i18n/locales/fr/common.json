@@ -219,7 +219,12 @@
     "unknownParty": "Interlocuteur",
     "popupTitle": "Message à {{name}}",
     "popupHint": "Votre premier message ouvrira une conversation avec ce candidat.",
-    "quotaExceeded": "Quota de contacts atteint pour votre abonnement."
+    "quotaExceeded": "Quota de contacts atteint pour votre abonnement.",
+    "report": "Signaler",
+    "reportReasonLabel": "Motif du signalement",
+    "reportPlaceholder": "Décrivez le problème (contenu inapproprié, spam, harcèlement…)",
+    "reportSubmit": "Envoyer le signalement",
+    "reportSent": "Signalement envoyé. Notre équipe va l'examiner."
   },
   "notifications": {
     "title": "Notifications",
@@ -420,8 +425,36 @@
     "close": "Fermer",
     "back": "Retour",
     "next": "Suivant",
+    "previous": "Précédent",
     "yes": "Oui",
     "no": "Non"
+  },
+  "auditLog": {
+    "navLabel": "Journaux d'audit",
+    "title": "Journaux d'audit",
+    "subtitle": "Traçabilité sécurité et conformité — lecture seule.",
+    "empty": "Aucune entrée d'audit.",
+    "system": "système",
+    "colDate": "Date",
+    "colAction": "Action",
+    "colActor": "Acteur",
+    "colEntity": "Entité",
+    "colIp": "IP"
+  },
+  "moderation": {
+    "navLabel": "Signalements",
+    "title": "Signalements d'abus",
+    "subtitle": "Conversations signalées par les participants.",
+    "empty": "Aucun signalement dans cette file.",
+    "conversation": "Conversation",
+    "updated": "Signalement mis à jour.",
+    "markReviewed": "Marquer examiné",
+    "dismiss": "Rejeter",
+    "status": {
+      "open": "Ouverts",
+      "reviewed": "Examinés",
+      "dismissed": "Rejetés"
+    }
   },
   "footer": {
     "rights": "Tous droits réservés.",

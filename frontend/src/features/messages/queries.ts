@@ -94,6 +94,17 @@ export function useSendMessage(conversationId: string) {
   });
 }
 
+// EF-MSG-05 — flag a conversation for abuse.
+export function useReportConversation(conversationId: string) {
+  return useMutation({
+    mutationFn: (reason: string) =>
+      authedJson<{ id: string; status: string }>(
+        `/api/v1/conversations/${conversationId}/report`,
+        { method: 'POST', body: JSON.stringify({ reason }) },
+      ),
+  });
+}
+
 export function useOpenConversation() {
   const queryClient = useQueryClient();
   return useMutation({
