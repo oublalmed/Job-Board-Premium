@@ -5,6 +5,7 @@ import { Message } from './entities/message.entity.js';
 import { MessageReport } from './entities/message-report.entity.js';
 import { ConversationService } from './conversation.service.js';
 import { ConversationController } from './conversation.controller.js';
+import { MessageReportAdminController } from './message-report-admin.controller.js';
 import { CandidatesModule } from '../candidates/candidates.module.js';
 import { CompaniesModule } from '../companies/companies.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
@@ -16,7 +17,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     CompaniesModule,
     NotificationsModule,
   ],
-  controllers: [ConversationController],
+  controllers: [ConversationController, MessageReportAdminController],
   providers: [ConversationService],
   exports: [ConversationService],
 })

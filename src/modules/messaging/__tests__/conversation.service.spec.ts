@@ -1,10 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { NotFoundException } from '@nestjs/common';
 import { DataSource, QueryFailedError } from 'typeorm';
 import { ConversationService } from '../conversation.service.js';
 import { Conversation } from '../entities/conversation.entity.js';
 import { Message, MessageSenderRole } from '../entities/message.entity.js';
-import { MessageReport } from '../entities/message-report.entity.js';
+import {
+  MessageReport,
+  MessageReportStatus,
+} from '../entities/message-report.entity.js';
 import { CandidateProfile } from '../../candidates/entities/candidate-profile.entity.js';
 import { AuditService } from '../../audit/audit.service.js';
 import { NotificationService } from '../../notifications/notification.service.js';
@@ -52,7 +56,7 @@ describe('ConversationService', () => {
   let managerMessageRepo: { create: jest.Mock; save: jest.Mock };
   let manager: { getRepository: jest.Mock };
   let notificationService: { create: jest.Mock };
-  let messageReportRepo: { create: jest.Mock; save: jest.Mock };
+  let messageReportRepo: Record<string, jest.Mock>;
   let auditService: { log: jest.Mock };
 
   const recruiterUserId = 'recruiter-user-1';
@@ -441,6 +445,58 @@ describe('ConversationService', () => {
         service.reportConversation('conversation-1', 'stranger', 'spam'),
       ).rejects.toThrow(ConversationNotFoundException);
       expect(messageReportRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('moderation queue (EF-ADM-01)', () => {
+    it('lists reports filtered by status, newest first', async () => {
+      messageReportRepo.find = jest
+        .fn()
+        .mockResolvedValue([{ id: 'report-1' }]);
+
+      const result = await service.listReports(MessageReportStatus.OPEN);
+
+      expect(messageReportRepo.find).toHaveBeenCalledWith({
+        where: { status: MessageReportStatus.OPEN },
+        order: { createdAt: 'DESC' },
+      });
+      expect(result).toEqual([{ id: 'report-1' }]);
+    });
+
+    it('updates a report status and records an audit entry', async () => {
+      messageReportRepo.findOne = jest.fn().mockResolvedValue({
+        id: 'report-1',
+        status: MessageReportStatus.OPEN,
+      });
+
+      const result = await service.updateReportStatus(
+        'report-1',
+        MessageReportStatus.REVIEWED,
+        'moderator-1',
+      );
+
+      expect(messageReportRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: MessageReportStatus.REVIEWED }),
+      );
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorId: 'moderator-1',
+          entityType: 'message_report',
+        }),
+      );
+      expect(result.status).toBe(MessageReportStatus.REVIEWED);
+    });
+
+    it('404s when updating a nonexistent report', async () => {
+      messageReportRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.updateReportStatus(
+          'missing',
+          MessageReportStatus.DISMISSED,
+          'moderator-1',
+        ),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

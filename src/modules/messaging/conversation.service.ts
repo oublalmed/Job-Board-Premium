@@ -1,4 +1,9 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalyticsService } from '../analytics/analytics.service.js';
 import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
@@ -7,7 +12,10 @@ import { NotificationType } from '../notifications/entities/notification.entity.
 import { DataSource, Repository, In, IsNull, Not } from 'typeorm';
 import { Conversation } from './entities/conversation.entity.js';
 import { Message, MessageSenderRole } from './entities/message.entity.js';
-import { MessageReport } from './entities/message-report.entity.js';
+import {
+  MessageReport,
+  MessageReportStatus,
+} from './entities/message-report.entity.js';
 import { CandidateProfile } from '../candidates/entities/candidate-profile.entity.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
@@ -245,6 +253,40 @@ export class ConversationService {
       entityType: 'conversation',
       entityId: conversation.id,
       metadata: { kind: 'message_abuse_report', reportId: report.id },
+    });
+
+    return { id: report.id, status: report.status };
+  }
+
+  // EF-ADM-01 / EF-MSG-05 (admin side) — the moderation queue. Newest first,
+  // optionally filtered by status. Admin-only (enforced at the controller).
+  async listReports(status?: MessageReportStatus): Promise<MessageReport[]> {
+    return this.messageReportRepo.find({
+      where: status ? { status } : {},
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async updateReportStatus(
+    reportId: string,
+    status: MessageReportStatus,
+    moderatorUserId: string,
+  ): Promise<{ id: string; status: string }> {
+    const report = await this.messageReportRepo.findOne({
+      where: { id: reportId },
+    });
+    if (!report) {
+      throw new NotFoundException('Message report not found');
+    }
+    report.status = status;
+    await this.messageReportRepo.save(report);
+
+    await this.auditService.log({
+      actorId: moderatorUserId,
+      action: AuditAction.MODERATION_ACTION,
+      entityType: 'message_report',
+      entityId: report.id,
+      metadata: { status },
     });
 
     return { id: report.id, status: report.status };
