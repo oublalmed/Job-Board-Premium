@@ -85,4 +85,9 @@ export const configValidationSchema = Joi.object({
   INVOICE_ISSUER_NAME: Joi.string().allow('').default(''),
   INVOICE_ISSUER_ICE: Joi.string().allow('').default(''),
   INVOICE_ISSUER_ADDRESS: Joi.string().allow('').default(''),
+
+  // Notifications email channel (EF-MSG-02) — off by default; 'smtp' is a
+  // documented extension point, only 'log' is wired today.
+  NOTIFICATIONS_EMAIL_ENABLED: Joi.boolean().default(false),
+  MAIL_DRIVER: Joi.string().valid('log', 'smtp').default('log'),
 });

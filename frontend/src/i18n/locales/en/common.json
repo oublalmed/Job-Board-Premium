@@ -226,6 +226,15 @@
     "reportSubmit": "Send report",
     "reportSent": "Report sent. Our team will review it."
   },
+  "messageAttachments": {
+    "attach": "Attach a document",
+    "invalidType": "File type not allowed. Accepted formats: PDF, DOCX.",
+    "tooLarge": "The file exceeds the maximum size of 5 MB.",
+    "uploading": "Uploading document…",
+    "uploadError": "Failed to upload the document.",
+    "downloadError": "Could not download the document.",
+    "download": "Download"
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications.",

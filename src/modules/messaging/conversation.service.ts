@@ -1,9 +1,13 @@
 import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalyticsService } from '../analytics/analytics.service.js';
 import { AnalyticsEventType } from '../analytics/entities/analytics-event.entity.js';
@@ -22,10 +26,28 @@ import { AuditAction } from '../../common/enums/audit-action.enum.js';
 import { SubscriptionGuardService } from '../companies/subscription-guard.service.js';
 import { ContactQuotaService } from '../companies/contact-quota.service.js';
 import { isUniqueViolation } from '../../common/typeorm/is-unique-violation.js';
+import type { FileScanner } from '../../ports/file-scanner.port.js';
+import { FILE_SCANNER } from '../../ports/file-scanner.port.js';
+import type { ObjectStorage } from '../../ports/object-storage.port.js';
+import { OBJECT_STORAGE } from '../../ports/object-storage.port.js';
 import {
   CandidateProfileNotFoundException,
   ConversationNotFoundException,
 } from './messaging.exceptions.js';
+
+// EF-MSG-03 — same rules as CV upload: PDF/DOCX only, ≤5MB, antivirus-gated.
+const ATTACHMENT_MAX_SIZE = 5 * 1024 * 1024;
+const ATTACHMENT_ALLOWED_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+export interface AttachmentUpload {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
 
 export interface ConversationSummary {
   id: string;
@@ -46,6 +68,12 @@ export interface ConversationSummary {
   updatedAt: string;
 }
 
+export interface MessageAttachmentView {
+  originalName: string;
+  mimeType: string;
+  size: number;
+}
+
 export interface MessageView {
   id: string;
   body: string;
@@ -53,6 +81,9 @@ export interface MessageView {
   mine: boolean;
   readAt: string | null;
   createdAt: string;
+  // EF-MSG-03 — metadata only; the binary is fetched via the signed-url
+  // endpoint, never by exposing the storage key.
+  attachment: MessageAttachmentView | null;
 }
 
 @Injectable()
@@ -72,6 +103,10 @@ export class ConversationService {
     @InjectRepository(MessageReport)
     private readonly messageReportRepo: Repository<MessageReport>,
     private readonly auditService: AuditService,
+    @Inject(FILE_SCANNER)
+    private readonly fileScanner: FileScanner,
+    @Inject(OBJECT_STORAGE)
+    private readonly objectStorage: ObjectStorage,
     // Optional so unit tests need not wire the (global) analytics module.
     @Optional() private readonly analytics?: AnalyticsService,
     // Optional for the same reason — messaging works without it, the in-app
@@ -185,6 +220,117 @@ export class ConversationService {
     }
 
     return message;
+  }
+
+  // EF-MSG-03 — a participant attaches ONE document to a message (the caption
+  // in `body` is optional: a blank body is a standalone attachment message).
+  // Authorization reuses the same SQL-scoped participant check as sending, so
+  // a non-participant gets the same 404 as a nonexistent thread. Enforces the
+  // exact CV-upload rules: PDF/DOCX only, ≤5MB, blocking antivirus scan.
+  async sendAttachment(
+    conversationId: string,
+    senderUserId: string,
+    file: AttachmentUpload,
+    body?: string,
+  ): Promise<Message> {
+    const { conversation, senderRole } = await this.findAuthorizedConversation(
+      conversationId,
+      senderUserId,
+    );
+
+    if (!file || !file.size || file.buffer.length === 0) {
+      throw new BadRequestException('Le fichier est vide');
+    }
+    if (file.size > ATTACHMENT_MAX_SIZE) {
+      throw new BadRequestException(
+        'Le fichier dépasse la taille maximale de 5 Mo',
+      );
+    }
+    if (!ATTACHMENT_ALLOWED_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Type de fichier non autorisé. Types acceptés : PDF, DOCX',
+      );
+    }
+
+    const scanResult = await this.fileScanner.scan(
+      file.buffer,
+      file.originalname,
+    );
+    if (!scanResult.clean) {
+      throw new BadRequestException(
+        `Fichier rejeté : menace détectée (${scanResult.threat ?? 'threat detected'})`,
+      );
+    }
+
+    const storageKey = `message-attachments/${conversation.id}/${uuidv4()}-${file.originalname}`;
+    await this.objectStorage.upload({
+      key: storageKey,
+      body: file.buffer,
+      contentType: file.mimetype,
+    });
+
+    const message = await this.messageRepo.save(
+      this.messageRepo.create({
+        conversationId: conversation.id,
+        senderId: senderUserId,
+        senderRole,
+        body: body?.trim() ?? '',
+        attachmentStorageKey: storageKey,
+        attachmentOriginalName: file.originalname,
+        attachmentMimeType: file.mimetype,
+        attachmentSize: file.size,
+      }),
+    );
+
+    const recipientUserId = await this.resolveRecipient(
+      conversation,
+      senderRole,
+    );
+    if (recipientUserId) {
+      void this.notifyNewMessage(recipientUserId, senderRole);
+    }
+
+    return message;
+  }
+
+  // EF-MSG-03 — a short-lived signed URL for an attachment, authorized to the
+  // two conversation participants ONLY (403 for anyone else). The message must
+  // belong to the thread and actually carry an attachment.
+  async getAttachmentSignedUrl(
+    conversationId: string,
+    messageId: string,
+    userId: string,
+  ): Promise<{ url: string; originalName: string; mimeType: string }> {
+    let conversation: Conversation;
+    try {
+      ({ conversation } = await this.findAuthorizedConversation(
+        conversationId,
+        userId,
+      ));
+    } catch {
+      // Deliberately 403 (not 404) on the download path per EF-MSG-03: the
+      // participant check is SQL-scoped exactly like sending, so this covers
+      // both "not your thread" and "no such thread" without leaking which.
+      throw new ForbiddenException(
+        'You are not a participant of this conversation',
+      );
+    }
+
+    const message = await this.messageRepo.findOne({
+      where: { id: messageId, conversationId: conversation.id },
+    });
+    if (!message || !message.attachmentStorageKey) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    const url = await this.objectStorage.getSignedUrl(
+      message.attachmentStorageKey,
+    );
+    return {
+      url,
+      originalName: message.attachmentOriginalName ?? 'document',
+      mimeType: message.attachmentMimeType ?? 'application/octet-stream',
+    };
   }
 
   private async resolveRecipient(
@@ -398,6 +544,14 @@ export class ConversationService {
       mine: m.senderId === userId,
       readAt: m.readAt ? m.readAt.toISOString() : null,
       createdAt: m.createdAt.toISOString(),
+      attachment:
+        m.attachmentStorageKey && m.attachmentOriginalName
+          ? {
+              originalName: m.attachmentOriginalName,
+              mimeType: m.attachmentMimeType ?? 'application/octet-stream',
+              size: m.attachmentSize ?? 0,
+            }
+          : null,
     }));
   }
 

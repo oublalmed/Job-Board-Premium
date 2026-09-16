@@ -226,6 +226,15 @@
     "reportSubmit": "Envoyer le signalement",
     "reportSent": "Signalement envoyé. Notre équipe va l'examiner."
   },
+  "messageAttachments": {
+    "attach": "Joindre un document",
+    "invalidType": "Type de fichier non autorisé. Formats acceptés : PDF, DOCX.",
+    "tooLarge": "Le fichier dépasse la taille maximale de 5 Mo.",
+    "uploading": "Envoi du document…",
+    "uploadError": "Échec de l'envoi du document.",
+    "downloadError": "Impossible de télécharger le document.",
+    "download": "Télécharger"
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "Aucune notification.",

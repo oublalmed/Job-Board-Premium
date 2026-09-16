@@ -44,6 +44,12 @@ export interface ConversationSummary {
   updatedAt: string;
 }
 
+export interface MessageAttachment {
+  originalName: string;
+  mimeType: string;
+  size: number;
+}
+
 export interface MessageView {
   id: string;
   body: string;
@@ -51,6 +57,9 @@ export interface MessageView {
   mine: boolean;
   readAt: string | null;
   createdAt: string;
+  // EF-MSG-03 — attachment metadata; the binary is fetched on demand via a
+  // signed URL (fetchAttachmentUrl), never linked directly.
+  attachment: MessageAttachment | null;
 }
 
 export const messageKeys = {
@@ -92,6 +101,44 @@ export function useSendMessage(conversationId: string) {
       void queryClient.invalidateQueries({ queryKey: messageKeys.list() });
     },
   });
+}
+
+// EF-MSG-03 — attach ONE document (PDF/DOCX ≤5MB) to a new message. Uses raw
+// FormData: Content-Type is left unset so the browser adds the multipart
+// boundary itself (authedJson would force application/json).
+export function useSendAttachment(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { file: File; body?: string }) => {
+      const form = new FormData();
+      form.append('file', input.file);
+      if (input.body) form.append('body', input.body);
+      const res = await fetch(
+        `${BASE}/api/v1/conversations/${conversationId}/messages/attachment`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getAccessToken()}` },
+          body: form,
+        },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as MessageView;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: messageKeys.thread(conversationId),
+      });
+      void queryClient.invalidateQueries({ queryKey: messageKeys.list() });
+    },
+  });
+}
+
+// EF-MSG-03 — resolve a short-lived signed URL for an attachment on demand
+// (authorized to the two conversation participants only).
+export function fetchAttachmentUrl(conversationId: string, messageId: string) {
+  return authedJson<{ url: string; originalName: string; mimeType: string }>(
+    `/api/v1/conversations/${conversationId}/messages/${messageId}/attachment`,
+  );
 }
 
 // EF-MSG-05 — flag a conversation for abuse.

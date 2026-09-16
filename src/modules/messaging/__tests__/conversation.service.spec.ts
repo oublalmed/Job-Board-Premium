@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, QueryFailedError } from 'typeorm';
 import { ConversationService } from '../conversation.service.js';
 import { Conversation } from '../entities/conversation.entity.js';
@@ -16,6 +20,8 @@ import { NotificationType } from '../../notifications/entities/notification.enti
 import { SubscriptionGuardService } from '../../companies/subscription-guard.service.js';
 import { ContactQuotaService } from '../../companies/contact-quota.service.js';
 import { ContactQuotaExceededException } from '../../companies/contact-quota.exceptions.js';
+import { FILE_SCANNER } from '../../../ports/file-scanner.port.js';
+import { OBJECT_STORAGE } from '../../../ports/object-storage.port.js';
 import {
   CandidateProfileNotFoundException,
   ConversationNotFoundException,
@@ -58,6 +64,8 @@ describe('ConversationService', () => {
   let notificationService: { create: jest.Mock };
   let messageReportRepo: Record<string, jest.Mock>;
   let auditService: { log: jest.Mock };
+  let fileScanner: { scan: jest.Mock };
+  let objectStorage: { upload: jest.Mock; getSignedUrl: jest.Mock };
 
   const recruiterUserId = 'recruiter-user-1';
   const candidateProfileId = 'candidate-profile-1';
@@ -126,7 +134,15 @@ describe('ConversationService', () => {
         Promise.resolve({ id: 'message-1', ...(data as object) }),
       ),
       find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
       update: jest.fn().mockResolvedValue({ affected: 0 }),
+    };
+    fileScanner = {
+      scan: jest.fn().mockResolvedValue({ clean: true }),
+    };
+    objectStorage = {
+      upload: jest.fn().mockResolvedValue({ key: 'k', url: 'https://stub/k' }),
+      getSignedUrl: jest.fn().mockResolvedValue('https://stub/signed'),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -150,6 +166,8 @@ describe('ConversationService', () => {
         },
         { provide: AuditService, useValue: auditService },
         { provide: NotificationService, useValue: notificationService },
+        { provide: FILE_SCANNER, useValue: fileScanner },
+        { provide: OBJECT_STORAGE, useValue: objectStorage },
       ],
     }).compile();
 
@@ -335,6 +353,166 @@ describe('ConversationService', () => {
       await expect(
         service.sendMessage('conversation-1', 'other-recruiter', 'x'),
       ).rejects.toThrow(ConversationNotFoundException);
+    });
+  });
+
+  describe('sendAttachment (EF-MSG-03)', () => {
+    const pdf = {
+      buffer: Buffer.from('%PDF-1.4 fake'),
+      originalname: 'cv.pdf',
+      mimetype: 'application/pdf',
+      size: 1024,
+    };
+
+    function authorizeRecruiterThread() {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+    }
+
+    it('blocks a non-participant (same 404 as isolation) and never uploads', async () => {
+      subscriptionGuard.resolveCompanyId.mockResolvedValue('other-company');
+      conversationRepo.findOne.mockResolvedValue(null);
+      candidateProfileRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.sendAttachment('conversation-1', 'stranger', pdf),
+      ).rejects.toThrow(ConversationNotFoundException);
+      expect(objectStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('rejects a disallowed mime type before scanning or uploading', async () => {
+      authorizeRecruiterThread();
+
+      await expect(
+        service.sendAttachment('conversation-1', recruiterUserId, {
+          ...pdf,
+          mimetype: 'image/png',
+          originalname: 'x.png',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(fileScanner.scan).not.toHaveBeenCalled();
+      expect(objectStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('rejects a file larger than 5MB', async () => {
+      authorizeRecruiterThread();
+
+      await expect(
+        service.sendAttachment('conversation-1', recruiterUserId, {
+          ...pdf,
+          size: 6 * 1024 * 1024,
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(objectStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('rejects a file the antivirus flags as infected and never uploads', async () => {
+      authorizeRecruiterThread();
+      fileScanner.scan.mockResolvedValue({ clean: false, threat: 'EICAR' });
+
+      await expect(
+        service.sendAttachment('conversation-1', recruiterUserId, pdf),
+      ).rejects.toThrow(BadRequestException);
+      expect(objectStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('stores the binary and persists attachment metadata on a clean upload', async () => {
+      authorizeRecruiterThread();
+
+      await service.sendAttachment(
+        'conversation-1',
+        recruiterUserId,
+        pdf,
+        'Voici mon CV',
+      );
+
+      expect(objectStorage.upload).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contentType: 'application/pdf',
+          body: pdf.buffer,
+        }),
+      );
+      expect(messageRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: 'Voici mon CV',
+          attachmentOriginalName: 'cv.pdf',
+          attachmentMimeType: 'application/pdf',
+          attachmentSize: 1024,
+          attachmentStorageKey: expect.stringContaining(
+            'message-attachments/conversation-1/',
+          ),
+        }),
+      );
+    });
+  });
+
+  describe('getAttachmentSignedUrl (EF-MSG-03)', () => {
+    it('returns 403 for a non-participant', async () => {
+      subscriptionGuard.resolveCompanyId.mockResolvedValue('other-company');
+      conversationRepo.findOne.mockResolvedValue(null);
+      candidateProfileRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.getAttachmentSignedUrl(
+          'conversation-1',
+          'message-1',
+          'stranger',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(objectStorage.getSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('returns a signed URL for a participant when the message carries an attachment', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      });
+      messageRepo.findOne.mockResolvedValue({
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        attachmentStorageKey: 'message-attachments/conversation-1/x-cv.pdf',
+        attachmentOriginalName: 'cv.pdf',
+        attachmentMimeType: 'application/pdf',
+      });
+
+      const result = await service.getAttachmentSignedUrl(
+        'conversation-1',
+        'message-1',
+        recruiterUserId,
+      );
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          url: 'https://stub/signed',
+          originalName: 'cv.pdf',
+        }),
+      );
+    });
+
+    it('404s when the message has no attachment', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      });
+      messageRepo.findOne.mockResolvedValue({
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        attachmentStorageKey: null,
+      });
+
+      await expect(
+        service.getAttachmentSignedUrl(
+          'conversation-1',
+          'message-1',
+          recruiterUserId,
+        ),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
