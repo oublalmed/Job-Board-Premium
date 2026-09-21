@@ -33,6 +33,8 @@ describe('AuthService', () => {
     emailVerified: true,
     emailVerificationToken: null,
     emailVerificationExpires: null,
+    passwordResetToken: null,
+    passwordResetExpires: null,
     mfaEnabled: false,
     mfaSecret: null,
     mfaBackupCodes: null,
@@ -329,6 +331,91 @@ describe('AuthService', () => {
       await expect(service.verifyEmail('expired-token')).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('requestPasswordReset (EF-CAND-01)', () => {
+    it('issues a hashed token and emails the raw one for an active account', async () => {
+      usersService['findByEmail'].mockResolvedValue(mockUser);
+
+      const result = await service.requestPasswordReset('Test@Example.com');
+
+      expect(result.message).toMatch(/if an account exists/i);
+      // Lower-cased lookup.
+      expect(usersService['findByEmail']).toHaveBeenCalledWith(
+        'test@example.com',
+      );
+      // Stored token is a sha256 hash (64 hex chars), never the raw value.
+      const updateArg = usersService['update'].mock.calls[0][1] as {
+        passwordResetToken: string;
+        passwordResetExpires: Date;
+      };
+      expect(updateArg.passwordResetToken).toMatch(/^[a-f0-9]{64}$/);
+      expect(updateArg.passwordResetExpires.getTime()).toBeGreaterThan(
+        Date.now(),
+      );
+      const mailArg = mailProvider['send'].mock.calls[0][0] as {
+        templateId: string;
+        variables: { token: string };
+      };
+      expect(mailArg.templateId).toBe('password-reset');
+      // The emailed token is the RAW token, not the stored hash.
+      expect(mailArg.variables.token).not.toBe(updateArg.passwordResetToken);
+    });
+
+    it('returns the same message and does nothing when the email is unknown (no enumeration)', async () => {
+      usersService['findByEmail'].mockResolvedValue(null);
+
+      const result = await service.requestPasswordReset('ghost@example.com');
+
+      expect(result.message).toMatch(/if an account exists/i);
+      expect(usersService['update']).not.toHaveBeenCalled();
+      expect(mailProvider['send']).not.toHaveBeenCalled();
+    });
+
+    it('does not issue a token for an unverified account', async () => {
+      usersService['findByEmail'].mockResolvedValue({
+        ...mockUser,
+        emailVerified: false,
+      });
+
+      await service.requestPasswordReset('test@example.com');
+
+      expect(usersService['update']).not.toHaveBeenCalled();
+      expect(mailProvider['send']).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resetPassword (EF-CAND-01)', () => {
+    it('sets a new password, clears the token, and revokes all sessions', async () => {
+      const future = new Date(Date.now() + 60 * 60 * 1000);
+      refreshTokenRepo['manager'].find.mockResolvedValue([
+        { ...mockUser, passwordResetExpires: future },
+      ]);
+
+      const result = await service.resetPassword('raw-token', 'NewStr0ng!Pass');
+
+      expect(result.message).toMatch(/reset/i);
+      const updateArg = usersService['update'].mock.calls[0][1] as {
+        passwordHash: string;
+        passwordResetToken: string | null;
+      };
+      expect(updateArg.passwordHash).toBeDefined();
+      expect(updateArg.passwordResetToken).toBeNull();
+      // All refresh tokens revoked (session invalidation on reset).
+      expect(refreshTokenRepo['update']).toHaveBeenCalledWith(
+        { userId: mockUser.id, revoked: false },
+        { revoked: true },
+      );
+    });
+
+    it('rejects an invalid or expired token', async () => {
+      refreshTokenRepo['manager'].find.mockResolvedValue([]);
+
+      await expect(
+        service.resetPassword('bad-token', 'NewStr0ng!Pass'),
+      ).rejects.toThrow(BadRequestException);
+      expect(usersService['update']).not.toHaveBeenCalled();
     });
   });
 

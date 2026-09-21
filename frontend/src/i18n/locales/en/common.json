@@ -83,7 +83,29 @@
       "submitting": "Logging in…",
       "error": "Incorrect email or password.",
       "noAccount": "Don't have an account?",
-      "registerLink": "Create an account"
+      "registerLink": "Create an account",
+      "forgotLink": "Forgot password?"
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email and we'll send you a reset link.",
+      "submit": "Send reset link",
+      "submitting": "Sending…",
+      "sentTitle": "Check your email",
+      "sent": "If an account exists for that email, a reset link has just been sent.",
+      "backToLogin": "Back to sign in"
+    },
+    "reset": {
+      "title": "New password",
+      "subtitle": "Choose a new password for your account.",
+      "newPasswordLabel": "New password",
+      "submit": "Reset password",
+      "submitting": "Resetting…",
+      "successTitle": "Password reset",
+      "success": "Your password has been updated. Redirecting to sign in…",
+      "error": "Could not reset the password. Please try again.",
+      "invalidToken": "This link is invalid or has expired. Request a new one.",
+      "missingToken": "Missing or invalid reset link."
     },
     "register": {
       "title": "Create an account",

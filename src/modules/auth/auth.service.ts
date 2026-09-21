@@ -175,6 +175,87 @@ export class AuthService {
     return { message: 'Email verified successfully' };
   }
 
+  /**
+   * EF-CAND-01 — start a password reset. Always resolves with the same
+   * outcome whether or not the email maps to an eligible account, so an
+   * attacker cannot use this to enumerate registered emails. When it does
+   * match, a single-use token (hashed at rest, raw value emailed) valid for
+   * one hour is issued.
+   */
+  async requestPasswordReset(email: string): Promise<{ message: string }> {
+    const genericMessage =
+      'If an account exists for that email, a reset link has been sent.';
+
+    const user = await this.usersService.findByEmail(email.toLowerCase());
+    // Only active, verified accounts can reset — but we still return the same
+    // message for everything else.
+    if (!user || user.status !== UserStatus.ACTIVE || !user.emailVerified) {
+      return { message: genericMessage };
+    }
+
+    const rawToken = randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.usersService.update(user.id, {
+      passwordResetToken: this.hashToken(rawToken),
+      passwordResetExpires: expires,
+    });
+
+    // Best-effort delivery — the generic response never reveals a send failure.
+    try {
+      await this.mailProvider.send({
+        to: user.email,
+        subject: `Réinitialisation de votre mot de passe - ${APP_NAME}`,
+        templateId: 'password-reset',
+        variables: { token: rawToken, email: user.email },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Password-reset email failed for ${user.id}: ${(error as Error).message}`,
+      );
+    }
+
+    return { message: genericMessage };
+  }
+
+  /**
+   * EF-CAND-01 — complete a password reset. Validates the emailed token
+   * against its stored hash + expiry, sets the new password, clears the token,
+   * and revokes every existing session so a compromised session cannot
+   * survive a reset.
+   */
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.findUserByResetToken(token);
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const passwordHash = await argon2.hash(newPassword, {
+      type: argon2.argon2id,
+    });
+
+    await this.usersService.update(user.id, {
+      passwordHash,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    });
+
+    await this.revokeAllUserTokens(user.id);
+
+    await this.auditService.log({
+      actorId: user.id,
+      action: AuditAction.USER_PASSWORD_CHANGED,
+      entityType: 'user',
+      entityId: user.id,
+      metadata: { via: 'password_reset' },
+    });
+
+    return { message: 'Password reset successfully' };
+  }
+
   async login(dto: LoginDto): Promise<LoginResult> {
     const user = await this.usersService.findByEmail(dto.email.toLowerCase());
 
@@ -388,6 +469,22 @@ export class AuthService {
       !user ||
       !user.emailVerificationExpires ||
       user.emailVerificationExpires < new Date()
+    ) {
+      return null;
+    }
+    return user;
+  }
+
+  private async findUserByResetToken(token: string): Promise<User | null> {
+    const tokenHash = this.hashToken(token);
+    const users = await this.refreshTokenRepository.manager.find(User, {
+      where: { passwordResetToken: tokenHash },
+    });
+    const user = users[0];
+    if (
+      !user ||
+      !user.passwordResetExpires ||
+      user.passwordResetExpires < new Date()
     ) {
       return null;
     }
