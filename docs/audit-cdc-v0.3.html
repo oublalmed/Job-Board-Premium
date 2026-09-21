@@ -360,8 +360,8 @@
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">67<small>%</small></div>
-      <div class="bar"><span style="width:67%;background:var(--sev-mid-ink)"></span></div>
+      <div class="num">68<small>%</small></div>
+      <div class="bar"><span style="width:68%;background:var(--sev-mid-ink)"></span></div>
       <div class="foot">48 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
@@ -385,7 +385,7 @@
 <section id="candidat">
   <div class="sec-head">
     <h2>1 · Gestion du candidat <span style="color:var(--ink-faint);font-weight:500">§4.1</span></h2>
-    <div class="sec-avg">backend <b>83 %</b> · frontend <b>71 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
+    <div class="sec-avg">backend <b>83 %</b> · frontend <b>73 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
   </div>
   <p class="sec-intro">Le cœur (compte, complétude, export/effacement RGPD) est solide des deux côtés. Le vrai trou : <strong>les liens externes (GitHub/Portfolio) ont un CRUD backend complet que le frontend n'appelle jamais</strong> — champ entièrement absent de l'écran de profil.</p>
   <div class="tbl-scroll"><table>
@@ -394,9 +394,9 @@
       <tr><td class="id">EF-CAND-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Créer un compte</div><div class="rule">email unique, vérif. lien, mdp ≥10 OWASP</div></td>
         <td><span class="pill g">90%</span></td><td><span class="pill g">90%</span></td>
         <td class="evid"><code>auth.service.ts</code> ; <strong>réinit. mot de passe (V0.3)</strong> <code>/auth/forgot-password</code> + <code>/reset-password</code> (token haché, révoc. sessions), écrans dédiés + lien connexion ; <strong>changement de mot de passe + enrôlement 2FA</strong> dans <code>/settings</code></td><td class="gap"><s>Pas d'écran mot de passe oublié</s> → <strong>flux complet livré (V0.3)</strong>. Reste : SSO (hors périmètre MVP).</td></tr>
-      <tr><td class="id">EF-CAND-02<span class="prio M">M</span></td><td class="req"><div class="name">Profil + complétude</div><div class="rule">publiable si ≥70 %</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>candidate-profile.service.ts:107</code> — barème pondéré testé jusqu'au cas limite 70,0 % exact</td><td class="gap">Frontend : pas d'erreurs de validation par champ</td></tr>
+      <tr><td class="id">EF-CAND-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Profil + complétude</div><div class="rule">publiable si ≥70 %</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">90%</span></td>
+        <td class="evid"><code>candidate-profile.service.ts:107</code> ; <strong>bornes par champ (V0.3)</strong> : <code>@MaxLength</code> sur <code>UpdateProfileDto</code> reflété exactement dans <code>features/profile/schema.ts</code> (zod), erreurs par champ via <code>FormMessage</code></td><td class="gap"><s>Pas d'erreurs par champ</s> → <strong>validation par champ affichée (V0.3)</strong>, bornes client = bornes serveur.</td></tr>
       <tr><td class="id">EF-CAND-03<span class="prio M">M</span></td><td class="req"><div class="name">Upload CV</div><div class="rule">PDF/DOCX ≤5 Mo, antivirus bloquant</div><span class="pivot-flag">⚑ retrait prévu — état actuel</span></td>
         <td><span class="pill g">90%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>candidate-document.service.ts:52</code> ; <strong>adaptateur ClamAV réel (V0.3)</strong> <code>clamav-file-scanner.adapter.ts</code></td><td class="gap"><s>Stub only</s> → <strong>adaptateur ClamAV réel livré</strong> (clamd INSTREAM/TCP), sélectionné par <code>ANTIVIRUS_DRIVER</code> (défaut <code>stub</code> pour CI/dev). Reste : activer clamd en prod.</td></tr>
@@ -471,7 +471,7 @@
 <section id="remediation">
   <div class="sec-head">
     <h2>3 · Remédiation candidat <span style="color:var(--ink-faint);font-weight:500">§4.3 — nouveau vs V0.1</span></h2>
-    <div class="sec-avg">backend <b>88 %</b> · frontend <b>63 %</b> <span style="color:var(--ink-faint)">(base .../25)</span></div>
+    <div class="sec-avg">backend <b>88 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base .../25)</span></div>
   </div>
   <p class="sec-intro">Le module le mieux construit du backend — la non-fuite de la banque de sujets est garantie <em>structurellement</em> par le typage (pas juste par convention), et la notification J-90 est un vrai cron BullMQ testé sous concurrence. Le frontend est très en retard : le feedback par domaine s'affiche, mais les ressources ciblées et la notification de fin de cooldown n'ont pas d'écran dédié.</p>
   <div class="tbl-scroll"><table>
@@ -484,8 +484,8 @@
         <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>remediation-resources.ts</code> ; <strong>affichées à l'écran (V0.3)</strong> dans le bloc feedback (<code>assessments/page.tsx</code>)</td><td class="gap"><s>Rien à l'écran</s> → <strong>ressources recommandées listées (V0.3)</strong> par domaine faible.</td></tr>
       <tr><td class="id">EF-REM-03<span class="prio M">M</span></td><td class="req"><div class="name">Notif fin de cooldown</div><div class="rule">email + in-app à J-90</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill n">25%</span></td>
-        <td class="evid"><code>cooldown-scheduler.service.ts:41</code> — vrai cron <code>0 3 * * *</code>, idempotence prouvée sous concurrence</td><td class="gap">Liste de notifications générique ; rien de typé spécifiquement "cooldown terminé"</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill n">50%</span></td>
+        <td class="evid"><code>cooldown-scheduler.service.ts:41</code> — vrai cron ; notification typée <code>COOLDOWN_EXPIRED</code> désormais rendue avec icône dédiée dans l'écran notifications (V0.3)</td><td class="gap"><s>Rendu générique</s> → <strong>rendu typé par nature (V0.3)</strong>. Reste : volet email (canal Mailer livré, SMTP en prod).</td></tr>
       <tr><td class="id">EF-REM-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Profil visible non mis en avant</div></td>
         <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>indexation.service.ts:107</code> ; <strong>état affiché (V0.3)</strong> : « visible mais non mis en avant » vs « mis en avant » selon <code>indexationThresholdMet</code></td><td class="gap"><s>Aucun texte à l'écran</s> → <strong>état de mise en avant explicité (V0.3)</strong>.</td></tr>

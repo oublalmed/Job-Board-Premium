@@ -2,19 +2,30 @@ import { z } from 'zod';
 
 export const VISIBILITY_OPTIONS = ['public', 'recruiters_only', 'hidden'] as const;
 
-// Mirrors the backend UpdateProfileDto: every field optional, visibility a
-// fixed enum. Deliberately NO arbitrary max-lengths — the backend owns the
-// real bounds, and inventing client limits could reject payloads the API
-// would accept, which would be a behavior change. RHF keeps fields as
-// controlled strings; `toUpdatePayload` reproduces the original page's
-// exact empty-string -> undefined mapping so the request body is identical.
+// Mirrors the backend UpdateProfileDto EXACTLY (EF-CAND-02): the max-lengths
+// here are the same bounds declared with @MaxLength server-side, so the client
+// never rejects a payload the API would accept, nor vice-versa. All fields are
+// optional (empty allowed); `toUpdatePayload` maps empty strings to undefined
+// so the request body is unchanged.
+export const PROFILE_LIMITS = {
+  firstName: 100,
+  lastName: 100,
+  headline: 150,
+  bio: 2000,
+  location: 120,
+  school: 150,
+} as const;
+
+const bounded = (max: number) =>
+  z.string().max(max, { message: `Maximum ${max} caractères` });
+
 export const profileSchema = z.object({
-  firstName: z.string(),
-  lastName: z.string(),
-  headline: z.string(),
-  bio: z.string(),
-  location: z.string(),
-  school: z.string(),
+  firstName: bounded(PROFILE_LIMITS.firstName),
+  lastName: bounded(PROFILE_LIMITS.lastName),
+  headline: bounded(PROFILE_LIMITS.headline),
+  bio: bounded(PROFILE_LIMITS.bio),
+  location: bounded(PROFILE_LIMITS.location),
+  school: bounded(PROFILE_LIMITS.school),
   visibility: z.enum(VISIBILITY_OPTIONS),
 });
 
