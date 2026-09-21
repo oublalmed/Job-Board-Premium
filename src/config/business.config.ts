@@ -40,6 +40,11 @@ export const businessConfig = registerAs('business', () => ({
   // score's standing against the current live cohort. Default daily at
   // 02:30, i.e. before the 03:00 cooldown sweep and indexation reads.
   percentileRecalcCron: process.env['PERCENTILE_RECALC_CRON'] ?? '30 2 * * *',
+  // EF-SRCH-04 — when the saved-search alert sweep runs. For each saved
+  // search with alerts enabled, it notifies the recruiter about candidates
+  // newly indexed into the CVthèque since the last alert. Standard 5-field
+  // cron, default daily at 07:00 (after the overnight indexation/recalc jobs).
+  savedSearchAlertCron: process.env['SAVED_SEARCH_ALERT_CRON'] ?? '0 7 * * *',
   // Lot 7 (EF-GROW-04) — anti-spam window: N views by the same recruiter
   // on the same candidate within this window produce at most 1
   // notification (the view itself is still always recorded).

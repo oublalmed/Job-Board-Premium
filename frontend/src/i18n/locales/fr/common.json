@@ -184,6 +184,29 @@
     "loadMore": "Charger plus",
     "results": "{{count}} résultats"
   },
+  "savedSearches": {
+    "title": "Recherches enregistrées",
+    "saveThisSearch": "Enregistrer cette recherche",
+    "empty": "Aucune recherche enregistrée pour le moment.",
+    "name": "Nom",
+    "namePlaceholder": "ex. Développeurs backend Casablanca",
+    "enableAlerts": "Activer les alertes (nouveaux candidats)",
+    "saveTitle": "Enregistrer la recherche",
+    "saveDescription": "Enregistrez les filtres actuels pour les réappliquer plus tard.",
+    "renameTitle": "Renommer la recherche",
+    "renameDescription": "Modifiez le nom et les alertes de cette recherche.",
+    "rename": "Renommer",
+    "saved": "Recherche enregistrée.",
+    "updated": "Recherche mise à jour.",
+    "deleted": "Recherche supprimée.",
+    "alertsEnabled": "Alertes activées.",
+    "alertsDisabled": "Alertes désactivées.",
+    "alertsOn": "Alertes activées",
+    "alertsOff": "Alertes désactivées",
+    "applyHint": "Cliquez pour réappliquer ces filtres",
+    "deleteTitle": "Supprimer la recherche",
+    "deleteConfirm": "Supprimer la recherche « {{name}} » ? Cette action est irréversible."
+  },
   "offers": {
     "status": {
       "pending_moderation": "En modération",

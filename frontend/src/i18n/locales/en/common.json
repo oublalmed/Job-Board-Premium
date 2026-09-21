@@ -184,6 +184,29 @@
     "loadMore": "Load more",
     "results": "{{count}} results"
   },
+  "savedSearches": {
+    "title": "Saved searches",
+    "saveThisSearch": "Save this search",
+    "empty": "No saved searches yet.",
+    "name": "Name",
+    "namePlaceholder": "e.g. Backend developers Casablanca",
+    "enableAlerts": "Enable alerts (new candidates)",
+    "saveTitle": "Save search",
+    "saveDescription": "Save the current filters to re-apply them later.",
+    "renameTitle": "Rename search",
+    "renameDescription": "Edit the name and alerts for this search.",
+    "rename": "Rename",
+    "saved": "Search saved.",
+    "updated": "Search updated.",
+    "deleted": "Search deleted.",
+    "alertsEnabled": "Alerts enabled.",
+    "alertsDisabled": "Alerts disabled.",
+    "alertsOn": "Alerts on",
+    "alertsOff": "Alerts off",
+    "applyHint": "Click to re-apply these filters",
+    "deleteTitle": "Delete search",
+    "deleteConfirm": "Delete the search “{{name}}”? This cannot be undone."
+  },
   "offers": {
     "status": {
       "pending_moderation": "Under review",

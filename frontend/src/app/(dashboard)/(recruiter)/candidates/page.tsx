@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable } from '@/components/ui/data-table';
 import { useCandidateSearchStore } from '@/features/candidates/search-store';
+import { SavedSearchesPanel } from '@/features/candidates/saved-searches-panel';
 import {
   useAddToShortlist,
   useCandidateSearch,
@@ -72,6 +73,12 @@ export default function CandidatesPage() {
 
   function runSearch() {
     apply(draft);
+  }
+
+  // Re-apply a saved search: hydrate the visible filter inputs and run it.
+  function applySavedSearch(next: CandidateFilters) {
+    setDraft(next);
+    apply(next);
   }
 
   function handleAdd(id: string) {
@@ -262,6 +269,11 @@ export default function CandidatesPage() {
             </CardContent>
           </Card>
         )}
+
+        <SavedSearchesPanel
+          currentFilters={draft}
+          onApply={applySavedSearch}
+        />
       </div>
 
       {/* Error state */}

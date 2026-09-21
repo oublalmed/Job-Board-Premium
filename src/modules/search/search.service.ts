@@ -160,6 +160,24 @@ export class SearchService {
     };
   }
 
+  // EF-SRCH-04 — the saved-search alert sweep asks "how many candidates match
+  // this saved criteria that became visible since `since`?". It reuses the
+  // exact same filter + visibility predicates as the recruiter-facing search
+  // (buildQuery), so a masked/non-indexed profile can never be counted here
+  // either — only the freshness window (`profile.updatedAt > since`, i.e.
+  // newly indexed/updated into the CVthèque) is added. A null `since` (a
+  // saved search that has never alerted) counts every current match.
+  async countNewMatches(
+    filters: SearchCandidatesDto,
+    since: Date | null,
+  ): Promise<number> {
+    const qb = this.buildQuery(filters);
+    if (since) {
+      qb.andWhere('profile.updatedAt > :since', { since });
+    }
+    return qb.getCount();
+  }
+
   private buildQuery(
     filters: SearchCandidatesDto,
   ): SelectQueryBuilder<CandidateProfile> {
