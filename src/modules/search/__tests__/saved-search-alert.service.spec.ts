@@ -109,8 +109,10 @@ describe('SavedSearchAlertService', () => {
   it('advances lastNotifiedAt atomically, guarded by the value it read (null)', async () => {
     await service.runAlertSweep();
 
+    // A bound JS Date (ms precision), NOT SQL now() — so the equality guard
+    // matches the value TypeORM reloads on the next sweep.
     expect(updateQb.qb.set).toHaveBeenCalledWith({
-      lastNotifiedAt: expect.any(Function),
+      lastNotifiedAt: expect.any(Date),
     });
     expect(updateQb.qb.where).toHaveBeenCalledWith('id = :id', {
       id: 'search-1',
@@ -155,5 +157,24 @@ describe('SavedSearchAlertService', () => {
 
     expect(result).toEqual({ notifiedCount: 0 });
     expect(notificationService.create).not.toHaveBeenCalled();
+  });
+
+  it('isolates a failing search so the rest of the sweep still runs', async () => {
+    repo.find.mockResolvedValueOnce([
+      makeSaved({ id: 'bad', ownerUserId: 'owner-bad' }),
+      makeSaved({ id: 'good', ownerUserId: 'owner-good' }),
+    ]);
+    // The first search's notification throws; the second must still be notified.
+    notificationService.create
+      .mockRejectedValueOnce(new Error('notify boom'))
+      .mockResolvedValueOnce(undefined);
+
+    const result = await service.runAlertSweep();
+
+    expect(result).toEqual({ notifiedCount: 1 });
+    expect(notificationService.create).toHaveBeenCalledTimes(2);
+    expect(notificationService.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ recipientUserId: 'owner-good' }),
+    );
   });
 });

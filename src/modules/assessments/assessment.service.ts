@@ -269,17 +269,24 @@ export class AssessmentService {
   }
 
   /**
-   * §5.3 anti-cheat (multi-account layer). Returns why the start is suspicious
-   * — `'device'` or `'ip'` — when the same non-null signal was used by a
-   * DIFFERENT candidate inside the detection window, else `null`. Device
-   * fingerprint is checked first (far more specific than a shared IP).
+   * §5.3 anti-cheat (multi-account layer). Returns `'device'` when the same
+   * device fingerprint was used by a DIFFERENT candidate inside the detection
+   * window, else `null`.
+   *
+   * Flagging is deliberately DEVICE-ONLY. `ipAddress` is captured and stored
+   * for moderator context, but is NOT a flag trigger: behind a reverse
+   * proxy/load balancer (the normal deployment, and Express `trust proxy` is
+   * not enabled here) `req.ip` is the proxy's address — shared by every
+   * candidate — so an IP-based trigger would flag essentially everyone and
+   * drown the moderation trail in false positives. Re-enabling an IP signal
+   * requires a trusted-proxy setup that yields the real client IP.
    */
   private async detectMultiAccount(
     candidateId: string,
-    ipAddress: string | null,
+    _ipAddress: string | null,
     deviceFingerprint: string | null,
-  ): Promise<'device' | 'ip' | null> {
-    if (!ipAddress && !deviceFingerprint) {
+  ): Promise<'device' | null> {
+    if (!deviceFingerprint) {
       return null;
     }
 
@@ -288,32 +295,14 @@ export class AssessmentService {
       DEFAULT_MULTI_ACCOUNT_WINDOW_HOURS;
     const since = new Date(Date.now() - windowHours * 60 * 60 * 1000);
 
-    if (deviceFingerprint) {
-      const byDevice = await this.assessmentRepo.count({
-        where: {
-          deviceFingerprint,
-          candidateId: Not(candidateId),
-          createdAt: MoreThanOrEqual(since),
-        },
-      });
-      if (byDevice > 0) {
-        return 'device';
-      }
-    }
+    const byDevice = await this.assessmentRepo.count({
+      where: {
+        deviceFingerprint,
+        candidateId: Not(candidateId),
+        createdAt: MoreThanOrEqual(since),
+      },
+    });
 
-    if (ipAddress) {
-      const byIp = await this.assessmentRepo.count({
-        where: {
-          ipAddress,
-          candidateId: Not(candidateId),
-          createdAt: MoreThanOrEqual(since),
-        },
-      });
-      if (byIp > 0) {
-        return 'ip';
-      }
-    }
-
-    return null;
+    return byDevice > 0 ? 'device' : null;
   }
 }

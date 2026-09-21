@@ -20,11 +20,16 @@ export class SavedSearchService {
     ownerUserId: string,
     dto: CreateSavedSearchDto,
   ): Promise<SavedSearch> {
+    const alertEnabled = dto.alertEnabled ?? false;
     const entity = this.savedSearchRepo.create({
       ownerUserId,
       name: dto.name,
       criteria: dto.criteria,
-      alertEnabled: dto.alertEnabled ?? false,
+      alertEnabled,
+      // Anchor the alert window at creation time. Without this, the first
+      // sweep would treat the ENTIRE existing matching pool as "new" and
+      // notify the owner about thousands of pre-existing candidates.
+      lastNotifiedAt: alertEnabled ? new Date() : null,
     });
     return this.savedSearchRepo.save(entity);
   }
@@ -46,6 +51,12 @@ export class SavedSearchService {
     if (dto.name !== undefined) existing.name = dto.name;
     if (dto.criteria !== undefined) existing.criteria = dto.criteria;
     if (dto.alertEnabled !== undefined) {
+      // Turning alerts ON (from off) re-anchors the window at now(), so the
+      // owner is alerted about candidates indexed AFTER they opted in, not the
+      // whole back-catalogue accumulated while alerts were off.
+      if (dto.alertEnabled && !existing.alertEnabled) {
+        existing.lastNotifiedAt = new Date();
+      }
       existing.alertEnabled = dto.alertEnabled;
     }
 

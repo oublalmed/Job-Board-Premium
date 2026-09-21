@@ -36,34 +36,50 @@ export class SavedSearchAlertService {
     let notifiedCount = 0;
 
     for (const search of searches) {
-      const since = search.lastNotifiedAt;
+      // Per-search isolation: one bad saved search (malformed criteria, a
+      // transient notification failure) must not abort the whole sweep and
+      // starve every later owner of their alert.
+      try {
+        const since = search.lastNotifiedAt;
+        // Capture the new watermark BEFORE counting. Advancing to this instant
+        // (rather than now() after the notification) means any profile indexed
+        // during the sweep is re-evaluated next run instead of falling into a
+        // lost-update gap — at worst it is counted twice, never silently
+        // dropped.
+        const sweepStart = new Date();
 
-      const count = await this.searchService.countNewMatches(
-        search.criteria,
-        since,
-      );
-      if (count <= 0) {
-        // No new matching profiles since the last alert — nothing to notify,
-        // and (deliberately) lastNotifiedAt is left untouched so it keeps
-        // meaning "the last time we actually told the owner something".
-        continue;
+        const count = await this.searchService.countNewMatches(
+          search.criteria,
+          since,
+        );
+        if (count <= 0) {
+          // No new matching profiles since the last alert — nothing to notify,
+          // and (deliberately) lastNotifiedAt is left untouched so it keeps
+          // meaning "the last time we actually told the owner something".
+          continue;
+        }
+
+        const claimed = await this.claimAdvance(search.id, since, sweepStart);
+        if (!claimed) {
+          // A concurrent run / retry already advanced this search's window —
+          // it (not us) is responsible for its notification. Skip to avoid a
+          // duplicate.
+          continue;
+        }
+
+        await this.notificationService.create({
+          recipientUserId: search.ownerUserId,
+          type: NotificationType.SAVED_SEARCH_ALERT,
+          title: 'Nouveaux candidats pour votre recherche',
+          body: `${count} nouveau(x) candidat(s) correspondent à votre recherche « ${search.name} ».`,
+        });
+        notifiedCount++;
+      } catch (err) {
+        this.logger.error(
+          `Saved-search alert failed for search ${search.id}`,
+          err instanceof Error ? err.stack : String(err),
+        );
       }
-
-      const claimed = await this.claimAdvance(search.id, since);
-      if (!claimed) {
-        // A concurrent run / retry already advanced this search's window —
-        // it (not us) is responsible for its notification. Skip to avoid a
-        // duplicate.
-        continue;
-      }
-
-      await this.notificationService.create({
-        recipientUserId: search.ownerUserId,
-        type: NotificationType.SAVED_SEARCH_ALERT,
-        title: 'Nouveaux candidats pour votre recherche',
-        body: `${count} nouveau(x) candidat(s) correspondent à votre recherche « ${search.name} ».`,
-      });
-      notifiedCount++;
     }
 
     this.logger.log(
@@ -74,14 +90,23 @@ export class SavedSearchAlertService {
   }
 
   // Atomic conditional UPDATE, not a read-then-write — same family as the
-  // cooldown-notification claim. Advances lastNotifiedAt to now() only when it
+  // cooldown-notification claim. Advances lastNotifiedAt to `next` only when it
   // still equals the value this run read (the `since` guard), so exactly one
   // of any racing runs wins. Returns true only for that winner.
-  private async claimAdvance(id: string, since: Date | null): Promise<boolean> {
+  //
+  // `next` is a bound JS Date, NOT SQL now(): the guard compares
+  // last_notified_at against the millisecond-precision value TypeORM reloads,
+  // so writing microsecond-precision now() would make every subsequent
+  // equality guard miss and silently stop alerting after the first run.
+  private async claimAdvance(
+    id: string,
+    since: Date | null,
+    next: Date,
+  ): Promise<boolean> {
     const qb = this.savedSearchRepo
       .createQueryBuilder()
       .update(SavedSearch)
-      .set({ lastNotifiedAt: () => 'now()' })
+      .set({ lastNotifiedAt: next })
       .where('id = :id', { id });
 
     if (since === null) {

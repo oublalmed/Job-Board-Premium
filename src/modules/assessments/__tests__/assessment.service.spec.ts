@@ -155,20 +155,20 @@ describe('AssessmentService', () => {
       );
     });
 
-    it('falls back to an IP match when the device is clean', async () => {
-      // device count → 0, ip count → 1
-      assessmentRepo.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
-
+    it('does NOT flag on a shared IP alone (proxy false-positive guard)', async () => {
+      // No device fingerprint sent — only the (proxy-shared) IP is present.
+      // Flagging is device-only, so this must not raise a flag and must not
+      // even run a detection count.
       const result = await service.startAssessment(candidateId, testId, {
         ipAddress: '196.200.1.1',
-        deviceFingerprint: 'fp-unique',
       });
 
-      expect(result.assessment.multiAccountFlagged).toBe(true);
-      expect(auditService.log).toHaveBeenCalledWith(
+      expect(result.assessment.multiAccountFlagged).toBe(false);
+      expect(result.assessment.ipAddress).toBe('196.200.1.1');
+      expect(assessmentRepo.count).not.toHaveBeenCalled();
+      expect(auditService.log).not.toHaveBeenCalledWith(
         expect.objectContaining({
           action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
-          metadata: expect.objectContaining({ sharedBy: 'ip' }),
         }),
       );
     });
