@@ -120,3 +120,30 @@ Small, well-scoped follow-up:
 - Add a consent checkbox with a privacy-policy link to the register page.
 - Document retention windows per data category (profiles, CVs, audit logs,
   invoices — invoices already have a legal 10-year retention, see ADR-0003).
+
+## EF-CAND-03 — Antivirus scanning of uploads 🟡
+
+Candidate uploads (CV, diploma) are scanned through the `FileScanner` port
+before they are trusted. The bound adapter is chosen at boot by
+`ANTIVIRUS_DRIVER` (see `PortsModule.fileScannerFactory`):
+
+- `stub` (**default**) — `StubFileScannerAdapter`, always reports clean. Keeps
+  CI, local and dev behavior unchanged with no daemon to run.
+- `clamav` — `ClamavFileScannerAdapter`, streams each upload to a ClamAV
+  `clamd` daemon over TCP using the INSTREAM protocol (Node's built-in `net`
+  socket, no extra dependency). An `OK` reply passes, a `FOUND` reply is
+  rejected with the signature name, and an `ERROR`/empty reply is treated as a
+  scan failure (thrown), never a silent pass.
+
+Environment variables:
+
+| Var | Default | Meaning |
+| --- | --- | --- |
+| `ANTIVIRUS_DRIVER` | `stub` | `stub` or `clamav`. Leave `stub` unless a clamd daemon is reachable. |
+| `CLAMAV_HOST` | `localhost` | Hostname/IP of the clamd daemon (only used when driver is `clamav`). |
+| `CLAMAV_PORT` | `3310` | clamd TCP port (only used when driver is `clamav`). |
+
+To enable in production: run `clamav-daemon` (with `freshclam` keeping
+signatures current) reachable from the API pods, then set
+`ANTIVIRUS_DRIVER=clamav` and point `CLAMAV_HOST`/`CLAMAV_PORT` at it. clamd's
+`StreamMaxLength` must be ≥ the max upload size (`MAX_CV_SIZE_BYTES`).

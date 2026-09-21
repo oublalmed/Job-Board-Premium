@@ -90,4 +90,9 @@ export const configValidationSchema = Joi.object({
   // documented extension point, only 'log' is wired today.
   NOTIFICATIONS_EMAIL_ENABLED: Joi.boolean().default(false),
   MAIL_DRIVER: Joi.string().valid('log', 'smtp').default('log'),
+  // Antivirus (EF-CAND-03) — `stub` is the default so CI/local/dev behavior
+  // is unchanged; `clamav` streams uploads to a clamd daemon over TCP.
+  ANTIVIRUS_DRIVER: Joi.string().valid('stub', 'clamav').default('stub'),
+  CLAMAV_HOST: Joi.string().default('localhost'),
+  CLAMAV_PORT: Joi.number().default(3310),
 });

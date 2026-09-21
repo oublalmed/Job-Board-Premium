@@ -16,6 +16,7 @@ import {
   paymentConfig,
   legalConfig,
   notificationsConfig,
+  antivirusConfig,
   configValidationSchema,
 } from './config/index.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -50,6 +51,7 @@ import { PortsModule } from './ports/ports.module.js';
         paymentConfig,
         legalConfig,
         notificationsConfig,
+        antivirusConfig,
       ],
       validationSchema: configValidationSchema,
       validationOptions: { abortEarly: true },

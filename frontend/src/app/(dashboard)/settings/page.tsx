@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useDeleteAccount, useExportData } from '@/features/settings/queries';
+import { DataRequestsCard } from '@/features/data-requests/DataRequestsCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -83,6 +84,7 @@ export default function SettingsPage() {
       </Card>
 
       {isCandidate && (
+        <>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -142,6 +144,9 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <DataRequestsCard />
+        </>
       )}
     </motion.div>
   );

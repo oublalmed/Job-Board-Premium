@@ -331,6 +331,58 @@
     "typeLinkedin": "LinkedIn",
     "typeOther": "Other"
   },
+  "certifications": {
+    "title": "Certifications",
+    "description": "Add your professional certifications to strengthen your profile.",
+    "empty": "No certifications yet.",
+    "addTitle": "Add a certification",
+    "editTitle": "Edit certification",
+    "name": "Name",
+    "namePlaceholder": "e.g. AWS Certified Solutions Architect",
+    "issuer": "Issuer",
+    "issuerPlaceholder": "e.g. Amazon Web Services",
+    "issueDate": "Issue date",
+    "expiryDate": "Expiry date (optional)",
+    "credentialUrl": "Credential URL (optional)",
+    "credential": "Verify credential",
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "remove": "Remove",
+    "required": "This field is required.",
+    "urlInvalid": "Enter a valid URL (https://…).",
+    "updated": "Certification updated.",
+    "saveError": "Could not save the certification."
+  },
+  "dataRequestsCandidate": {
+    "title": "My CNDP / GDPR requests",
+    "description": "Exercise your rights over your personal data. Each request is handled within the 30-day legal deadline.",
+    "empty": "You haven't filed any request yet.",
+    "fileTitle": "File a request",
+    "file": "Send request",
+    "filed": "Request sent.",
+    "message": "Message (optional)",
+    "messagePlaceholder": "Describe your request (e.g. data to rectify, reason for objection).",
+    "due": "Due",
+    "overdue": "overdue",
+    "openTag": "in progress",
+    "conflict": "An open request of this type already exists.",
+    "type": {
+      "label": "Request type",
+      "access": "Access",
+      "portability": "Portability",
+      "erasure": "Erasure",
+      "rectification": "Rectification",
+      "objection": "Objection"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    }
+  },
   "billing": {
     "title": "Billing",
     "invoices": "Invoices",

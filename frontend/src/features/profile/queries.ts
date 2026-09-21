@@ -67,14 +67,52 @@ export interface CreateProfileLinkInput {
   label?: string;
 }
 
+// EF-CAND-07 — structured certifications. The backend endpoints are not part
+// of the generated openapi schema, so these hooks use raw fetch + bearer
+// (the repo convention for endpoints not covered by `apiClient`).
+export interface Certification {
+  id: string;
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate: string | null;
+  credentialUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CertificationInput {
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate?: string;
+  credentialUrl?: string;
+}
+
 export const profileKeys = {
   all: ['profile'] as const,
   me: () => [...profileKeys.all, 'me'] as const,
   cv: () => [...profileKeys.all, 'cv'] as const,
   schoolVerification: () => [...profileKeys.all, 'school-verification'] as const,
   links: () => [...profileKeys.all, 'links'] as const,
+  certifications: () => [...profileKeys.all, 'certifications'] as const,
   recruiterSelf: (userId?: string) => ['recruiter', 'self', userId] as const,
 };
+
+async function fetchWithAuth(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  return fetch(`${baseUrl}${path}`, {
+    ...init,
+    headers: {
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      Authorization: `Bearer ${getAccessToken()}`,
+      ...(init.headers ?? {}),
+    },
+  });
+}
 
 export function useCandidateProfile() {
   return useQuery({
@@ -229,6 +267,82 @@ export function useDeleteProfileLink() {
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: profileKeys.links() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+// EF-CAND-07 — certifications CRUD (raw fetch + bearer; see fetchWithAuth).
+export function useCertifications() {
+  return useQuery({
+    queryKey: profileKeys.certifications(),
+    queryFn: async () => {
+      const res = await fetchWithAuth('/api/v1/candidates/certifications');
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Certification[];
+    },
+  });
+}
+
+export function useAddCertification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CertificationInput) => {
+      const res = await fetchWithAuth('/api/v1/candidates/certifications', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Certification;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: profileKeys.certifications(),
+      });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+export function useUpdateCertification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: CertificationInput;
+    }) => {
+      const res = await fetchWithAuth(
+        `/api/v1/candidates/certifications/${id}`,
+        { method: 'PUT', body: JSON.stringify(input) },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Certification;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: profileKeys.certifications(),
+      });
+    },
+  });
+}
+
+export function useDeleteCertification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(
+        `/api/v1/candidates/certifications/${id}`,
+        { method: 'DELETE' },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: profileKeys.certifications(),
+      });
       void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
     },
   });

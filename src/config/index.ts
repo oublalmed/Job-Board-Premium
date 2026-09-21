@@ -8,4 +8,5 @@ export { scoringConfig } from './scoring.config.js';
 export { paymentConfig } from './payment.config.js';
 export { legalConfig } from './legal.config.js';
 export { notificationsConfig } from './notifications.config.js';
+export { antivirusConfig } from './antivirus.config.js';
 export { configValidationSchema } from './config.validation.js';

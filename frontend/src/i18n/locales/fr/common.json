@@ -331,6 +331,58 @@
     "typeLinkedin": "LinkedIn",
     "typeOther": "Autre"
   },
+  "certifications": {
+    "title": "Certifications",
+    "description": "Ajoutez vos certifications professionnelles pour valoriser votre profil.",
+    "empty": "Aucune certification pour le moment.",
+    "addTitle": "Ajouter une certification",
+    "editTitle": "Modifier la certification",
+    "name": "Intitulé",
+    "namePlaceholder": "Ex. AWS Certified Solutions Architect",
+    "issuer": "Organisme émetteur",
+    "issuerPlaceholder": "Ex. Amazon Web Services",
+    "issueDate": "Date d'obtention",
+    "expiryDate": "Date d'expiration (facultatif)",
+    "credentialUrl": "Lien de vérification (facultatif)",
+    "credential": "Vérifier la certification",
+    "add": "Ajouter",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "remove": "Supprimer",
+    "required": "Ce champ est requis.",
+    "urlInvalid": "Entrez une URL valide (https://…).",
+    "updated": "Certification mise à jour.",
+    "saveError": "Impossible d'enregistrer la certification."
+  },
+  "dataRequestsCandidate": {
+    "title": "Mes demandes CNDP / RGPD",
+    "description": "Exercez vos droits sur vos données personnelles. Chaque demande est traitée dans le délai légal de 30 jours.",
+    "empty": "Vous n'avez encore déposé aucune demande.",
+    "fileTitle": "Déposer une demande",
+    "file": "Envoyer la demande",
+    "filed": "Demande envoyée.",
+    "message": "Message (facultatif)",
+    "messagePlaceholder": "Précisez votre demande (ex. données à rectifier, motif d'opposition).",
+    "due": "Échéance",
+    "overdue": "en retard",
+    "openTag": "en cours",
+    "conflict": "Une demande de ce type est déjà en cours de traitement.",
+    "type": {
+      "label": "Type de demande",
+      "access": "Accès",
+      "portability": "Portabilité",
+      "erasure": "Effacement",
+      "rectification": "Rectification",
+      "objection": "Opposition"
+    },
+    "status": {
+      "pending": "En attente",
+      "in_progress": "En cours",
+      "completed": "Clôturée",
+      "rejected": "Rejetée"
+    }
+  },
   "billing": {
     "title": "Facturation",
     "invoices": "Factures",
