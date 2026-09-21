@@ -329,7 +329,35 @@
     "deleteAccountDescription": "This action is irreversible. All your data will be anonymized.",
     "deleteConfirm": "Are you absolutely sure? This action is irreversible.",
     "deleted": "Account deleted.",
-    "deleteError": "Error while deleting."
+    "deleteError": "Error while deleting.",
+    "security": {
+      "title": "Security",
+      "changePassword": {
+        "title": "Change password",
+        "current": "Current password",
+        "new": "New password",
+        "submit": "Update password",
+        "success": "Password updated.",
+        "error": "Current password is incorrect or the new password is invalid."
+      },
+      "mfa": {
+        "title": "Two-factor authentication (2FA)",
+        "description": "Add a layer of security with an authenticator app (TOTP).",
+        "statusOn": "Enabled",
+        "statusOff": "Disabled",
+        "enable": "Enable 2FA",
+        "scanHint": "Add this secret to your authenticator app (Google Authenticator, Authy…), then enter the generated code.",
+        "secretLabel": "Secret key",
+        "codeLabel": "6-digit code",
+        "confirm": "Confirm",
+        "enabled": "2FA enabled.",
+        "disable": "Disable 2FA",
+        "disabled": "2FA disabled.",
+        "invalidCode": "Invalid code. Try again.",
+        "backupTitle": "Backup codes",
+        "backupHint": "Keep these somewhere safe: each works once if you lose your device. They won't be shown again."
+      }
+    }
   },
   "verifyEmail": {
     "verifying": "Verifying your email…",

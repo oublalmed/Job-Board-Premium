@@ -329,7 +329,35 @@
     "deleteAccountDescription": "Cette action est irréversible. Toutes vos données seront anonymisées.",
     "deleteConfirm": "Êtes-vous absolument sûr ? Cette action est irréversible.",
     "deleted": "Compte supprimé.",
-    "deleteError": "Erreur lors de la suppression."
+    "deleteError": "Erreur lors de la suppression.",
+    "security": {
+      "title": "Sécurité",
+      "changePassword": {
+        "title": "Changer le mot de passe",
+        "current": "Mot de passe actuel",
+        "new": "Nouveau mot de passe",
+        "submit": "Mettre à jour le mot de passe",
+        "success": "Mot de passe mis à jour.",
+        "error": "Mot de passe actuel incorrect ou nouveau mot de passe invalide."
+      },
+      "mfa": {
+        "title": "Authentification à deux facteurs (2FA)",
+        "description": "Ajoutez une couche de sécurité avec une application d'authentification (TOTP).",
+        "statusOn": "Activée",
+        "statusOff": "Désactivée",
+        "enable": "Activer la 2FA",
+        "scanHint": "Ajoutez ce secret dans votre application d'authentification (Google Authenticator, Authy…), puis entrez le code généré.",
+        "secretLabel": "Clé secrète",
+        "codeLabel": "Code à 6 chiffres",
+        "confirm": "Confirmer",
+        "enabled": "2FA activée.",
+        "disable": "Désactiver la 2FA",
+        "disabled": "2FA désactivée.",
+        "invalidCode": "Code invalide. Réessayez.",
+        "backupTitle": "Codes de secours",
+        "backupHint": "Conservez ces codes en lieu sûr : chacun n'est utilisable qu'une fois si vous perdez votre appareil. Ils ne seront plus affichés."
+      }
+    }
   },
   "verifyEmail": {
     "verifying": "Vérification de votre email…",

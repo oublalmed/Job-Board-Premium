@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useDeleteAccount, useExportData } from '@/features/settings/queries';
 import { DataRequestsCard } from '@/features/data-requests/DataRequestsCard';
+import { SecurityCard } from '@/features/settings/SecurityCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -82,6 +83,8 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <SecurityCard />
 
       {isCandidate && (
         <>

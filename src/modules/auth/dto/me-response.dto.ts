@@ -12,4 +12,7 @@ export class MeResponseDto {
 
   @ApiProperty({ enum: Role, isArray: true })
   roles!: Role[];
+
+  @ApiProperty({ description: 'Whether two-factor authentication is enabled.' })
+  mfaEnabled!: boolean;
 }

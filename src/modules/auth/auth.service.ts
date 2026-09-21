@@ -475,6 +475,37 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * EF-CAND-01 — an authenticated user changes their own password. Re-verifies
+   * the current password before applying the new one; existing sessions are
+   * left intact (a voluntary change from a trusted session).
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.usersService.findById(userId);
+    if (!user || !(await argon2.verify(user.passwordHash, currentPassword))) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const passwordHash = await argon2.hash(newPassword, {
+      type: argon2.argon2id,
+    });
+    await this.usersService.update(user.id, { passwordHash });
+
+    await this.auditService.log({
+      actorId: user.id,
+      action: AuditAction.USER_PASSWORD_CHANGED,
+      entityType: 'user',
+      entityId: user.id,
+      metadata: { via: 'self_service' },
+    });
+
+    return { message: 'Password changed successfully' };
+  }
+
   private async findUserByResetToken(token: string): Promise<User | null> {
     const tokenHash = this.hashToken(token);
     const users = await this.refreshTokenRepository.manager.find(User, {

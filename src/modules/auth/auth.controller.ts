@@ -16,6 +16,8 @@ import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { VerifyEmailDto } from './dto/verify-email.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { UsersService } from '../users/users.service.js';
 import {
   AuthTokensResponseDto,
   LoginResponseDto,
@@ -43,6 +45,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly mfaService: MfaService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Post('register')
@@ -132,7 +135,29 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   @ApiResponse({ status: 200, type: MeResponseDto })
-  getProfile(@CurrentUser() user: JwtPayload) {
-    return { userId: user.sub, email: user.email, roles: user.roles };
+  async getProfile(@CurrentUser() user: JwtPayload) {
+    const dbUser = await this.usersService.findById(user.sub);
+    return {
+      userId: user.sub,
+      email: user.email,
+      roles: user.roles,
+      mfaEnabled: dbUser?.mfaEnabled ?? false,
+    };
+  }
+
+  // EF-CAND-01 — authenticated self-service password change.
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, type: MessageResponseDto })
+  async changePassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      user.sub,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 }
