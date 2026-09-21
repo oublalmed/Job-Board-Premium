@@ -59,6 +59,8 @@ describe('AssessmentService', () => {
         .fn()
         .mockImplementation((e: Record<string, unknown>) => Promise.resolve(e)),
       findOne: jest.fn().mockResolvedValue(null),
+      // §5.3 anti-cheat detection — no prior device/IP match by default.
+      count: jest.fn().mockResolvedValue(0),
     };
 
     testRepo = {
@@ -107,6 +109,84 @@ describe('AssessmentService', () => {
     }).compile();
 
     service = module.get(AssessmentService);
+  });
+
+  describe('§5.3 anti-cheat — multi-account detection', () => {
+    it('does not flag when no device/IP context is provided', async () => {
+      const result = await service.startAssessment(candidateId, testId);
+
+      expect(result.assessment.multiAccountFlagged).toBe(false);
+      expect(assessmentRepo.count).not.toHaveBeenCalled();
+      expect(auditService.log).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
+        }),
+      );
+    });
+
+    it('stores IP + fingerprint and does not flag when they are unseen', async () => {
+      assessmentRepo.count.mockResolvedValue(0);
+
+      const result = await service.startAssessment(candidateId, testId, {
+        ipAddress: '196.200.1.1',
+        deviceFingerprint: 'fp-abc',
+      });
+
+      expect(result.assessment.ipAddress).toBe('196.200.1.1');
+      expect(result.assessment.deviceFingerprint).toBe('fp-abc');
+      expect(result.assessment.multiAccountFlagged).toBe(false);
+    });
+
+    it('flags and audits when the same device was used by another candidate', async () => {
+      // First count() call (device) matches; IP is never reached.
+      assessmentRepo.count.mockResolvedValueOnce(1);
+
+      const result = await service.startAssessment(candidateId, testId, {
+        ipAddress: '196.200.1.1',
+        deviceFingerprint: 'fp-shared',
+      });
+
+      expect(result.assessment.multiAccountFlagged).toBe(true);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
+          metadata: expect.objectContaining({ sharedBy: 'device' }),
+        }),
+      );
+    });
+
+    it('falls back to an IP match when the device is clean', async () => {
+      // device count → 0, ip count → 1
+      assessmentRepo.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+
+      const result = await service.startAssessment(candidateId, testId, {
+        ipAddress: '196.200.1.1',
+        deviceFingerprint: 'fp-unique',
+      });
+
+      expect(result.assessment.multiAccountFlagged).toBe(true);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
+          metadata: expect.objectContaining({ sharedBy: 'ip' }),
+        }),
+      );
+    });
+
+    it('scopes the detection to OTHER candidates within the window', async () => {
+      assessmentRepo.count.mockResolvedValue(0);
+
+      await service.startAssessment(candidateId, testId, {
+        deviceFingerprint: 'fp-abc',
+      });
+
+      const where = assessmentRepo.count.mock.calls[0][0].where;
+      expect(where.deviceFingerprint).toBe('fp-abc');
+      // candidateId filter is a TypeORM Not(...) operator, and createdAt a
+      // MoreThanOrEqual(...) — both present means "others, recently".
+      expect(where.candidateId).toBeDefined();
+      expect(where.createdAt).toBeDefined();
+    });
   });
 
   describe('US-EVAL-02 — Scenario 1: passage nominal', () => {

@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not, MoreThanOrEqual } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { Inject, Optional } from '@nestjs/common';
 import { Assessment, AssessmentStatus } from './entities/assessment.entity.js';
@@ -23,6 +23,17 @@ import {
   DEFAULT_COOLDOWN_DAYS,
   computeCooldownEnd,
 } from './cooldown.js';
+
+// §5.3 anti-cheat — how far back to look for the same device/IP used by a
+// different candidate. Overridable via the settings store.
+const MULTI_ACCOUNT_WINDOW_KEY = 'anti_cheat_multi_account_window_hours';
+const DEFAULT_MULTI_ACCOUNT_WINDOW_HOURS = 24;
+
+/** Request-scoped signals used by the anti-cheat multi-account layer. */
+export interface AssessmentStartContext {
+  ipAddress?: string | null;
+  deviceFingerprint?: string | null;
+}
 
 @Injectable()
 export class AssessmentService {
@@ -43,6 +54,7 @@ export class AssessmentService {
   async startAssessment(
     candidateId: string,
     testId: string,
+    context: AssessmentStartContext = {},
   ): Promise<{ assessment: Assessment; assessmentUrl: string }> {
     const test = await this.testRepo.findOne({ where: { id: testId } });
     if (!test) {
@@ -53,6 +65,15 @@ export class AssessmentService {
     }
 
     await this.checkEligibility(candidateId, testId);
+
+    const ipAddress = context.ipAddress?.trim() || null;
+    const deviceFingerprint = context.deviceFingerprint?.trim() || null;
+    const sharedBy = await this.detectMultiAccount(
+      candidateId,
+      ipAddress,
+      deviceFingerprint,
+    );
+    const multiAccountFlagged = sharedBy !== null;
 
     const { externalId, assessmentUrl } =
       await this.scoringProvider.createAssessment({
@@ -84,6 +105,9 @@ export class AssessmentService {
       resumeToken: uuidv4(),
       expiresAt,
       startedAt: now,
+      ipAddress,
+      deviceFingerprint,
+      multiAccountFlagged,
     });
 
     const saved = await this.assessmentRepo.save(assessment);
@@ -95,6 +119,19 @@ export class AssessmentService {
       entityId: saved.id,
       metadata: { testId, externalId },
     });
+
+    // Raise a moderation signal (never a hard block — shared NAT/corporate IPs
+    // would false-positive) when this device/IP was just used by someone else.
+    if (multiAccountFlagged) {
+      await this.auditService.log({
+        actorId: candidateId,
+        action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
+        entityType: 'assessment',
+        entityId: saved.id,
+        ipAddress,
+        metadata: { testId, sharedBy },
+      });
+    }
 
     // EF-ADM-05 funnel — fire-and-forget.
     void this.analytics?.track(AnalyticsEventType.TEST_STARTED, candidateId, {
@@ -229,5 +266,54 @@ export class AssessmentService {
         });
       }
     }
+  }
+
+  /**
+   * §5.3 anti-cheat (multi-account layer). Returns why the start is suspicious
+   * — `'device'` or `'ip'` — when the same non-null signal was used by a
+   * DIFFERENT candidate inside the detection window, else `null`. Device
+   * fingerprint is checked first (far more specific than a shared IP).
+   */
+  private async detectMultiAccount(
+    candidateId: string,
+    ipAddress: string | null,
+    deviceFingerprint: string | null,
+  ): Promise<'device' | 'ip' | null> {
+    if (!ipAddress && !deviceFingerprint) {
+      return null;
+    }
+
+    const windowHours =
+      (await this.settingsService.getNumber(MULTI_ACCOUNT_WINDOW_KEY)) ??
+      DEFAULT_MULTI_ACCOUNT_WINDOW_HOURS;
+    const since = new Date(Date.now() - windowHours * 60 * 60 * 1000);
+
+    if (deviceFingerprint) {
+      const byDevice = await this.assessmentRepo.count({
+        where: {
+          deviceFingerprint,
+          candidateId: Not(candidateId),
+          createdAt: MoreThanOrEqual(since),
+        },
+      });
+      if (byDevice > 0) {
+        return 'device';
+      }
+    }
+
+    if (ipAddress) {
+      const byIp = await this.assessmentRepo.count({
+        where: {
+          ipAddress,
+          candidateId: Not(candidateId),
+          createdAt: MoreThanOrEqual(since),
+        },
+      });
+      if (byIp > 0) {
+        return 'ip';
+      }
+    }
+
+    return null;
   }
 }

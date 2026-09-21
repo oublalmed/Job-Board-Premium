@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity.js';
 import { Test } from './test.entity.js';
@@ -66,6 +67,22 @@ export class Assessment {
   // a read-then-write — see RemediationNotificationService.
   @Column({ name: 'cooldown_notified_at', type: 'timestamptz', nullable: true })
   cooldownNotifiedAt!: Date | null;
+
+  // §5.3 anti-cheat (multi-account layer) — the client IP and an opaque device
+  // fingerprint captured at start, plus a review flag raised when the same
+  // device/IP was used by a *different* candidate inside the detection window.
+  // This is a signal for moderation (audited, surfaced in the admin trail),
+  // not a hard block: shared NAT/corporate IPs would otherwise false-positive.
+  @Column({ name: 'ip_address', type: 'varchar', nullable: true })
+  @Index()
+  ipAddress!: string | null;
+
+  @Column({ name: 'device_fingerprint', type: 'varchar', nullable: true })
+  @Index()
+  deviceFingerprint!: string | null;
+
+  @Column({ name: 'multi_account_flagged', type: 'boolean', default: false })
+  multiAccountFlagged!: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

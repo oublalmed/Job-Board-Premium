@@ -4,6 +4,8 @@ import {
   Get,
   Body,
   Param,
+  Headers,
+  Ip,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
@@ -43,8 +45,15 @@ export class AssessmentController {
   async startAssessment(
     @CurrentUser() user: JwtPayload,
     @Body() dto: StartAssessmentDto,
+    @Ip() ip: string,
+    @Headers('x-device-fingerprint') deviceFingerprint?: string,
   ) {
-    return this.assessmentService.startAssessment(user.sub, dto.testId);
+    // §5.3 anti-cheat: IP + an opaque client device fingerprint feed the
+    // multi-account detection; both are optional and never trusted for auth.
+    return this.assessmentService.startAssessment(user.sub, dto.testId, {
+      ipAddress: ip,
+      deviceFingerprint,
+    });
   }
 
   @Post('resume')

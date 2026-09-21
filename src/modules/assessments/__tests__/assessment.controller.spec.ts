@@ -81,23 +81,30 @@ describe('AssessmentController', () => {
   });
 
   describe('startAssessment', () => {
-    it('should start an assessment for the authenticated candidate', async () => {
-      const result = await controller.startAssessment(authenticatedUser, {
-        testId: 'test-1',
-      });
+    it('should start an assessment for the authenticated candidate with anti-cheat context', async () => {
+      const result = await controller.startAssessment(
+        authenticatedUser,
+        { testId: 'test-1' },
+        '196.200.1.1',
+        'fp-abc',
+      );
 
       expect(service.startAssessment).toHaveBeenCalledWith(
         'candidate-1',
         'test-1',
+        { ipAddress: '196.200.1.1', deviceFingerprint: 'fp-abc' },
       );
       expect(result.assessment.id).toBe('assessment-1');
       expect(result.assessmentUrl).toBeDefined();
     });
 
     it('should always use user.sub, never an external parameter', async () => {
-      await controller.startAssessment(authenticatedUser, {
-        testId: 'test-1',
-      });
+      await controller.startAssessment(
+        authenticatedUser,
+        { testId: 'test-1' },
+        '196.200.1.1',
+        'fp-abc',
+      );
 
       expect(service.startAssessment).not.toHaveBeenCalledWith(
         otherUserId,
