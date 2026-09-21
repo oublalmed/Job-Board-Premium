@@ -219,8 +219,8 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Écarts fermés — passe de remédiation</div>
-      <div class="num">21<small>exigences</small></div>
-      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-03/04/07, EF-EVAL-04, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04, §11 rate-limiting — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
+      <div class="num">24<small>exigences</small></div>
+      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-01/03/04/07, EF-EVAL-01/04, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04, §11 rate-limiting, réinit./changement mdp + enrôlement 2FA, notifications lu/tout-lu — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
     </div>
     <div class="score-card">
       <div class="label">Livrés entre le 3 août et le 21 sept.</div>
@@ -230,9 +230,9 @@
     </div>
     <div class="score-card">
       <div class="label">Qualité (mesuré, CI)</div>
-      <div class="num">695<small>tests ✓</small></div>
-      <div class="bar"><span style="width:79%;background:var(--sev-good-ink)"></span></div>
-      <div class="foot">79 suites vertes ; lint CI débloqué ; <code style="font-size:11px">nest build</code> et <code style="font-size:11px">next build</code> OK.</div>
+      <div class="num">711<small>tests ✓</small></div>
+      <div class="bar"><span style="width:80%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">80 suites vertes ; lint CI débloqué ; <code style="font-size:11px">nest build</code> et <code style="font-size:11px">next build</code> OK.</div>
     </div>
     <div class="score-card">
       <div class="label">Reste ouvert</div>
@@ -305,6 +305,15 @@
       <tr><td class="id">EF-CAND-03</td><td class="req"><div class="name">Antivirus réel (ClamAV)</div><div class="rule">stub « clean » only</div></td>
         <td><span class="pill m">BE 75%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>clamav-file-scanner.adapter.ts</code> (clamd INSTREAM/TCP), sélectionné par <code>ANTIVIRUS_DRIVER</code> (défaut <code>stub</code>) ; documenté</td></tr>
+      <tr><td class="id">EF-CAND-01</td><td class="req"><div class="name">Réinit. + changement de mot de passe, enrôlement 2FA</div><div class="rule">aucun écran mot de passe oublié</div></td>
+        <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>/auth/forgot-password</code> + <code>/reset-password</code> (token SHA-256 haché, expiry 1 h, révoc. sessions) ; <code>/auth/change-password</code> ; carte Sécurité <code>/settings</code> (2FA setup/enable/disable, backup codes) ; 9 tests</td></tr>
+      <tr><td class="id">EF-EVAL-01</td><td class="req"><div class="name">1 test actif par spécialité</div><div class="rule">non contraint en base</div></td>
+        <td><span class="pill n">BE 50%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid">index unique partiel <code>UQ_tests_one_active_per_specialty ... WHERE active = true</code></td></tr>
+      <tr><td class="id">EF-MSG-02 / notifications</td><td class="req"><div class="name">Notifications : marquer lu / tout lu</div><div class="rule">liste seule, readAt jamais posé</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid">PATCH <code>/notifications/:id/read</code> + <code>/read-all</code> (owner-scoped, idempotent) ; boutons dans l'écran notifications</td></tr>
       <tr><td class="id" style="border-top:2px solid var(--border-strong)">EF-MSG-01</td><td class="req" style="border-top:2px solid var(--border-strong)"><div class="name">Vue de conversation</div><div class="rule">livré entre-temps</div></td>
         <td style="border-top:2px solid var(--border-strong)"><span class="pill n">FE 25%</span></td><td style="border-top:2px solid var(--border-strong)"><span class="pill m">FE ~75%</span></td>
         <td class="evid" style="border-top:2px solid var(--border-strong)"><code>features/messages/ConversationList.tsx</code>, <code>MessageThread.tsx</code></td></tr>
@@ -339,14 +348,14 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Cœur MVP (exigences « Must »)</div>
-      <div class="num">88<small>% backend</small></div>
-      <div class="num" style="font-size:20px;margin-top:-2px">71<small>% frontend</small></div>
-      <div class="foot">Base 3 août : 74 % / 49 %. Le frontend « Must » rattrape le backend après la remédiation (EF-ADM-02/03, EF-MSG-02/03 livrés).</div>
+      <div class="num">90<small>% backend</small></div>
+      <div class="num" style="font-size:20px;margin-top:-2px">72<small>% frontend</small></div>
+      <div class="foot">Base 3 août : 74 % / 49 %. Comptes & sécurité complets (réinit. mot de passe, 2FA, changement de mot de passe) et « 1 test actif/spécialité » contraint en base.</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), backend</div>
-      <div class="num">84<small>%</small></div>
-      <div class="bar"><span style="width:84%;background:var(--sev-good-ink)"></span></div>
+      <div class="num">85<small>%</small></div>
+      <div class="bar"><span style="width:85%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">51 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
     </div>
     <div class="score-card">
@@ -376,15 +385,15 @@
 <section id="candidat">
   <div class="sec-head">
     <h2>1 · Gestion du candidat <span style="color:var(--ink-faint);font-weight:500">§4.1</span></h2>
-    <div class="sec-avg">backend <b>83 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
+    <div class="sec-avg">backend <b>83 %</b> · frontend <b>71 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
   </div>
   <p class="sec-intro">Le cœur (compte, complétude, export/effacement RGPD) est solide des deux côtés. Le vrai trou : <strong>les liens externes (GitHub/Portfolio) ont un CRUD backend complet que le frontend n'appelle jamais</strong> — champ entièrement absent de l'écran de profil.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
-      <tr><td class="id">EF-CAND-01<span class="prio M">M</span></td><td class="req"><div class="name">Créer un compte</div><div class="rule">email unique, vérif. lien, mdp ≥10 OWASP</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>auth.service.ts:48</code></td><td class="gap">Pas de SSO ; pas d'écran "mot de passe oublié"</td></tr>
+      <tr><td class="id">EF-CAND-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Créer un compte</div><div class="rule">email unique, vérif. lien, mdp ≥10 OWASP</div></td>
+        <td><span class="pill g">90%</span></td><td><span class="pill g">90%</span></td>
+        <td class="evid"><code>auth.service.ts</code> ; <strong>réinit. mot de passe (V0.3)</strong> <code>/auth/forgot-password</code> + <code>/reset-password</code> (token haché, révoc. sessions), écrans dédiés + lien connexion ; <strong>changement de mot de passe + enrôlement 2FA</strong> dans <code>/settings</code></td><td class="gap"><s>Pas d'écran mot de passe oublié</s> → <strong>flux complet livré (V0.3)</strong>. Reste : SSO (hors périmètre MVP).</td></tr>
       <tr><td class="id">EF-CAND-02<span class="prio M">M</span></td><td class="req"><div class="name">Profil + complétude</div><div class="rule">publiable si ≥70 %</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>candidate-profile.service.ts:107</code> — barème pondéré testé jusqu'au cas limite 70,0 % exact</td><td class="gap">Frontend : pas d'erreurs de validation par champ</td></tr>
@@ -417,15 +426,15 @@
 <section id="evaluation">
   <div class="sec-head">
     <h2>2 · Évaluation & scoring <span style="color:var(--ink-faint);font-weight:500">§4.2, §5.2–5.3</span></h2>
-    <div class="sec-avg">backend <b>82 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base 73/69)</span></div>
+    <div class="sec-avg">backend <b>87 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base 73/69)</span></div>
   </div>
   <p class="sec-intro">Le pipeline de score (webhook, versioning, cooldown, incidents) est le module le mieux testé du projet. Mais <strong>l'anti-triche multicouche, présenté par le CDC comme le différenciateur n°1, n'a que 3 de ses 6 couches réellement construites</strong> côté plateforme (cooldown, audit, blocage multi-compte device/IP livré en V0.3) — les 3 autres sont déléguées à un fournisseur externe qui n'est aujourd'hui qu'un stub déterministe.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
-      <tr><td class="id">EF-EVAL-01<span class="prio M">M</span></td><td class="req"><div class="name">Test par spécialité</div></td>
-        <td><span class="pill n">50%</span></td><td><span class="pill g">100%</span></td>
-        <td class="evid"><code>catalog.service.ts:19</code></td><td class="gap">"1 test actif par spécialité" non contraint en base</td></tr>
+      <tr><td class="id">EF-EVAL-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Test par spécialité</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>catalog.service.ts:19</code> ; <strong>index unique partiel (V0.3)</strong> <code>UQ_tests_one_active_per_specialty ... WHERE active = true</code></td><td class="gap"><s>Non contraint en base</s> → <strong>1 test actif/spécialité garanti par la base (V0.3)</strong>.</td></tr>
       <tr><td class="id">EF-EVAL-02<span class="prio M">M</span></td><td class="req"><div class="name">Environnement sécurisé</div><div class="rule">timer, session unique, plein écran, anti copier-coller</div></td>
         <td><span class="pill n">50%</span></td><td><span class="pill n">50%</span></td>
         <td class="evid"><code>assessment.service.ts:64</code></td><td class="gap">Session unique + timer réels ; plein écran/anti copier-coller délégués au fournisseur externe (0 trace de code)</td></tr>
