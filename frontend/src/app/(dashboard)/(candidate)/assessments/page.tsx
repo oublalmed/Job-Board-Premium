@@ -305,6 +305,35 @@ export default function AssessmentsPage() {
                     })}
                   </p>
                 )}
+                {/* EF-REM-04 — the candidate is told whether their profile is
+                    highlighted in the CVthèque or merely visible. */}
+                <p className="text-xs text-muted-foreground">
+                  {feedbackData.indexationThresholdMet
+                    ? t('assessments.feedback.highlighted')
+                    : t('assessments.feedback.visibleNotHighlighted')}
+                </p>
+                {/* EF-REM-02 — targeted resources to improve weak domains. */}
+                {feedbackData.resources.length > 0 && (
+                  <div className="flex flex-col gap-1.5 border-t border-border/60 pt-3">
+                    <p className="text-xs font-medium text-foreground">
+                      {t('assessments.feedback.resourcesTitle')}
+                    </p>
+                    <ul className="flex flex-col gap-1">
+                      {feedbackData.resources.map((r) => (
+                        <li key={r.url}>
+                          <a
+                            href={r.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-primary hover:underline underline-offset-4"
+                          >
+                            {r.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

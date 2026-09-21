@@ -360,8 +360,8 @@
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">64<small>%</small></div>
-      <div class="bar"><span style="width:64%;background:var(--sev-mid-ink)"></span></div>
+      <div class="num">67<small>%</small></div>
+      <div class="bar"><span style="width:67%;background:var(--sev-mid-ink)"></span></div>
       <div class="foot">48 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
@@ -471,7 +471,7 @@
 <section id="remediation">
   <div class="sec-head">
     <h2>3 · Remédiation candidat <span style="color:var(--ink-faint);font-weight:500">§4.3 — nouveau vs V0.1</span></h2>
-    <div class="sec-avg">backend <b>88 %</b> · frontend <b>25 %</b> <span style="color:var(--ink-faint)">(inchangé)</span></div>
+    <div class="sec-avg">backend <b>88 %</b> · frontend <b>63 %</b> <span style="color:var(--ink-faint)">(base .../25)</span></div>
   </div>
   <p class="sec-intro">Le module le mieux construit du backend — la non-fuite de la banque de sujets est garantie <em>structurellement</em> par le typage (pas juste par convention), et la notification J-90 est un vrai cron BullMQ testé sous concurrence. Le frontend est très en retard : le feedback par domaine s'affiche, mais les ressources ciblées et la notification de fin de cooldown n'ont pas d'écran dédié.</p>
   <div class="tbl-scroll"><table>
@@ -480,15 +480,15 @@
       <tr><td class="id">EF-REM-01<span class="prio M">M</span></td><td class="req"><div class="name">Feedback constructif par domaine</div><div class="rule">sans divulguer les réponses</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>ports/scoring.port.ts:9</code> — type fermé <code>{domain, level}</code>, ne peut structurellement pas porter une réponse</td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-REM-02<span class="prio S">S</span></td><td class="req"><div class="name">Ressources ciblées</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill b">0%</span></td>
-        <td class="evid"><code>remediation-resources.ts:1</code> — table statique, assumé comme tel</td><td class="gap">Rien affiché côté écran au-delà des badges de niveau par domaine</td></tr>
+      <tr><td class="id">EF-REM-02<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Ressources ciblées</div></td>
+        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
+        <td class="evid"><code>remediation-resources.ts</code> ; <strong>affichées à l'écran (V0.3)</strong> dans le bloc feedback (<code>assessments/page.tsx</code>)</td><td class="gap"><s>Rien à l'écran</s> → <strong>ressources recommandées listées (V0.3)</strong> par domaine faible.</td></tr>
       <tr><td class="id">EF-REM-03<span class="prio M">M</span></td><td class="req"><div class="name">Notif fin de cooldown</div><div class="rule">email + in-app à J-90</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill n">25%</span></td>
         <td class="evid"><code>cooldown-scheduler.service.ts:41</code> — vrai cron <code>0 3 * * *</code>, idempotence prouvée sous concurrence</td><td class="gap">Liste de notifications générique ; rien de typé spécifiquement "cooldown terminé"</td></tr>
-      <tr><td class="id">EF-REM-04<span class="prio S">S</span></td><td class="req"><div class="name">Profil visible non mis en avant</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill b">0%</span></td>
-        <td class="evid"><code>indexation.service.ts:107</code></td><td class="gap">Aucun texte/état confirmant ce comportement à l'écran</td></tr>
+      <tr><td class="id">EF-REM-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Profil visible non mis en avant</div></td>
+        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
+        <td class="evid"><code>indexation.service.ts:107</code> ; <strong>état affiché (V0.3)</strong> : « visible mais non mis en avant » vs « mis en avant » selon <code>indexationThresholdMet</code></td><td class="gap"><s>Aucun texte à l'écran</s> → <strong>état de mise en avant explicité (V0.3)</strong>.</td></tr>
     </tbody>
   </table></div>
 </section>

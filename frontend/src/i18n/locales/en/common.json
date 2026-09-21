@@ -532,7 +532,10 @@
     "feedback": {
       "score": "Score obtained: {{score}}/100",
       "technicalScore": "Technical: {{score}}/100",
-      "psychotechnicalScore": "Psychotechnical: {{score}}/100"
+      "psychotechnicalScore": "Psychotechnical: {{score}}/100",
+      "highlighted": "Your profile is indexed and highlighted in the CV library.",
+      "visibleNotHighlighted": "Your profile stays visible but is not highlighted: improve your weak domains to get highlighted.",
+      "resourcesTitle": "Recommended resources"
     },
     "manual": {
       "title": "Resume with an ID (another session)",

@@ -532,7 +532,10 @@
     "feedback": {
       "score": "Score obtenu : {{score}}/100",
       "technicalScore": "Technique : {{score}}/100",
-      "psychotechnicalScore": "Psychotechnique : {{score}}/100"
+      "psychotechnicalScore": "Psychotechnique : {{score}}/100",
+      "highlighted": "Votre profil est indexé et mis en avant dans la CVthèque.",
+      "visibleNotHighlighted": "Votre profil reste visible mais n'est pas mis en avant : améliorez les domaines faibles pour être mis en avant.",
+      "resourcesTitle": "Ressources recommandées"
     },
     "manual": {
       "title": "Reprendre avec un identifiant (autre session)",
