@@ -7,7 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useNotifications } from '@/features/notifications/queries';
+import {
+  useNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from '@/features/notifications/queries';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -30,6 +34,8 @@ function timeAgo(dateStr: string): string {
 export default function NotificationsPage() {
   const { t } = useLocale();
   const { data, isLoading, isError, refetch } = useNotifications();
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
   const notifications = data ?? [];
   const unreadCount = notifications.filter((n) => !n.readAt).length;
 
@@ -40,11 +46,27 @@ export default function NotificationsPage() {
         {!isLoading && !isError && notifications.length > 0 && (
           <div className="flex items-center gap-2">
             {unreadCount > 0 ? (
-              <Badge variant="default">{unreadCount} new</Badge>
+              <>
+                <Badge variant="default">
+                  {t('notifications.unreadCount', {
+                    count: String(unreadCount),
+                  })}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={markAllRead.isPending}
+                  onClick={() => markAllRead.mutate()}
+                >
+                  <CheckCheck className="size-4" />
+                  {t('notifications.markAllRead')}
+                </Button>
+              </>
             ) : (
               <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <CheckCheck className="size-4" />
-                All read
+                {t('notifications.allRead')}
               </span>
             )}
           </div>
@@ -97,6 +119,19 @@ export default function NotificationsPage() {
                   {n.body && <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">{timeAgo(n.createdAt)}</p>
                 </div>
+                {!n.readAt && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 text-muted-foreground"
+                    disabled={markRead.isPending}
+                    onClick={() => markRead.mutate(n.id)}
+                    aria-label={t('notifications.markRead')}
+                    title={t('notifications.markRead')}
+                  >
+                    <CheckCheck className="size-4" />
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}

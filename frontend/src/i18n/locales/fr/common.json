@@ -284,6 +284,9 @@
     "title": "Notifications",
     "empty": "Aucune notification.",
     "markRead": "Marquer comme lu",
+    "markAllRead": "Tout marquer comme lu",
+    "allRead": "Tout est lu",
+    "unreadCount": "{{count}} non lue(s)",
     "cooldownExpired": "Évaluation à nouveau disponible",
     "profileViewed": "Profil consulté"
   },

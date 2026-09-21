@@ -20,8 +20,8 @@ export enum NotificationType {
 // The in-app half of "in-app + email" — neither EF-REM-03 nor EF-GROW-04
 // had anything to attach to before this (5B messaging never actually built
 // EF-MSG-02's in-app+email despite the CDC listing it — see Lot 7 PROGRESS
-// notes). Deliberately minimal: no read-tracking endpoint yet
-// (`readAt` exists for a future PATCH, not wired to anything today).
+// notes). `readAt` is set by the owner-scoped mark-as-read endpoints
+// (PATCH /notifications/:id/read and /notifications/read-all).
 @Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn('uuid')

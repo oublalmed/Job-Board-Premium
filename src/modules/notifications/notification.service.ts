@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 import {
   Notification,
   NotificationType,
@@ -59,6 +59,24 @@ export class NotificationService {
       where: { recipientUserId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  // Owner-scoped mark-as-read: the WHERE pins recipient + id together, so one
+  // user can never mark another's notification read. Idempotent — a
+  // second call (or a foreign id) simply affects zero rows.
+  async markRead(recipientUserId: string, id: string): Promise<void> {
+    await this.notificationRepo.update(
+      { id, recipientUserId, readAt: IsNull() },
+      { readAt: new Date() },
+    );
+  }
+
+  async markAllRead(recipientUserId: string): Promise<{ updated: number }> {
+    const result = await this.notificationRepo.update(
+      { recipientUserId, readAt: IsNull() },
+      { readAt: new Date() },
+    );
+    return { updated: result.affected ?? 0 };
   }
 
   // Best-effort email dispatch. Returns (never throws) so the in-app path is

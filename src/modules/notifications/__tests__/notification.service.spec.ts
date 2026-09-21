@@ -30,6 +30,7 @@ describe('NotificationService', () => {
         }),
       ),
       find: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     userRepo = {
       findOne: jest
@@ -174,6 +175,30 @@ describe('NotificationService', () => {
         }),
       ).resolves.toEqual(expect.objectContaining({ id: 'notif-1' }));
       expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('mark as read', () => {
+    it('marks a single notification read scoped to the owner and unread rows', async () => {
+      await service.markRead('user-1', 'notif-9');
+
+      const [where, patch] = notificationRepo.update.mock.calls[0];
+      expect(where.recipientUserId).toBe('user-1');
+      expect(where.id).toBe('notif-9');
+      // Only touches still-unread rows (readAt IS NULL) and stamps a date.
+      expect(where.readAt).toBeDefined();
+      expect(patch.readAt).toBeInstanceOf(Date);
+    });
+
+    it('marks all unread notifications read and returns the count', async () => {
+      notificationRepo.update.mockResolvedValueOnce({ affected: 3 });
+
+      const result = await service.markAllRead('user-1');
+
+      expect(result).toEqual({ updated: 3 });
+      const [where] = notificationRepo.update.mock.calls[0];
+      expect(where.recipientUserId).toBe('user-1');
+      expect(where.readAt).toBeDefined();
     });
   });
 });

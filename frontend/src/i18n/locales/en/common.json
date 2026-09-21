@@ -284,6 +284,9 @@
     "title": "Notifications",
     "empty": "No notifications.",
     "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "allRead": "All read",
+    "unreadCount": "{{count}} new",
     "cooldownExpired": "Assessment available again",
     "profileViewed": "Profile viewed"
   },
