@@ -448,6 +448,28 @@ describe('ConversationService', () => {
         }),
       );
     });
+
+    it('sanitizes a path-traversal filename before building the storage key', async () => {
+      authorizeRecruiterThread();
+
+      await service.sendAttachment('conversation-1', recruiterUserId, {
+        ...pdf,
+        originalname: '../../../etc/passwd\u0000.pdf',
+      });
+
+      const savedKey = (
+        objectStorage.upload.mock.calls[0][0] as { key: string }
+      ).key;
+      // Must stay under the intended prefix — no traversal, no separators,
+      // no control chars leaking from the client-supplied name.
+      expect(savedKey.startsWith('message-attachments/conversation-1/')).toBe(
+        true,
+      );
+      const tail = savedKey.slice('message-attachments/conversation-1/'.length);
+      expect(tail).not.toContain('..');
+      expect(tail).not.toContain('/');
+      expect(tail).not.toContain('\u0000');
+    });
   });
 
   describe('getAttachmentSignedUrl (EF-MSG-03)', () => {

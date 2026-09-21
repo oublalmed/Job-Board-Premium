@@ -42,6 +42,17 @@ const ATTACHMENT_ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
 
+// Defense-in-depth: the client-supplied filename is untrusted and gets
+// embedded in the object-storage key. Strip any path components and anything
+// outside a safe charset so a crafted name (`../`, control chars, separators)
+// can never escape the intended prefix in a filesystem-backed storage adapter,
+// and cap the length. A uuid still guarantees key uniqueness.
+function safeAttachmentName(originalname: string): string {
+  const base = (originalname || 'document').split(/[/\\]/).pop() ?? 'document';
+  const cleaned = base.replace(/[^A-Za-z0-9._-]/g, '_').replace(/^\.+/, '');
+  return (cleaned || 'document').slice(0, 100);
+}
+
 export interface AttachmentUpload {
   buffer: Buffer;
   originalname: string;
@@ -262,7 +273,7 @@ export class ConversationService {
       );
     }
 
-    const storageKey = `message-attachments/${conversation.id}/${uuidv4()}-${file.originalname}`;
+    const storageKey = `message-attachments/${conversation.id}/${uuidv4()}-${safeAttachmentName(file.originalname)}`;
     await this.objectStorage.upload({
       key: storageKey,
       body: file.buffer,
