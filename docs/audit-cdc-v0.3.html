@@ -497,7 +497,7 @@
 <section id="cvtheque">
   <div class="sec-head">
     <h2>4 · CVthèque & recherche <span style="color:var(--ink-faint);font-weight:500">§4.4</span></h2>
-    <div class="sec-avg">backend <b>67 %</b> · frontend <b>50 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
+    <div class="sec-avg">backend <b>70 %</b> · frontend <b>50 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
   </div>
   <p class="sec-intro">Le moteur de recherche (filtres combinables, tri, pagination curseur) est réel des deux côtés. <strong>V0.3 :</strong> la preuve la plus stricte du CDC — <strong>« un profil masqué n'apparaît JAMAIS »</strong> — est désormais couverte par un e2e réel contre Postgres (liste + détail). <strong>V0.3 :</strong> les recherches sauvegardées + alertes (EF-SRCH-04) sont livrées. Reste en écart : anonymisation d'aperçu (EF-SRCH-05, priorité « Could »).</p>
   <div class="tbl-scroll"><table>
@@ -506,9 +506,9 @@
       <tr><td class="id">EF-SRCH-01<span class="prio M">M</span></td><td class="req"><div class="name">Indexation profils scorés+publiables</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill na">n/a</span></td>
         <td class="evid"><code>indexation.service.ts:84</code></td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-SRCH-02<span class="prio M">M</span></td><td class="req"><div class="name">Recherche full-text + filtres</div></td><span class="pivot-flag">⚑ colonnes score/salaire — retrait prévu, état actuel</span>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>search.service.ts:171</code> — filtres combinables, tri, pagination curseur</td><td class="gap">Pas de e2e HTTP complet, seulement unitaire sur query-builder mocké</td></tr>
+      <tr><td class="id">EF-SRCH-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Recherche full-text + filtres</div></td><span class="pivot-flag">⚑ colonnes score/salaire — retrait prévu, état actuel</span>
+        <td><span class="pill g">90%</span></td><td><span class="pill m">75%</span></td>
+        <td class="evid"><code>search.service.ts:171</code> ; <strong>e2e HTTP réel (V0.3)</strong> <code>test/search-filters.e2e-spec.ts</code> — full-text <code>q</code>, location, pagination limit+curseur, validation</td><td class="gap"><s>Seulement unitaire mocké</s> → <strong>e2e HTTP complet contre Postgres (V0.3)</strong>.</td></tr>
       <tr><td class="id">EF-SRCH-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Respect visibilité</div><div class="rule">contrôle serveur</div></td>
         <td><span class="pill m">75%</span></td><td><span class="pill n">50%</span></td>
         <td class="evid"><code>search.service.ts:184</code> + <strong>e2e réel</strong> <code>test/search-visibility.e2e-spec.ts</code></td><td class="gap"><s>Prouvé seulement contre un mock</s> → <strong>e2e réel (V0.3)</strong> : profil masqué et non-indexé seedés en base, absence vérifiée via HTTP (liste + détail 404).</td></tr>
