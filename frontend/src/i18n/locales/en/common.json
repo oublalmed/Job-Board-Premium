@@ -549,6 +549,8 @@
       "psychotechnical": "Psychotechnical",
       "percentile": "{{value}}th percentile",
       "completedOn": "Completed on {{date}}",
+      "viewRemediation": "View remediation",
+      "hideRemediation": "Hide",
       "eligibleNow": "You are eligible to retake an assessment.",
       "nextEligible": "Next attempt available from {{date}}.",
       "cooldownInfo": "An assessment can be retaken every {{days}} days."

@@ -549,6 +549,8 @@
       "psychotechnical": "Psychotechnique",
       "percentile": "{{value}}ᵉ percentile",
       "completedOn": "Terminée le {{date}}",
+      "viewRemediation": "Voir la remédiation",
+      "hideRemediation": "Masquer",
       "eligibleNow": "Vous êtes éligible pour repasser une évaluation.",
       "nextEligible": "Prochaine tentative possible à partir du {{date}}.",
       "cooldownInfo": "Une évaluation peut être repassée tous les {{days}} jours."

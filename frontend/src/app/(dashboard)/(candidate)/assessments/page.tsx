@@ -35,6 +35,7 @@ import { formatDateCasablanca } from '@/lib/format';
 import {
   useAssessmentCatalog,
   useAssessmentFeedback,
+  useAssessmentFeedbackQuery,
   useAssessmentHistory,
   useReportIncident,
   useResumeAssessment,
@@ -505,6 +506,12 @@ function ScoreStat({ label, value }: { label: string; value: string }) {
 function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
   const { t, locale } = useLocale();
   const badge = STATUS_BADGE[item.status];
+  const [open, setOpen] = useState(false);
+  // EF-CAND-09 — remediation guidance for a past completed attempt, fetched
+  // lazily only when the candidate expands the row.
+  const isCompleted = item.status === 'completed';
+  const feedback = useAssessmentFeedbackQuery(item.id, open && isCompleted);
+  const fb = feedback.data;
   return (
     <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -520,7 +527,21 @@ function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
             </span>
           )}
         </div>
-        <Badge variant={badge.variant}>{t(badge.key)}</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={badge.variant}>{t(badge.key)}</Badge>
+          {isCompleted && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOpen((o) => !o)}
+              aria-expanded={open}
+            >
+              {open
+                ? t('assessments.history.hideRemediation')
+                : t('assessments.history.viewRemediation')}
+            </Button>
+          )}
+        </div>
       </div>
       {item.score && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -547,6 +568,67 @@ function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
                 value: String(Math.round(item.score.percentile)),
               })}
             />
+          )}
+        </div>
+      )}
+      {open && isCompleted && (
+        <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-muted/30 p-3">
+          {feedback.isLoading && (
+            <p className="text-xs text-muted-foreground">
+              {t('common.loading')}
+            </p>
+          )}
+          {feedback.isError && (
+            <p className="text-xs text-destructive">{t('common.error')}</p>
+          )}
+          {fb && (
+            <>
+              {fb.domainFeedback.length > 0 && (
+                <ul className="flex flex-wrap gap-2">
+                  {fb.domainFeedback.map((d) => (
+                    <li key={d.domain}>
+                      <Badge
+                        variant={
+                          d.level === 'strong'
+                            ? 'success'
+                            : d.level === 'medium'
+                              ? 'warning'
+                              : 'destructive'
+                        }
+                      >
+                        {d.domain}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {fb.indexationThresholdMet
+                  ? t('assessments.feedback.highlighted')
+                  : t('assessments.feedback.visibleNotHighlighted')}
+              </p>
+              {fb.resources.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-medium text-foreground">
+                    {t('assessments.feedback.resourcesTitle')}
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    {fb.resources.map((r) => (
+                      <li key={r.url}>
+                        <a
+                          href={r.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary hover:underline underline-offset-4"
+                        >
+                          {r.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

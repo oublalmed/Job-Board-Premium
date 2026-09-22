@@ -127,3 +127,22 @@ export function useAssessmentFeedback() {
       ),
   });
 }
+
+// EF-CAND-09 — lazy per-assessment feedback so a candidate can review the
+// remediation guidance of any past completed attempt from their history, not
+// just the active session. Only fetched once `enabled` (the row is expanded).
+export function useAssessmentFeedbackQuery(
+  assessmentId: string,
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: [...assessmentKeys.all, 'feedback', assessmentId] as const,
+    enabled,
+    queryFn: async (): Promise<RemediationFeedback> =>
+      unwrap(
+        await apiClient.GET('/api/v1/assessments/{id}/feedback', {
+          params: { path: { id: assessmentId } },
+        }),
+      ) as RemediationFeedback,
+  });
+}

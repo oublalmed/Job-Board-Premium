@@ -360,8 +360,8 @@
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">68<small>%</small></div>
-      <div class="bar"><span style="width:68%;background:var(--sev-mid-ink)"></span></div>
+      <div class="num">69<small>%</small></div>
+      <div class="bar"><span style="width:69%;background:var(--sev-mid-ink)"></span></div>
       <div class="foot">48 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
@@ -385,7 +385,7 @@
 <section id="candidat">
   <div class="sec-head">
     <h2>1 · Gestion du candidat <span style="color:var(--ink-faint);font-weight:500">§4.1</span></h2>
-    <div class="sec-avg">backend <b>83 %</b> · frontend <b>73 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
+    <div class="sec-avg">backend <b>83 %</b> · frontend <b>78 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
   </div>
   <p class="sec-intro">Le cœur (compte, complétude, export/effacement RGPD) est solide des deux côtés. Le vrai trou : <strong>les liens externes (GitHub/Portfolio) ont un CRUD backend complet que le frontend n'appelle jamais</strong> — champ entièrement absent de l'écran de profil.</p>
   <div class="tbl-scroll"><table>
@@ -415,9 +415,9 @@
       <tr><td class="id">EF-CAND-08<span class="prio M">M</span></td><td class="req"><div class="name">Export / effacement RGPD</div><div class="rule">portabilité + effacement ≤30j</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>candidate-data.service.ts:40</code> — effacement immédiat, journalisé</td><td class="gap">Export JSON seulement (pas de PDF)</td></tr>
-      <tr><td class="id">EF-CAND-09<span class="prio S">S</span></td><td class="req"><div class="name">Parcours de remédiation</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill n">25%</span></td>
-        <td class="evid"><code>remediation.service.ts:42</code></td><td class="gap">Même endpoint que EF-REM-01 ; pas de suivi de progression dédié côté écran</td></tr>
+      <tr><td class="id">EF-CAND-09<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Parcours de remédiation</div></td>
+        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
+        <td class="evid"><code>remediation.service.ts:42</code> ; <strong>consultation par tentative (V0.3)</strong> : chaque évaluation terminée de l'historique déplie sa remédiation (domaines, ressources, mise en avant) — <code>useAssessmentFeedbackQuery</code></td><td class="gap"><s>Pas de suivi à l'écran</s> → <strong>remédiation consultable par tentative passée (V0.3)</strong>.</td></tr>
     </tbody>
   </table></div>
 </section>
