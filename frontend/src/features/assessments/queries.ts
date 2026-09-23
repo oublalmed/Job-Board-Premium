@@ -29,6 +29,9 @@ export interface AssessmentHistoryItem {
     percentile: number | null;
     technicalScore: number | null;
     psychotechnicalScore: number | null;
+    // ISO date at which this score stops counting for indexation/ranking
+    // (EF-EVAL-05 — 12-month validity). May be absent for legacy payloads.
+    expiresAt: string | null;
   } | null;
 }
 

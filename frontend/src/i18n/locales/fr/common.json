@@ -582,8 +582,17 @@
       "hideRemediation": "Masquer",
       "eligibleNow": "Vous êtes éligible pour repasser une évaluation.",
       "nextEligible": "Prochaine tentative possible à partir du {{date}}.",
-      "cooldownInfo": "Une évaluation peut être repassée tous les {{days}} jours."
+      "cooldownInfo": "Une évaluation peut être repassée tous les {{days}} jours.",
+      "scoreExpires": "Ce score est valable jusqu'au {{date}}."
     }
+  },
+  "secureExam": {
+    "title": "Mode examen sécurisé",
+    "hint": "Restez en plein écran pendant l'évaluation. Le copier-coller est désactivé et les changements d'onglet sont enregistrés.",
+    "enterFullscreen": "Passer en plein écran",
+    "warnLeftTab": "Vous avez quitté l'onglet de l'évaluation. Revenez pour continuer.",
+    "warnNotFullscreen": "Vous n'êtes plus en plein écran. Repassez en plein écran.",
+    "leaveCount": "{{count}} sortie(s) détectée(s) pendant cette évaluation."
   },
   "common": {
     "loading": "Chargement…",

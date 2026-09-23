@@ -46,6 +46,8 @@ import {
   useAssessmentSession,
   type AssessmentStatus,
 } from '@/features/assessments/session-store';
+import { useSecureExam } from '@/features/assessments/use-secure-exam';
+import { SecureExamBanner } from '@/features/assessments/SecureExamBanner';
 import {
   manualResumeSchema,
   EMPTY_MANUAL_RESUME,
@@ -104,6 +106,10 @@ export default function AssessmentsPage() {
 
   const { session, setSession, updateStatus } = useAssessmentSession();
 
+  // EF-EVAL-02 — browser-side deterrent layer, active only while an attempt
+  // is genuinely in progress.
+  const secureExam = useSecureExam(session?.status === 'in_progress');
+
   const start = useStartAssessment();
   const resume = useResumeAssessment();
   const incident = useReportIncident();
@@ -128,6 +134,12 @@ export default function AssessmentsPage() {
           status: data.assessment.status,
         });
         feedback.reset();
+        // EF-EVAL-02 — best-effort fullscreen entry on start; the secure-exam
+        // banner exposes a reliable gesture-driven fallback if the browser
+        // denies this deferred (post-mutation) request.
+        if (data.assessment.status === 'in_progress') {
+          void secureExam.enterFullscreen();
+        }
         toast(t('assessments.started'), 'success');
       },
       onError: (err) => {
@@ -207,6 +219,7 @@ export default function AssessmentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            <SecureExamBanner exam={secureExam} />
             <p className="text-sm text-muted-foreground">
               {t('assessments.session.testLabel')}{' '}
               <span className="font-medium text-foreground">
@@ -570,6 +583,13 @@ function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
             />
           )}
         </div>
+      )}
+      {item.score?.expiresAt && (
+        <p className="text-xs text-muted-foreground">
+          {t('assessments.history.scoreExpires', {
+            date: new Date(item.score.expiresAt).toLocaleDateString(),
+          })}
+        </p>
       )}
       {open && isCompleted && (
         <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-muted/30 p-3">

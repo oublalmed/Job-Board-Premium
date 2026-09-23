@@ -582,8 +582,17 @@
       "hideRemediation": "Hide",
       "eligibleNow": "You are eligible to retake an assessment.",
       "nextEligible": "Next attempt available from {{date}}.",
-      "cooldownInfo": "An assessment can be retaken every {{days}} days."
+      "cooldownInfo": "An assessment can be retaken every {{days}} days.",
+      "scoreExpires": "This score is valid until {{date}}."
     }
+  },
+  "secureExam": {
+    "title": "Secure exam mode",
+    "hint": "Stay in fullscreen during the assessment. Copy-paste is disabled and tab switches are recorded.",
+    "enterFullscreen": "Enter fullscreen",
+    "warnLeftTab": "You left the assessment tab. Return to continue.",
+    "warnNotFullscreen": "You are no longer in fullscreen. Re-enter fullscreen.",
+    "leaveCount": "{{count}} exit(s) detected during this assessment."
   },
   "common": {
     "loading": "Loading…",

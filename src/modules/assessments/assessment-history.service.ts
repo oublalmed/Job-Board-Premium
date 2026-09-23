@@ -22,6 +22,10 @@ export interface AssessmentHistoryItem {
     percentile: number | null;
     technicalScore: number | null;
     psychotechnicalScore: number | null;
+    // ISO date at which this score stops counting for indexation/ranking
+    // (EF-EVAL-05 — 12-month validity, see webhook.service.ts). Surfaced so
+    // the candidate-facing history can label when a result expires.
+    expiresAt: string | null;
   } | null;
 }
 
@@ -78,6 +82,7 @@ export class AssessmentHistoryService {
               percentile: num(s.percentile),
               technicalScore: num(s.technicalScore),
               psychotechnicalScore: num(s.psychotechnicalScore),
+              expiresAt: s.expiresAt ? s.expiresAt.toISOString() : null,
             }
           : null,
       };
