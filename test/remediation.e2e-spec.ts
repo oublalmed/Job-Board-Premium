@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -33,6 +33,19 @@ describe('GET /assessments/:id/feedback (e2e) — Lot 7 remediation', () => {
 
   function sign(body: Buffer): string {
     return createHmac('sha256', webhookSecret).update(body).digest('hex');
+  }
+
+  // Mirrors the persisted composite score for a given externalId so the
+  // assertion stays deterministic and pipeline-accurate. The StubScoringAdapter
+  // derives its sub-scores from sha256(externalId) (never a fixed constant), and
+  // WebhookService stores value = (tech*60 + psych*40)/100 (the default
+  // technique/psychotechnique weights). Keeping both in one place means this
+  // test breaks loudly if either formula changes, instead of silently.
+  function expectedCompositeScore(externalId: string): number {
+    const hash = createHash('sha256').update(externalId).digest();
+    const technicalScore = hash[0] % 101;
+    const psychotechnicalScore = hash[1] % 101;
+    return (technicalScore * 60 + psychotechnicalScore * 40) / 100;
   }
 
   async function createCandidate(): Promise<{ userId: string; token: string }> {
@@ -86,7 +99,7 @@ describe('GET /assessments/:id/feedback (e2e) — Lot 7 remediation', () => {
 
   async function createCompletedAssessment(
     candidateId: string,
-  ): Promise<string> {
+  ): Promise<{ assessmentId: string; externalId: string }> {
     const specialty = await specialtyRepo.save(
       specialtyRepo.create({
         name: `E2E remediation specialty ${Date.now()}-${Math.random()}`,
@@ -120,12 +133,14 @@ describe('GET /assessments/:id/feedback (e2e) — Lot 7 remediation', () => {
       .send(payload.toString('utf8'))
       .expect(200);
 
-    return assessment.id;
+    return { assessmentId: assessment.id, externalId };
   }
 
   it('returns per-domain feedback with no leaked keys for the assessment owner', async () => {
     const candidate = await createCandidate();
-    const assessmentId = await createCompletedAssessment(candidate.userId);
+    const { assessmentId, externalId } = await createCompletedAssessment(
+      candidate.userId,
+    );
 
     const res = await request(app.getHttpServer())
       .get(path(`/assessments/${assessmentId}/feedback`))
@@ -140,7 +155,9 @@ describe('GET /assessments/:id/feedback (e2e) — Lot 7 remediation', () => {
       reEligibleAt: string;
     };
 
-    expect(body.scoreValue).toBe(65); // StubScoringAdapter's fixed score
+    // The stub scorer is deterministic per externalId (not a fixed constant),
+    // so assert against the exact composite the pipeline must have persisted.
+    expect(body.scoreValue).toBe(expectedCompositeScore(externalId));
     expect(body.domainFeedback.length).toBeGreaterThan(0);
     for (const entry of body.domainFeedback) {
       expect(Object.keys(entry).sort()).toEqual(['domain', 'level']);
@@ -151,7 +168,7 @@ describe('GET /assessments/:id/feedback (e2e) — Lot 7 remediation', () => {
   it('does not let candidate B see candidate A’s feedback — 404, not 403 (existence not leaked)', async () => {
     const candidateA = await createCandidate();
     const candidateB = await createCandidate();
-    const assessmentId = await createCompletedAssessment(candidateA.userId);
+    const { assessmentId } = await createCompletedAssessment(candidateA.userId);
 
     await request(app.getHttpServer())
       .get(path(`/assessments/${assessmentId}/feedback`))
@@ -168,7 +185,7 @@ describe('GET /assessments/:id/feedback (e2e) — Lot 7 remediation', () => {
 
   it('rejects an unauthenticated request', async () => {
     const candidate = await createCandidate();
-    const assessmentId = await createCompletedAssessment(candidate.userId);
+    const { assessmentId } = await createCompletedAssessment(candidate.userId);
 
     await request(app.getHttpServer())
       .get(path(`/assessments/${assessmentId}/feedback`))
@@ -177,7 +194,7 @@ describe('GET /assessments/:id/feedback (e2e) — Lot 7 remediation', () => {
 
   it('rejects a recruiter (wrong role) even if authenticated', async () => {
     const candidate = await createCandidate();
-    const assessmentId = await createCompletedAssessment(candidate.userId);
+    const { assessmentId } = await createCompletedAssessment(candidate.userId);
 
     const recruiterUser = await userRepo.save(
       userRepo.create({

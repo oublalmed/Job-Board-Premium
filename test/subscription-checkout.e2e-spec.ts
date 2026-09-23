@@ -6,8 +6,13 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import request from 'supertest';
 import type { App } from 'supertest/types';
+import { randomUUID } from 'node:crypto';
 import { AppModule } from '../src/app.module';
 import { User } from '../src/modules/users/entities/user.entity';
+import {
+  CandidateProfile,
+  ProfileVisibility,
+} from '../src/modules/candidates/entities/candidate-profile.entity';
 import {
   Subscription,
   SubscriptionPlan,
@@ -23,6 +28,7 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
   let jwtService: JwtService;
   let userRepo: Repository<User>;
   let subscriptionRepo: Repository<Subscription>;
+  let profileRepo: Repository<CandidateProfile>;
   let createCheckoutSpy: jest.SpiedFunction<
     PaymentProvider['createCheckoutSession']
   >;
@@ -75,6 +81,50 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
     return (res.body as { company: { id: string } }).company.id;
   }
 
+  // A subscription-gated action still exercised over HTTP now that the OFFRES
+  // endpoint is gone: POST /companies/shortlist runs
+  // SubscriptionGuardService.assertActiveSubscription *before* any other work,
+  // so it is the faithful access probe for the Lot 6D per-status rules. The
+  // 403 path needs no real profile (the guard rejects first); the success path
+  // needs a real indexed, non-hidden candidate profile to shortlist.
+  let probeCandidateCounter = 0;
+  async function seedIndexedProfileId(): Promise<string> {
+    probeCandidateCounter += 1;
+    const user = await userRepo.save(
+      userRepo.create({
+        email: `e2e-checkout-candidate-${Date.now()}-${probeCandidateCounter}@example.com`,
+        passwordHash: 'irrelevant-for-this-test',
+        roles: [Role.CANDIDATE],
+        emailVerified: true,
+      }),
+    );
+    const profile = await profileRepo.save(
+      profileRepo.create({
+        userId: user.id,
+        headline: 'Gated-action probe profile',
+        location: 'Casablanca',
+        visibility: ProfileVisibility.PUBLIC,
+        indexedInCvtheque: true,
+        completeness: 100,
+      }),
+    );
+    return profile.id;
+  }
+
+  // Asserts the caller's subscription access via the gated shortlist action.
+  async function expectGatedAccess(
+    token: string,
+    expectedStatus: 201 | 403,
+  ): Promise<void> {
+    const candidateProfileId =
+      expectedStatus === 201 ? await seedIndexedProfileId() : randomUUID();
+    await request(app.getHttpServer())
+      .post(path('/companies/shortlist'))
+      .set('Authorization', `Bearer ${token}`)
+      .send({ candidateProfileId })
+      .expect(expectedStatus);
+  }
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -98,6 +148,7 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
     jwtService = app.get(JwtService);
     userRepo = app.get(getRepositoryToken(User));
     subscriptionRepo = app.get(getRepositoryToken(Subscription));
+    profileRepo = app.get(getRepositoryToken(CandidateProfile));
 
     // Checkout Session creation is a real outbound Stripe API call — no
     // network/live credentials in this environment. Only this one method
@@ -306,11 +357,7 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
       expect(after.cancelAtPeriodEnd).toBe(true);
 
       // Access maintained: a subscription-gated action still succeeds.
-      await request(app.getHttpServer())
-        .post(path('/companies/offers'))
-        .set('Authorization', `Bearer ${recruiter.token}`)
-        .send({ title: 'Ingénieur logiciel' })
-        .expect(201);
+      await expectGatedAccess(recruiter.token, 201);
     });
 
     it('is idempotent — a second call does not re-invoke the provider', async () => {
@@ -407,11 +454,7 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
       subscription.pastDueSince = new Date(); // just went past due
       await subscriptionRepo.save(subscription);
 
-      await request(app.getHttpServer())
-        .post(path('/companies/offers'))
-        .set('Authorization', `Bearer ${recruiter.token}`)
-        .send({ title: 'Dans la fenêtre de grâce' })
-        .expect(201);
+      await expectGatedAccess(recruiter.token, 201);
 
       // SUBSCRIPTION_GRACE_PERIOD_DAYS=7 in this environment's .env — well
       // outside it.
@@ -420,11 +463,7 @@ describe('Subscription checkout (e2e) — Lot 6B', () => {
       );
       await subscriptionRepo.save(subscription);
 
-      await request(app.getHttpServer())
-        .post(path('/companies/offers'))
-        .set('Authorization', `Bearer ${recruiter.token}`)
-        .send({ title: 'Hors de la fenêtre de grâce' })
-        .expect(403);
+      await expectGatedAccess(recruiter.token, 403);
     });
   });
 
