@@ -30,11 +30,14 @@ spec:
             - name: MFA_ENFORCE_STAFF
               value: "true"
           readinessProbe:
-            httpGet: { path: /api/v1/health, port: 3000 }
+            # DB reachable + heap within budget — pull the pod from the LB
+            # (without killing it) when it cannot serve.
+            httpGet: { path: /api/v1/health/ready, port: 3000 }
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet: { path: /api/v1/health, port: 3000 }
+            # Process-only check — a transient DB blip must not restart the pod.
+            httpGet: { path: /api/v1/health/live, port: 3000 }
             initialDelaySeconds: 20
             periodSeconds: 20
           resources:

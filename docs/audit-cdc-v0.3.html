@@ -230,7 +230,7 @@
     </div>
     <div class="score-card">
       <div class="label">Qualité (mesuré, CI)</div>
-      <div class="num">716<small>tests ✓</small></div>
+      <div class="num">719<small>tests ✓</small></div>
       <div class="bar"><span style="width:80%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">80 suites unitaires + 20 suites e2e (121 tests) vertes ; lint CI débloqué ; <code style="font-size:11px">nest build</code> et <code style="font-size:11px">next build</code> OK. CI PR #6 verte.</div>
     </div>
@@ -311,6 +311,9 @@
       <tr><td class="id">EF-SRCH-05</td><td class="req"><div class="name">Anonymisation de l'aperçu CVthèque</div><div class="rule">identité complète exposée en liste</div></td>
         <td><span class="pill b">0%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>search.service.ts#anonymizeLastName</code> — la liste n'expose que prénom + initiale (<code>anonymized:true</code>), contrôle serveur ; identité complète réservée au détail candidat ; test unitaire dédié</td></tr>
+      <tr><td class="id">ENF-09 (partiel)</td><td class="req"><div class="name">Sondes liveness/readiness</div><div class="rule"><code>/health</code> pinguait seulement la BD</div></td>
+        <td><span class="pill n">25%</span></td><td><span class="pill m">40%</span></td>
+        <td class="evid"><code>health.controller.ts</code> — <code>/health/live</code> (process seul, pas de restart sur blip BD) + <code>/health/ready</code> (BD + budget mémoire via <code>MemoryHealthIndicator</code>) ; sondes câblées dans <code>deploy/k8s/api.yaml</code> ; 3 tests. Métriques/tracing (prom-client/OTel) restent à faire.</td></tr>
       <tr><td class="id">EF-CAND-01</td><td class="req"><div class="name">Réinit. + changement de mot de passe, enrôlement 2FA</div><div class="rule">aucun écran mot de passe oublié</div></td>
         <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>/auth/forgot-password</code> + <code>/reset-password</code> (token SHA-256 haché, expiry 1 h, révoc. sessions) ; <code>/auth/change-password</code> ; carte Sécurité <code>/settings</code> (2FA setup/enable/disable, backup codes) ; 9 tests</td></tr>
@@ -692,7 +695,7 @@
       <tr><td class="id">ENF-06 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req">Auth + MFA staff</td><td>JWT+refresh, MFA</td><td><span class="pill g">100%</span></td><td class="evid">JWT/refresh solide + <strong>MFA/TOTP livrée</strong> : <code>mfa.service.ts</code>, <code>common/crypto/</code> (RFC 6238, secrets AES-256-GCM), backup codes, login step-up, <code>StaffMfaGuard</code> (flag <code>MFA_ENFORCE_STAFF</code>)</td></tr>
       <tr><td class="id">ENF-07</td><td class="req">Secrets en coffre-fort</td><td>vault, pas en clair</td><td><span class="pill n">25%</span></td><td class="evid">Env vars validées par Joi, <code>.env</code> gitignored — aucune intégration Vault/KMS</td></tr>
       <tr><td class="id">ENF-08</td><td class="req">Sauvegardes BD</td><td>quotidiennes, PITR, testées</td><td><span class="pill b">0%</span></td><td class="evid">Toujours à mettre en place — <strong>V0.3 : guidage + CronJob exemple documentés</strong> dans <code>docs/HARDENING.md</code> (managed PITR recommandé)</td></tr>
-      <tr><td class="id">ENF-09</td><td class="req">Observabilité</td><td>logs/métriques/alertes centralisés</td><td><span class="pill n">25%</span></td><td class="evid">Endpoint <code>/health</code> + journal d'audit lisible (V0.3) ; métriques/tracing encore à ajouter — plan détaillé (prom-client, OTel) dans <code>docs/HARDENING.md</code></td></tr>
+      <tr><td class="id">ENF-09</td><td class="req">Observabilité</td><td>logs/métriques/alertes centralisés</td><td><span class="pill m">40%</span></td><td class="evid">Sondes liveness/readiness séparées (V0.3) : <code>/health/live</code> (process seul), <code>/health/ready</code> (DB + budget mémoire), câblées dans <code>deploy/k8s/api.yaml</code> ; <code>/health</code> agrégé + journal d'audit lisible. Restent métriques/tracing centralisés (prom-client, OTel — plan dans <code>docs/HARDENING.md</code>)</td></tr>
       <tr><td class="id">ENF-10</td><td class="req">Couverture de tests</td><td>≥70 % cœur métier</td><td><span class="pill g">100%</span></td><td class="evid"><strong>Mesuré</strong> : 95,4 % lignes, seuil CI appliqué (<code>package.json</code>), 61 fichiers de tests unitaires + 19 e2e</td></tr>
       <tr><td class="id">ENF-11</td><td class="req">Accessibilité WCAG 2.1 AA</td><td>—</td><td><span class="pill na">non audité</span></td><td class="evid">Hors périmètre de cette passe (audit backend) — à couvrir dans un passage frontend dédié</td></tr>
       <tr><td class="id">ENF-12 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req">Protection données perso</td><td>CNDP/RGPD</td><td><span class="pill m">75%</span></td><td class="evid">Droit d'accès/effacement réels et audités ; <strong>V0.3 : recueil de consentement à l'inscription livré</strong> (<code>RegisterDto</code> exige <code>consentAccepted</code>, <code>users.consent_at</code>, case à cocher + page <code>/privacy</code>). Rétention par type documentée dans <code>docs/HARDENING.md</code></td></tr>
