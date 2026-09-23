@@ -96,6 +96,7 @@ export const profileKeys = {
   schoolVerification: () => [...profileKeys.all, 'school-verification'] as const,
   links: () => [...profileKeys.all, 'links'] as const,
   certifications: () => [...profileKeys.all, 'certifications'] as const,
+  projects: () => [...profileKeys.all, 'projects'] as const,
   recruiterSelf: (userId?: string) => ['recruiter', 'self', userId] as const,
 };
 
@@ -365,6 +366,86 @@ export function useRecruiterSelf(userId: string | undefined) {
         recruiter: list.find((r) => r.userId === userId) ?? null,
         companyName: companyData?.company?.name ?? null,
       };
+    },
+  });
+}
+
+// EF-CAND-07 — structured projects. Same raw fetch + bearer pattern as
+// certifications: the endpoints post-date the generated OpenAPI client.
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  url: string | null;
+  role: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface ProjectInput {
+  title: string;
+  description: string;
+  url?: string;
+  role?: string;
+  startDate?: string;
+  endDate?: string;
+}
+export function useProjects() {
+  return useQuery({
+    queryKey: profileKeys.projects(),
+    queryFn: async () => {
+      const res = await fetchWithAuth('/api/v1/candidates/projects');
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Project[];
+    },
+  });
+}
+export function useAddProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ProjectInput) => {
+      const res = await fetchWithAuth('/api/v1/candidates/projects', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Project;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.projects() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: ProjectInput }) => {
+      const res = await fetchWithAuth(`/api/v1/candidates/projects/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Project;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.projects() });
+    },
+  });
+}
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(`/api/v1/candidates/projects/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.projects() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
     },
   });
 }

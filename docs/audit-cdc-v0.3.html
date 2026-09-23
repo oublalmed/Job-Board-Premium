@@ -409,7 +409,7 @@
 <section id="candidat">
   <div class="sec-head">
     <h2>1 · Gestion du candidat <span style="color:var(--ink-faint);font-weight:500">§4.1</span></h2>
-    <div class="sec-avg">backend <b>87 %</b> · frontend <b>80 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
+    <div class="sec-avg">backend <b>87 %</b> · frontend <b>82 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
   </div>
   <p class="sec-intro">Le cœur (compte, complétude, export/effacement RGPD) est solide des deux côtés, et le frontend a rattrapé le backend : liens externes, validation par champ, réinit./changement de mot de passe et export RGPD sont désormais à l'écran. <strong>L'export de portabilité RGPD est maintenant disponible en JSON <em>et</em> en PDF (EF-CAND-08, V0.3)</strong>. Ce qui reste porte sur des règles métier fines (devise MAD explicite, blocage direct du champ visibilité) plutôt que sur des écrans manquants.</p>
   <div class="tbl-scroll"><table>
@@ -434,8 +434,8 @@
         <td><span class="pill g">90%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>candidate-profile.entity.ts:60</code> (défaut HIDDEN) ; <strong>garde de domaine (V0.3)</strong> <code>candidate-profile.service.ts#updateProfile</code> — toute bascule vers PUBLIC/RECRUITERS_ONLY est refusée (403) tant que <code>indexedInCvtheque</code> est faux ; 5 tests</td><td class="gap"><s>Règle non bloquante</s> → <strong>blocage direct du champ appliqué (V0.3)</strong> : impossible de se rendre visible avant d'être évalué et publiable.</td></tr>
       <tr><td class="id">EF-CAND-07<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Certifications & projets</div></td>
-        <td><span class="pill g">85%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>certification.entity.ts</code> + CRUD <code>candidate-certification.controller.ts</code> ; section profil <code>CertificationsCard.tsx</code> ; inclus dans l'export RGPD</td><td class="gap"><s>Simple enum</s> → <strong>entité structurée + CRUD + écran livrés (V0.3)</strong> (nom, organisme, dates, URL). Reste : sous-entité « projets » (même patron).</td></tr>
+        <td><span class="pill g">90%</span></td><td><span class="pill g">90%</span></td>
+        <td class="evid">Certifications : <code>certification.entity.ts</code> + CRUD + <code>CertificationsCard.tsx</code> (export RGPD). <strong>Projets (V0.3)</strong> : <code>project.entity.ts</code> + migration + CRUD owner-scoped <code>candidate-project.controller.ts</code> (10 tests) + <code>ProjectsCard.tsx</code> (ajout/édition/suppression, i18n fr/en).</td><td class="gap"><s>Simple enum</s> → <strong>certifications ET projets structurés + écrans livrés (V0.3)</strong>.</td></tr>
       <tr><td class="id">EF-CAND-08<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Export / effacement RGPD</div><div class="rule">portabilité + effacement ≤30j</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill g">90%</span></td>
         <td class="evid"><code>candidate-data.service.ts</code> — effacement immédiat journalisé + <strong>export PDF de portabilité (V0.3)</strong> <code>GET /candidates/data/export/pdf</code> (<code>candidate-data-pdf.ts</code>, source unique partagée avec l'export JSON) ; bouton dédié dans <code>/settings</code></td><td class="gap"><s>Export JSON seulement (pas de PDF)</s> → <strong>export PDF livré (V0.3)</strong> : document de portabilité téléchargeable, mêmes données que le JSON.</td></tr>
