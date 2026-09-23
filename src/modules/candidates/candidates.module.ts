@@ -7,6 +7,7 @@ import { Document } from './entities/document.entity.js';
 import { Experience } from './entities/experience.entity.js';
 import { ProfileLink } from './entities/profile-link.entity.js';
 import { Certification } from './entities/certification.entity.js';
+import { Project } from './entities/project.entity.js';
 import { DataRequest } from './entities/data-request.entity.js';
 import { User } from '../users/entities/user.entity.js';
 import { CandidateProfileService } from './candidate-profile.service.js';
@@ -27,6 +28,8 @@ import { CandidateSkillService } from './candidate-skill.service.js';
 import { CandidateSkillController } from './candidate-skill.controller.js';
 import { CandidateCertificationService } from './candidate-certification.service.js';
 import { CandidateCertificationController } from './candidate-certification.controller.js';
+import { CandidateProjectService } from './candidate-project.service.js';
+import { CandidateProjectController } from './candidate-project.controller.js';
 
 @Module({
   imports: [
@@ -38,6 +41,7 @@ import { CandidateCertificationController } from './candidate-certification.cont
       Experience,
       ProfileLink,
       Certification,
+      Project,
       DataRequest,
       User,
     ]),
@@ -52,6 +56,7 @@ import { CandidateCertificationController } from './candidate-certification.cont
     CandidateLinkController,
     CandidateSkillController,
     CandidateCertificationController,
+    CandidateProjectController,
   ],
   providers: [
     CandidateProfileService,
@@ -63,6 +68,7 @@ import { CandidateCertificationController } from './candidate-certification.cont
     CandidateLinkService,
     CandidateSkillService,
     CandidateCertificationService,
+    CandidateProjectService,
   ],
   exports: [
     CandidateProfileService,
