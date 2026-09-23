@@ -314,6 +314,9 @@
       <tr><td class="id">ENF-09 (partiel)</td><td class="req"><div class="name">Sondes liveness/readiness</div><div class="rule"><code>/health</code> pinguait seulement la BD</div></td>
         <td><span class="pill n">25%</span></td><td><span class="pill m">40%</span></td>
         <td class="evid"><code>health.controller.ts</code> — <code>/health/live</code> (process seul, pas de restart sur blip BD) + <code>/health/ready</code> (BD + budget mémoire via <code>MemoryHealthIndicator</code>) ; sondes câblées dans <code>deploy/k8s/api.yaml</code> ; 3 tests. Métriques/tracing (prom-client/OTel) restent à faire.</td></tr>
+      <tr><td class="id">ENF-07 / ENF-08 (partiel)</td><td class="req"><div class="name">Manifestes secrets + sauvegardes</div><div class="rule">jusque-là documentés seulement</div></td>
+        <td><span class="pill n">25/0%</span></td><td><span class="pill m">40%</span></td>
+        <td class="evid"><code>deploy/k8s/external-secrets.yaml</code> (ExternalSecret → <code>cobalt-secrets</code>, aucun secret en clair) et <code>deploy/k8s/db-backup.yaml</code> (CronJob pg_dump nocturne → S3 chiffré KMS, rétention lifecycle). Restent côté hébergeur : gestionnaire de secrets cloud, PITR/WAL, test de restauration.</td></tr>
       <tr><td class="id">EF-CAND-01</td><td class="req"><div class="name">Réinit. + changement de mot de passe, enrôlement 2FA</div><div class="rule">aucun écran mot de passe oublié</div></td>
         <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>/auth/forgot-password</code> + <code>/reset-password</code> (token SHA-256 haché, expiry 1 h, révoc. sessions) ; <code>/auth/change-password</code> ; carte Sécurité <code>/settings</code> (2FA setup/enable/disable, backup codes) ; 9 tests</td></tr>
@@ -345,7 +348,7 @@
       • <strong>Administration</strong> — les cinq exigences du Lot 8 (EF-ADM-01→05) sont couvertes côté écran + API. Restent des raffinements : file de modération unifiée profils/offres, historique de version des référentiels.<br>
       • <strong>Messagerie</strong> — les cinq exigences sont couvertes (vue de conversation, notifications in-app + email, signalement, partage de documents). Reste à brancher un adaptateur SMTP réel en prod (point d'extension).<br>
       • <strong>Antivirus upload</strong> — adaptateur toujours stub (rate-limiting <code>/auth/login</code> désormais livré, cf. §11).<br>
-      • <strong>Infra (ENF-08 sauvegardes/PITR, ENF-09 observabilité, ENF-07 coffre-fort de secrets)</strong> — dépendantes de l'hébergement ; guidage concret + exemples dans <code>docs/HARDENING.md</code> et <code>deploy/k8s/</code>.
+      • <strong>Infra (ENF-08 sauvegardes/PITR, ENF-09 observabilité, ENF-07 coffre-fort de secrets)</strong> — manifestes concrets livrés en V0.3 (<code>deploy/k8s/db-backup.yaml</code>, <code>external-secrets.yaml</code>, sondes liveness/readiness) ; ne restent côté hébergeur que le PITR/WAL, le gestionnaire de secrets cloud et les métriques/tracing centralisés.
     </span>
   </div>
 </section>
@@ -375,9 +378,9 @@
     </div>
     <div class="score-card">
       <div class="label">Non-fonctionnel (perf/sécu/infra)</div>
-      <div class="num">60<small>%</small></div>
-      <div class="bar"><span style="width:60%;background:var(--sev-mid-ink)"></span></div>
-      <div class="foot">11 items ENF numériques · base 3 août : 40 % — durcissement (MFA, index, TLS, rate-limiting, antivirus ClamAV, k8s)</div>
+      <div class="num">63<small>%</small></div>
+      <div class="bar"><span style="width:63%;background:var(--sev-mid-ink)"></span></div>
+      <div class="foot">11 items ENF numériques · base 3 août : 40 % — durcissement (MFA, index, TLS, rate-limiting, antivirus ClamAV, k8s, sondes santé, manifestes secrets + sauvegardes)</div>
     </div>
   </div>
 
@@ -693,8 +696,8 @@
       <tr><td class="id">ENF-04</td><td class="req">SLA ≥99,5 %</td><td>—</td><td><span class="pill na">n/a</span></td><td class="evid">Non vérifiable depuis le code — engagement opérationnel</td></tr>
       <tr><td class="id">ENF-05 <span class="pill g" style="padding:1px 6px">↑ V0.3</span></td><td class="req">Chiffrement transit/repos</td><td>TLS 1.2+/AES-256</td><td><span class="pill n">50%</span></td><td class="evid"><code>helmet()</code> + <strong>TLS Postgres en option (<code>DB_SSL</code>)</strong> côté app et migrations (V0.3) ; secrets MFA chiffrés AES-256-GCM au repos. Chiffrement disque au repos reste au niveau infra</td></tr>
       <tr><td class="id">ENF-06 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req">Auth + MFA staff</td><td>JWT+refresh, MFA</td><td><span class="pill g">100%</span></td><td class="evid">JWT/refresh solide + <strong>MFA/TOTP livrée</strong> : <code>mfa.service.ts</code>, <code>common/crypto/</code> (RFC 6238, secrets AES-256-GCM), backup codes, login step-up, <code>StaffMfaGuard</code> (flag <code>MFA_ENFORCE_STAFF</code>)</td></tr>
-      <tr><td class="id">ENF-07</td><td class="req">Secrets en coffre-fort</td><td>vault, pas en clair</td><td><span class="pill n">25%</span></td><td class="evid">Env vars validées par Joi, <code>.env</code> gitignored — aucune intégration Vault/KMS</td></tr>
-      <tr><td class="id">ENF-08</td><td class="req">Sauvegardes BD</td><td>quotidiennes, PITR, testées</td><td><span class="pill b">0%</span></td><td class="evid">Toujours à mettre en place — <strong>V0.3 : guidage + CronJob exemple documentés</strong> dans <code>docs/HARDENING.md</code> (managed PITR recommandé)</td></tr>
+      <tr><td class="id">ENF-07</td><td class="req">Secrets en coffre-fort</td><td>vault, pas en clair</td><td><span class="pill m">40%</span></td><td class="evid">Env vars validées par Joi, <code>.env</code> gitignored ; <strong>V0.3 : manifeste External Secrets</strong> <code>deploy/k8s/external-secrets.yaml</code> (SecretStore + ExternalSecret → <code>cobalt-secrets</code> depuis un gestionnaire de secrets cloud, aucun secret en clair). Reste : provisionner le gestionnaire côté hébergeur.</td></tr>
+      <tr><td class="id">ENF-08</td><td class="req">Sauvegardes BD</td><td>quotidiennes, PITR, testées</td><td><span class="pill n">40%</span></td><td class="evid"><strong>V0.3 : CronJob de sauvegarde livré</strong> <code>deploy/k8s/db-backup.yaml</code> (pg_dump nocturne gzip → S3 chiffré KMS, rétention via lifecycle bucket). Reste (hébergeur) : PITR/WAL et test de restauration ; managed Postgres recommandé.</td></tr>
       <tr><td class="id">ENF-09</td><td class="req">Observabilité</td><td>logs/métriques/alertes centralisés</td><td><span class="pill m">40%</span></td><td class="evid">Sondes liveness/readiness séparées (V0.3) : <code>/health/live</code> (process seul), <code>/health/ready</code> (DB + budget mémoire), câblées dans <code>deploy/k8s/api.yaml</code> ; <code>/health</code> agrégé + journal d'audit lisible. Restent métriques/tracing centralisés (prom-client, OTel — plan dans <code>docs/HARDENING.md</code>)</td></tr>
       <tr><td class="id">ENF-10</td><td class="req">Couverture de tests</td><td>≥70 % cœur métier</td><td><span class="pill g">100%</span></td><td class="evid"><strong>Mesuré</strong> : 95,4 % lignes, seuil CI appliqué (<code>package.json</code>), 61 fichiers de tests unitaires + 19 e2e</td></tr>
       <tr><td class="id">ENF-11</td><td class="req">Accessibilité WCAG 2.1 AA</td><td>—</td><td><span class="pill na">non audité</span></td><td class="evid">Hors périmètre de cette passe (audit backend) — à couvrir dans un passage frontend dédié</td></tr>

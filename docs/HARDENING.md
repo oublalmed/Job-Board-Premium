@@ -35,51 +35,29 @@ To enforce it for staff in production:
 3. Set a dedicated `MFA_ENCRYPTION_KEY` (32+ bytes of entropy) rather than
    deriving it from the refresh secret.
 
-## ENF-07 — Secrets management ⬜
+## ENF-07 — Secrets management 🟡
 
-Env vars are validated (Joi) and `.env` is gitignored, but there is no vault
-integration. Recommended: inject secrets from AWS Secrets Manager / GCP Secret
-Manager / Vault at deploy time (e.g. External Secrets Operator on k8s) so no
-secret is stored in plaintext config. No application change is required — the
-app already reads everything from the environment.
+Env vars are validated (Joi) and `.env` is gitignored. An example External
+Secrets Operator manifest is now provided at
+`deploy/k8s/external-secrets.yaml` (a `SecretStore` + `ExternalSecret` that
+materialise the `cobalt-secrets` Secret from AWS Secrets Manager / GCP Secret
+Manager / Vault), so no secret value lives in plaintext Git or config. No
+application change is required — the app already reads everything from the
+environment. Remaining, host-side: provision the cloud secret manager and its
+access (prefer IRSA / workload identity over static keys).
 
-## ENF-08 — Database backups + PITR ⬜
+## ENF-08 — Database backups + PITR 🟡
 
 Prefer a managed Postgres with automated backups + point-in-time recovery
 (RDS/Cloud SQL: enable automated backups, 7–30 day retention, and test a
-restore quarterly). For self-managed Postgres, a daily logical dump as a
-starting point (example k8s CronJob):
+restore quarterly). For self-managed Postgres, a nightly logical dump manifest
+is now provided at `deploy/k8s/db-backup.yaml` (a `CronJob` that streams a
+gzipped `pg_dump` to KMS-encrypted object storage; retention via a bucket
+lifecycle rule, documented inline).
 
-```yaml
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: cobalt-db-backup
-spec:
-  schedule: "0 1 * * *" # daily 01:00 UTC
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          restartPolicy: OnFailure
-          containers:
-            - name: pg-dump
-              image: postgres:15-alpine
-              command:
-                - /bin/sh
-                - -c
-                - >-
-                  pg_dump "$DATABASE_URL" | gzip |
-                  aws s3 cp - "s3://$BACKUP_BUCKET/$(date +%F).sql.gz"
-              env:
-                - name: DATABASE_URL
-                  valueFrom: { secretKeyRef: { name: cobalt-secrets, key: database-url } }
-                - name: BACKUP_BUCKET
-                  value: cobalt-backups
-```
-
-PITR itself (WAL archiving) is a managed-service feature; logical dumps above
-are a floor, not a substitute for it.
+PITR itself (WAL archiving) is a managed-service feature; the logical dump is a
+floor, not a substitute for it. Remaining, host-side: enable PITR/WAL archiving
+and run a periodic restore drill.
 
 ## ENF-09 — Observability ⬜
 

@@ -1,0 +1,65 @@
+# ENF-08 — Database backups. Example Kubernetes manifest; adapt before use.
+# See docs/HARDENING.md (ENF-08).
+#
+# Prefer a managed Postgres with automated backups + point-in-time recovery
+# (RDS / Cloud SQL). This CronJob is a self-hosted fallback: a nightly logical
+# dump (pg_dump) streamed, gzipped, to object storage. It does NOT provide PITR
+# on its own — WAL archiving is a managed-service / pgBackRest concern.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cobalt-db-backup
+  labels: { app: cobalt-db-backup }
+spec:
+  # 02:15 UTC daily — offset from the app's own 02:30 percentile-recalc job.
+  schedule: "15 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      # Give up (and alert via the failedJobs history) rather than retry forever.
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pg-backup
+              # Postgres client + awscli. Pin to your Postgres major version so
+              # pg_dump matches the server.
+              image: postgres:15-alpine
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  apk add --no-cache aws-cli >/dev/null
+                  KEY="$(date -u +%Y/%m/%d)/cobalt-$(date -u +%FT%H%M%SZ).sql.gz"
+                  echo "Backing up to s3://$BACKUP_BUCKET/$KEY"
+                  pg_dump --no-owner --no-privileges "$DATABASE_URL" \
+                    | gzip -9 \
+                    | aws s3 cp - "s3://$BACKUP_BUCKET/$KEY" \
+                        --sse aws:kms --only-show-errors
+                  echo "Backup complete"
+              env:
+                # Reuse the app's secret; never inline the DSN here.
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef: { name: cobalt-secrets, key: database-url }
+                - name: BACKUP_BUCKET
+                  value: cobalt-backups # replace with your bucket
+                - name: AWS_REGION
+                  value: eu-west-3
+              resources:
+                requests: { cpu: "100m", memory: "128Mi" }
+                limits: { cpu: "500m", memory: "512Mi" }
+---
+# Retention is enforced by the bucket, not this job: set an S3 lifecycle policy
+# (or equivalent) to expire objects after your retention window (e.g. 30 days).
+# Documented here so the two halves of the policy stay together.
+#
+#   aws s3api put-bucket-lifecycle-configuration \
+#     --bucket cobalt-backups \
+#     --lifecycle-configuration '{"Rules":[{"ID":"expire-30d",
+#       "Status":"Enabled","Filter":{"Prefix":""},"Expiration":{"Days":30}}]}'
