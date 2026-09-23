@@ -14,7 +14,6 @@ import {
   LayoutGrid,
   Table2,
   AlertCircle,
-  Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -30,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable } from '@/components/ui/data-table';
 import { useCandidateSearchStore } from '@/features/candidates/search-store';
 import { SavedSearchesPanel } from '@/features/candidates/saved-searches-panel';
+import { AnonymizedHint } from '@/features/candidates/AnonymizedHint';
 import {
   useAddToShortlist,
   useCandidateSearch,
@@ -52,26 +52,6 @@ function CandidateAvatar({ candidate }: { candidate: CandidateResult }) {
     <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-base font-semibold text-primary">
       {(candidate.firstName?.[0] ?? '?').toUpperCase()}
     </div>
-  );
-}
-
-/**
- * Subtle, non-interactive caption for anonymised search rows (CDC EF-SRCH-05):
- * the family name is masked in the list and only revealed on contact. The
- * visible text is the accessible name, so the lock icon is aria-hidden; the
- * same text is mirrored into `title` as a hover tooltip.
- */
-function AnonymizedHint() {
-  const { t } = useLocale();
-  const label = t('search.anonymizedHint');
-  return (
-    <span
-      className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground"
-      title={label}
-    >
-      <Lock className="size-3 shrink-0" aria-hidden="true" />
-      <span>{label}</span>
-    </span>
   );
 }
 
