@@ -230,7 +230,7 @@
     </div>
     <div class="score-card">
       <div class="label">Qualité (mesuré, CI)</div>
-      <div class="num">719<small>tests ✓</small></div>
+      <div class="num">727<small>tests ✓</small></div>
       <div class="bar"><span style="width:80%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">80 suites unitaires + 20 suites e2e (121 tests) vertes ; lint CI débloqué ; <code style="font-size:11px">nest build</code> et <code style="font-size:11px">next build</code> OK. CI PR #6 verte.</div>
     </div>
@@ -317,6 +317,12 @@
       <tr><td class="id">ENF-07 / ENF-08 (partiel)</td><td class="req"><div class="name">Manifestes secrets + sauvegardes</div><div class="rule">jusque-là documentés seulement</div></td>
         <td><span class="pill n">25/0%</span></td><td><span class="pill m">40%</span></td>
         <td class="evid"><code>deploy/k8s/external-secrets.yaml</code> (ExternalSecret → <code>cobalt-secrets</code>, aucun secret en clair) et <code>deploy/k8s/db-backup.yaml</code> (CronJob pg_dump nocturne → S3 chiffré KMS, rétention lifecycle). Restent côté hébergeur : gestionnaire de secrets cloud, PITR/WAL, test de restauration.</td></tr>
+      <tr><td class="id">ENF-09 (métriques)</td><td class="req"><div class="name">Endpoint Prometheus /metrics</div><div class="rule">observabilité — aucune métrique exposée</div></td>
+        <td><span class="pill m">40%</span></td><td><span class="pill m">60%</span></td>
+        <td class="evid"><code>src/modules/metrics/</code> (prom-client) — métriques process par défaut + histogramme <code>http_request_duration_seconds</code> (label route matchée, cardinalité bornée) via interceptor global ; <code>GET /metrics</code> exposition Prometheus, public comme <code>/health</code> ; 8 tests, module couvert à 100 %.</td></tr>
+      <tr><td class="id">EF-SRCH-05 (écran)</td><td class="req"><div class="name">Indicateur d'aperçu anonymisé</div><div class="rule">masquage serveur non visible à l'écran</div></td>
+        <td><span class="pill m">FE 75%</span></td><td><span class="pill g">FE 90%</span></td>
+        <td class="evid"><code>candidates/page.tsx</code> — indicateur accessible (cadenas + libellé i18n fr/en « identité complète au contact ») sous le nom masqué, vues liste + tableau ; icône <code>aria-hidden</code>, libellé = nom accessible.</td></tr>
       <tr><td class="id">EF-CAND-01</td><td class="req"><div class="name">Réinit. + changement de mot de passe, enrôlement 2FA</div><div class="rule">aucun écran mot de passe oublié</div></td>
         <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>/auth/forgot-password</code> + <code>/reset-password</code> (token SHA-256 haché, expiry 1 h, révoc. sessions) ; <code>/auth/change-password</code> ; carte Sécurité <code>/settings</code> (2FA setup/enable/disable, backup codes) ; 9 tests</td></tr>
@@ -378,9 +384,9 @@
     </div>
     <div class="score-card">
       <div class="label">Non-fonctionnel (perf/sécu/infra)</div>
-      <div class="num">63<small>%</small></div>
-      <div class="bar"><span style="width:63%;background:var(--sev-mid-ink)"></span></div>
-      <div class="foot">11 items ENF numériques · base 3 août : 40 % — durcissement (MFA, index, TLS, rate-limiting, antivirus ClamAV, k8s, sondes santé, manifestes secrets + sauvegardes)</div>
+      <div class="num">65<small>%</small></div>
+      <div class="bar"><span style="width:65%;background:var(--sev-mid-ink)"></span></div>
+      <div class="foot">11 items ENF numériques · base 3 août : 40 % — durcissement (MFA, index, TLS, rate-limiting, antivirus ClamAV, k8s, sondes santé, endpoint Prometheus /metrics, manifestes secrets + sauvegardes)</div>
     </div>
   </div>
 
@@ -509,7 +515,7 @@
 <section id="cvtheque">
   <div class="sec-head">
     <h2>4 · CVthèque & recherche <span style="color:var(--ink-faint);font-weight:500">§4.4</span></h2>
-    <div class="sec-avg">backend <b>88 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
+    <div class="sec-avg">backend <b>88 %</b> · frontend <b>73 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
   </div>
   <p class="sec-intro">Le moteur de recherche (filtres combinables, tri, pagination curseur) est réel des deux côtés. <strong>V0.3 :</strong> la preuve la plus stricte du CDC — <strong>« un profil masqué n'apparaît JAMAIS »</strong> — est désormais couverte par un e2e réel contre Postgres (liste + détail). <strong>V0.3 :</strong> les recherches sauvegardées + alertes (EF-SRCH-04) et l'<strong>anonymisation d'aperçu (EF-SRCH-05)</strong> — l'identité de liste est réduite côté serveur à prénom + initiale — sont livrées. Reste (« Could ») : conditionner la révélation du détail à la consommation d'un contact.</p>
   <div class="tbl-scroll"><table>
@@ -528,8 +534,8 @@
         <td><span class="pill g">85%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>saved-search.service.ts</code> + CRUD ; job BullMQ idempotent <code>saved-search-alert.service.ts</code> (réutilise la même requête de visibilité) ; panneau <code>saved-searches-panel.tsx</code></td><td class="gap"><s>Aucune trace</s> → <strong>recherches sauvegardées + alertes in-app livrées (V0.3)</strong>. Alerte in-app (le canal email des notifications est le point d'extension).</td></tr>
       <tr><td class="id">EF-SRCH-05<span class="prio C">C</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Anonymisation aperçu</div></td>
-        <td><span class="pill g">90%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>search.service.ts#anonymizeLastName</code> — l'aperçu de liste n'expose que prénom + initiale du nom (<code>anonymized:true</code>) ; l'identité complète n'est révélée que sur le détail candidat, testé</td><td class="gap"><s>Aucune trace</s> → <strong>anonymisation serveur de l'aperçu (V0.3)</strong>. Reste (« Could ») : révélation du détail conditionnée à la consommation d'un contact.</td></tr>
+        <td><span class="pill g">90%</span></td><td><span class="pill g">90%</span></td>
+        <td class="evid"><code>search.service.ts#anonymizeLastName</code> — l'aperçu de liste n'expose que prénom + initiale du nom (<code>anonymized:true</code>) ; côté écran, indicateur accessible « identité complète au contact » (cadenas + libellé i18n) dans la CVthèque (<code>candidates/page.tsx</code>, vues liste + tableau) ; identité complète réservée au détail candidat, testé</td><td class="gap"><s>Aucune trace</s> → <strong>anonymisation serveur + indicateur écran (V0.3)</strong>. Reste (« Could ») : révélation du détail conditionnée à la consommation d'un contact.</td></tr>
     </tbody>
   </table></div>
   <div class="mod-summary">Bonus non numéroté trouvé côté frontend : une <strong>fiche candidat détaillée</strong> réelle existe (<code>candidates/[id]/page.tsx</code>, appelle <code>GET /search/candidates/{id}</code>) — pas explicitement dans le CDC mais couvre une partie de EF-RECR-04.</div>
@@ -698,7 +704,7 @@
       <tr><td class="id">ENF-06 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req">Auth + MFA staff</td><td>JWT+refresh, MFA</td><td><span class="pill g">100%</span></td><td class="evid">JWT/refresh solide + <strong>MFA/TOTP livrée</strong> : <code>mfa.service.ts</code>, <code>common/crypto/</code> (RFC 6238, secrets AES-256-GCM), backup codes, login step-up, <code>StaffMfaGuard</code> (flag <code>MFA_ENFORCE_STAFF</code>)</td></tr>
       <tr><td class="id">ENF-07</td><td class="req">Secrets en coffre-fort</td><td>vault, pas en clair</td><td><span class="pill m">40%</span></td><td class="evid">Env vars validées par Joi, <code>.env</code> gitignored ; <strong>V0.3 : manifeste External Secrets</strong> <code>deploy/k8s/external-secrets.yaml</code> (SecretStore + ExternalSecret → <code>cobalt-secrets</code> depuis un gestionnaire de secrets cloud, aucun secret en clair). Reste : provisionner le gestionnaire côté hébergeur.</td></tr>
       <tr><td class="id">ENF-08</td><td class="req">Sauvegardes BD</td><td>quotidiennes, PITR, testées</td><td><span class="pill n">40%</span></td><td class="evid"><strong>V0.3 : CronJob de sauvegarde livré</strong> <code>deploy/k8s/db-backup.yaml</code> (pg_dump nocturne gzip → S3 chiffré KMS, rétention via lifecycle bucket). Reste (hébergeur) : PITR/WAL et test de restauration ; managed Postgres recommandé.</td></tr>
-      <tr><td class="id">ENF-09</td><td class="req">Observabilité</td><td>logs/métriques/alertes centralisés</td><td><span class="pill m">40%</span></td><td class="evid">Sondes liveness/readiness séparées (V0.3) : <code>/health/live</code> (process seul, pas de restart sur blip BD), <code>/health/ready</code> (BD accessible), câblées dans <code>deploy/k8s/api.yaml</code> ; <code>/health</code> agrégé + journal d'audit lisible. Restent métriques/tracing centralisés (prom-client, OTel — plan dans <code>docs/HARDENING.md</code>)</td></tr>
+      <tr><td class="id">ENF-09</td><td class="req">Observabilité</td><td>logs/métriques/alertes centralisés</td><td><span class="pill m">60%</span></td><td class="evid">Sondes liveness/readiness séparées (<code>/health/live</code>, <code>/health/ready</code>, câblées <code>deploy/k8s/api.yaml</code>) ; <strong>endpoint Prometheus <code>/metrics</code> (V0.3)</strong> — <code>metrics.module.ts</code> (prom-client) : métriques process par défaut + histogramme <code>http_request_duration_seconds</code> (label = route matchée, cardinalité bornée) via interceptor global ; journal d'audit lisible. Reste : tracing distribué (OTel) + agrégation/alerting centralisés (hébergeur).</td></tr>
       <tr><td class="id">ENF-10</td><td class="req">Couverture de tests</td><td>≥70 % cœur métier</td><td><span class="pill g">100%</span></td><td class="evid"><strong>Mesuré</strong> : 95,4 % lignes, seuil CI appliqué (<code>package.json</code>), 61 fichiers de tests unitaires + 19 e2e</td></tr>
       <tr><td class="id">ENF-11</td><td class="req">Accessibilité WCAG 2.1 AA</td><td>—</td><td><span class="pill na">non audité</span></td><td class="evid">Hors périmètre de cette passe (audit backend) — à couvrir dans un passage frontend dédié</td></tr>
       <tr><td class="id">ENF-12 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req">Protection données perso</td><td>CNDP/RGPD</td><td><span class="pill m">75%</span></td><td class="evid">Droit d'accès/effacement réels et audités ; <strong>V0.3 : recueil de consentement à l'inscription livré</strong> (<code>RegisterDto</code> exige <code>consentAccepted</code>, <code>users.consent_at</code>, case à cocher + page <code>/privacy</code>). Rétention par type documentée dans <code>docs/HARDENING.md</code></td></tr>
