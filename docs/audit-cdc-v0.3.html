@@ -372,7 +372,7 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Cœur MVP (exigences « Must »)</div>
-      <div class="num">91<small>% backend</small></div>
+      <div class="num">92<small>% backend</small></div>
       <div class="num" style="font-size:20px;margin-top:-2px">75<small>% frontend</small></div>
       <div class="foot">Base 3 août : 74 % / 49 %. Comptes & sécurité complets (réinit. mot de passe, 2FA, changement de mot de passe) et « 1 test actif/spécialité » contraint en base.</div>
     </div>
@@ -409,7 +409,7 @@
 <section id="candidat">
   <div class="sec-head">
     <h2>1 · Gestion du candidat <span style="color:var(--ink-faint);font-weight:500">§4.1</span></h2>
-    <div class="sec-avg">backend <b>87 %</b> · frontend <b>82 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
+    <div class="sec-avg">backend <b>89 %</b> · frontend <b>83 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
   </div>
   <p class="sec-intro">Le cœur (compte, complétude, export/effacement RGPD) est solide des deux côtés, et le frontend a rattrapé le backend : liens externes, validation par champ, réinit./changement de mot de passe et export RGPD sont désormais à l'écran. <strong>L'export de portabilité RGPD est maintenant disponible en JSON <em>et</em> en PDF (EF-CAND-08, V0.3)</strong>. Ce qui reste porte sur des règles métier fines (devise MAD explicite, blocage direct du champ visibilité) plutôt que sur des écrans manquants.</p>
   <div class="tbl-scroll"><table>
@@ -425,8 +425,8 @@
         <td><span class="pill g">90%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>candidate-document.service.ts:52</code> ; <strong>adaptateur ClamAV réel (V0.3)</strong> <code>clamav-file-scanner.adapter.ts</code></td><td class="gap"><s>Stub only</s> → <strong>adaptateur ClamAV réel livré</strong> (clamd INSTREAM/TCP), sélectionné par <code>ANTIVIRUS_DRIVER</code> (défaut <code>stub</code> pour CI/dev). Reste : activer clamd en prod.</td></tr>
       <tr><td class="id">EF-CAND-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Liens externes</div><div class="rule">format URL + vérif. asynchrone accessibilité</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>ProfileLinksCard.tsx</code> branché sur le CRUD <code>candidates/links</code></td><td class="gap"><s>Aucune UI</s> → <strong>UI livrée (V0.3)</strong> : ajout/suppression, validation URL. Reste : vérif. d'accessibilité asynchrone.</td></tr>
+        <td><span class="pill g">90%</span></td><td><span class="pill g">90%</span></td>
+        <td class="evid"><code>ProfileLinksCard.tsx</code> + CRUD <code>candidates/links</code> ; <strong>vérif. asynchrone (V0.3)</strong> : port <code>LinkProber</code> + worker BullMQ, adaptateur HTTP anti-SSRF (schémas http(s), rejet loopback/RFC1918/link-local/ULA, pas de suivi de redirection), statut <code>pending/reachable/unreachable</code> exposé + revérification à la demande ; 17 tests (dont garde SSRF)</td><td class="gap"><s>Aucune UI ; pas de vérif. d'accessibilité</s> → <strong>UI + vérification d'accessibilité asynchrone livrées (V0.3)</strong>.</td></tr>
       <tr><td class="id">EF-CAND-05<span class="prio M">M</span></td><td class="req"><div class="name">Dispo/mobilité/salaire</div><div class="rule">fourchette MAD, masquable</div><span class="pivot-flag">⚑ salaire — retrait prévu, état actuel</span></td>
         <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>candidate-profile.entity.ts:51</code></td><td class="gap">Devise MAD implicite, non validée explicitement</td></tr>
