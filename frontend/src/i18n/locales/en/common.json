@@ -198,6 +198,7 @@
     "location": "Location",
     "locationPlaceholder": "e.g. Casablanca",
     "noResults": "No candidates found.",
+    "anonymizedHint": "Full name shown on contact",
     "addToShortlist": "Add to shortlist",
     "addedToShortlist": "Candidate added to shortlist.",
     "alreadyInShortlist": "Candidate already in shortlist.",

@@ -5,6 +5,19 @@ export interface CandidateResult {
   headline?: string;
   location?: string;
   featured?: boolean;
+  /**
+   * CDC EF-SRCH-05: search-list rows are an anonymised preview — the backend
+   * returns the given name plus a masked family name (e.g. "Youssef" + "E.")
+   * and sets this flag. Full identity is only revealed on the detail view /
+   * at contact. Not yet in the generated OpenAPI schema; surfaced through the
+   * domain-level cast in queries.ts.
+   */
+  anonymized?: boolean;
+}
+
+/** Whether a search row is an anonymised identity preview (CDC EF-SRCH-05). */
+export function isAnonymized(c: CandidateResult): boolean {
+  return c.anonymized === true;
 }
 
 export interface CandidateSearchResponse {

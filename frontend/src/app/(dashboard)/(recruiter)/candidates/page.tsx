@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Table2,
   AlertCircle,
+  Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -35,6 +36,7 @@ import {
 } from '@/features/candidates/queries';
 import {
   activeFilterCount,
+  isAnonymized,
   type CandidateFilters,
   type CandidateResult,
 } from '@/features/candidates/types';
@@ -50,6 +52,26 @@ function CandidateAvatar({ candidate }: { candidate: CandidateResult }) {
     <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-base font-semibold text-primary">
       {(candidate.firstName?.[0] ?? '?').toUpperCase()}
     </div>
+  );
+}
+
+/**
+ * Subtle, non-interactive caption for anonymised search rows (CDC EF-SRCH-05):
+ * the family name is masked in the list and only revealed on contact. The
+ * visible text is the accessible name, so the lock icon is aria-hidden; the
+ * same text is mirrored into `title` as a hover tooltip.
+ */
+function AnonymizedHint() {
+  const { t } = useLocale();
+  const label = t('search.anonymizedHint');
+  return (
+    <span
+      className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground"
+      title={label}
+    >
+      <Lock className="size-3 shrink-0" aria-hidden="true" />
+      <span>{label}</span>
+    </span>
   );
 }
 
@@ -122,6 +144,7 @@ export default function CandidatesPage() {
                 {c.headline && (
                   <p className="truncate text-xs text-muted-foreground">{c.headline}</p>
                 )}
+                {isAnonymized(c) && <AnonymizedHint />}
               </div>
             </div>
           );
@@ -326,6 +349,7 @@ export default function CandidatesPage() {
                         {candidate.headline}
                       </p>
                     )}
+                    {isAnonymized(candidate) && <AnonymizedHint />}
                     <div className="mt-1 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                       {candidate.location && (
                         <span className="flex items-center gap-1">
