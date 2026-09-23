@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bullmq';
+import { ConfigService } from '@nestjs/config';
 import { CandidateProfile } from './entities/candidate-profile.entity.js';
 import { Skill } from './entities/skill.entity.js';
 import { ProfileSkill } from './entities/profile-skill.entity.js';
@@ -30,9 +32,17 @@ import { CandidateCertificationService } from './candidate-certification.service
 import { CandidateCertificationController } from './candidate-certification.controller.js';
 import { CandidateProjectService } from './candidate-project.service.js';
 import { CandidateProjectController } from './candidate-project.controller.js';
+import { LinkVerificationService } from './link-verification.service.js';
+import { LinkVerificationProcessor } from './link-verification.processor.js';
+import { LinkVerificationEnqueuer } from './link-verification-enqueuer.service.js';
+import { LINK_VERIFICATION_QUEUE } from './link-verification.constants.js';
+import { LINK_PROBER } from '../../ports/link-prober.port.js';
+import { HttpLinkProberAdapter } from '../../adapters/link-prober/http-link-prober.adapter.js';
+import { StubLinkProberAdapter } from '../../adapters/link-prober/stub-link-prober.adapter.js';
 
 @Module({
   imports: [
+    BullModule.registerQueue({ name: LINK_VERIFICATION_QUEUE }),
     TypeOrmModule.forFeature([
       CandidateProfile,
       Skill,
@@ -69,6 +79,22 @@ import { CandidateProjectController } from './candidate-project.controller.js';
     CandidateSkillService,
     CandidateCertificationService,
     CandidateProjectService,
+    LinkVerificationService,
+    LinkVerificationProcessor,
+    LinkVerificationEnqueuer,
+    // EF-CAND-04 — real HTTP prober in prod, deterministic no-network stub in
+    // CI/dev; selected by LINK_PROBER_DRIVER (default 'http'). Same convention
+    // as the antivirus scanner (ANTIVIRUS_DRIVER).
+    {
+      provide: LINK_PROBER,
+      useFactory: (config: ConfigService) => {
+        const driver = config.get<string>('business.linkProberDriver', 'http');
+        return driver === 'stub'
+          ? new StubLinkProberAdapter()
+          : new HttpLinkProberAdapter(config);
+      },
+      inject: [ConfigService],
+    },
   ],
   exports: [
     CandidateProfileService,

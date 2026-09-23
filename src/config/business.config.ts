@@ -45,6 +45,15 @@ export const businessConfig = registerAs('business', () => ({
   // newly indexed into the CVthèque since the last alert. Standard 5-field
   // cron, default daily at 07:00 (after the overnight indexation/recalc jobs).
   savedSearchAlertCron: process.env['SAVED_SEARCH_ALERT_CRON'] ?? '0 7 * * *',
+  // EF-CAND-04 — external profile-link accessibility verification. Driver
+  // selects the outbound prober: 'http' (default) performs a real SSRF-guarded
+  // request; 'stub' keeps CI/dev hermetic (no network). Timeout bounds each
+  // probe so a slow host never ties up a worker.
+  linkProberDriver: process.env['LINK_PROBER_DRIVER'] ?? 'http',
+  linkProbeTimeoutMs: parseInt(
+    process.env['LINK_PROBE_TIMEOUT_MS'] ?? '5000',
+    10,
+  ),
   // Lot 7 (EF-GROW-04) — anti-spam window: N views by the same recruiter
   // on the same candidate within this window produce at most 1
   // notification (the view itself is still always recorded).

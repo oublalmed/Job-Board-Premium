@@ -15,6 +15,15 @@ export enum LinkType {
   OTHER = 'other',
 }
 
+// EF-CAND-04 — result of the asynchronous accessibility verification. A link
+// starts PENDING at creation and is moved to REACHABLE / UNREACHABLE by the
+// background verification worker.
+export enum LinkAccessibilityStatus {
+  PENDING = 'pending',
+  REACHABLE = 'reachable',
+  UNREACHABLE = 'unreachable',
+}
+
 @Entity('profile_links')
 export class ProfileLink {
   @PrimaryGeneratedColumn('uuid')
@@ -35,6 +44,17 @@ export class ProfileLink {
 
   @Column({ type: 'varchar', nullable: true })
   label!: string | null;
+
+  @Column({
+    name: 'accessibility_status',
+    type: 'enum',
+    enum: LinkAccessibilityStatus,
+    default: LinkAccessibilityStatus.PENDING,
+  })
+  accessibilityStatus!: LinkAccessibilityStatus;
+
+  @Column({ name: 'checked_at', type: 'timestamptz', nullable: true })
+  checkedAt!: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
