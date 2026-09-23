@@ -219,8 +219,8 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Écarts fermés — passe de remédiation</div>
-      <div class="num">25<small>exigences</small></div>
-      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-01/03/04/07/08, EF-EVAL-01/04, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04, §11 rate-limiting, réinit./changement mdp + enrôlement 2FA, notifications lu/tout-lu, export PDF RGPD — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
+      <div class="num">26<small>exigences</small></div>
+      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-01/03/04/07/08, EF-EVAL-01/04, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04/05, §11 rate-limiting, réinit./changement mdp + enrôlement 2FA, notifications lu/tout-lu, export PDF RGPD, anonymisation aperçu CVthèque — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
     </div>
     <div class="score-card">
       <div class="label">Livrés entre le 3 août et le 23 sept.</div>
@@ -230,7 +230,7 @@
     </div>
     <div class="score-card">
       <div class="label">Qualité (mesuré, CI)</div>
-      <div class="num">715<small>tests ✓</small></div>
+      <div class="num">716<small>tests ✓</small></div>
       <div class="bar"><span style="width:80%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">80 suites unitaires + 20 suites e2e (121 tests) vertes ; lint CI débloqué ; <code style="font-size:11px">nest build</code> et <code style="font-size:11px">next build</code> OK. CI PR #6 verte.</div>
     </div>
@@ -308,6 +308,9 @@
       <tr><td class="id">EF-CAND-08</td><td class="req"><div class="name">Export PDF de portabilité RGPD</div><div class="rule">export JSON seulement</div></td>
         <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>GET /candidates/data/export/pdf</code> (<code>StreamableFile</code>) rendu par <code>candidate-data-pdf.ts</code> (pdfkit), même source de données que l'export JSON via <code>collectExportData</code> ; bouton dans <code>/settings</code> ; 4 tests unitaires (en-tête %PDF, audit, profil vide, 404)</td></tr>
+      <tr><td class="id">EF-SRCH-05</td><td class="req"><div class="name">Anonymisation de l'aperçu CVthèque</div><div class="rule">identité complète exposée en liste</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>search.service.ts#anonymizeLastName</code> — la liste n'expose que prénom + initiale (<code>anonymized:true</code>), contrôle serveur ; identité complète réservée au détail candidat ; test unitaire dédié</td></tr>
       <tr><td class="id">EF-CAND-01</td><td class="req"><div class="name">Réinit. + changement de mot de passe, enrôlement 2FA</div><div class="rule">aucun écran mot de passe oublié</div></td>
         <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>/auth/forgot-password</code> + <code>/reset-password</code> (token SHA-256 haché, expiry 1 h, révoc. sessions) ; <code>/auth/change-password</code> ; carte Sécurité <code>/settings</code> (2FA setup/enable/disable, backup codes) ; 9 tests</td></tr>
@@ -500,9 +503,9 @@
 <section id="cvtheque">
   <div class="sec-head">
     <h2>4 · CVthèque & recherche <span style="color:var(--ink-faint);font-weight:500">§4.4</span></h2>
-    <div class="sec-avg">backend <b>70 %</b> · frontend <b>50 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
+    <div class="sec-avg">backend <b>88 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
   </div>
-  <p class="sec-intro">Le moteur de recherche (filtres combinables, tri, pagination curseur) est réel des deux côtés. <strong>V0.3 :</strong> la preuve la plus stricte du CDC — <strong>« un profil masqué n'apparaît JAMAIS »</strong> — est désormais couverte par un e2e réel contre Postgres (liste + détail). <strong>V0.3 :</strong> les recherches sauvegardées + alertes (EF-SRCH-04) sont livrées. Reste en écart : anonymisation d'aperçu (EF-SRCH-05, priorité « Could »).</p>
+  <p class="sec-intro">Le moteur de recherche (filtres combinables, tri, pagination curseur) est réel des deux côtés. <strong>V0.3 :</strong> la preuve la plus stricte du CDC — <strong>« un profil masqué n'apparaît JAMAIS »</strong> — est désormais couverte par un e2e réel contre Postgres (liste + détail). <strong>V0.3 :</strong> les recherches sauvegardées + alertes (EF-SRCH-04) et l'<strong>anonymisation d'aperçu (EF-SRCH-05)</strong> — l'identité de liste est réduite côté serveur à prénom + initiale — sont livrées. Reste (« Could ») : conditionner la révélation du détail à la consommation d'un contact.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
@@ -518,9 +521,9 @@
       <tr><td class="id">EF-SRCH-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Recherches sauvegardées / alertes</div></td>
         <td><span class="pill g">85%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>saved-search.service.ts</code> + CRUD ; job BullMQ idempotent <code>saved-search-alert.service.ts</code> (réutilise la même requête de visibilité) ; panneau <code>saved-searches-panel.tsx</code></td><td class="gap"><s>Aucune trace</s> → <strong>recherches sauvegardées + alertes in-app livrées (V0.3)</strong>. Alerte in-app (le canal email des notifications est le point d'extension).</td></tr>
-      <tr><td class="id">EF-SRCH-05<span class="prio C">C</span></td><td class="req"><div class="name">Anonymisation aperçu</div></td>
-        <td><span class="pill b">0%</span></td><td><span class="pill b">0%</span></td>
-        <td class="evid">Aucune trace</td><td class="gap">Attendu — priorité "Could"</td></tr>
+      <tr><td class="id">EF-SRCH-05<span class="prio C">C</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Anonymisation aperçu</div></td>
+        <td><span class="pill g">90%</span></td><td><span class="pill m">75%</span></td>
+        <td class="evid"><code>search.service.ts#anonymizeLastName</code> — l'aperçu de liste n'expose que prénom + initiale du nom (<code>anonymized:true</code>) ; l'identité complète n'est révélée que sur le détail candidat, testé</td><td class="gap"><s>Aucune trace</s> → <strong>anonymisation serveur de l'aperçu (V0.3)</strong>. Reste (« Could ») : révélation du détail conditionnée à la consommation d'un contact.</td></tr>
     </tbody>
   </table></div>
   <div class="mod-summary">Bonus non numéroté trouvé côté frontend : une <strong>fiche candidat détaillée</strong> réelle existe (<code>candidates/[id]/page.tsx</code>, appelle <code>GET /search/candidates/{id}</code>) — pas explicitement dans le CDC mais couvre une partie de EF-RECR-04.</div>

@@ -49,6 +49,17 @@ interface RawScoreRow {
   bestScorePercentile: string | null;
 }
 
+// EF-SRCH-05 — reduce a last name to an initial for the anonymised search
+// preview ("El Amrani" -> "E."). Null/blank stays null so the UI shows no
+// spurious placeholder.
+export function anonymizeLastName(lastName: string | null): string | null {
+  const trimmed = lastName?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return `${trimmed.charAt(0).toUpperCase()}.`;
+}
+
 @Injectable()
 export class SearchService {
   constructor(
@@ -83,10 +94,15 @@ export class SearchService {
 
     const skillsByProfile = await this.loadSkills(page.map((p) => p.id));
 
+    // EF-SRCH-05 — anonymised preview: the list only ever exposes the first
+    // name + last initial. Full identity is revealed on the candidate detail
+    // (getCandidateDetail), the point at which a recruiter has singled a
+    // candidate out. This narrows PII exposure of the browsable index without
+    // hiding the signal a recruiter searches on (skills, score, headline).
     const items: CandidateSearchResultDto[] = page.map((profile, i) => ({
       id: profile.id,
       firstName: profile.firstName,
-      lastName: profile.lastName,
+      lastName: anonymizeLastName(profile.lastName),
       headline: profile.headline,
       location: profile.location,
       skills: skillsByProfile.get(profile.id) ?? [],
@@ -97,6 +113,7 @@ export class SearchService {
           ? Number(rawPage[i].bestScorePercentile)
           : null,
       featured: profile.featured,
+      anonymized: true,
     }));
 
     let nextCursor: string | null = null;

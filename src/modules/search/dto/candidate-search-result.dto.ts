@@ -8,6 +8,10 @@ export interface CandidateSearchResultDto {
   score: number;
   percentile: number | null;
   featured: boolean;
+  // EF-SRCH-05 — true when the identity in this row is an anonymized preview
+  // (last name reduced to an initial). Full identity is revealed only on the
+  // candidate detail. Absent on the detail response (full identity).
+  anonymized?: boolean;
 }
 
 export interface SearchCandidatesResult {

@@ -242,6 +242,25 @@ describe('SearchService', () => {
       expect(profileSkillRepo.createQueryBuilder).not.toHaveBeenCalled();
       expect(result.items).toEqual([]);
     });
+
+    it('anonymises the preview identity (EF-SRCH-05): last name → initial, flagged', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({
+        entities: [
+          makeProfileEntity({
+            id: 'p1',
+            firstName: 'Youssef',
+            lastName: 'El Amrani',
+          }),
+        ],
+        raw: [{ bestScoreValue: '70', bestScorePercentile: '65' }],
+      });
+
+      const result = await service.searchCandidates({});
+
+      expect(result.items[0].firstName).toBe('Youssef');
+      expect(result.items[0].lastName).toBe('E.');
+      expect(result.items[0].anonymized).toBe(true);
+    });
   });
 
   describe('getCandidateDetail (EF-GROW-04) — same visibility rule as the list, never more reachable', () => {
