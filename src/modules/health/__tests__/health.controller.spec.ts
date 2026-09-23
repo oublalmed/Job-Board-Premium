@@ -1,16 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  HealthCheckService,
-  MemoryHealthIndicator,
-  TypeOrmHealthIndicator,
-} from '@nestjs/terminus';
+import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
 import { HealthController } from '../health.controller.js';
 
 describe('HealthController (ENF-09 — liveness/readiness probes)', () => {
   let controller: HealthController;
   let health: { check: jest.Mock };
   let db: { pingCheck: jest.Mock };
-  let memory: { checkHeap: jest.Mock };
 
   beforeEach(async () => {
     // health.check runs the indicator thunks it is given and echoes a marker so
@@ -24,16 +19,12 @@ describe('HealthController (ENF-09 — liveness/readiness probes)', () => {
     db = {
       pingCheck: jest.fn().mockResolvedValue({ database: { status: 'up' } }),
     };
-    memory = {
-      checkHeap: jest.fn().mockResolvedValue({ memory_heap: { status: 'up' } }),
-    };
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
       providers: [
         { provide: HealthCheckService, useValue: health },
         { provide: TypeOrmHealthIndicator, useValue: db },
-        { provide: MemoryHealthIndicator, useValue: memory },
       ],
     }).compile();
 
@@ -45,24 +36,18 @@ describe('HealthController (ENF-09 — liveness/readiness probes)', () => {
 
     expect(health.check).toHaveBeenCalledWith([]);
     expect(db.pingCheck).not.toHaveBeenCalled();
-    expect(memory.checkHeap).not.toHaveBeenCalled();
   });
 
-  it('readiness checks the database and heap budget', async () => {
+  it('readiness checks the database (the "can I serve" signal)', async () => {
     const result = await controller.ready();
 
     expect(db.pingCheck).toHaveBeenCalledWith('database');
-    expect(memory.checkHeap).toHaveBeenCalledWith(
-      'memory_heap',
-      512 * 1024 * 1024,
-    );
-    expect(result).toEqual({ status: 'ok', checked: 2 });
+    expect(result).toEqual({ status: 'ok', checked: 1 });
   });
 
-  it('the aggregate check composes database + heap', async () => {
+  it('the aggregate check pings the database', async () => {
     await controller.check();
 
     expect(db.pingCheck).toHaveBeenCalledWith('database');
-    expect(memory.checkHeap).toHaveBeenCalled();
   });
 });
