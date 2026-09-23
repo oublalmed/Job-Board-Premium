@@ -219,8 +219,8 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Écarts fermés — passe de remédiation</div>
-      <div class="num">26<small>exigences</small></div>
-      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-01/03/04/07/08, EF-EVAL-01/04, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04/05, §11 rate-limiting, réinit./changement mdp + enrôlement 2FA, notifications lu/tout-lu, export PDF RGPD, anonymisation aperçu CVthèque — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
+      <div class="num">28<small>exigences</small></div>
+      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-01/03/04/07/08, EF-EVAL-01/02/04/06, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04/05, §11 rate-limiting, réinit./changement mdp + enrôlement 2FA, notifications lu/tout-lu, export PDF RGPD, anonymisation aperçu CVthèque — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
     </div>
     <div class="score-card">
       <div class="label">Livrés entre le 3 août et le 23 sept.</div>
@@ -372,21 +372,21 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Cœur MVP (exigences « Must »)</div>
-      <div class="num">90<small>% backend</small></div>
-      <div class="num" style="font-size:20px;margin-top:-2px">74<small>% frontend</small></div>
+      <div class="num">91<small>% backend</small></div>
+      <div class="num" style="font-size:20px;margin-top:-2px">75<small>% frontend</small></div>
       <div class="foot">Base 3 août : 74 % / 49 %. Comptes & sécurité complets (réinit. mot de passe, 2FA, changement de mot de passe) et « 1 test actif/spécialité » contraint en base.</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), backend</div>
-      <div class="num">88<small>%</small></div>
-      <div class="bar"><span style="width:88%;background:var(--sev-good-ink)"></span></div>
+      <div class="num">89<small>%</small></div>
+      <div class="bar"><span style="width:89%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">50 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">72<small>%</small></div>
-      <div class="bar"><span style="width:72%;background:var(--sev-mid-ink)"></span></div>
-      <div class="foot">48 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
+      <div class="num">73<small>%</small></div>
+      <div class="bar"><span style="width:73%;background:var(--sev-mid-ink)"></span></div>
+      <div class="foot">49 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
       <div class="label">Non-fonctionnel (perf/sécu/infra)</div>
@@ -450,7 +450,7 @@
 <section id="evaluation">
   <div class="sec-head">
     <h2>2 · Évaluation & scoring <span style="color:var(--ink-faint);font-weight:500">§4.2, §5.2–5.3</span></h2>
-    <div class="sec-avg">backend <b>87 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base 73/69)</span></div>
+    <div class="sec-avg">backend <b>97 %</b> · frontend <b>84 %</b> <span style="color:var(--ink-faint)">(base 73/69)</span></div>
   </div>
   <p class="sec-intro">Le pipeline de score (webhook, versioning, cooldown, incidents) est le module le mieux testé du projet. Mais <strong>l'anti-triche multicouche, présenté par le CDC comme le différenciateur n°1, n'a que 3 de ses 6 couches réellement construites</strong> côté plateforme (cooldown, audit, blocage multi-compte device/IP livré en V0.3) — les 3 autres sont déléguées à un fournisseur externe qui n'est aujourd'hui qu'un stub déterministe.</p>
   <div class="tbl-scroll"><table>
@@ -459,9 +459,9 @@
       <tr><td class="id">EF-EVAL-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Test par spécialité</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
         <td class="evid"><code>catalog.service.ts:19</code> ; <strong>index unique partiel (V0.3)</strong> <code>UQ_tests_one_active_per_specialty ... WHERE active = true</code></td><td class="gap"><s>Non contraint en base</s> → <strong>1 test actif/spécialité garanti par la base (V0.3)</strong>.</td></tr>
-      <tr><td class="id">EF-EVAL-02<span class="prio M">M</span></td><td class="req"><div class="name">Environnement sécurisé</div><div class="rule">timer, session unique, plein écran, anti copier-coller</div></td>
-        <td><span class="pill n">50%</span></td><td><span class="pill n">50%</span></td>
-        <td class="evid"><code>assessment.service.ts:64</code></td><td class="gap">Session unique + timer réels ; plein écran/anti copier-coller délégués au fournisseur externe (0 trace de code)</td></tr>
+      <tr><td class="id">EF-EVAL-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Environnement sécurisé</div><div class="rule">timer, session unique, plein écran, anti copier-coller</div></td>
+        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
+        <td class="evid"><code>assessment.service.ts:64</code> (timer + session unique) ; <code>frontend/…/use-secure-exam.ts</code> + <code>SecureExamBanner.tsx</code> — plein écran, comptage changements d'onglet, blocage copier/couper/coller, 4 tests</td><td class="gap"><s>Plein écran/anti copier-coller délégués au fournisseur (0 trace de code)</s> → <strong>couche dissuasive navigateur livrée (V0.3)</strong> : Fullscreen API, comptage de sorties d'onglet et blocage du presse-papiers, bannière accessible <code>role=alert</code>. Le proctoring approfondi (signaux comportementaux, rotation de banque) reste chez le fournisseur.</td></tr>
       <tr><td class="id">EF-EVAL-03<span class="prio M">M</span></td><td class="req"><div class="name">Score normalisé 0–100</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>webhook.service.ts:48</code> — idempotent, testé sur cas 0 et 100</td><td class="gap">—</td></tr>
@@ -471,9 +471,9 @@
       <tr><td class="id">EF-EVAL-05<span class="prio M">M</span></td><td class="req"><div class="name">1 tentative / 90j / test</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>assessment.service.ts:177</code> — e2e réel avec date de rééligibilité</td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-EVAL-06<span class="prio S">S</span></td><td class="req"><div class="name">Expiration score 12 mois</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill na">n/a</span></td>
-        <td class="evid"><code>webhook.service.ts:21</code></td><td class="gap">—</td></tr>
+      <tr><td class="id">EF-EVAL-06<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Expiration score 12 mois</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>webhook.service.ts:21</code> ; <code>assessment-history.service.ts</code> expose <code>expiresAt</code> — date de validité affichée au candidat dans l'historique</td><td class="gap"><s>Aucune restitution de la date d'expiration côté candidat</s> → <strong>date de validité du score surfacée (V0.3)</strong>.</td></tr>
       <tr><td class="id">EF-EVAL-07<span class="prio M">M</span></td><td class="req"><div class="name">Historisation / audit</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>score.entity.ts:36</code>, <code>AuditAction.SCORE_CALCULATED</code></td><td class="gap">—</td></tr>
