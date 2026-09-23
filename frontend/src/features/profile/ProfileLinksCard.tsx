@@ -12,6 +12,10 @@ import {
   Trash2,
   Plus,
   Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  RefreshCw,
 } from 'lucide-react';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -24,8 +28,38 @@ import {
   useProfileLinks,
   useAddProfileLink,
   useDeleteProfileLink,
+  useReverifyProfileLink,
   type ProfileLinkType,
+  type LinkAccessibilityStatus,
 } from './queries';
+
+// EF-CAND-04 — how each accessibility-verification status renders. The icon is
+// decorative (aria-hidden); the visible text carries the meaning for screen
+// readers, so the badge never relies on colour alone (WCAG 1.4.1).
+const STATUS_META: Record<
+  LinkAccessibilityStatus,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    className: string;
+    labelKey: string;
+  }
+> = {
+  pending: {
+    icon: Clock,
+    className: 'text-muted-foreground',
+    labelKey: 'profileLinks.statusPending',
+  },
+  reachable: {
+    icon: CheckCircle2,
+    className: 'text-emerald-600 dark:text-emerald-400',
+    labelKey: 'profileLinks.statusReachable',
+  },
+  unreachable: {
+    icon: AlertCircle,
+    className: 'text-destructive',
+    labelKey: 'profileLinks.statusUnreachable',
+  },
+};
 
 const LINK_TYPES: ProfileLinkType[] = [
   'github',
@@ -65,6 +99,7 @@ export function ProfileLinksCard() {
   const { data, isLoading } = useProfileLinks();
   const addLink = useAddProfileLink();
   const deleteLink = useDeleteProfileLink();
+  const reverifyLink = useReverifyProfileLink();
 
   const {
     register,
@@ -96,6 +131,12 @@ export function ProfileLinksCard() {
     });
   }
 
+  function handleReverify(id: string) {
+    reverifyLink.mutate(id, {
+      onError: () => toast(t('common.error'), 'error'),
+    });
+  }
+
   const links = data ?? [];
 
   return (
@@ -121,12 +162,19 @@ export function ProfileLinksCard() {
           <ul className="flex flex-col gap-2">
             {links.map((link) => {
               const Icon = TYPE_ICON[link.type];
+              const status = STATUS_META[link.accessibilityStatus];
+              const StatusIcon = status.icon;
+              const isReverifying =
+                reverifyLink.isPending && reverifyLink.variables === link.id;
               return (
                 <li
                   key={link.id}
                   className="flex items-center gap-3 rounded-xl border border-border/60 px-4 py-3"
                 >
-                  <Icon className="size-4 shrink-0 text-muted-foreground" />
+                  <Icon
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">
                       {link.label || t(`profileLinks.type${capitalize(link.type)}`)}
@@ -138,9 +186,30 @@ export function ProfileLinksCard() {
                       className="flex items-center gap-1 truncate text-xs text-primary hover:underline"
                     >
                       <span className="truncate">{link.url}</span>
-                      <ExternalLink className="size-3 shrink-0" />
+                      <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
                     </a>
                   </div>
+                  {/* EF-CAND-04 — accessibility status. Icon is decorative; the
+                      text label carries the meaning (no colour-only signal). */}
+                  <span
+                    className={`hidden items-center gap-1 text-xs font-medium sm:flex ${status.className}`}
+                  >
+                    <StatusIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                    {t(status.labelKey)}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 text-muted-foreground"
+                    onClick={() => handleReverify(link.id)}
+                    disabled={isReverifying}
+                    aria-label={`${t('profileLinks.recheck')} ${link.url}`}
+                  >
+                    <RefreshCw
+                      className={`size-4 ${isReverifying ? 'animate-spin' : ''}`}
+                      aria-hidden="true"
+                    />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -151,7 +220,7 @@ export function ProfileLinksCard() {
                     }
                     aria-label={`${t('profileLinks.remove')} ${link.url}`}
                   >
-                    <Trash2 className="size-4" />
+                    <Trash2 className="size-4" aria-hidden="true" />
                   </Button>
                 </li>
               );

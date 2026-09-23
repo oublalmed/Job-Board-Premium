@@ -53,11 +53,17 @@ export interface RecruiterSummary {
 
 export type ProfileLinkType = 'github' | 'portfolio' | 'linkedin' | 'other';
 
+// EF-CAND-04 — result of the asynchronous accessibility verification. A link is
+// 'pending' until the background worker probes it.
+export type LinkAccessibilityStatus = 'pending' | 'reachable' | 'unreachable';
+
 export interface ProfileLink {
   id: string;
   type: ProfileLinkType;
   url: string;
   label: string | null;
+  accessibilityStatus: LinkAccessibilityStatus;
+  checkedAt: string | null;
   createdAt: string;
 }
 
@@ -269,6 +275,26 @@ export function useDeleteProfileLink() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: profileKeys.links() });
       void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+// EF-CAND-04 — re-run the accessibility check for a link (e.g. after the
+// candidate fixed a broken URL). The verify endpoint is not in the generated
+// openapi schema, so this uses the raw fetch + bearer convention.
+export function useReverifyProfileLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(
+        `/api/v1/candidates/links/${id}/verify`,
+        { method: 'POST' },
+      );
+      if (!res.ok) throw new Error(`Re-verify failed (${res.status})`);
+      return (await res.json()) as ProfileLink;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.links() });
     },
   });
 }
