@@ -326,6 +326,8 @@
     "data": "Personal data",
     "exportData": "Export my data",
     "exportDataDescription": "Download a copy of all your data (CNDP/GDPR compliance).",
+    "exportJson": "Export (JSON)",
+    "exportPdf": "Export (PDF)",
     "exporting": "Exporting…",
     "exported": "Data exported.",
     "deleteAccount": "Delete my account",

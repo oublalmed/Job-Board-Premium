@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
-<title>Audit CDC — Cobalt (V0.3, 21 sept.)</title>
+<title>Audit CDC — Cobalt (V0.3, 23 sept.)</title>
 <style>
   :root{
     --bg:#f5f6fa; --surface:#ffffff; --surface-2:#eef0f6;
@@ -175,11 +175,11 @@
   <div class="masthead-inner">
     <div class="eyebrow">Audit de conformité — Cobalt (ex-Job Board Premium)</div>
     <h1>Ce qui est écrit vs. ce qui tourne</h1>
-    <p class="sub">Chaque exigence du CDC V0.2, comparée au code réel — backend NestJS et frontend Next.js — avec preuve à l'appui (fichier:ligne). <strong>Mise à jour V0.3 (21 sept. 2026)</strong> : le dépôt a avancé de plusieurs lots depuis la passe initiale, et une passe de remédiation ciblée a fermé la plupart des écarts adressables par le code. Le récapitulatif de cette mise à jour est en tête ; les tableaux détaillés portent l'état actuel, les cellules corrigées étant marquées <span class="pill g" style="padding:1px 6px">✓ V0.3</span>.</p>
+    <p class="sub">Chaque exigence du CDC V0.2, comparée au code réel — backend NestJS et frontend Next.js — avec preuve à l'appui (fichier:ligne). <strong>Mise à jour V0.3 (23 sept. 2026)</strong> : le dépôt a avancé de plusieurs lots depuis la passe initiale, et une passe de remédiation ciblée a fermé la plupart des écarts adressables par le code. Le récapitulatif de cette mise à jour est en tête ; les tableaux détaillés portent l'état actuel, les cellules corrigées étant marquées <span class="pill g" style="padding:1px 6px">✓ V0.3</span>.</p>
     <div class="doc-refs">
       <span class="doc-chip">CDC_JobBoard_Premium_V0.2.pdf</span>
       <span class="doc-chip">base : 3 août 2026</span>
-      <span class="doc-chip">maj : 21 sept. 2026</span>
+      <span class="doc-chip">maj : 23 sept. 2026</span>
     </div>
   </div>
 </div>
@@ -209,8 +209,8 @@
 <!-- ============ DELTA V0.3 ============ -->
 <section id="delta">
   <div class="sec-head">
-    <h2>Mise à jour V0.3 — état réel au 21 septembre 2026</h2>
-    <div class="sec-avg">base : 3 août · maj : 21 sept.</div>
+    <h2>Mise à jour V0.3 — état réel au 23 septembre 2026</h2>
+    <div class="sec-avg">base : 3 août · maj : 23 sept.</div>
   </div>
   <p class="sec-intro" style="max-width:90ch">
     Deux choses ont bougé depuis l'audit du 3 août. D'abord, le dépôt a avancé de plusieurs lots (messagerie, admin/analytics, amorçage, exécution du pivot, vérification d'école). Ensuite, une <strong>passe de remédiation ciblée</strong> a fermé la quasi-totalité des écarts <em>adressables par le code</em> — avec tests et CI verte. Ce qui reste est soit de l'infrastructure (sauvegardes, observabilité), soit hors périmètre code. Le détail, preuve à l'appui, ci-dessous.
@@ -219,20 +219,20 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Écarts fermés — passe de remédiation</div>
-      <div class="num">24<small>exigences</small></div>
-      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-01/03/04/07, EF-EVAL-01/04, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04, §11 rate-limiting, réinit./changement mdp + enrôlement 2FA, notifications lu/tout-lu — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
+      <div class="num">25<small>exigences</small></div>
+      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-01/03/04/07/08, EF-EVAL-01/04, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04, §11 rate-limiting, réinit./changement mdp + enrôlement 2FA, notifications lu/tout-lu, export PDF RGPD — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
     </div>
     <div class="score-card">
-      <div class="label">Livrés entre le 3 août et le 21 sept.</div>
+      <div class="label">Livrés entre le 3 août et le 23 sept.</div>
       <div class="num">5<small>+ lots</small></div>
       <div class="bar"><span style="width:70%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">Vue de conversation (EF-MSG-01), dashboard KPI (EF-ADM-05), badge (EF-GROW-01), parrainage (EF-GROW-02), pivot exécuté (offres supprimées), module vérification d'école.</div>
     </div>
     <div class="score-card">
       <div class="label">Qualité (mesuré, CI)</div>
-      <div class="num">711<small>tests ✓</small></div>
+      <div class="num">715<small>tests ✓</small></div>
       <div class="bar"><span style="width:80%;background:var(--sev-good-ink)"></span></div>
-      <div class="foot">80 suites vertes ; lint CI débloqué ; <code style="font-size:11px">nest build</code> et <code style="font-size:11px">next build</code> OK.</div>
+      <div class="foot">80 suites unitaires + 20 suites e2e (121 tests) vertes ; lint CI débloqué ; <code style="font-size:11px">nest build</code> et <code style="font-size:11px">next build</code> OK. CI PR #6 verte.</div>
     </div>
     <div class="score-card">
       <div class="label">Reste ouvert</div>
@@ -305,6 +305,9 @@
       <tr><td class="id">EF-CAND-03</td><td class="req"><div class="name">Antivirus réel (ClamAV)</div><div class="rule">stub « clean » only</div></td>
         <td><span class="pill m">BE 75%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>clamav-file-scanner.adapter.ts</code> (clamd INSTREAM/TCP), sélectionné par <code>ANTIVIRUS_DRIVER</code> (défaut <code>stub</code>) ; documenté</td></tr>
+      <tr><td class="id">EF-CAND-08</td><td class="req"><div class="name">Export PDF de portabilité RGPD</div><div class="rule">export JSON seulement</div></td>
+        <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>GET /candidates/data/export/pdf</code> (<code>StreamableFile</code>) rendu par <code>candidate-data-pdf.ts</code> (pdfkit), même source de données que l'export JSON via <code>collectExportData</code> ; bouton dans <code>/settings</code> ; 4 tests unitaires (en-tête %PDF, audit, profil vide, 404)</td></tr>
       <tr><td class="id">EF-CAND-01</td><td class="req"><div class="name">Réinit. + changement de mot de passe, enrôlement 2FA</div><div class="rule">aucun écran mot de passe oublié</div></td>
         <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
         <td class="evid"><code>/auth/forgot-password</code> + <code>/reset-password</code> (token SHA-256 haché, expiry 1 h, révoc. sessions) ; <code>/auth/change-password</code> ; carte Sécurité <code>/settings</code> (2FA setup/enable/disable, backup codes) ; 9 tests</td></tr>
@@ -343,7 +346,7 @@
 
 <section id="summary">
   <div class="callout" style="border-color:var(--sev-good-line);background:var(--sev-good-bg);color:var(--sev-good-ink)">
-    <strong>Chiffres à jour au 21 sept. 2026 (V0.3).</strong> Les pourcentages ci-dessous sont recalculés sur l'état actuel du code (base du 3 août rappelée entre parenthèses). Même barème : moyenne arithmétique non pondérée des exigences listées, n/a exclus ; les cartes « Must » ne moyennent que les exigences Must ; ENF-02/04/11 exclus du numérique. Détail des écarts fermés : <a href="#delta">Mise à jour V0.3</a>.
+    <strong>Chiffres à jour au 23 sept. 2026 (V0.3).</strong> Les pourcentages ci-dessous sont recalculés sur l'état actuel du code (base du 3 août rappelée entre parenthèses). Même barème : moyenne arithmétique non pondérée des exigences listées, n/a exclus ; les cartes « Must » ne moyennent que les exigences Must ; ENF-02/04/11 exclus du numérique. Détail des écarts fermés : <a href="#delta">Mise à jour V0.3</a>.
   </div>
   <div class="score-grid">
     <div class="score-card accent">
@@ -385,9 +388,9 @@
 <section id="candidat">
   <div class="sec-head">
     <h2>1 · Gestion du candidat <span style="color:var(--ink-faint);font-weight:500">§4.1</span></h2>
-    <div class="sec-avg">backend <b>83 %</b> · frontend <b>78 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
+    <div class="sec-avg">backend <b>85 %</b> · frontend <b>80 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
   </div>
-  <p class="sec-intro">Le cœur (compte, complétude, export/effacement RGPD) est solide des deux côtés. Le vrai trou : <strong>les liens externes (GitHub/Portfolio) ont un CRUD backend complet que le frontend n'appelle jamais</strong> — champ entièrement absent de l'écran de profil.</p>
+  <p class="sec-intro">Le cœur (compte, complétude, export/effacement RGPD) est solide des deux côtés, et le frontend a rattrapé le backend : liens externes, validation par champ, réinit./changement de mot de passe et export RGPD sont désormais à l'écran. <strong>L'export de portabilité RGPD est maintenant disponible en JSON <em>et</em> en PDF (EF-CAND-08, V0.3)</strong>. Ce qui reste porte sur des règles métier fines (devise MAD explicite, blocage direct du champ visibilité) plutôt que sur des écrans manquants.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
@@ -412,9 +415,9 @@
       <tr><td class="id">EF-CAND-07<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Certifications & projets</div></td>
         <td><span class="pill g">85%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>certification.entity.ts</code> + CRUD <code>candidate-certification.controller.ts</code> ; section profil <code>CertificationsCard.tsx</code> ; inclus dans l'export RGPD</td><td class="gap"><s>Simple enum</s> → <strong>entité structurée + CRUD + écran livrés (V0.3)</strong> (nom, organisme, dates, URL). Reste : sous-entité « projets » (même patron).</td></tr>
-      <tr><td class="id">EF-CAND-08<span class="prio M">M</span></td><td class="req"><div class="name">Export / effacement RGPD</div><div class="rule">portabilité + effacement ≤30j</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>candidate-data.service.ts:40</code> — effacement immédiat, journalisé</td><td class="gap">Export JSON seulement (pas de PDF)</td></tr>
+      <tr><td class="id">EF-CAND-08<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Export / effacement RGPD</div><div class="rule">portabilité + effacement ≤30j</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">90%</span></td>
+        <td class="evid"><code>candidate-data.service.ts</code> — effacement immédiat journalisé + <strong>export PDF de portabilité (V0.3)</strong> <code>GET /candidates/data/export/pdf</code> (<code>candidate-data-pdf.ts</code>, source unique partagée avec l'export JSON) ; bouton dédié dans <code>/settings</code></td><td class="gap"><s>Export JSON seulement (pas de PDF)</s> → <strong>export PDF livré (V0.3)</strong> : document de portabilité téléchargeable, mêmes données que le JSON.</td></tr>
       <tr><td class="id">EF-CAND-09<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Parcours de remédiation</div></td>
         <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
         <td class="evid"><code>remediation.service.ts:42</code> ; <strong>consultation par tentative (V0.3)</strong> : chaque évaluation terminée de l'historique déplie sa remédiation (domaines, ressources, mise en avant) — <code>useAssessmentFeedbackQuery</code></td><td class="gap"><s>Pas de suivi à l'écran</s> → <strong>remédiation consultable par tentative passée (V0.3)</strong>.</td></tr>
@@ -765,7 +768,7 @@
 
 <footer>
   <div class="wrap" style="padding:0">
-    Cobalt (ex-Job Board Premium) — audit interne, non destiné à un tiers. Sources : CDC_JobBoard_Premium_V0.2.pdf, Backlog_UserStories_V0.2.pdf, et lecture directe du code aux chemins <code style="font-family:var(--font-mono)">src/</code> (backend) et <code style="font-family:var(--font-mono)">frontend/src/</code> (Next.js). Base : 3 août 2026 · Mise à jour V0.3 : 21 septembre 2026 (branche <code style="font-family:var(--font-mono)">claude/frontend-nextjs-redesign-1114aa</code> — remédiation + lots livrés, dont une passe d'agents parallèles). Les cellules ✓ V0.3 sont vérifiées par chemin de fichier et, côté backend, par tests unitaires verts (695 tests, CI).
+    Cobalt (ex-Job Board Premium) — audit interne, non destiné à un tiers. Sources : CDC_JobBoard_Premium_V0.2.pdf, Backlog_UserStories_V0.2.pdf, et lecture directe du code aux chemins <code style="font-family:var(--font-mono)">src/</code> (backend) et <code style="font-family:var(--font-mono)">frontend/src/</code> (Next.js). Base : 3 août 2026 · Mise à jour V0.3 : 23 septembre 2026 (branche <code style="font-family:var(--font-mono)">claude/frontend-nextjs-redesign-1114aa</code> — remédiation + lots livrés, dont une passe d'agents parallèles). Les cellules ✓ V0.3 sont vérifiées par chemin de fichier et, côté backend, par tests unitaires verts (715 tests, CI).
   </div>
 </footer>
 

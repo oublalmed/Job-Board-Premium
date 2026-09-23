@@ -7,6 +7,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  StreamableFile,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
@@ -31,6 +32,19 @@ export class CandidateDataController {
   @Get('export')
   async exportData(@CurrentUser() user: JwtPayload) {
     return this.dataService.exportData(user.sub);
+  }
+
+  // EF-CAND-08 — the same portability export as a downloadable PDF (the
+  // JSON endpoint above stays the machine-readable form).
+  @Get('export/pdf')
+  async exportDataPdf(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<StreamableFile> {
+    const pdf = await this.dataService.exportDataPdf(user.sub);
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: 'attachment; filename="mes-donnees-personnelles.pdf"',
+    });
   }
 
   @Delete()

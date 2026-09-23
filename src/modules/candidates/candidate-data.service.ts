@@ -15,6 +15,10 @@ import {
 } from '../../ports/object-storage.port.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
+import {
+  generateCandidateDataPdf,
+  type CandidateDataExport,
+} from './candidate-data-pdf.js';
 
 @Injectable()
 export class CandidateDataService {
@@ -40,7 +44,34 @@ export class CandidateDataService {
     private readonly auditService: AuditService,
   ) {}
 
-  async exportData(userId: string) {
+  // Machine-readable portability export (EF-CAND-08).
+  async exportData(userId: string): Promise<CandidateDataExport> {
+    const data = await this.collectExportData(userId);
+    await this.logExport(userId);
+    return data;
+  }
+
+  // Human-readable portability export (EF-CAND-08) — the same data rendered
+  // to an archivable PDF. Reuses collectExportData so the two forms cannot
+  // diverge.
+  async exportDataPdf(userId: string): Promise<Buffer> {
+    const data = await this.collectExportData(userId);
+    await this.logExport(userId);
+    return generateCandidateDataPdf(data);
+  }
+
+  private async logExport(userId: string): Promise<void> {
+    await this.auditService.log({
+      actorId: userId,
+      action: AuditAction.USER_DATA_EXPORTED,
+      entityType: 'User',
+      entityId: userId,
+    });
+  }
+
+  private async collectExportData(
+    userId: string,
+  ): Promise<CandidateDataExport> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException();
@@ -67,13 +98,6 @@ export class CandidateDataService {
           : Promise.resolve([]),
         this.documentRepo.find({ where: { ownerId: userId } }),
       ]);
-
-    await this.auditService.log({
-      actorId: userId,
-      action: AuditAction.USER_DATA_EXPORTED,
-      entityType: 'User',
-      entityId: userId,
-    });
 
     return {
       exportDate: new Date().toISOString(),

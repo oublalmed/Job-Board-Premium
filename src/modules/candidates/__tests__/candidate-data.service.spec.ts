@@ -257,6 +257,68 @@ describe('CandidateDataService', () => {
     });
   });
 
+  // ── PDF portability export (EF-CAND-08) ────────────────────────────
+
+  describe('exportDataPdf', () => {
+    const seedFullExport = (): void => {
+      userRepo.findOne.mockResolvedValue(mockUser);
+      profileRepo.findOne.mockResolvedValue(mockProfile);
+      experienceRepo.find.mockResolvedValue(mockExperiences);
+      profileSkillRepo.find.mockResolvedValue(mockProfileSkills);
+      profileLinkRepo.find.mockResolvedValue(mockLinks);
+      certificationRepo.find.mockResolvedValue(mockCertifications);
+      documentRepo.find.mockResolvedValue(mockDocuments);
+    };
+
+    it('renders a non-empty PDF document (%PDF header)', async () => {
+      seedFullExport();
+
+      const pdf = await service.exportDataPdf(userId);
+
+      expect(Buffer.isBuffer(pdf)).toBe(true);
+      expect(pdf.length).toBeGreaterThan(0);
+      // Every PDF starts with the "%PDF-" magic bytes.
+      expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    });
+
+    it('logs the export in the audit trail', async () => {
+      seedFullExport();
+
+      await service.exportDataPdf(userId);
+
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorId: userId,
+          action: AuditAction.USER_DATA_EXPORTED,
+          entityType: 'User',
+          entityId: userId,
+        }),
+      );
+    });
+
+    it('throws NotFoundException if the user does not exist', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.exportDataPdf(userId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('renders even when the candidate has no profile', async () => {
+      userRepo.findOne.mockResolvedValue(mockUser);
+      profileRepo.findOne.mockResolvedValue(null);
+      experienceRepo.find.mockResolvedValue([]);
+      profileSkillRepo.find.mockResolvedValue([]);
+      profileLinkRepo.find.mockResolvedValue([]);
+      certificationRepo.find.mockResolvedValue([]);
+      documentRepo.find.mockResolvedValue([]);
+
+      const pdf = await service.exportDataPdf(userId);
+
+      expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    });
+  });
+
   // ── Deletion ───────────────────────────────────────────────────────
 
   describe('deleteData', () => {
