@@ -30,6 +30,7 @@ import { BillingModule } from './modules/billing/billing.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { SchoolVerificationModule } from './modules/school-verification/school-verification.module.js';
 import { GrowthModule } from './modules/growth/growth.module.js';
@@ -115,6 +116,7 @@ import { PortsModule } from './ports/ports.module.js';
     AuditModule,
     SettingsModule,
     HealthModule,
+    MetricsModule,
     NotificationsModule,
     SchoolVerificationModule,
     GrowthModule,
