@@ -41,14 +41,21 @@ export interface CandidateFilters {
   q: string;
   skills: string;
   location: string;
+  // EF-SRCH-02 — availability substring + salary budget (MAD, as text input).
+  availability: string;
+  salaryMax: string;
 }
 
 export const EMPTY_FILTERS: CandidateFilters = {
   q: '',
   skills: '',
   location: '',
+  availability: '',
+  salaryMax: '',
 };
 
 export function activeFilterCount(f: CandidateFilters): number {
-  return [f.skills, f.location].filter((v) => v.trim()).length;
+  return [f.skills, f.location, f.availability, f.salaryMax].filter((v) =>
+    v.trim(),
+  ).length;
 }

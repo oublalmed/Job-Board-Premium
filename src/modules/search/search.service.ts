@@ -255,6 +255,22 @@ export class SearchService {
       });
     }
 
+    // EF-SRCH-02 — availability substring filter.
+    if (filters.availability) {
+      qb.andWhere('profile.availability ILIKE :availability', {
+        availability: `%${filters.availability}%`,
+      });
+    }
+
+    // EF-SRCH-02 — salary budget: only candidates who disclosed a range
+    // (salaryVisible) whose minimum expectation fits the recruiter's budget.
+    if (filters.salaryMax !== undefined) {
+      qb.andWhere(
+        'profile.salaryVisible = true AND profile.salaryMin IS NOT NULL AND profile.salaryMin <= :salaryMax',
+        { salaryMax: filters.salaryMax },
+      );
+    }
+
     if (filters.cursor) {
       const decoded = decodeCursor(filters.cursor);
       if (decoded) {

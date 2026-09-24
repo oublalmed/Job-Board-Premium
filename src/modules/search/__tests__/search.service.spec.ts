@@ -151,6 +151,26 @@ describe('SearchService', () => {
         { location: '%Rabat%' },
       );
     });
+
+    it('applies availability as an ILIKE filter (EF-SRCH-02)', async () => {
+      await service.searchCandidates({ availability: 'Immédiate' });
+
+      expect(mainQb.andWhere).toHaveBeenCalledWith(
+        'profile.availability ILIKE :availability',
+        { availability: '%Immédiate%' },
+      );
+    });
+
+    it('applies the salary-budget filter only to disclosed ranges (EF-SRCH-02)', async () => {
+      await service.searchCandidates({ salaryMax: 450000 });
+
+      const call = mainQb.andWhere.mock.calls.find(
+        (c) => typeof c[0] === 'string' && c[0].includes('salaryMin <= :salaryMax'),
+      );
+      expect(call).toBeDefined();
+      expect(call![0]).toContain('profile.salaryVisible = true');
+      expect(call![1]).toEqual({ salaryMax: 450000 });
+    });
   });
 
   describe('pagination curseur (EF-SRCH-02)', () => {

@@ -31,6 +31,8 @@ export interface SavedSearchCriteria {
   skills?: string[];
   scoreMin?: number;
   location?: string;
+  availability?: string;
+  salaryMax?: number;
 }
 
 export interface SavedSearch {
@@ -59,6 +61,10 @@ export function filtersToCriteria(f: CandidateFilters): SavedSearchCriteria {
     .filter(Boolean);
   if (skills.length) criteria.skills = skills;
   if (f.location.trim()) criteria.location = f.location.trim();
+  if (f.availability.trim()) criteria.availability = f.availability.trim();
+  const salaryMax = Number(f.salaryMax);
+  if (f.salaryMax.trim() && Number.isFinite(salaryMax) && salaryMax >= 0)
+    criteria.salaryMax = salaryMax;
   return criteria;
 }
 
@@ -69,6 +75,8 @@ export function criteriaToFilters(c: SavedSearchCriteria): CandidateFilters {
     q: c.q ?? '',
     skills: (c.skills ?? []).join(', '),
     location: c.location ?? '',
+    availability: c.availability ?? '',
+    salaryMax: c.salaryMax != null ? String(c.salaryMax) : '',
   };
 }
 

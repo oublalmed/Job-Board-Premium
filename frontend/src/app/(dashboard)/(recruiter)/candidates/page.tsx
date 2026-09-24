@@ -268,6 +268,29 @@ export default function CandidatesPage() {
                     placeholder={t('search.locationPlaceholder')}
                   />
                 </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">{t('search.availability')}</Label>
+                  <Input
+                    value={draft.availability}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, availability: e.target.value }))
+                    }
+                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                    placeholder={t('search.availabilityPlaceholder')}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">{t('search.salaryMax')}</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={draft.salaryMax}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, salaryMax: e.target.value }))
+                    }
+                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                    placeholder={t('search.salaryMaxPlaceholder')}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

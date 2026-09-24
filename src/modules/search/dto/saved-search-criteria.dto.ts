@@ -2,6 +2,7 @@ import {
   IsOptional,
   IsString,
   IsNumber,
+  IsInt,
   Min,
   Max,
   IsArray,
@@ -39,4 +40,16 @@ export class SavedSearchCriteriaDto {
   @IsString()
   @MaxLength(200)
   location?: string;
+
+  // EF-SRCH-02 — persistable availability + salary-budget filters.
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  availability?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100_000_000)
+  salaryMax?: number;
 }
