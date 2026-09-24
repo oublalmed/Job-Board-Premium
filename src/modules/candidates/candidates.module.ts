@@ -32,6 +32,8 @@ import { CandidateCertificationService } from './candidate-certification.service
 import { CandidateCertificationController } from './candidate-certification.controller.js';
 import { CandidateProjectService } from './candidate-project.service.js';
 import { CandidateProjectController } from './candidate-project.controller.js';
+import { ProfileModerationService } from './profile-moderation.service.js';
+import { ProfileModerationAdminController } from './profile-moderation-admin.controller.js';
 import { LinkVerificationService } from './link-verification.service.js';
 import { LinkVerificationProcessor } from './link-verification.processor.js';
 import { LinkVerificationEnqueuer } from './link-verification-enqueuer.service.js';
@@ -67,9 +69,11 @@ import { StubLinkProberAdapter } from '../../adapters/link-prober/stub-link-prob
     CandidateSkillController,
     CandidateCertificationController,
     CandidateProjectController,
+    ProfileModerationAdminController,
   ],
   providers: [
     CandidateProfileService,
+    ProfileModerationService,
     CandidateDocumentService,
     CandidateDataService,
     DataRequestService,

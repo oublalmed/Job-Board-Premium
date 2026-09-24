@@ -160,6 +160,9 @@ export class SearchService {
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
       .where('profile.id = :id', { id })
       .andWhere('profile.indexedInCvtheque = true')
+      // EF-ADM-01 — an admin-suspended profile is never reachable, whatever the
+      // candidate's own visibility says.
+      .andWhere('profile.moderationStatus = :modActive', { modActive: 'active' })
       .andWhere('profile.visibility IN (:...visibilities)', {
         visibilities: [
           ProfileVisibility.PUBLIC,
@@ -256,6 +259,8 @@ export class SearchService {
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
       .addSelect('COALESCE(best_score.best_value, 0)', 'sortScore')
       .where('profile.indexedInCvtheque = true')
+      // EF-ADM-01 — admin-suspended profiles never appear in the CVthèque.
+      .andWhere('profile.moderationStatus = :modActive', { modActive: 'active' })
       .andWhere('profile.visibility IN (:...visibilities)', {
         visibilities: [
           ProfileVisibility.PUBLIC,

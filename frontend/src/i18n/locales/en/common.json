@@ -697,6 +697,21 @@
     "colEntity": "Entity",
     "colIp": "IP"
   },
+  "adminProfiles": {
+    "navLabel": "Profiles",
+    "title": "Profile moderation",
+    "subtitle": "Suspend or reinstate candidate profiles.",
+    "empty": "No profiles.",
+    "filter_all": "All",
+    "filter_active": "Active",
+    "filter_suspended": "Suspended",
+    "status_active": "Active",
+    "status_suspended": "Suspended",
+    "suspend": "Suspend",
+    "reinstate": "Reinstate",
+    "suspended": "Profile suspended.",
+    "reinstated": "Profile reinstated."
+  },
   "adminSettings": {
     "navLabel": "Settings",
     "title": "Reference data",
@@ -704,7 +719,9 @@
     "empty": "No settings yet.",
     "value": "Value",
     "save": "Save",
-    "saved": "Setting saved."
+    "saved": "Setting saved.",
+    "history": "Version history",
+    "historyEmpty": "No changes recorded yet."
   },
   "moderation": {
     "navLabel": "Reports",

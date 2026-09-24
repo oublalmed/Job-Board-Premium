@@ -28,14 +28,38 @@ export interface Setting {
   updatedAt: string;
 }
 
+// EF-ADM-02 — one version-history entry for a setting key.
+export interface SettingHistoryEntry {
+  id: string;
+  key: string;
+  value: string;
+  description: string | null;
+  valueType: string;
+  changedById: string | null;
+  createdAt: string;
+}
+
 export const settingsKeys = {
   all: ['admin', 'settings'] as const,
+  history: (key: string) => ['admin', 'settings', 'history', key] as const,
 };
 
 export function useSettings() {
   return useQuery({
     queryKey: settingsKeys.all,
     queryFn: () => authedJson<Setting[]>('/api/v1/admin/settings'),
+  });
+}
+
+// EF-ADM-02 — the change history for one setting key, loaded on demand.
+export function useSettingHistory(key: string | null) {
+  return useQuery({
+    queryKey: settingsKeys.history(key ?? ''),
+    enabled: !!key,
+    queryFn: () =>
+      authedJson<SettingHistoryEntry[]>(
+        `/api/v1/admin/settings/${encodeURIComponent(key as string)}/history`,
+      ),
   });
 }
 
@@ -47,8 +71,11 @@ export function useUpdateSetting() {
         `/api/v1/admin/settings/${encodeURIComponent(input.key)}`,
         { method: 'PUT', body: JSON.stringify({ value: input.value }) },
       ),
-    onSuccess: () => {
+    onSuccess: (_data, input) => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+      void queryClient.invalidateQueries({
+        queryKey: settingsKeys.history(input.key),
+      });
     },
   });
 }

@@ -19,6 +19,7 @@ import {
   Flag,
   SlidersHorizontal,
   ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -61,6 +62,12 @@ export function DashboardSidebar() {
       href: '/admin/message-reports',
       label: t('moderation.navLabel'),
       icon: Flag,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/profiles',
+      label: t('adminProfiles.navLabel'),
+      icon: ShieldAlert,
       roles: ['admin', 'moderator'],
     },
     {

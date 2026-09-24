@@ -16,6 +16,14 @@ export enum ProfileVisibility {
   HIDDEN = 'hidden',
 }
 
+// EF-ADM-01 — admin-owned moderation state, distinct from the candidate's own
+// `visibility` choice. A SUSPENDED profile is excluded from the CVthèque
+// regardless of what the candidate sets, and cannot be un-suspended by them.
+export enum ProfileModerationStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+}
+
 // ENF-01 — every CVthèque read gates on `indexed_in_cvtheque = true AND
 // visibility IN (...)` (see SearchService). This composite index keeps that
 // hottest predicate off a sequential scan as the profile table grows.
@@ -66,6 +74,16 @@ export class CandidateProfile {
     default: ProfileVisibility.HIDDEN,
   })
   visibility!: ProfileVisibility;
+
+  // EF-ADM-01 — admin moderation status; default ACTIVE. SUSPENDED profiles are
+  // filtered out of every CVthèque read (see SearchService).
+  @Column({
+    name: 'moderation_status',
+    type: 'enum',
+    enum: ProfileModerationStatus,
+    default: ProfileModerationStatus.ACTIVE,
+  })
+  moderationStatus!: ProfileModerationStatus;
 
   @Column({
     type: 'decimal',

@@ -73,6 +73,8 @@ describe('SettingsAdminController', () => {
       'indexation_score_min',
       '45',
       'min score',
+      undefined,
+      'admin-1',
     );
     expect(auditService.log).toHaveBeenCalledWith(
       expect.objectContaining({

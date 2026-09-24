@@ -697,6 +697,21 @@
     "colEntity": "Entité",
     "colIp": "IP"
   },
+  "adminProfiles": {
+    "navLabel": "Profils",
+    "title": "Modération des profils",
+    "subtitle": "Suspendre ou réactiver les profils candidats.",
+    "empty": "Aucun profil.",
+    "filter_all": "Tous",
+    "filter_active": "Actifs",
+    "filter_suspended": "Suspendus",
+    "status_active": "Actif",
+    "status_suspended": "Suspendu",
+    "suspend": "Suspendre",
+    "reinstate": "Réactiver",
+    "suspended": "Profil suspendu.",
+    "reinstated": "Profil réactivé."
+  },
   "adminSettings": {
     "navLabel": "Paramètres",
     "title": "Données de référence",
@@ -704,7 +719,9 @@
     "empty": "Aucun paramètre pour le moment.",
     "value": "Valeur",
     "save": "Enregistrer",
-    "saved": "Paramètre enregistré."
+    "saved": "Paramètre enregistré.",
+    "history": "Historique des versions",
+    "historyEmpty": "Aucune modification enregistrée."
   },
   "moderation": {
     "navLabel": "Signalements",

@@ -46,6 +46,8 @@ export class SettingsAdminController {
       key,
       dto.value,
       dto.description,
+      undefined,
+      user.sub,
     );
     await this.auditService.log({
       actorId: user.sub,
@@ -60,5 +62,20 @@ export class SettingsAdminController {
       description: setting.description,
       updatedAt: setting.updatedAt,
     };
+  }
+
+  // EF-ADM-02 — the version history for one setting key (newest first).
+  @Get(':key/history')
+  async history(@Param('key') key: string) {
+    const rows = await this.settingsService.getHistory(key);
+    return rows.map((h) => ({
+      id: h.id,
+      key: h.key,
+      value: h.value,
+      description: h.description,
+      valueType: h.valueType,
+      changedById: h.changedById,
+      createdAt: h.createdAt,
+    }));
   }
 }

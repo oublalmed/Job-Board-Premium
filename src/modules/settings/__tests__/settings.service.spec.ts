@@ -3,10 +3,12 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { SettingsService } from '../settings.service.js';
 import { Setting } from '../entities/setting.entity.js';
+import { SettingHistory } from '../entities/setting-history.entity.js';
 
 describe('SettingsService', () => {
   let service: SettingsService;
   let repo: Record<string, jest.Mock>;
+  let historyRepo: Record<string, jest.Mock>;
   let configService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -24,6 +26,12 @@ describe('SettingsService', () => {
       ),
     };
 
+    historyRepo = {
+      create: jest.fn().mockImplementation((entity: unknown) => entity),
+      save: jest.fn().mockResolvedValue({}),
+      find: jest.fn().mockResolvedValue([]),
+    };
+
     configService = {
       get: jest.fn(),
     };
@@ -32,6 +40,7 @@ describe('SettingsService', () => {
       providers: [
         SettingsService,
         { provide: getRepositoryToken(Setting), useValue: repo },
+        { provide: getRepositoryToken(SettingHistory), useValue: historyRepo },
         { provide: ConfigService, useValue: configService },
       ],
     }).compile();
@@ -121,6 +130,40 @@ describe('SettingsService', () => {
       expect(repo['save']).toHaveBeenCalledWith(
         expect.objectContaining({ value: 'new_value' }),
       );
+    });
+
+    it('records a version-history row on every change (EF-ADM-02)', async () => {
+      repo['findOne'].mockResolvedValue(null);
+      await service.set('k', 'v', 'desc', 'string', 'admin-user-1');
+      expect(historyRepo['save']).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key: 'k',
+          value: 'v',
+          changedById: 'admin-user-1',
+        }),
+      );
+    });
+
+    it('does not fail the write if history persistence throws', async () => {
+      repo['findOne'].mockResolvedValue(null);
+      historyRepo['save'].mockRejectedValueOnce(new Error('db down'));
+      const result = await service.set('k', 'v');
+      expect(result.value).toBe('v'); // the setting write still succeeds
+    });
+  });
+
+  describe('getHistory (EF-ADM-02)', () => {
+    it('returns history for a key, newest first', async () => {
+      const rows = [{ id: 'h1', key: 'k', value: 'v2' }];
+      historyRepo['find'].mockResolvedValue(rows);
+      const result = await service.getHistory('k');
+      expect(historyRepo['find']).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { key: 'k' },
+          order: { createdAt: 'DESC' },
+        }),
+      );
+      expect(result).toBe(rows);
     });
   });
 });

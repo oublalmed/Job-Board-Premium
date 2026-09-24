@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SlidersHorizontal, AlertCircle, Save, Loader2 } from 'lucide-react';
+import { SlidersHorizontal, AlertCircle, Save, Loader2, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useSettings,
+  useSettingHistory,
   useUpdateSetting,
   type Setting,
 } from '@/features/admin/settings';
@@ -22,10 +23,12 @@ const fadeUp = {
 };
 
 function SettingRow({ setting }: { setting: Setting }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { toast } = useToast();
   const update = useUpdateSetting();
   const [value, setValue] = useState(setting.value);
+  const [showHistory, setShowHistory] = useState(false);
+  const history = useSettingHistory(showHistory ? setting.key : null);
   const dirty = value !== setting.value;
 
   function save() {
@@ -39,35 +42,74 @@ function SettingRow({ setting }: { setting: Setting }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 border-b border-border/60 py-3 last:border-0 sm:flex-row sm:items-center">
-      <div className="min-w-0 flex-1">
-        <p className="font-mono text-sm text-foreground">{setting.key}</p>
-        {setting.description && (
-          <p className="text-xs text-muted-foreground">{setting.description}</p>
-        )}
-      </div>
-      <div className="flex items-center gap-2 sm:w-72">
-        <Input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          aria-label={`${t('adminSettings.value')} ${setting.key}`}
-          className="flex-1"
-        />
-        <Button
-          size="sm"
-          variant={dirty ? 'default' : 'outline'}
-          className="gap-1.5"
-          disabled={!dirty || update.isPending}
-          onClick={save}
-          aria-label={`${t('adminSettings.save')} ${setting.key}`}
-        >
-          {update.isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Save className="size-4" />
+    <div className="border-b border-border/60 py-3 last:border-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-sm text-foreground">{setting.key}</p>
+          {setting.description && (
+            <p className="text-xs text-muted-foreground">{setting.description}</p>
           )}
-        </Button>
+        </div>
+        <div className="flex items-center gap-2 sm:w-80">
+          <Input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            aria-label={`${t('adminSettings.value')} ${setting.key}`}
+            className="flex-1"
+          />
+          <Button
+            size="sm"
+            variant={dirty ? 'default' : 'outline'}
+            className="gap-1.5"
+            disabled={!dirty || update.isPending}
+            onClick={save}
+            aria-label={`${t('adminSettings.save')} ${setting.key}`}
+          >
+            {update.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Save className="size-4" />
+            )}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            aria-expanded={showHistory}
+            aria-label={`${t('adminSettings.history')} ${setting.key}`}
+            title={t('adminSettings.history')}
+            onClick={() => setShowHistory((v) => !v)}
+          >
+            <History className="size-4" />
+          </Button>
+        </div>
       </div>
+
+      {showHistory && (
+        <div className="mt-2 rounded-lg border border-border/50 bg-muted/20 p-3">
+          {history.isLoading ? (
+            <Skeleton className="h-8" />
+          ) : !history.data || history.data.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t('adminSettings.historyEmpty')}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {history.data.map((h) => (
+                <li
+                  key={h.id}
+                  className="flex items-center justify-between gap-3 text-xs"
+                >
+                  <span className="font-mono text-foreground">{h.value}</span>
+                  <span className="text-muted-foreground">
+                    {new Date(h.createdAt).toLocaleString(locale)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }
