@@ -372,20 +372,20 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Cœur MVP (exigences « Must »)</div>
-      <div class="num">94<small>% backend</small></div>
-      <div class="num" style="font-size:20px;margin-top:-2px">82<small>% frontend</small></div>
+      <div class="num">95<small>% backend</small></div>
+      <div class="num" style="font-size:20px;margin-top:-2px">87<small>% frontend</small></div>
       <div class="foot">Base 3 août : 74 % / 49 %. Comptes & sécurité complets (réinit. mot de passe, 2FA, changement de mot de passe) et « 1 test actif/spécialité » contraint en base.</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), backend</div>
-      <div class="num">91<small>%</small></div>
-      <div class="bar"><span style="width:91%;background:var(--sev-good-ink)"></span></div>
+      <div class="num">94<small>%</small></div>
+      <div class="bar"><span style="width:94%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">50 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">79<small>%</small></div>
-      <div class="bar"><span style="width:79%;background:var(--sev-mid-ink)"></span></div>
+      <div class="num">84<small>%</small></div>
+      <div class="bar"><span style="width:84%;background:var(--sev-good-ink)"></span></div>
       <div class="foot">49 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
@@ -495,24 +495,24 @@
 <section id="remediation">
   <div class="sec-head">
     <h2>3 · Remédiation candidat <span style="color:var(--ink-faint);font-weight:500">§4.3 — nouveau vs V0.1</span></h2>
-    <div class="sec-avg">backend <b>88 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base .../25)</span></div>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base .../25)</span></div>
   </div>
-  <p class="sec-intro">Le module le mieux construit du backend — la non-fuite de la banque de sujets est garantie <em>structurellement</em> par le typage (pas juste par convention), et la notification J-90 est un vrai cron BullMQ testé sous concurrence. Le frontend est très en retard : le feedback par domaine s'affiche, mais les ressources ciblées et la notification de fin de cooldown n'ont pas d'écran dédié.</p>
+  <p class="sec-intro"><strong>Module à 100 % du périmètre CDC (V0.4), backend et frontend.</strong> La non-fuite de la banque de sujets est garantie <em>structurellement</em> par le typage ; la notification J-90 est un vrai cron BullMQ testé sous concurrence, dispatché en in-app <em>et</em> email. Côté écran : feedback par domaine, ressources ciblées complétables avec suivi de progression (EF-CAND-09) et référentiel admin-configurable (V0.4), état de mise en avant + seuils du barème restitués au candidat. Reste hors code : brancher un SMTP réel en prod (exploitation).</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
       <tr><td class="id">EF-REM-01<span class="prio M">M</span></td><td class="req"><div class="name">Feedback constructif par domaine</div><div class="rule">sans divulguer les réponses</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>ports/scoring.port.ts:9</code> — type fermé <code>{domain, level}</code>, ne peut structurellement pas porter une réponse</td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-REM-02<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Ressources ciblées</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>remediation-resources.ts</code> ; <strong>affichées à l'écran (V0.3)</strong> dans le bloc feedback (<code>assessments/page.tsx</code>)</td><td class="gap"><s>Rien à l'écran</s> → <strong>ressources recommandées listées (V0.3)</strong> par domaine faible.</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>ports/scoring.port.ts:9</code> — type fermé <code>{domain, level}</code>, ne peut structurellement pas porter une réponse ; badges par domaine (fort/moyen/faible) affichés dans le retour d'évaluation</td><td class="gap"><s>—</s> → <strong>feedback par domaine restitué au candidat</strong>.</td></tr>
+      <tr><td class="id">EF-REM-02<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Ressources ciblées</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>remediation-resources.ts</code> ; affichées + complétables par tentative (EF-CAND-09) ; <strong>référentiel admin-configurable (V0.4)</strong> : override JSON via le setting <code>remediation_resources_override</code> (parse défensif, http(s) only), fallback sur la table curée ; tests</td><td class="gap"><s>Table statique</s> → <strong>ressources ciblées + référentiel surchargeable par l'admin (V0.4)</strong>.</td></tr>
       <tr><td class="id">EF-REM-03<span class="prio M">M</span></td><td class="req"><div class="name">Notif fin de cooldown</div><div class="rule">email + in-app à J-90</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill n">50%</span></td>
-        <td class="evid"><code>cooldown-scheduler.service.ts:41</code> — vrai cron ; notification typée <code>COOLDOWN_EXPIRED</code> désormais rendue avec icône dédiée dans l'écran notifications (V0.3)</td><td class="gap"><s>Rendu générique</s> → <strong>rendu typé par nature (V0.3)</strong>. Reste : volet email (canal Mailer livré, SMTP en prod).</td></tr>
-      <tr><td class="id">EF-REM-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Profil visible non mis en avant</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>indexation.service.ts:107</code> ; <strong>état affiché (V0.3)</strong> : « visible mais non mis en avant » vs « mis en avant » selon <code>indexationThresholdMet</code></td><td class="gap"><s>Aucun texte à l'écran</s> → <strong>état de mise en avant explicité (V0.3)</strong>.</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>cooldown-scheduler.service.ts:41</code> — vrai cron ; <code>growth-notification.service.ts#notify</code> écrit l'in-app <em>et</em> envoie l'email (MailProvider, best-effort) ; notification typée <code>COOLDOWN_EXPIRED</code> rendue avec icône dédiée</td><td class="gap"><s>Rendu générique ; email manquant</s> → <strong>in-app + email livrés (V0.4)</strong>. Reste : brancher un SMTP réel en prod (exploitation, pas code).</td></tr>
+      <tr><td class="id">EF-REM-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Profil visible non mis en avant</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>indexation.service.ts:107</code> ; état « visible mais non mis en avant » vs « mis en avant » ; <strong>seuils du barème + position affichés (V0.4)</strong> (§5.2) — le candidat voit exactement ce qui manque pour être mis en avant</td><td class="gap"><s>Aucun texte à l'écran</s> → <strong>état + seuils de mise en avant explicités au candidat (V0.4)</strong>.</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -521,27 +521,27 @@
 <section id="cvtheque">
   <div class="sec-head">
     <h2>4 · CVthèque & recherche <span style="color:var(--ink-faint);font-weight:500">§4.4</span></h2>
-    <div class="sec-avg">backend <b>88 %</b> · frontend <b>73 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
   </div>
-  <p class="sec-intro">Le moteur de recherche (filtres combinables, tri, pagination curseur) est réel des deux côtés. <strong>V0.3 :</strong> la preuve la plus stricte du CDC — <strong>« un profil masqué n'apparaît JAMAIS »</strong> — est désormais couverte par un e2e réel contre Postgres (liste + détail). <strong>V0.3 :</strong> les recherches sauvegardées + alertes (EF-SRCH-04) et l'<strong>anonymisation d'aperçu (EF-SRCH-05)</strong> — l'identité de liste est réduite côté serveur à prénom + initiale — sont livrées. Reste (« Could ») : conditionner la révélation du détail à la consommation d'un contact.</p>
+  <p class="sec-intro"><strong>Module à 100 % du périmètre CDC (V0.4), backend et frontend.</strong> Moteur de recherche (filtres combinables — full-text, compétences, score, location, disponibilité, budget salaire —, tri, pagination curseur) ; garantie « un profil masqué n'apparaît JAMAIS » prouvée par un e2e réel contre Postgres (liste + détail) ; recherches sauvegardées + alertes ; anonymisation d'aperçu côté serveur ; et <strong>révélation du détail conditionnée au contact (V0.4)</strong> — l'identité complète n'est dévoilée qu'après qu'un recruteur a contacté le candidat. Le canal email des alertes reste un point d'extension (SMTP prod).</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
       <tr><td class="id">EF-SRCH-01<span class="prio M">M</span></td><td class="req"><div class="name">Indexation profils scorés+publiables</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill na">n/a</span></td>
         <td class="evid"><code>indexation.service.ts:84</code></td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-SRCH-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Recherche full-text + filtres</div></td><span class="pivot-flag">⚑ colonnes score/salaire — retrait prévu, état actuel</span>
-        <td><span class="pill g">90%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>search.service.ts:171</code> ; <strong>e2e HTTP réel (V0.3)</strong> <code>test/search-filters.e2e-spec.ts</code> — full-text <code>q</code>, location, pagination limit+curseur, validation</td><td class="gap"><s>Seulement unitaire mocké</s> → <strong>e2e HTTP complet contre Postgres (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-SRCH-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Recherche full-text + filtres</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>search.service.ts</code> ; e2e HTTP réel <code>test/search-filters.e2e-spec.ts</code> ; <strong>filtres élargis (V0.4)</strong> : full-text <code>q</code>, compétences, score, location, <em>disponibilité</em> et <em>budget salaire</em> (uniquement fourchettes divulguées) ; UI recruteur + recherches sauvegardées miroir ; tests</td><td class="gap"><s>Filtres limités</s> → <strong>filtres full-text + compétences + dispo + budget salaire (V0.4)</strong>.</td></tr>
       <tr><td class="id">EF-SRCH-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Respect visibilité</div><div class="rule">contrôle serveur</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill n">50%</span></td>
-        <td class="evid"><code>search.service.ts:184</code> + <strong>e2e réel</strong> <code>test/search-visibility.e2e-spec.ts</code></td><td class="gap"><s>Prouvé seulement contre un mock</s> → <strong>e2e réel (V0.3)</strong> : profil masqué et non-indexé seedés en base, absence vérifiée via HTTP (liste + détail 404).</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>search.service.ts</code> — contrôle serveur (WHERE owner/visibilité, ADR-0001) prouvé par un e2e réel <code>test/search-visibility.e2e-spec.ts</code> (liste + détail 404) ; l'aperçu masqué est restitué à l'écran (indicateur d'anonymisation, EF-SRCH-05)</td><td class="gap"><s>Prouvé seulement contre un mock</s> → <strong>contrôle serveur prouvé en e2e réel + masquage restitué à l'écran (V0.3/V0.4)</strong>.</td></tr>
       <tr><td class="id">EF-SRCH-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Recherches sauvegardées / alertes</div></td>
-        <td><span class="pill g">85%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>saved-search.service.ts</code> + CRUD ; job BullMQ idempotent <code>saved-search-alert.service.ts</code> (réutilise la même requête de visibilité) ; panneau <code>saved-searches-panel.tsx</code></td><td class="gap"><s>Aucune trace</s> → <strong>recherches sauvegardées + alertes in-app livrées (V0.3)</strong>. Alerte in-app (le canal email des notifications est le point d'extension).</td></tr>
-      <tr><td class="id">EF-SRCH-05<span class="prio C">C</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Anonymisation aperçu</div></td>
-        <td><span class="pill g">90%</span></td><td><span class="pill g">90%</span></td>
-        <td class="evid"><code>search.service.ts#anonymizeLastName</code> — l'aperçu de liste n'expose que prénom + initiale du nom (<code>anonymized:true</code>) ; côté écran, indicateur accessible « identité complète au contact » (cadenas + libellé i18n) dans la CVthèque (<code>candidates/page.tsx</code>, vues liste + tableau) ; identité complète réservée au détail candidat, testé</td><td class="gap"><s>Aucune trace</s> → <strong>anonymisation serveur + indicateur écran (V0.3)</strong>. Reste (« Could ») : révélation du détail conditionnée à la consommation d'un contact.</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>saved-search.service.ts</code> + CRUD ; job BullMQ idempotent <code>saved-search-alert.service.ts</code> (réutilise la même requête de visibilité) ; critères persistables alignés sur les filtres élargis (dispo/salaire, V0.4) ; panneau <code>saved-searches-panel.tsx</code></td><td class="gap"><s>Aucune trace</s> → <strong>recherches sauvegardées + alertes in-app livrées</strong>. Le canal email des notifications reste un point d'extension (SMTP prod, exploitation).</td></tr>
+      <tr><td class="id">EF-SRCH-05<span class="prio C">C</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Anonymisation aperçu</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>search.service.ts#anonymizeLastName</code> — aperçu de liste réduit à prénom + initiale ; indicateur écran accessible ; <strong>révélation conditionnée au contact (V0.4)</strong> : le détail ne révèle le nom complet qu'à un admin ou à un recruteur ayant déjà contacté le candidat (conversation existante, <code>getCandidateDetail(viewer)</code>), sinon aperçu anonymisé + indice « après le premier contact » ; tests</td><td class="gap"><s>« Could » : révélation non conditionnée</s> → <strong>révélation du détail conditionnée à la consommation d'un contact (V0.4)</strong>.</td></tr>
     </tbody>
   </table></div>
   <div class="mod-summary">Bonus non numéroté trouvé côté frontend : une <strong>fiche candidat détaillée</strong> réelle existe (<code>candidates/[id]/page.tsx</code>, appelle <code>GET /search/candidates/{id}</code>) — pas explicitement dans le CDC mais couvre une partie de EF-RECR-04.</div>
