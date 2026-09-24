@@ -581,6 +581,8 @@
       "technical": "Technical",
       "psychotechnical": "Psychotechnical",
       "percentile": "{{value}}th percentile",
+      "ranking": "Ranking",
+      "rankingTop": "Top {{value}}%",
       "completedOn": "Completed on {{date}}",
       "viewRemediation": "View remediation",
       "hideRemediation": "Hide",
