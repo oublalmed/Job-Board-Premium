@@ -372,21 +372,21 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Cœur MVP (exigences « Must »)</div>
-      <div class="num">95<small>% backend</small></div>
-      <div class="num" style="font-size:20px;margin-top:-2px">87<small>% frontend</small></div>
+      <div class="num">97<small>% backend</small></div>
+      <div class="num" style="font-size:20px;margin-top:-2px">94<small>% frontend</small></div>
       <div class="foot">Base 3 août : 74 % / 49 %. Comptes & sécurité complets (réinit. mot de passe, 2FA, changement de mot de passe) et « 1 test actif/spécialité » contraint en base.</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), backend</div>
-      <div class="num">94<small>%</small></div>
-      <div class="bar"><span style="width:94%;background:var(--sev-good-ink)"></span></div>
-      <div class="foot">50 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
+      <div class="num">95<small>%</small></div>
+      <div class="bar"><span style="width:95%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">49 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">84<small>%</small></div>
-      <div class="bar"><span style="width:84%;background:var(--sev-good-ink)"></span></div>
-      <div class="foot">49 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
+      <div class="num">89<small>%</small></div>
+      <div class="bar"><span style="width:89%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">48 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
       <div class="label">Non-fonctionnel (perf/sécu/infra)</div>
@@ -551,30 +551,30 @@
 <section id="recruteur">
   <div class="sec-head">
     <h2>5 · Espace recruteur & offres <span style="color:var(--ink-faint);font-weight:500">§4.5</span></h2>
-    <div class="sec-avg">backend <b>100 %</b> · frontend <b>73 %</b> <span style="color:var(--ink-faint)">(base 100/58)</span></div>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 100/58)</span></div>
   </div>
-  <p class="sec-intro"><strong>Seul module où chaque exigence backend atteint 100 %</strong>, avec e2e sur l'isolation inter-entreprise et la décrémentation atomique du quota de contacts sous concurrence. Le frontend, lui, oublie complètement d'afficher le quota au recruteur — il peut être bloqué sans jamais avoir vu venir la limite.</p>
+  <p class="sec-intro"><strong>Backend intégralement à 100 %</strong>, avec e2e sur l'isolation inter-entreprise et la décrémentation atomique du quota de contacts sous concurrence. <strong>Depuis (V0.3) :</strong> le frontend est complété et testé — indicateur de quota (EF-RECR-05), <strong>classement candidat rendu explicite à l'écran</strong> (EF-RECR-04, avec correction d'un bug où la liste de résultats restait vide), et écrans KYB / multi-utilisateurs / vivier couverts par des tests composant. La publication d'offres (EF-RECR-03) a été <strong>retirée au pivot CVthèque</strong> — hors périmètre, exclue de la moyenne.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
-      <tr><td class="id">EF-RECR-01<span class="prio M">M</span></td><td class="req"><div class="name">Compte entreprise (KYB léger)</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>company.service.ts:45</code> — ICE 15 chiffres, e2e complet</td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-RECR-02<span class="prio M">M</span></td><td class="req"><div class="name">Multi-utilisateurs</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>recruiter.service.ts:35</code></td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-RECR-03<span class="prio M">M</span></td><td class="req"><div class="name">Publier / gérer des offres</div></td><span class="pivot-flag">⚑ retrait prévu — état actuel</span>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>job-offer.service.ts:27</code> — cycle de vie complet, modération</td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-RECR-04<span class="prio M">M</span></td><td class="req"><div class="name">Score & classement candidat</div></td><span class="pivot-flag">⚑ colonne score — retrait prévu, état actuel</span>
-        <td><span class="pill g">100%</span></td><td><span class="pill n">50%</span></td>
-        <td class="evid"><code>search.controller.ts:35</code></td><td class="gap">Affiché mais sans contrôle de tri à l'écran</td></tr>
+      <tr><td class="id">EF-RECR-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Compte entreprise (KYB léger)</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>company.service.ts:45</code> — ICE 15 chiffres, e2e complet ; front <code>company/page.tsx</code> (saisie ICE bornée à 15 chiffres, statut de vérification) <strong>+ tests composant (V0.3)</strong> <code>company/page.test.tsx</code></td><td class="gap"><s>Écran non testé</s> → <strong>KYB testé de bout en bout (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-RECR-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Multi-utilisateurs</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>recruiter.service.ts:35</code> ; front <code>company/page.tsx</code> (liste, ajout, retrait — réservé au <code>company_admin</code>) <strong>+ tests composant (V0.3)</strong></td><td class="gap"><s>Écran non testé</s> → <strong>gestion d'équipe testée, contrôles réservés à l'admin (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-RECR-03<span class="prio M">M</span></td><td class="req"><div class="name">Publier / gérer des offres</div></td><span class="pivot-flag">⚑ module retiré au pivot</span>
+        <td><span class="pill na">retiré</span></td><td><span class="pill na">retiré</span></td>
+        <td class="evid">Module Offres supprimé lors du pivot CVthèque (migration <code>RemoveJobOffersAndAvailabilityMobility</code>). Plus aucune surface offres côté produit.</td><td class="gap">Retiré volontairement au pivot — hors périmètre, pas un écart (exclu de la moyenne).</td></tr>
+      <tr><td class="id">EF-RECR-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Score & classement candidat</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>search.controller.ts:35</code> (tri par score décroissant) ; front <code>CandidateScoreBadge.tsx</code> (rang, score/100, tranche percentile, libellé accessible) en vues carte + tableau + indicateur « classé par score » <strong>+ tests composant (V0.3)</strong>. Correction : la liste lisait <code>results</code> alors que l'API renvoie <code>items</code> (résultats jamais affichés).</td><td class="gap"><s>Affiché sans contrôle de tri à l'écran</s> → <strong>classement rendu explicite à l'écran + testé (V0.3)</strong>.</td></tr>
       <tr><td class="id">EF-RECR-05<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Contact candidat via messagerie</div><div class="rule">quota mensuel, décrément à l'envoi</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill g">90%</span></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
         <td class="evid"><code>RecruiterAccessBar.tsx</code> + <code>GET /companies/contact-quota</code> (<code>getQuotaStatus</code>) ; <strong>tests composant (V0.3)</strong> <code>RecruiterAccessBar.test.tsx</code> (états restants / épuisé / actif)</td><td class="gap"><s>Aucun indicateur</s> → <strong>« X contacts restants » livré + testé (V0.3)</strong> (ambre bientôt épuisé, rouge épuisé).</td></tr>
-      <tr><td class="id">EF-RECR-06<span class="prio S">S</span></td><td class="req"><div class="name">Shortlist / viviers</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>shortlist.service.ts:29</code> — partage intra-entreprise testé</td><td class="gap">—</td></tr>
+      <tr><td class="id">EF-RECR-06<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Shortlist / viviers</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>shortlist.service.ts:29</code> — partage intra-entreprise testé ; front <code>shortlist/page.tsx</code> (vivier, note, retrait avec confirmation) <strong>+ tests composant (V0.3)</strong> <code>shortlist/page.test.tsx</code></td><td class="gap"><s>Écran non testé</s> → <strong>vivier testé (liste, note, retrait, reprise sur erreur) (V0.3)</strong>.</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -583,27 +583,27 @@
 <section id="messagerie">
   <div class="sec-head">
     <h2>6 · Messagerie <span style="color:var(--ink-faint);font-weight:500">§4.6</span></h2>
-    <div class="sec-avg">backend <b>79 %</b> · frontend <b>69 %</b> <span style="color:var(--ink-faint)">(base 19/6)</span></div>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 19/6)</span></div>
   </div>
-  <p class="sec-intro"><strong>Base 3 août :</strong> le point le plus faible du produit. <strong>Depuis (V0.3) :</strong> vue de conversation, <strong>notifications de nouveaux messages</strong> (EF-MSG-02, in-app <em>+ canal email</em>), <strong>signalement d'abus</strong> (EF-MSG-05) et <strong>partage de documents</strong> (EF-MSG-03 : pièce jointe scannée, URL signée réservée aux participants) livrés et testés. Les cinq exigences de la messagerie sont désormais couvertes (EF-MSG-04 reporté V1 par le CDC). Reste : adaptateur SMTP réel (point d'extension) et préférences email par utilisateur.</p>
+  <p class="sec-intro"><strong>Base 3 août :</strong> le point le plus faible du produit. <strong>Depuis (V0.3) :</strong> le module est complété et prouvé de bout en bout — fil recruteur ↔ candidat avec marquage-lu, <strong>notifications</strong> (in-app + badge global de non-lus + canal email), <strong>partage de documents scanné</strong> (URL signée réservée aux participants) et <strong>signalement d'abus → file de modération</strong>. Un e2e HTTP dédié (<code>conversation-messaging.e2e-spec.ts</code>) couvre lecture/marquage-lu, blocage antivirus, isolation du téléchargement et la file d'abus. Les quatre exigences actives sont à 100 % (EF-MSG-04 reporté V1 par le CDC). Reste, en exploitation : adaptateur SMTP réel (point d'extension) et préférences email par utilisateur.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
       <tr><td class="id">EF-MSG-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Fil recruteur ↔ candidat</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>conversation.service.ts:29</code> ; front <code>ConversationList.tsx</code> + <code>MessageThread.tsx</code></td><td class="gap"><s>Formulaire seul</s> → <strong>vue de conversation livrée</strong> : liste des fils + lecture des messages, deux rôles.</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>conversation.service.ts:29</code> ; front <code>ConversationList.tsx</code> + <code>MessageThread.tsx</code> <strong>+ tests composant (V0.3)</strong> et <strong>e2e (V0.3)</strong> <code>conversation-messaging.e2e-spec.ts</code> (liste, lecture, marquage-lu, réponse à travers les deux rôles)</td><td class="gap"><s>Formulaire seul</s> → <strong>fil complet livré + testé de bout en bout (V0.3)</strong>.</td></tr>
       <tr><td class="id">EF-MSG-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Notification nouveaux messages</div></td>
-        <td><span class="pill g">90%</span></td><td><span class="pill n">50%</span></td>
-        <td class="evid"><code>NotificationType.NEW_MESSAGE</code> émis à l'ouverture/réponse (<code>conversation.service.ts</code>), testé ; <strong>canal email (V0.3)</strong> port <code>Mailer</code> + dispatch best-effort derrière <code>NOTIFICATIONS_EMAIL_ENABLED</code></td><td class="gap"><s>Absent</s> → <strong>notification in-app + canal email livrés (V0.3)</strong>. Adaptateur SMTP = point d'extension (logging par défaut).</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>NotificationType.NEW_MESSAGE</code> émis à l'ouverture/réponse, <strong>prouvé par e2e (V0.3)</strong> ; canal email (port <code>Mailer</code>, derrière <code>NOTIFICATIONS_EMAIL_ENABLED</code>). Front : <strong>badge global de messages non lus (V0.3)</strong> <code>MessagesNavBadge.tsx</code> sur l'entrée de nav (desktop + mobile), testé.</td><td class="gap"><s>Non surfacé hors de l'écran messagerie</s> → <strong>indicateur global livré + testé (V0.3)</strong>. SMTP réel = point d'extension.</td></tr>
       <tr><td class="id">EF-MSG-03<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Partage de documents</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>conversation.service.ts</code> (pièce jointe PDF/DOCX ≤5 Mo, scan antivirus bloquant, URL signée réservée aux 2 participants) ; <code>MessageThread.tsx</code></td><td class="gap"><s>Aucune pièce jointe</s> → <strong>partage de documents livré (V0.3)</strong> : upload gardé + téléchargement autorisé aux seuls participants.</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>conversation.service.ts</code> (PDF/DOCX ≤5 Mo, scan antivirus bloquant, URL signée réservée aux 2 participants) ; <code>MessageThread.tsx</code> <strong>+ tests composant + e2e (V0.3)</strong> : type interdit rejeté (400), <strong>upload infecté bloqué par le scan (400)</strong>, PDF sain accepté et URL signée refusée à un tiers (403).</td><td class="gap"><s>Aucune pièce jointe</s> → <strong>partage gardé livré + testé (V0.3)</strong>.</td></tr>
       <tr><td class="id">EF-MSG-04<span class="prio C">C</span></td><td class="req"><div class="name">Planification d'entretien</div></td>
         <td><span class="pill na">reporté V1</span></td><td><span class="pill na">reporté V1</span></td>
         <td class="evid">—</td><td class="gap">Conforme au CDC — reporté volontairement, pas un écart</td></tr>
       <tr><td class="id">EF-MSG-05<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Signaler un abus</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid">API + bouton « signaler » dans le fil (<code>MessageThread.tsx</code>) + file admin <code>admin/message-reports</code>, testé</td><td class="gap"><s>Aucune trace</s> → <strong>signalement de bout en bout livré (V0.3)</strong> : bouton côté écran, API, file de modération admin.</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid">API + bouton « signaler » dans le fil (<code>MessageThread.tsx</code>) + file admin <code>admin/message-reports</code> <strong>+ tests composant + e2e (V0.3)</strong> : signalement d'un participant → file de modération → clôture admin ; un tiers ne peut pas signaler (404).</td><td class="gap"><s>Aucune trace</s> → <strong>signalement de bout en bout livré + testé (V0.3)</strong>.</td></tr>
     </tbody>
   </table></div>
 </section>
