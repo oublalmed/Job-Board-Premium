@@ -161,6 +161,12 @@
     "visibilityPublic": "Public",
     "visibilityRecruitersOnly": "Recruiters only",
     "visibilityHidden": "Hidden",
+    "visibilityLockedHint": "Your profile can only become visible after you complete an assessment and are indexed into the CV library.",
+    "scanStatus": {
+      "clean": "Antivirus scan: passed",
+      "pending": "Antivirus scan in progress…",
+      "infected": "File rejected (threat detected)"
+    },
     "skills": "Skills",
     "experience": "Experience",
     "cv": "Resume",

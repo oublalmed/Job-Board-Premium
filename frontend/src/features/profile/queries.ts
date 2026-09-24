@@ -16,6 +16,11 @@ export interface CandidateProfileData {
     school?: string | null;
     schoolVerified?: boolean;
     visibility?: 'public' | 'recruiters_only' | 'hidden';
+    // EF-CAND-06 — true once the candidate has been scored and indexed into the
+    // CVthèque. The backend refuses (403) any switch to a visible state while
+    // this is false; the UI mirrors that rule instead of letting the request
+    // fail silently.
+    indexedInCvtheque?: boolean;
   };
   completeness: {
     completeness: number;

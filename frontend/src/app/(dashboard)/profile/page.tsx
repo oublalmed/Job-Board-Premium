@@ -211,6 +211,10 @@ function CandidateProfile() {
 
   const completeness = profileQuery.data?.completeness.completeness ?? 0;
   const schoolVerified = profileQuery.data?.profile.schoolVerified ?? false;
+  // EF-CAND-06 — a profile can only be made visible once it has been scored and
+  // indexed. Mirror the backend guard in the UI so the candidate sees why the
+  // public options are unavailable instead of hitting a 403 on save.
+  const canBeVisible = profileQuery.data?.profile.indexedInCvtheque ?? false;
   const cv = cvQuery.data ?? null;
   const verification = verificationQuery.data ?? null;
   // useWatch (a hook) rather than form.watch() (a returned function) so the
@@ -412,13 +416,23 @@ function CandidateProfile() {
                       <FormLabel>{t('profile.visibility')}</FormLabel>
                       <FormControl>
                         <Select {...field}>
-                          <option value="public">{t('profile.visibilityPublic')}</option>
-                          <option value="recruiters_only">
+                          <option value="public" disabled={!canBeVisible}>
+                            {t('profile.visibilityPublic')}
+                          </option>
+                          <option
+                            value="recruiters_only"
+                            disabled={!canBeVisible}
+                          >
                             {t('profile.visibilityRecruitersOnly')}
                           </option>
                           <option value="hidden">{t('profile.visibilityHidden')}</option>
                         </Select>
                       </FormControl>
+                      {!canBeVisible && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('profile.visibilityLockedHint')}
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -437,12 +451,16 @@ function CandidateProfile() {
           {cv ? (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
-                <FileText className="size-5 text-primary" />
+                <FileText className="size-5 text-primary" aria-hidden="true" />
                 <div>
                   <p className="text-sm font-medium text-foreground">{cv.originalName}</p>
                   <p className="text-xs text-muted-foreground">
                     {(cv.size / 1024).toFixed(0)} KB
                   </p>
+                  {/* EF-CAND-03 — antivirus scan outcome. The scan is blocking
+                      server-side; showing its state here tells the candidate
+                      whether their CV is usable, pending, or was rejected. */}
+                  <CvScanBadge status={cv.scanStatus} />
                 </div>
               </div>
               <Button
@@ -567,5 +585,26 @@ function CandidateProfile() {
 
       <ReferralCard />
     </motion.div>
+  );
+}
+
+// EF-CAND-03 — antivirus scan status for the uploaded CV. Icon is decorative;
+// the visible text carries the meaning (no colour-only signal, WCAG 1.4.1).
+function CvScanBadge({ status }: { status: string }) {
+  const { t } = useLocale();
+  const meta: Record<
+    string,
+    { variant: 'success' | 'warning' | 'destructive'; Icon: typeof Clock }
+  > = {
+    clean: { variant: 'success', Icon: ShieldCheck },
+    pending: { variant: 'warning', Icon: Clock },
+    infected: { variant: 'destructive', Icon: ShieldX },
+  };
+  const { variant, Icon } = meta[status] ?? meta.pending;
+  return (
+    <Badge variant={variant} className="mt-1 gap-1">
+      <Icon className="size-3" aria-hidden="true" />
+      {t(`profile.scanStatus.${status in meta ? status : 'pending'}`)}
+    </Badge>
   );
 }

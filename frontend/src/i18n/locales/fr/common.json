@@ -161,6 +161,12 @@
     "visibilityPublic": "Public",
     "visibilityRecruitersOnly": "Recruteurs uniquement",
     "visibilityHidden": "Masqué",
+    "visibilityLockedHint": "Votre profil ne peut devenir visible qu'après avoir passé une évaluation et été indexé dans la CVthèque.",
+    "scanStatus": {
+      "clean": "Analyse antivirus : OK",
+      "pending": "Analyse antivirus en cours…",
+      "infected": "Fichier rejeté (menace détectée)"
+    },
     "skills": "Compétences",
     "experience": "Expérience",
     "cv": "CV",
