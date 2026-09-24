@@ -63,10 +63,39 @@ export interface MessageView {
   attachment: MessageAttachment | null;
 }
 
+// EF-MSG-04 — interview scheduling within a conversation.
+export type InterviewMode = 'onsite' | 'video' | 'phone';
+export type InterviewStatus = 'proposed' | 'accepted' | 'declined' | 'cancelled';
+
+export interface InterviewView {
+  id: string;
+  status: InterviewStatus;
+  mode: InterviewMode;
+  scheduledAt: string;
+  durationMinutes: number;
+  location: string | null;
+  note: string | null;
+  proposedByRole: MessageSenderRole;
+  // Whether the current viewer proposed this slot (proposer cancels;
+  // counterpart accepts/declines).
+  mine: boolean;
+  respondedAt: string | null;
+  createdAt: string;
+}
+
+export interface ProposeInterviewInput {
+  mode: InterviewMode;
+  scheduledAt: string;
+  durationMinutes?: number;
+  location?: string;
+  note?: string;
+}
+
 export const messageKeys = {
   all: ['conversations'] as const,
   list: () => [...messageKeys.all, 'list'] as const,
   thread: (id: string) => [...messageKeys.all, 'thread', id] as const,
+  interviews: (id: string) => [...messageKeys.all, 'interviews', id] as const,
 };
 
 export function useConversations() {
@@ -176,6 +205,51 @@ export function useOpenConversation() {
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: messageKeys.list() });
+    },
+  });
+}
+
+// EF-MSG-04 — interview scheduling. Endpoints post-date the OpenAPI schema, so
+// they use the same fetch+bearer helper as the rest of the messaging surface.
+export function useInterviews(conversationId: string | null) {
+  return useQuery({
+    queryKey: messageKeys.interviews(conversationId ?? ''),
+    enabled: !!conversationId,
+    queryFn: () =>
+      authedJson<InterviewView[]>(
+        `/api/v1/conversations/${conversationId}/interviews`,
+      ),
+  });
+}
+
+export function useProposeInterview(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ProposeInterviewInput) =>
+      authedJson<InterviewView>(
+        `/api/v1/conversations/${conversationId}/interviews`,
+        { method: 'POST', body: JSON.stringify(input) },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: messageKeys.interviews(conversationId),
+      });
+    },
+  });
+}
+
+export function useRespondInterview(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { interviewId: string; status: InterviewStatus }) =>
+      authedJson<InterviewView>(
+        `/api/v1/conversations/${conversationId}/interviews/${input.interviewId}`,
+        { method: 'PATCH', body: JSON.stringify({ status: input.status }) },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: messageKeys.interviews(conversationId),
+      });
     },
   });
 }

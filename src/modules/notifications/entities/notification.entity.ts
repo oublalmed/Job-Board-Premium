@@ -15,6 +15,10 @@ export enum NotificationType {
   NEW_MESSAGE = 'new_message',
   // EF-SRCH-04 — newly-indexed candidates match a recruiter's saved search.
   SAVED_SEARCH_ALERT = 'saved_search_alert',
+  // EF-MSG-04 — an interview slot was proposed in one of the recipient's threads.
+  INTERVIEW_PROPOSED = 'interview_proposed',
+  // EF-MSG-04 — a proposed interview was accepted, declined or cancelled.
+  INTERVIEW_UPDATED = 'interview_updated',
 }
 
 // The in-app half of "in-app + email" — neither EF-REM-03 nor EF-GROW-04

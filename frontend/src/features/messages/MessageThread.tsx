@@ -15,6 +15,7 @@ import {
   useReportConversation,
   fetchAttachmentUrl,
 } from './queries';
+import { InterviewPanel } from './InterviewPanel';
 
 // EF-MSG-03 — mirror the backend rules (PDF/DOCX ≤5MB) for instant feedback.
 const ATTACHMENT_MAX_SIZE = 5 * 1024 * 1024;
@@ -140,6 +141,11 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
             </div>
           ))
         )}
+      </div>
+
+      {/* EF-MSG-04 — interview scheduling for this thread. */}
+      <div className="mt-3">
+        <InterviewPanel conversationId={conversationId} />
       </div>
 
       {reporting && (

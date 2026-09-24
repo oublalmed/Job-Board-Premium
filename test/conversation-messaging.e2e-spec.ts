@@ -405,4 +405,143 @@ describe('Messaging flows (e2e) — EF-MSG-01/02/03/05', () => {
         .expect(404);
     });
   });
+
+  describe('EF-MSG-04 — interview scheduling within a conversation', () => {
+    const future = () => new Date(Date.now() + 3 * 86_400_000).toISOString();
+
+    it('recruiter proposes a slot, candidate sees it and accepts; the recruiter is notified', async () => {
+      const recruiter = await createUser([Role.RECRUITER]);
+      await createCompanyFor(recruiter.token);
+      const candidate = await createCandidate();
+      const conversationId = await openThread(
+        recruiter.token,
+        candidate.profileId,
+      );
+
+      const proposed = await request(app.getHttpServer())
+        .post(path(`/conversations/${conversationId}/interviews`))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({
+          mode: 'video',
+          scheduledAt: future(),
+          durationMinutes: 45,
+          location: 'https://meet.example/interview',
+        })
+        .expect(201);
+      const interview = proposed.body as {
+        id: string;
+        status: string;
+        mine: boolean;
+      };
+      expect(interview.status).toBe('proposed');
+
+      // Candidate sees it (and it is not "theirs").
+      const candList = await request(app.getHttpServer())
+        .get(path(`/conversations/${conversationId}/interviews`))
+        .set('Authorization', `Bearer ${candidate.token}`)
+        .expect(200);
+      const rows = candList.body as {
+        id: string;
+        mine: boolean;
+        status: string;
+      }[];
+      expect(rows.find((r) => r.id === interview.id)?.mine).toBe(false);
+
+      // Candidate accepts.
+      const accepted = await request(app.getHttpServer())
+        .patch(
+          path(`/conversations/${conversationId}/interviews/${interview.id}`),
+        )
+        .set('Authorization', `Bearer ${candidate.token}`)
+        .send({ status: 'accepted' })
+        .expect(200);
+      expect((accepted.body as { status: string }).status).toBe('accepted');
+
+      // The recruiter received an interview notification (proposal → candidate,
+      // acceptance → recruiter). Poll: dispatch is fire-and-forget.
+      let interviewNotes: Notification[] = [];
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        interviewNotes = await notificationRepo.find({
+          where: { recipientUserId: recruiter.userId },
+        });
+        if (
+          interviewNotes.some(
+            (n) => n.type === NotificationType.INTERVIEW_UPDATED,
+          )
+        ) {
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      expect(
+        interviewNotes.some(
+          (n) => n.type === NotificationType.INTERVIEW_UPDATED,
+        ),
+      ).toBe(true);
+    });
+
+    it('forbids the proposer from accepting their own proposal (403)', async () => {
+      const recruiter = await createUser([Role.RECRUITER]);
+      await createCompanyFor(recruiter.token);
+      const candidate = await createCandidate();
+      const conversationId = await openThread(
+        recruiter.token,
+        candidate.profileId,
+      );
+
+      const proposed = await request(app.getHttpServer())
+        .post(path(`/conversations/${conversationId}/interviews`))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ mode: 'onsite', scheduledAt: future() })
+        .expect(201);
+      const id = (proposed.body as { id: string }).id;
+
+      await request(app.getHttpServer())
+        .patch(path(`/conversations/${conversationId}/interviews/${id}`))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({ status: 'accepted' })
+        .expect(403);
+    });
+
+    it('rejects a past scheduledAt (400)', async () => {
+      const recruiter = await createUser([Role.RECRUITER]);
+      await createCompanyFor(recruiter.token);
+      const candidate = await createCandidate();
+      const conversationId = await openThread(
+        recruiter.token,
+        candidate.profileId,
+      );
+
+      await request(app.getHttpServer())
+        .post(path(`/conversations/${conversationId}/interviews`))
+        .set('Authorization', `Bearer ${recruiter.token}`)
+        .send({
+          mode: 'phone',
+          scheduledAt: new Date(Date.now() - 3600_000).toISOString(),
+        })
+        .expect(400);
+    });
+
+    it('does not let a non-participant propose or list interviews (404)', async () => {
+      const recruiter = await createUser([Role.RECRUITER]);
+      await createCompanyFor(recruiter.token, 'Company A');
+      const candidate = await createCandidate();
+      const conversationId = await openThread(
+        recruiter.token,
+        candidate.profileId,
+      );
+
+      const outsider = await createUser([Role.RECRUITER]);
+      await createCompanyFor(outsider.token, 'Company B');
+      await request(app.getHttpServer())
+        .get(path(`/conversations/${conversationId}/interviews`))
+        .set('Authorization', `Bearer ${outsider.token}`)
+        .expect(404);
+      await request(app.getHttpServer())
+        .post(path(`/conversations/${conversationId}/interviews`))
+        .set('Authorization', `Bearer ${outsider.token}`)
+        .send({ mode: 'video', scheduledAt: future() })
+        .expect(404);
+    });
+  });
 });

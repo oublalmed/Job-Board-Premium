@@ -18,6 +18,10 @@ vi.mock('@/lib/format', () => ({
   formatDateCasablanca: () => '01/06/2026 10:00',
 }));
 
+// InterviewPanel is exercised by its own test; stub it here so this suite's
+// ./queries mock need not also stub the interview hooks.
+vi.mock('./InterviewPanel', () => ({ InterviewPanel: () => null }));
+
 const useMessages = vi.fn();
 const sendMutate = vi.fn();
 const attachMutate = vi.fn();

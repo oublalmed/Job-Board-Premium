@@ -572,6 +572,25 @@ export class ConversationService {
   // and checking company/candidate membership in application code — same
   // "filter in SQL, not after the fact" rule as the rest of this module
   // (ADR-0001).
+  // EF-MSG-04 — the interview subdomain shares the exact SQL-scoped
+  // participant rule, so it authorizes through this service rather than
+  // re-deriving company/candidate membership. A non-participant gets the same
+  // ConversationNotFoundException (404) as a nonexistent thread.
+  async authorizeParticipant(
+    conversationId: string,
+    userId: string,
+  ): Promise<{ conversation: Conversation; senderRole: MessageSenderRole }> {
+    return this.findAuthorizedConversation(conversationId, userId);
+  }
+
+  // EF-MSG-04 — the User.id of the *other* participant, for notifications.
+  async counterpartUserId(
+    conversation: Conversation,
+    actorRole: MessageSenderRole,
+  ): Promise<string | null> {
+    return this.resolveRecipient(conversation, actorRole);
+  }
+
   private async findAuthorizedConversation(
     conversationId: string,
     senderUserId: string,
