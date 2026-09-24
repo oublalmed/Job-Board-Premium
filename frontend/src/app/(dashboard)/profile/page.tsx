@@ -56,6 +56,7 @@ import {
 import { ScoreBadgeCard } from '@/features/badge/ScoreBadgeCard';
 import { ReferralCard } from '@/features/referral/ReferralCard';
 import { ProfileLinksCard } from '@/features/profile/ProfileLinksCard';
+import { CvScanBadge } from '@/features/profile/CvScanBadge';
 import { CertificationsCard } from '@/features/profile/CertificationsCard';
 import { ProjectsCard } from '@/features/profile/ProjectsCard';
 
@@ -588,23 +589,3 @@ function CandidateProfile() {
   );
 }
 
-// EF-CAND-03 — antivirus scan status for the uploaded CV. Icon is decorative;
-// the visible text carries the meaning (no colour-only signal, WCAG 1.4.1).
-function CvScanBadge({ status }: { status: string }) {
-  const { t } = useLocale();
-  const meta: Record<
-    string,
-    { variant: 'success' | 'warning' | 'destructive'; Icon: typeof Clock }
-  > = {
-    clean: { variant: 'success', Icon: ShieldCheck },
-    pending: { variant: 'warning', Icon: Clock },
-    infected: { variant: 'destructive', Icon: ShieldX },
-  };
-  const { variant, Icon } = meta[status] ?? meta.pending;
-  return (
-    <Badge variant={variant} className="mt-1 gap-1">
-      <Icon className="size-3" aria-hidden="true" />
-      {t(`profile.scanStatus.${status in meta ? status : 'pending'}`)}
-    </Badge>
-  );
-}
