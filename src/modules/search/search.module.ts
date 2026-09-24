@@ -13,6 +13,7 @@ import { SAVED_SEARCH_ALERT_QUEUE } from './saved-search-alert.constants.js';
 import { CandidateProfileView } from './entities/candidate-profile-view.entity.js';
 import { ProfileViewCooldown } from './entities/profile-view-cooldown.entity.js';
 import { SavedSearch } from './entities/saved-search.entity.js';
+import { Conversation } from '../messaging/entities/conversation.entity.js';
 import { CandidatesModule } from '../candidates/candidates.module.js';
 import { AssessmentsModule } from '../assessments/assessments.module.js';
 import { CompaniesModule } from '../companies/companies.module.js';
@@ -25,6 +26,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
       CandidateProfileView,
       ProfileViewCooldown,
       SavedSearch,
+      Conversation,
     ]),
     BullModule.registerQueue({ name: SAVED_SEARCH_ALERT_QUEUE }),
     CandidatesModule,

@@ -15,11 +15,21 @@ import {
   Assessment,
   AssessmentStatus,
 } from '../assessments/entities/assessment.entity.js';
+import { Conversation } from '../messaging/entities/conversation.entity.js';
 import { SearchCandidatesDto } from './dto/search-candidates.dto.js';
 import type {
   CandidateSearchResultDto,
   SearchCandidatesResult,
 } from './dto/candidate-search-result.dto.js';
+
+// EF-SRCH-05 — who is viewing a candidate detail, and whether they have earned
+// the full-identity reveal (admin, or a recruiter who already contacted the
+// candidate — i.e. a conversation exists between their company and the
+// candidate).
+export interface CandidateDetailViewer {
+  isAdmin?: boolean;
+  companyId?: string;
+}
 
 interface CursorPayload {
   score: number;
@@ -67,6 +77,8 @@ export class SearchService {
     private readonly profileRepo: Repository<CandidateProfile>,
     @InjectRepository(ProfileSkill)
     private readonly profileSkillRepo: Repository<ProfileSkill>,
+    @InjectRepository(Conversation)
+    private readonly conversationRepo: Repository<Conversation>,
   ) {}
 
   async searchCandidates(
@@ -133,7 +145,10 @@ export class SearchService {
   // never more reachable than what would already show up in a search, and
   // a hidden/nonexistent profile are indistinguishable (404 either way —
   // ADR-0001, same reasoning as EF-SRCH-03's list-side filter).
-  async getCandidateDetail(id: string): Promise<CandidateSearchResultDto> {
+  async getCandidateDetail(
+    id: string,
+    viewer: CandidateDetailViewer = {},
+  ): Promise<CandidateSearchResultDto> {
     const qb = this.profileRepo
       .createQueryBuilder('profile')
       .leftJoin(
@@ -160,10 +175,22 @@ export class SearchService {
     const profile = entities[0];
     const skillsByProfile = await this.loadSkills([profile.id]);
 
+    // EF-SRCH-05 — full identity is revealed only to a viewer who has earned it:
+    // an admin, or a recruiter whose company already contacted this candidate
+    // (a conversation exists). Otherwise the detail keeps the anonymized
+    // preview (first name + last initial), same as the list.
+    const identityRevealed =
+      viewer.isAdmin === true ||
+      (viewer.companyId !== undefined &&
+        (await this.hasContact(viewer.companyId, profile.userId)));
+
     return {
       id: profile.id,
       firstName: profile.firstName,
-      lastName: profile.lastName,
+      lastName: identityRevealed
+        ? profile.lastName
+        : anonymizeLastName(profile.lastName),
+      anonymized: identityRevealed ? undefined : true,
       headline: profile.headline,
       location: profile.location,
       skills: skillsByProfile.get(profile.id) ?? [],
@@ -182,6 +209,19 @@ export class SearchService {
       salaryMax: profile.salaryVisible ? profile.salaryMax : null,
       salaryCurrency: profile.salaryVisible ? profile.salaryCurrency : null,
     };
+  }
+
+  // EF-SRCH-05 — a company has "contacted" a candidate once a conversation
+  // exists between them (the same unique (candidate, company) pair that
+  // consuming a contact opens). Owner-scoped to the viewer's company.
+  private async hasContact(
+    companyId: string,
+    candidateUserId: string,
+  ): Promise<boolean> {
+    const count = await this.conversationRepo.count({
+      where: { companyId, candidateId: candidateUserId },
+    });
+    return count > 0;
   }
 
   // EF-SRCH-04 — the saved-search alert sweep asks "how many candidates match

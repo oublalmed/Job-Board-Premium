@@ -106,9 +106,10 @@ describe('SearchController', () => {
       expect(subscriptionGuard.assertActiveSubscription).toHaveBeenCalledWith(
         recruiterUser.sub,
       );
-      expect(searchService.getCandidateDetail).toHaveBeenCalledWith(
-        profileId,
-      );
+      expect(searchService.getCandidateDetail).toHaveBeenCalledWith(profileId, {
+        isAdmin: false,
+        companyId: 'company-1',
+      });
       expect(profileViewService.recordView).toHaveBeenCalledWith(
         recruiterUser.sub,
         'company-1',
@@ -147,9 +148,10 @@ describe('SearchController', () => {
       );
 
       expect(subscriptionGuard.assertActiveSubscription).not.toHaveBeenCalled();
-      expect(searchService.getCandidateDetail).toHaveBeenCalledWith(
-        profileId,
-      );
+      expect(searchService.getCandidateDetail).toHaveBeenCalledWith(profileId, {
+        isAdmin: true,
+        companyId: undefined,
+      });
       expect(profileViewService.recordView).not.toHaveBeenCalled();
       expect(result).toEqual({ id: 'profile-1' });
     });

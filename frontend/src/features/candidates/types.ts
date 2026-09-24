@@ -34,6 +34,15 @@ export interface CandidateDetail {
   location: string | null;
   skills: string[];
   featured: boolean;
+  // EF-SRCH-05 — true until the recruiter has contacted the candidate; the last
+  // name stays an initial and full identity is withheld.
+  anonymized?: boolean;
+  // EF-CAND-05 — availability/mobility always shown; salary only if disclosed.
+  availability?: string | null;
+  mobility?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryCurrency?: string | null;
 }
 
 /** Raw filter inputs as typed by the recruiter (skills is a comma string). */

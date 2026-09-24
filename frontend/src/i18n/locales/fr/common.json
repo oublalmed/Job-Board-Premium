@@ -531,7 +531,11 @@
   "candidateDetail": {
     "title": "Profil du candidat",
     "notFound": "Candidat introuvable ou profil non disponible.",
-    "skills": "Compétences"
+    "skills": "Compétences",
+    "anonymizedHint": "Identité complète révélée après le premier contact",
+    "availability": "Disponibilité",
+    "mobility": "Mobilité",
+    "salary": "Salaire souhaité"
   },
   "assessments": {
     "title": "Évaluations",

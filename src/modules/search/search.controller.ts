@@ -44,14 +44,20 @@ export class SearchController {
     @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
+    const isAdmin = user.roles.includes(Role.ADMIN);
     let companyId: string | undefined;
-    if (!user.roles.includes(Role.ADMIN)) {
+    if (!isAdmin) {
       ({ companyId } = await this.subscriptionGuard.assertActiveSubscription(
         user.sub,
       ));
     }
 
-    const detail = await this.searchService.getCandidateDetail(id);
+    // EF-SRCH-05 — full identity is revealed only to an admin, or to a
+    // recruiter whose company already contacted this candidate.
+    const detail = await this.searchService.getCandidateDetail(id, {
+      isAdmin,
+      companyId,
+    });
 
     // Admins browse profiles without a company behind them — there's no
     // "a recruiter viewed you" story to tell a candidate about platform

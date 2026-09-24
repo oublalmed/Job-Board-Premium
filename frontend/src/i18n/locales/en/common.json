@@ -531,7 +531,11 @@
   "candidateDetail": {
     "title": "Candidate profile",
     "notFound": "Candidate not found or profile unavailable.",
-    "skills": "Skills"
+    "skills": "Skills",
+    "anonymizedHint": "Full identity revealed after first contact",
+    "availability": "Availability",
+    "mobility": "Mobility",
+    "salary": "Expected salary"
   },
   "assessments": {
     "title": "Assessments",
