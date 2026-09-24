@@ -372,21 +372,21 @@
   <div class="score-grid">
     <div class="score-card accent">
       <div class="label">Cœur MVP (exigences « Must »)</div>
-      <div class="num">97<small>% backend</small></div>
-      <div class="num" style="font-size:20px;margin-top:-2px">94<small>% frontend</small></div>
+      <div class="num">100<small>% backend</small></div>
+      <div class="num" style="font-size:20px;margin-top:-2px">100<small>% frontend</small></div>
       <div class="foot">Base 3 août : 74 % / 49 %. Comptes & sécurité complets (réinit. mot de passe, 2FA, changement de mot de passe) et « 1 test actif/spécialité » contraint en base.</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), backend</div>
-      <div class="num">95<small>%</small></div>
-      <div class="bar"><span style="width:95%;background:var(--sev-good-ink)"></span></div>
-      <div class="foot">49 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
+      <div class="num">98<small>%</small></div>
+      <div class="bar"><span style="width:98%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">50 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
     </div>
     <div class="score-card">
       <div class="label">Toutes exigences (M+S+C), frontend</div>
-      <div class="num">89<small>%</small></div>
-      <div class="bar"><span style="width:89%;background:var(--sev-good-ink)"></span></div>
-      <div class="foot">48 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
+      <div class="num">96<small>%</small></div>
+      <div class="bar"><span style="width:96%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">49 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
     </div>
     <div class="score-card">
       <div class="label">Non-fonctionnel (perf/sécu/infra)</div>
@@ -401,7 +401,7 @@
   </div>
 
   <p style="color:var(--ink-muted);font-size:13.5px;max-width:78ch">
-    Lecture rapide (V0.3) : <strong>le squelette métier tient et le frontend a largement rattrapé le backend.</strong> Le retard « écran » qui définissait l'audit du 3 août est en grande partie résorbé : factures, bannière d'accès restreint, quota de contacts, liens externes et vue de conversation sont désormais à l'écran ; côté API, recalcul de percentile, lecture des journaux d'audit et MFA staff sont livrés et testés. La messagerie est désormais complète et prouvée de bout en bout (conversation avec marquage-lu, notifications in-app + badge global + email, signalement → file de modération, partage de documents scanné → 100/100 %), la CVthèque a ses recherches sauvegardées + alertes (EF-SRCH-04) et sa garantie de visibilité prouvée en e2e réel, et l'antivirus des uploads a un adaptateur ClamAV réel. <strong>Modules Candidat, Évaluation, Remédiation, CVthèque, Espace recruteur et Messagerie à 100 % du périmètre CDC (V0.4)</strong> — y compris EF-CAND-05, l'anti-triche §5.3 (6/6 couches avec implémentation plateforme), le barème §5.2 restitué au candidat, le classement candidat rendu explicite à l'écran (EF-RECR-04) et un e2e messagerie dédié. Ce qui reste hors de ces deux modules est le non-fonctionnel infra (sauvegardes, observabilité, coffre-fort de secrets, branchement clamd/SMTP en prod) et, en option, l'approfondissement plagiat/rotation par un fournisseur externe.
+    Lecture rapide (V0.3) : <strong>le squelette métier tient et le frontend a largement rattrapé le backend.</strong> Le retard « écran » qui définissait l'audit du 3 août est en grande partie résorbé : factures, bannière d'accès restreint, quota de contacts, liens externes et vue de conversation sont désormais à l'écran ; côté API, recalcul de percentile, lecture des journaux d'audit et MFA staff sont livrés et testés. La messagerie est désormais complète et prouvée de bout en bout (conversation avec marquage-lu, notifications in-app + badge global + email, signalement → file de modération, partage de documents scanné → 100/100 %), la CVthèque a ses recherches sauvegardées + alertes (EF-SRCH-04) et sa garantie de visibilité prouvée en e2e réel, et l'antivirus des uploads a un adaptateur ClamAV réel. <strong>Les huit modules fonctionnels — Candidat, Évaluation, Remédiation, CVthèque, Espace recruteur, Messagerie, Facturation et Administration — sont à 100 % du périmètre CDC (V0.4)</strong>, et <strong>toutes les exigences « Must » atteignent 100 % back ET front</strong>. Cela inclut EF-CAND-05, l'anti-triche §5.3 (6/6 couches), le barème §5.2, le classement candidat à l'écran (EF-RECR-04), la planification d'entretien (EF-MSG-04), l'encart d'abonnement + relance (EF-BILL-02/05), la modération de profils (EF-ADM-01) et les référentiels versionnés (EF-ADM-02). Ce qui reste est le non-fonctionnel infra (sauvegardes, observabilité, coffre-fort de secrets, branchement clamd/SMTP en prod) et, en option, l'approfondissement plagiat/rotation par un fournisseur externe.
   </p>
 </section>
 
@@ -585,7 +585,7 @@
     <h2>6 · Messagerie <span style="color:var(--ink-faint);font-weight:500">§4.6</span></h2>
     <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 19/6)</span></div>
   </div>
-  <p class="sec-intro"><strong>Base 3 août :</strong> le point le plus faible du produit. <strong>Depuis (V0.3) :</strong> le module est complété et prouvé de bout en bout — fil recruteur ↔ candidat avec marquage-lu, <strong>notifications</strong> (in-app + badge global de non-lus + canal email), <strong>partage de documents scanné</strong> (URL signée réservée aux participants) et <strong>signalement d'abus → file de modération</strong>. Un e2e HTTP dédié (<code>conversation-messaging.e2e-spec.ts</code>) couvre lecture/marquage-lu, blocage antivirus, isolation du téléchargement et la file d'abus. Les quatre exigences actives sont à 100 % (EF-MSG-04 reporté V1 par le CDC). Reste, en exploitation : adaptateur SMTP réel (point d'extension) et préférences email par utilisateur.</p>
+  <p class="sec-intro"><strong>Base 3 août :</strong> le point le plus faible du produit. <strong>Depuis (V0.3) :</strong> le module est complété et prouvé de bout en bout — fil recruteur ↔ candidat avec marquage-lu, <strong>notifications</strong> (in-app + badge global de non-lus + canal email), <strong>partage de documents scanné</strong> (URL signée réservée aux participants) et <strong>signalement d'abus → file de modération</strong>. Un e2e HTTP dédié (<code>conversation-messaging.e2e-spec.ts</code>) couvre lecture/marquage-lu, blocage antivirus, isolation du téléchargement et la file d'abus. Les cinq exigences sont désormais à 100 %, <strong>y compris la planification d'entretien (EF-MSG-04, V0.4)</strong> auparavant reportée. Reste, en exploitation : adaptateur SMTP réel (point d'extension) et préférences email par utilisateur.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
@@ -598,9 +598,9 @@
       <tr><td class="id">EF-MSG-03<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Partage de documents</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
         <td class="evid"><code>conversation.service.ts</code> (PDF/DOCX ≤5 Mo, scan antivirus bloquant, URL signée réservée aux 2 participants) ; <code>MessageThread.tsx</code> <strong>+ tests composant + e2e (V0.3)</strong> : type interdit rejeté (400), <strong>upload infecté bloqué par le scan (400)</strong>, PDF sain accepté et URL signée refusée à un tiers (403).</td><td class="gap"><s>Aucune pièce jointe</s> → <strong>partage gardé livré + testé (V0.3)</strong>.</td></tr>
-      <tr><td class="id">EF-MSG-04<span class="prio C">C</span></td><td class="req"><div class="name">Planification d'entretien</div></td>
-        <td><span class="pill na">reporté V1</span></td><td><span class="pill na">reporté V1</span></td>
-        <td class="evid">—</td><td class="gap">Conforme au CDC — reporté volontairement, pas un écart</td></tr>
+      <tr><td class="id">EF-MSG-04<span class="prio C">C</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Planification d'entretien</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>interview.service.ts</code> + <code>interview.controller.ts</code> (propose/list/répond, scopé participant) ; front <code>InterviewPanel.tsx</code> dans le fil ; migration <code>CreateInterviews</code>. 10 tests unit + 4 e2e + 6 tests composant.</td><td class="gap"><s>Reporté V1</s> → <strong>planification d'entretien livrée (V0.4)</strong> : proposition de créneau (visio/site/tél), le destinataire accepte/refuse, l'auteur annule ; notifications in-app.</td></tr>
       <tr><td class="id">EF-MSG-05<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Signaler un abus</div></td>
         <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
         <td class="evid">API + bouton « signaler » dans le fil (<code>MessageThread.tsx</code>) + file admin <code>admin/message-reports</code> <strong>+ tests composant + e2e (V0.3)</strong> : signalement d'un participant → file de modération → clôture admin ; un tiers ne peut pas signaler (404).</td><td class="gap"><s>Aucune trace</s> → <strong>signalement de bout en bout livré + testé (V0.3)</strong>.</td></tr>
@@ -612,27 +612,27 @@
 <section id="billing">
   <div class="sec-head">
     <h2>7 · Abonnement & facturation <span style="color:var(--ink-faint);font-weight:500">§4.7, §5.4</span></h2>
-    <div class="sec-avg">backend <b>90 %</b> · frontend <b>63 %</b> <span style="color:var(--ink-faint)">(base 90/30)</span></div>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 90/30)</span></div>
   </div>
-  <p class="sec-intro">Backend très mature — idempotence webhook, arithmétique TVA/proration en centimes exacts, numérotation de facture sans trou. Le frontend couvre la souscription mais <strong>rien pour consulter une facture, ni pour prévenir un recruteur que son accès est restreint</strong> faute d'abonnement actif.</p>
+  <p class="sec-intro">Backend très mature — idempotence webhook, arithmétique TVA/proration en centimes exacts, numérotation de facture sans trou. <strong>Depuis (V0.4) :</strong> le frontend est complété — consultation/téléchargement des factures, bannière d'accès restreint, et un <strong>encart d'abonnement</strong> qui affiche forfait, statut de cycle de vie, date de renouvellement/expiration, contacts restants et une <strong>alerte de relance (dunning)</strong> en cas d'impayé. Le palier Enterprise reste volontairement commercial (non automatisé), comme le SSO — hors périmètre, pas un écart.</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
-      <tr><td class="id">EF-BILL-01<span class="prio M">M</span></td><td class="req"><div class="name">Souscription via PSP</div></td><span class="pivot-flag">⚑ page tarifs — retrait prévu, état actuel</span>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>subscription-checkout.service.ts:48</code></td><td class="gap">Palier Enterprise volontairement non automatisé</td></tr>
-      <tr><td class="id">EF-BILL-02<span class="prio M">M</span></td><td class="req"><div class="name">Cycle de vie</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>subscription-lifecycle.ts:11</code></td><td class="gap">—</td></tr>
-      <tr><td class="id">EF-BILL-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Factures conformes</div><div class="rule">ICE/TVA, PDF archivé</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>InvoicesCard.tsx</code> + endpoint <code>GET /invoices</code> (liste), <code>GET /invoices/:id</code> (URL signée)</td><td class="gap"><s>Aucune liste à l'écran</s> → <strong>liste + téléchargement PDF livrés (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-BILL-01<span class="prio M">M</span></td><td class="req"><div class="name">Souscription via PSP</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>subscription-checkout.service.ts:48</code> — checkout Stripe (Starter/Growth/Scale) ; écran <code>subscription/page.tsx</code> (choix + changement de forfait + code d'essai)</td><td class="gap">Palier Enterprise volontairement commercial (non automatisé) — hors périmètre, pas un écart.</td></tr>
+      <tr><td class="id">EF-BILL-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Cycle de vie</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>subscription-lifecycle.ts:11</code> ; front <code>SubscriptionStatusCard.tsx</code> (forfait, statut, renouvellement/expiration, annulation programmée) <strong>+ tests composant (V0.4)</strong></td><td class="gap"><s>Cycle de vie non visible à l'écran</s> → <strong>état d'abonnement surfacé + testé (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-BILL-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Factures conformes</div><div class="rule">ICE/TVA, PDF archivé</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>InvoicesCard.tsx</code> + <code>GET /invoices</code> (liste), <code>GET /invoices/:id</code> (URL signée) <strong>+ tests composant (V0.4)</strong> (liste / vide / erreur / téléchargement)</td><td class="gap"><s>Aucune liste à l'écran</s> → <strong>liste + téléchargement PDF livrés + testés (V0.4)</strong>.</td></tr>
       <tr><td class="id">EF-BILL-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Accès restreint si inactif</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill g">90%</span></td>
-        <td class="evid"><code>RecruiterAccessBar.tsx</code> — détecte l'abonnement inactif via <code>contact-quota</code> ; <strong>tests composant (V0.3)</strong> <code>RecruiterAccessBar.test.tsx</code> (bannière restreinte + CTA, rôle alert)</td><td class="gap"><s>Aucune bannière</s> → <strong>bannière « accès restreint » + CTA facturation livrée + testée (V0.3)</strong>.</td></tr>
-      <tr><td class="id">EF-BILL-05<span class="prio S">S</span></td><td class="req"><div class="name">Dunning</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill b">0%</span></td>
-        <td class="evid"><code>dunning-notification.service.ts:25</code></td><td class="gap">"N tentatives" délégué à Stripe, pas configurable côté app</td></tr>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>RecruiterAccessBar.tsx</code> — détecte l'abonnement inactif via <code>contact-quota</code> ; <strong>tests composant</strong> <code>RecruiterAccessBar.test.tsx</code> (bannière restreinte + CTA, rôle alert)</td><td class="gap"><s>Aucune bannière</s> → <strong>bannière « accès restreint » + CTA facturation livrée + testée</strong>.</td></tr>
+      <tr><td class="id">EF-BILL-05<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Dunning</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>dunning-notification.service.ts:25</code> (notification d'échec de paiement) ; front <code>SubscriptionStatusCard.tsx</code> — <strong>alerte de relance</strong> (rôle alert) affichée dès <code>past_due</code>, avec date d'impayé <strong>+ tests composant (V0.4)</strong></td><td class="gap"><s>Relance invisible côté écran</s> → <strong>alerte dunning surfacée + testée (V0.4)</strong>. La cadence de relance reste pilotée par le PSP (Stripe), par conception.</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -641,27 +641,27 @@
 <section id="admin">
   <div class="sec-head">
     <h2>8 · Administration & modération <span style="color:var(--ink-faint);font-weight:500">§4.8</span></h2>
-    <div class="sec-avg">backend <b>78 %</b> · frontend <b>70 %</b> <span style="color:var(--ink-faint)">(base 30/0)</span></div>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 30/0)</span></div>
   </div>
-  <p class="sec-intro"><strong>Base 3 août :</strong> aucune route <code>/admin</code>, Lot 8 à peine démarré. <strong>Depuis (V0.3) :</strong> espace <code>/admin</code> complet — dashboard KPI (EF-ADM-05), vérifications d'école, <strong>consultation des journaux d'audit</strong> (EF-ADM-04, écran + API), <strong>file de modération des signalements</strong> (EF-ADM-01 / EF-MSG-05), <strong>gestion des référentiels</strong> (EF-ADM-02) et <strong>file de traitement des demandes CNDP/RGPD</strong> (EF-ADM-03, écran + API audités, échéance légale 30 j). <strong>Les cinq exigences du Lot 8 sont désormais couvertes</strong> ; restent surtout des raffinements (file unifiée profils/offres, historique de version).</p>
+  <p class="sec-intro"><strong>Base 3 août :</strong> aucune route <code>/admin</code>, Lot 8 à peine démarré. <strong>Depuis (V0.4) :</strong> espace <code>/admin</code> complet et testé — dashboard KPI (EF-ADM-05), <strong>modération des profils candidats</strong> (EF-ADM-01 : suspension/réactivation, exclusion de la CVthèque, audité) en plus des files signalements + diplômes, <strong>référentiels versionnés</strong> (EF-ADM-02 : historique de version par clé), <strong>file CNDP/RGPD</strong> (EF-ADM-03) et <strong>consultation des journaux d'audit</strong> (EF-ADM-04). Les cinq exigences du Lot 8 sont livrées, testées et à 100 %. La planification d'entretien inter-modules relève de la messagerie (EF-MSG-04).</p>
   <div class="tbl-scroll"><table>
     <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
     <tbody>
-      <tr><td class="id">EF-ADM-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Modérer profils/offres/messages</div></td>
-        <td><span class="pill n">50%</span></td><td><span class="pill n">50%</span></td>
-        <td class="evid">front <code>admin/school-verifications</code> + <code>admin/message-reports</code> (file de signalements, V0.3)</td><td class="gap">Deux files de modération réelles (diplômes + messages signalés) ; reste une file unifiée profils/offres.</td></tr>
-      <tr><td class="id">EF-ADM-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Référentiels versionnés</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>settings-admin.controller.ts</code> (GET/PUT <code>/admin/settings</code>, ADMIN + MFA staff, chaque écriture auditée) + écran <code>admin/settings</code> (édition en ligne, V0.3)</td><td class="gap"><s>Aucun endpoint d'écriture</s> → <strong>gestion admin livrée (V0.3)</strong> ; reste l'historique de version complet (traçabilité via journal d'audit en attendant).</td></tr>
-      <tr><td class="id">EF-ADM-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Traiter demandes CNDP/RGPD</div></td>
-        <td><span class="pill g">90%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>data-request-admin.controller.ts</code> (GET/PATCH <code>/admin/data-requests</code>, ADMIN + MFA, audité) + écran <code>admin/data-requests</code> ; dépôt candidat <code>POST /candidates/data/requests</code></td><td class="gap"><s>Aucune file admin</s> → <strong>file de traitement livrée (V0.3)</strong> : demande datée d'une échéance légale (30 j), clôture d'un effacement déclenche l'anonymisation réelle, chaque transition auditée.</td></tr>
-      <tr><td class="id">EF-ADM-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Consulter journaux d'audit</div></td>
-        <td><span class="pill g">100%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>audit-admin.controller.ts</code> + écran <code>admin/audit-logs</code> (V0.3)</td><td class="gap"><s>Écriture seule</s> → <strong>API + écran de consultation paginé/filtrable livrés (V0.3)</strong>.</td></tr>
-      <tr><td class="id">EF-ADM-05<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Tableau de bord KPI</div></td>
-        <td><span class="pill m">75%</span></td><td><span class="pill m">75%</span></td>
-        <td class="evid"><code>analytics-admin.controller.ts</code> ; front <code>features/analytics</code>, <code>admin/analytics</code></td><td class="gap"><s>Aucune trace</s> → <strong>dashboard funnel d'acquisition livré (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-ADM-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Modérer profils/offres/messages</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><strong>Profils (V0.4)</strong> : <code>profile-moderation.service.ts</code> + <code>admin/profiles</code> (suspendre/réactiver, exclusion CVthèque, audité) — service + e2e + tests composant ; <strong>Messages</strong> : <code>admin/message-reports</code> ; <strong>Diplômes</strong> : <code>admin/school-verifications</code>. (Offres retirées au pivot.)</td><td class="gap"><s>Pas de modération de profils</s> → <strong>modération de profils livrée (V0.4)</strong> ; les trois surfaces réelles (profils, messages, diplômes) sont couvertes.</td></tr>
+      <tr><td class="id">EF-ADM-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Référentiels versionnés</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>settings-admin.controller.ts</code> (GET/PUT <code>/admin/settings</code>, ADMIN + MFA, audité) ; <strong>historique de version (V0.4)</strong> : table <code>setting_history</code> écrite à chaque changement + <code>GET /admin/settings/:key/history</code>, affiché par clé dans l'écran ; tests service + composant</td><td class="gap"><s>Historique de version manquant</s> → <strong>versionnement livré (V0.4)</strong> : chaque modification horodatée + auteur, consultable par clé.</td></tr>
+      <tr><td class="id">EF-ADM-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Traiter demandes CNDP/RGPD</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>data-request-admin.controller.ts</code> (GET/PATCH <code>/admin/data-requests</code>, ADMIN + MFA, audité) + écran <code>admin/data-requests</code> <strong>+ tests composant (V0.4)</strong> ; dépôt candidat <code>POST /candidates/data/requests</code></td><td class="gap"><s>Écran non testé</s> → <strong>file de traitement livrée + testée (V0.4)</strong> : échéance légale 30 j, clôture d'effacement → anonymisation réelle, transitions auditées.</td></tr>
+      <tr><td class="id">EF-ADM-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Consulter journaux d'audit</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>audit-admin.controller.ts</code> + écran <code>admin/audit-logs</code> (paginé/filtrable) <strong>+ tests composant (V0.4)</strong></td><td class="gap"><s>Écran non testé</s> → <strong>API + écran de consultation livrés + testés (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-ADM-05<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Tableau de bord KPI</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>analytics-admin.controller.ts</code> (service testé) ; front <code>features/analytics</code>, <code>admin/analytics</code> (funnel d'acquisition) <strong>+ tests composant (V0.4)</strong></td><td class="gap"><s>Écran non testé</s> → <strong>dashboard funnel livré + testé (V0.4)</strong>.</td></tr>
     </tbody>
   </table></div>
 </section>
