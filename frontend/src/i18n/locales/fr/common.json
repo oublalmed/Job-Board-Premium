@@ -222,7 +222,14 @@
     "contact": "Contacter",
     "viewProfile": "Voir le profil",
     "loadMore": "Charger plus",
-    "results": "{{count}} résultats"
+    "results": "{{count}} résultats",
+    "rankHeader": "Classement",
+    "rankPosition": "Rang {{rank}}",
+    "score": "Score",
+    "topPercent": "top {{pct}} %",
+    "topShort": "top",
+    "noScore": "Non évalué",
+    "sortedByScore": "Résultats classés par score (du plus élevé au plus faible)"
   },
   "savedSearches": {
     "title": "Recherches enregistrées",
@@ -287,7 +294,8 @@
     "reportReasonLabel": "Motif du signalement",
     "reportPlaceholder": "Décrivez le problème (contenu inapproprié, spam, harcèlement…)",
     "reportSubmit": "Envoyer le signalement",
-    "reportSent": "Signalement envoyé. Notre équipe va l'examiner."
+    "reportSent": "Signalement envoyé. Notre équipe va l'examiner.",
+    "unreadBadge": "{{count}} message(s) non lu(s)"
   },
   "messageAttachments": {
     "attach": "Joindre un document",

@@ -222,7 +222,14 @@
     "contact": "Contact",
     "viewProfile": "View profile",
     "loadMore": "Load more",
-    "results": "{{count}} results"
+    "results": "{{count}} results",
+    "rankHeader": "Ranking",
+    "rankPosition": "Rank {{rank}}",
+    "score": "Score",
+    "topPercent": "top {{pct}}%",
+    "topShort": "top",
+    "noScore": "Not assessed",
+    "sortedByScore": "Results ranked by score (highest first)"
   },
   "savedSearches": {
     "title": "Saved searches",
@@ -287,7 +294,8 @@
     "reportReasonLabel": "Reason for report",
     "reportPlaceholder": "Describe the issue (inappropriate content, spam, harassment…)",
     "reportSubmit": "Send report",
-    "reportSent": "Report sent. Our team will review it."
+    "reportSent": "Report sent. Our team will review it.",
+    "unreadBadge": "{{count}} unread message(s)"
   },
   "messageAttachments": {
     "attach": "Attach a document",

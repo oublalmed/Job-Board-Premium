@@ -23,6 +23,7 @@ import {
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { cn } from '@/lib/utils';
+import { MessagesNavBadge } from '@/features/messages/MessagesNavBadge';
 
 interface SidebarLink {
   href: string;
@@ -110,6 +111,7 @@ export function DashboardSidebar() {
             >
               <Icon className="size-4 shrink-0" />
               {link.label}
+              {link.href === '/messages' && <MessagesNavBadge />}
             </Link>
           );
         })}

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { getAccessToken } from '@/auth/token-store';
 import { unwrap } from '@/lib/api';
+import { sumUnread } from './queries.helpers';
 import type { OpenConversationValues } from './schema';
 
 // The conversation/message read endpoints post-date the last OpenAPI
@@ -73,6 +74,15 @@ export function useConversations() {
     queryKey: messageKeys.list(),
     queryFn: () => authedJson<ConversationSummary[]>('/api/v1/conversations'),
   });
+}
+
+// EF-MSG-02 — reuses the (cached, focus-refetched) conversations query so the
+// nav badge stays in sync with the messages screen without a second request.
+// `sumUnread` lives in queries.helpers.ts so it stays unit-testable without
+// mocking this module's react-query hooks.
+export function useUnreadMessageCount(): number {
+  const { data } = useConversations();
+  return sumUnread(data);
 }
 
 export function useMessages(conversationId: string | null) {

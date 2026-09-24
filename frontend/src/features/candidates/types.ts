@@ -6,6 +6,14 @@ export interface CandidateResult {
   location?: string;
   featured?: boolean;
   /**
+   * CDC EF-RECR-04: the candidate's best evaluation score (0–100) and its
+   * percentile rank. The backend orders the result set by this score
+   * descending, so a row's position in the list *is* its ranking — these
+   * fields let the UI make that ranking explicit rather than implicit.
+   */
+  score?: number;
+  percentile?: number | null;
+  /**
    * CDC EF-SRCH-05: search-list rows are an anonymised preview — the backend
    * returns the given name plus a masked family name (e.g. "Youssef" + "E.")
    * and sets this flag. Full identity is only revealed on the detail view /
@@ -21,7 +29,10 @@ export function isAnonymized(c: CandidateResult): boolean {
 }
 
 export interface CandidateSearchResponse {
-  results: CandidateResult[];
+  // The API returns the page under `items` (see SearchCandidatesResult on the
+  // backend). Keep this name aligned with the wire shape — reading a
+  // differently-named field silently yields an empty result set.
+  items: CandidateResult[];
   nextCursor?: string | null;
   total?: number;
 }
