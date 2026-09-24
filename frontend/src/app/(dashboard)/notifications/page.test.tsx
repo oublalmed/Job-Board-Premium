@@ -54,7 +54,7 @@ describe('NotificationsPage (EF-GROW-04 social-proof surface)', () => {
 
   it('marks a single notification read and marks all read', () => {
     useNotifications.mockReturnValue({
-      data: [notif(), notif({ id: 'n2', type: 'new_message', readAt: null })],
+      data: [notif(), notif({ id: 'n2', readAt: null })],
       isLoading: false,
       isError: false,
     });
