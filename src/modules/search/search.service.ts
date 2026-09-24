@@ -174,6 +174,13 @@ export class SearchService {
           ? Number(raw[0].bestScorePercentile)
           : null,
       featured: profile.featured,
+      // EF-CAND-05 — availability/mobility always shown; the salary range is
+      // withheld (masked) unless the candidate chose to expose it.
+      availability: profile.availability,
+      mobility: profile.mobility,
+      salaryMin: profile.salaryVisible ? profile.salaryMin : null,
+      salaryMax: profile.salaryVisible ? profile.salaryMax : null,
+      salaryCurrency: profile.salaryVisible ? profile.salaryCurrency : null,
     };
   }
 

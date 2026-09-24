@@ -21,6 +21,13 @@ export interface CandidateProfileData {
     // this is false; the UI mirrors that rule instead of letting the request
     // fail silently.
     indexedInCvtheque?: boolean;
+    // EF-CAND-05 — availability / mobility / salary expectation (MAD, maskable).
+    availability?: string | null;
+    mobility?: string | null;
+    salaryMin?: number | null;
+    salaryMax?: number | null;
+    salaryCurrency?: string | null;
+    salaryVisible?: boolean;
   };
   completeness: {
     completeness: number;

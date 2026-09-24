@@ -46,6 +46,12 @@ describe('SearchService', () => {
       headline: 'Backend dev',
       location: 'Casablanca',
       featured: false,
+      availability: 'Immédiate',
+      mobility: 'Casablanca',
+      salaryMin: 300000,
+      salaryMax: 450000,
+      salaryCurrency: 'MAD',
+      salaryVisible: true,
       ...overrides,
     };
   }
@@ -315,7 +321,29 @@ describe('SearchService', () => {
         score: 80,
         percentile: 90,
         featured: false,
+        availability: 'Immédiate',
+        mobility: 'Casablanca',
+        salaryMin: 300000,
+        salaryMax: 450000,
+        salaryCurrency: 'MAD',
       });
+    });
+
+    it('masks the salary range when the candidate hid it (EF-CAND-05), keeping availability/mobility', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({
+        entities: [makeProfileEntity({ id: 'p1', salaryVisible: false })],
+        raw: [{ bestScoreValue: '80', bestScorePercentile: '90' }],
+      });
+      skillQb.getRawMany.mockResolvedValue([]);
+
+      const result = await service.getCandidateDetail('p1');
+
+      expect(result.salaryMin).toBeNull();
+      expect(result.salaryMax).toBeNull();
+      expect(result.salaryCurrency).toBeNull();
+      // availability & mobility are never masked
+      expect(result.availability).toBe('Immédiate');
+      expect(result.mobility).toBe('Casablanca');
     });
   });
 });

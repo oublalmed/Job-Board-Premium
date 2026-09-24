@@ -78,6 +78,29 @@ export class CandidateProfile {
   @Column({ name: 'indexed_in_cvtheque', default: false })
   indexedInCvtheque!: boolean;
 
+  // EF-CAND-05 — availability / mobility / salary expectation. Salary is a
+  // range in MAD (the platform's single currency), maskable by the candidate:
+  // when `salaryVisible` is false the range is withheld from recruiter-facing
+  // projections. (Re-introduced in V0.4 after the Aug pivot had removed these
+  // fields; the offers module stays removed — these live on the profile.)
+  @Column({ type: 'varchar', nullable: true })
+  availability!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  mobility!: string | null;
+
+  @Column({ name: 'salary_min', type: 'int', nullable: true })
+  salaryMin!: number | null;
+
+  @Column({ name: 'salary_max', type: 'int', nullable: true })
+  salaryMax!: number | null;
+
+  @Column({ name: 'salary_currency', type: 'varchar', length: 3, default: 'MAD' })
+  salaryCurrency!: string;
+
+  @Column({ name: 'salary_visible', type: 'boolean', default: true })
+  salaryVisible!: boolean;
+
   @Column({ default: false })
   featured!: boolean;
 

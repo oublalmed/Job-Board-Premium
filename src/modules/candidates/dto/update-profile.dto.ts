@@ -1,5 +1,19 @@
-import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsInt,
+  IsIn,
+  IsBoolean,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 import { ProfileVisibility } from '../entities/candidate-profile.entity.js';
+
+// EF-CAND-05 — the platform operates in a single currency; the salary range is
+// always expressed in MAD, validated explicitly rather than left implicit.
+export const SALARY_CURRENCY = 'MAD';
 
 // EF-CAND-02 — explicit per-field bounds. These are the single source of truth
 // for the limits the frontend mirrors (features/profile/schema.ts), so
@@ -39,4 +53,39 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEnum(ProfileVisibility)
   visibility?: ProfileVisibility;
+
+  // EF-CAND-05 — availability & geographic mobility (free-form labels).
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  availability?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  mobility?: string;
+
+  // EF-CAND-05 — salary expectation range (MAD, annual gross). Bounds keep it
+  // sane; the min ≤ max relation is enforced in the service.
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100_000_000)
+  salaryMin?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100_000_000)
+  salaryMax?: number;
+
+  // Explicit currency validation: MAD is the only accepted value.
+  @IsOptional()
+  @IsIn([SALARY_CURRENCY])
+  salaryCurrency?: string;
+
+  // Masking: when false, the range is withheld from recruiter-facing views.
+  @IsOptional()
+  @IsBoolean()
+  salaryVisible?: boolean;
 }

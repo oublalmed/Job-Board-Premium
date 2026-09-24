@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -90,6 +91,12 @@ export class CandidateProfileService {
         | 'location'
         | 'school'
         | 'visibility'
+        | 'availability'
+        | 'mobility'
+        | 'salaryMin'
+        | 'salaryMax'
+        | 'salaryCurrency'
+        | 'salaryVisible'
       >
     >,
   ): Promise<CandidateProfile> {
@@ -97,6 +104,23 @@ export class CandidateProfileService {
       where: { id: profileId },
     });
     if (!profile) throw new NotFoundException('Profile not found');
+
+    // EF-CAND-05 — a salary range must be coherent. Compare against the
+    // incoming value where provided, else the stored one, so a partial update
+    // (only min, only max) is still validated against the effective range.
+    const effectiveMin = data.salaryMin ?? profile.salaryMin;
+    const effectiveMax = data.salaryMax ?? profile.salaryMax;
+    if (
+      effectiveMin !== null &&
+      effectiveMin !== undefined &&
+      effectiveMax !== null &&
+      effectiveMax !== undefined &&
+      effectiveMin > effectiveMax
+    ) {
+      throw new BadRequestException(
+        'Le salaire minimum ne peut pas dépasser le salaire maximum.',
+      );
+    }
 
     // EF-CAND-06 — visibilité : défaut masqué tant que non scoré. Un profil
     // qui n'est pas encore indexé dans la CVthèque (donc ni scoré ni

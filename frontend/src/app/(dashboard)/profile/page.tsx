@@ -41,6 +41,7 @@ import {
 import {
   profileSchema,
   EMPTY_PROFILE_FORM,
+  SALARY_CURRENCY,
   type ProfileFormValues,
 } from '@/features/profile/schema';
 import {
@@ -206,6 +207,11 @@ function CandidateProfile() {
       location: p.location ?? '',
       school: p.school ?? '',
       visibility: p.visibility ?? 'hidden',
+      availability: p.availability ?? '',
+      mobility: p.mobility ?? '',
+      salaryMin: p.salaryMin != null ? String(p.salaryMin) : '',
+      salaryMax: p.salaryMax != null ? String(p.salaryMax) : '',
+      salaryVisible: p.salaryVisible ?? true,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileQuery.data]);
@@ -434,6 +440,89 @@ function CandidateProfile() {
                           {t('profile.visibilityLockedHint')}
                         </p>
                       )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* EF-CAND-05 — availability, mobility, salary range (MAD), maskable */}
+                <FormField
+                  control={form.control}
+                  name="availability"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.availability')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t('profile.availabilityPlaceholder')}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mobility"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.mobility')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t('profile.mobilityPlaceholder')}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="salaryMin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t('profile.salaryMin')} ({SALARY_CURRENCY})
+                        </FormLabel>
+                        <FormControl>
+                          <Input inputMode="numeric" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="salaryMax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t('profile.salaryMax')} ({SALARY_CURRENCY})
+                        </FormLabel>
+                        <FormControl>
+                          <Input inputMode="numeric" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="salaryVisible"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="flex items-center gap-2 text-sm text-foreground">
+                        <input
+                          type="checkbox"
+                          className="size-4 accent-primary"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                        {t('profile.salaryVisible')}
+                      </label>
                       <FormMessage />
                     </FormItem>
                   )}

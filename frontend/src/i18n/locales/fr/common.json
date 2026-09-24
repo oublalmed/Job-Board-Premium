@@ -167,6 +167,13 @@
       "pending": "Analyse antivirus en cours…",
       "infected": "Fichier rejeté (menace détectée)"
     },
+    "availability": "Disponibilité",
+    "availabilityPlaceholder": "Ex. Immédiate, sous 1 mois…",
+    "mobility": "Mobilité géographique",
+    "mobilityPlaceholder": "Ex. Casablanca, télétravail, national…",
+    "salaryMin": "Salaire min. (brut annuel)",
+    "salaryMax": "Salaire max. (brut annuel)",
+    "salaryVisible": "Afficher ma fourchette de salaire aux recruteurs",
     "skills": "Compétences",
     "experience": "Expérience",
     "cv": "CV",

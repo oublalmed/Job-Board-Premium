@@ -167,6 +167,13 @@
       "pending": "Antivirus scan in progress…",
       "infected": "File rejected (threat detected)"
     },
+    "availability": "Availability",
+    "availabilityPlaceholder": "e.g. Immediate, within 1 month…",
+    "mobility": "Geographic mobility",
+    "mobilityPlaceholder": "e.g. Casablanca, remote, nationwide…",
+    "salaryMin": "Min. salary (gross annual)",
+    "salaryMax": "Max. salary (gross annual)",
+    "salaryVisible": "Show my salary range to recruiters",
     "skills": "Skills",
     "experience": "Experience",
     "cv": "Resume",
