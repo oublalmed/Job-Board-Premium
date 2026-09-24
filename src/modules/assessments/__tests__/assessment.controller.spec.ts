@@ -3,6 +3,7 @@ import { AssessmentController } from '../assessment.controller.js';
 import { AssessmentService } from '../assessment.service.js';
 import { AssessmentHistoryService } from '../assessment-history.service.js';
 import { RemediationService } from '../remediation.service.js';
+import { RemediationProgressService } from '../remediation-progress.service.js';
 import type { JwtPayload } from '../../../common/interfaces/request-with-user.interface.js';
 import { Role } from '../../../common/enums/role.enum.js';
 import { AssessmentStatus } from '../entities/assessment.entity.js';
@@ -12,6 +13,7 @@ describe('AssessmentController', () => {
   let service: Record<string, jest.Mock>;
   let historyService: Record<string, jest.Mock>;
   let remediationService: Record<string, jest.Mock>;
+  let remediationProgressService: Record<string, jest.Mock>;
 
   const authenticatedUser: JwtPayload = {
     sub: 'candidate-1',
@@ -64,8 +66,13 @@ describe('AssessmentController', () => {
         indexationThresholdMet: false,
         domainFeedback: [{ domain: 'Algorithmes', level: 'weak' }],
         resources: [],
+        completedCount: 0,
+        totalCount: 0,
         reEligibleAt: new Date().toISOString(),
       }),
+    };
+    remediationProgressService = {
+      setCompleted: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -74,6 +81,10 @@ describe('AssessmentController', () => {
         { provide: AssessmentService, useValue: service },
         { provide: AssessmentHistoryService, useValue: historyService },
         { provide: RemediationService, useValue: remediationService },
+        {
+          provide: RemediationProgressService,
+          useValue: remediationProgressService,
+        },
       ],
     }).compile();
 
@@ -205,6 +216,32 @@ describe('AssessmentController', () => {
 
       expect(remediationService.getFeedback.mock.calls[0][0]).toBe(
         authenticatedUser.sub,
+      );
+    });
+  });
+
+  describe('updateRemediationProgress (EF-CAND-09)', () => {
+    it('toggles a resource owner-scoped by user.sub', async () => {
+      await controller.updateRemediationProgress(authenticatedUser, {
+        url: 'https://sqlbolt.com/',
+        completed: true,
+      });
+
+      expect(remediationProgressService.setCompleted).toHaveBeenCalledWith(
+        authenticatedUser.sub,
+        'https://sqlbolt.com/',
+        true,
+      );
+    });
+
+    it('never trusts a caller-supplied id — always user.sub', async () => {
+      await controller.updateRemediationProgress(
+        { ...authenticatedUser, sub: otherUserId },
+        { url: 'https://sqlbolt.com/', completed: false },
+      );
+
+      expect(remediationProgressService.setCompleted.mock.calls[0][0]).toBe(
+        otherUserId,
       );
     });
   });

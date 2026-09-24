@@ -16,7 +16,13 @@ import {
   computeCooldownEnd,
 } from './cooldown.js';
 import { resourcesForDomain, RemediationResource } from './remediation-resources.js';
+import { RemediationProgressService } from './remediation-progress.service.js';
 import type { DomainFeedbackEntry } from '../../ports/scoring.port.js';
+
+// EF-CAND-09 — a resource plus whether the candidate has completed it.
+export interface RemediationResourceProgress extends RemediationResource {
+  completed: boolean;
+}
 
 export interface RemediationFeedback {
   scoreValue: number;
@@ -24,7 +30,10 @@ export interface RemediationFeedback {
   psychotechnicalScore: number | null;
   indexationThresholdMet: boolean;
   domainFeedback: DomainFeedbackEntry[];
-  resources: RemediationResource[];
+  resources: RemediationResourceProgress[];
+  // EF-CAND-09 — completion progress across the recommended resources.
+  completedCount: number;
+  totalCount: number;
   reEligibleAt: string | null;
 }
 
@@ -36,6 +45,7 @@ export class RemediationService {
     @InjectRepository(Score)
     private readonly scoreRepo: Repository<Score>,
     private readonly settingsService: SettingsService,
+    private readonly progressService: RemediationProgressService,
   ) {}
 
   // WHERE-scoped by (id, candidateId) in the same query, never a load then
@@ -87,7 +97,17 @@ export class RemediationService {
       .filter((entry) => entry.level === 'weak')
       .map((entry) => entry.domain);
 
-    const resources = weakDomains.flatMap((domain) => resourcesForDomain(domain));
+    const rawResources = weakDomains.flatMap((domain) =>
+      resourcesForDomain(domain),
+    );
+    // EF-CAND-09 — annotate each resource with the candidate's completion
+    // state so the UI can render an actionable, trackable journey.
+    const completed = await this.progressService.completedUrls(candidateId);
+    const resources: RemediationResourceProgress[] = rawResources.map((r) => ({
+      ...r,
+      completed: completed.has(r.url),
+    }));
+    const completedCount = resources.filter((r) => r.completed).length;
 
     const reEligibleAt = assessment.completedAt
       ? computeCooldownEnd(assessment.completedAt, cooldownDays).toISOString()
@@ -101,6 +121,8 @@ export class RemediationService {
       indexationThresholdMet,
       domainFeedback,
       resources,
+      completedCount,
+      totalCount: resources.length,
       reEligibleAt,
     };
   }

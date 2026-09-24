@@ -36,6 +36,7 @@ import {
   useAssessmentCatalog,
   useAssessmentFeedback,
   useAssessmentFeedbackQuery,
+  useUpdateRemediationProgress,
   useAssessmentHistory,
   useReportIncident,
   useResumeAssessment,
@@ -590,6 +591,8 @@ function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
   const isCompleted = item.status === 'completed';
   const feedback = useAssessmentFeedbackQuery(item.id, open && isCompleted);
   const fb = feedback.data;
+  // EF-CAND-09 — toggle completion of a remediation resource.
+  const progress = useUpdateRemediationProgress(item.id);
   return (
     <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -696,21 +699,45 @@ function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
               {fb.resources.length > 0 && (
                 <div className="flex flex-col gap-1">
                   <p className="text-xs font-medium text-foreground">
-                    {t('assessments.feedback.resourcesTitle')}
+                    {t('assessments.feedback.resourcesTitle')}{' '}
+                    <span className="font-normal text-muted-foreground">
+                      {t('assessments.feedback.resourcesProgress', {
+                        done: String(fb.completedCount),
+                        total: String(fb.totalCount),
+                      })}
+                    </span>
                   </p>
-                  <ul className="flex flex-col gap-1">
-                    {fb.resources.map((r) => (
-                      <li key={r.url}>
-                        <a
-                          href={r.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs text-primary hover:underline underline-offset-4"
-                        >
-                          {r.title}
-                        </a>
-                      </li>
-                    ))}
+                  <ul className="flex flex-col gap-1.5">
+                    {fb.resources.map((r, idx) => {
+                      const inputId = `remediation-${item.id}-${idx}`;
+                      return (
+                        <li key={r.url} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={inputId}
+                            checked={r.completed}
+                            disabled={progress.isPending}
+                            onChange={(e) =>
+                              progress.mutate({
+                                url: r.url,
+                                completed: e.target.checked,
+                              })
+                            }
+                            className="size-3.5 shrink-0 accent-primary"
+                          />
+                          <label htmlFor={inputId} className="text-xs">
+                            <a
+                              href={r.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary hover:underline underline-offset-4"
+                            >
+                              {r.title}
+                            </a>
+                          </label>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}

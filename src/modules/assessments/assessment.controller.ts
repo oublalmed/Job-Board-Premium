@@ -1,10 +1,13 @@
 import {
   Controller,
   Post,
+  Put,
   Get,
   Body,
   Param,
   Headers,
+  HttpCode,
+  HttpStatus,
   Ip,
   UseGuards,
   ParseUUIDPipe,
@@ -13,10 +16,12 @@ import { ApiResponse } from '@nestjs/swagger';
 import { AssessmentService } from './assessment.service.js';
 import { AssessmentHistoryService } from './assessment-history.service.js';
 import { RemediationService } from './remediation.service.js';
+import { RemediationProgressService } from './remediation-progress.service.js';
 import { StartAssessmentDto } from './dto/start-assessment.dto.js';
 import { ResumeAssessmentDto } from './dto/resume-assessment.dto.js';
 import { StartAssessmentResponseDto } from './dto/start-assessment-response.dto.js';
 import { RemediationFeedbackDto } from './dto/remediation-feedback.dto.js';
+import { UpdateRemediationProgressDto } from './dto/update-remediation-progress.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
@@ -31,6 +36,7 @@ export class AssessmentController {
     private readonly assessmentService: AssessmentService,
     private readonly assessmentHistoryService: AssessmentHistoryService,
     private readonly remediationService: RemediationService,
+    private readonly remediationProgressService: RemediationProgressService,
   ) {}
 
   @Get('mine')
@@ -87,5 +93,22 @@ export class AssessmentController {
     @Param('id', ParseUUIDPipe) assessmentId: string,
   ) {
     return this.remediationService.getFeedback(user.sub, assessmentId);
+  }
+
+  // EF-CAND-09 — mark a remediation resource complete / incomplete for the
+  // current candidate. Idempotent; owner-scoped by the JWT subject. 204 (no
+  // body): the client already knows the new state it requested.
+  @Put('remediation/progress')
+  @Roles(Role.CANDIDATE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updateRemediationProgress(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateRemediationProgressDto,
+  ): Promise<void> {
+    await this.remediationProgressService.setCompleted(
+      user.sub,
+      dto.url,
+      dto.completed,
+    );
   }
 }

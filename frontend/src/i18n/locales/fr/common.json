@@ -574,7 +574,8 @@
       "psychotechnicalScore": "Psychotechnique : {{score}}/100",
       "highlighted": "Votre profil est indexé et mis en avant dans la CVthèque.",
       "visibleNotHighlighted": "Votre profil reste visible mais n'est pas mis en avant : améliorez les domaines faibles pour être mis en avant.",
-      "resourcesTitle": "Ressources recommandées"
+      "resourcesTitle": "Ressources recommandées",
+      "resourcesProgress": "({{done}}/{{total}} complétées)"
     },
     "manual": {
       "title": "Reprendre avec un identifiant (autre session)",

@@ -21,6 +21,10 @@ export class RemediationResourceDto {
 
   @ApiProperty()
   url!: string;
+
+  // EF-CAND-09 — whether the candidate has marked this resource completed.
+  @ApiProperty()
+  completed!: boolean;
 }
 
 export class RemediationFeedbackDto {
@@ -41,6 +45,13 @@ export class RemediationFeedbackDto {
 
   @ApiProperty({ type: RemediationResourceDto, isArray: true })
   resources!: RemediationResourceDto[];
+
+  // EF-CAND-09 — completion progress across the recommended resources.
+  @ApiProperty()
+  completedCount!: number;
+
+  @ApiProperty()
+  totalCount!: number;
 
   @ApiProperty({ nullable: true, type: String })
   reEligibleAt!: string | null;
