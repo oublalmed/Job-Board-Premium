@@ -37,3 +37,49 @@ export const DOMAIN_RESOURCES: Record<string, RemediationResource[]> = {
 export function resourcesForDomain(domain: string): RemediationResource[] {
   return DOMAIN_RESOURCES[domain] ?? [];
 }
+
+// EF-REM-02 — the resource referential is admin-overridable at runtime via this
+// settings key (a JSON map domain -> [{title,url}]). It ties into the EF-ADM-02
+// settings mechanism without hard-coding an admin screen here; when unset or
+// malformed, the curated static table above is used.
+export const REMEDIATION_RESOURCES_OVERRIDE_KEY =
+  'remediation_resources_override';
+
+type ResourceMap = Record<string, RemediationResource[]>;
+
+// Parse the stored override defensively: bad JSON, wrong shape, or non-http(s)
+// URLs are ignored (fall back to defaults) rather than surfaced to candidates.
+export function parseResourceOverride(raw: string | null): ResourceMap | null {
+  if (!raw) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return null;
+  }
+  const out: ResourceMap = {};
+  for (const [domain, value] of Object.entries(parsed as Record<string, unknown>)) {
+    if (!Array.isArray(value)) continue;
+    const items = value.filter(
+      (v): v is RemediationResource =>
+        typeof v === 'object' &&
+        v !== null &&
+        typeof (v as RemediationResource).title === 'string' &&
+        typeof (v as RemediationResource).url === 'string' &&
+        /^https?:\/\/.+/i.test((v as RemediationResource).url),
+    );
+    if (items.length > 0) out[domain] = items;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
+// Resolve resources for a domain, preferring an admin override when present.
+export function resourcesForDomainWith(
+  domain: string,
+  override: ResourceMap | null,
+): RemediationResource[] {
+  return override?.[domain] ?? resourcesForDomain(domain);
+}

@@ -50,6 +50,7 @@ describe('RemediationService', () => {
     scoreRepo = { findOne: jest.fn().mockResolvedValue(makeScore()) };
     settingsService = {
       getNumber: jest.fn().mockResolvedValue(null), // fall back to defaults
+      get: jest.fn().mockResolvedValue(null), // no resource override by default
     };
     progressService = {
       completedUrls: jest.fn().mockResolvedValue(new Set<string>()),
@@ -114,6 +115,25 @@ describe('RemediationService', () => {
         'technicalScore',
         'totalCount',
       ].sort(),
+    );
+  });
+
+  it('honours an admin resource override from settings (EF-REM-02)', async () => {
+    settingsService.get.mockResolvedValue(
+      JSON.stringify({
+        Algorithmes: [
+          { title: 'Override course', url: 'https://example.com/override' },
+        ],
+      }),
+    );
+
+    const result = await service.getFeedback(candidateId, assessmentId);
+
+    expect(settingsService.get).toHaveBeenCalledWith(
+      'remediation_resources_override',
+    );
+    expect(result.resources.some((r) => r.url === 'https://example.com/override')).toBe(
+      true,
     );
   });
 

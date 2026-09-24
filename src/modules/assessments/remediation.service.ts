@@ -17,7 +17,12 @@ import {
   DEFAULT_COOLDOWN_DAYS,
   computeCooldownEnd,
 } from './cooldown.js';
-import { resourcesForDomain, RemediationResource } from './remediation-resources.js';
+import {
+  resourcesForDomainWith,
+  parseResourceOverride,
+  REMEDIATION_RESOURCES_OVERRIDE_KEY,
+  RemediationResource,
+} from './remediation-resources.js';
 import { RemediationProgressService } from './remediation-progress.service.js';
 import type { DomainFeedbackEntry } from '../../ports/scoring.port.js';
 
@@ -113,8 +118,13 @@ export class RemediationService {
       .filter((entry) => entry.level === 'weak')
       .map((entry) => entry.domain);
 
+    // EF-REM-02 — honour an admin-configured resource override (settings),
+    // falling back to the curated static table per weak domain.
+    const override = parseResourceOverride(
+      await this.settingsService.get(REMEDIATION_RESOURCES_OVERRIDE_KEY),
+    );
     const rawResources = weakDomains.flatMap((domain) =>
-      resourcesForDomain(domain),
+      resourcesForDomainWith(domain, override),
     );
     // EF-CAND-09 — annotate each resource with the candidate's completion
     // state so the UI can render an actionable, trackable journey.
