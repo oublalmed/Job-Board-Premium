@@ -29,6 +29,13 @@ import {
 const MULTI_ACCOUNT_WINDOW_KEY = 'anti_cheat_multi_account_window_hours';
 const DEFAULT_MULTI_ACCOUNT_WINDOW_HOURS = 24;
 
+// §5.3 behavioural-signals layer — total secure-exam leave events (tab
+// switches + window blurs) at or above which an attempt is flagged for human
+// review. Overridable via the settings store; a soft signal, never a block.
+const PROCTORING_LEAVE_FLAG_THRESHOLD_KEY =
+  'anti_cheat_proctoring_leave_threshold';
+const DEFAULT_PROCTORING_LEAVE_FLAG_THRESHOLD = 5;
+
 /** Request-scoped signals used by the anti-cheat multi-account layer. */
 export interface AssessmentStartContext {
   ipAddress?: string | null;
@@ -217,6 +224,71 @@ export class AssessmentService {
       entityType: 'assessment',
       entityId: saved.id,
     });
+
+    return saved;
+  }
+
+  // EF-EVAL-02 / §5.3 — record the secure-exam client's cumulative behavioural
+  // counts for an in-progress attempt. Owner-scoped; counts are monotonic
+  // (never decrease, so a tampered lower value can't erase prior signal). When
+  // total leave events cross the configured threshold the attempt is flagged
+  // for human review and audited — a soft moderation signal, never a block.
+  async recordProctoringEvents(
+    candidateId: string,
+    assessmentId: string,
+    events: { tabSwitches: number; windowBlurs: number },
+  ): Promise<Assessment> {
+    const assessment = await this.assessmentRepo.findOne({
+      where: { id: assessmentId },
+    });
+    if (!assessment) {
+      throw new NotFoundException('Assessment not found');
+    }
+    if (assessment.candidateId !== candidateId) {
+      throw new ForbiddenException('Access denied');
+    }
+    if (assessment.status !== AssessmentStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        'Proctoring events can only be recorded for an in-progress attempt',
+      );
+    }
+
+    assessment.tabSwitchCount = Math.max(
+      assessment.tabSwitchCount,
+      events.tabSwitches,
+    );
+    assessment.windowBlurCount = Math.max(
+      assessment.windowBlurCount,
+      events.windowBlurs,
+    );
+
+    const threshold =
+      (await this.settingsService.getNumber(
+        PROCTORING_LEAVE_FLAG_THRESHOLD_KEY,
+      )) ?? DEFAULT_PROCTORING_LEAVE_FLAG_THRESHOLD;
+    const totalLeaves =
+      assessment.tabSwitchCount + assessment.windowBlurCount;
+    const wasFlagged = assessment.proctoringFlagged;
+    if (totalLeaves >= threshold) {
+      assessment.proctoringFlagged = true;
+    }
+
+    const saved = await this.assessmentRepo.save(assessment);
+
+    // Audit the transition into flagged exactly once (not on every heartbeat).
+    if (!wasFlagged && saved.proctoringFlagged) {
+      await this.auditService.log({
+        actorId: candidateId,
+        action: AuditAction.ASSESSMENT_PROCTORING_FLAGGED,
+        entityType: 'assessment',
+        entityId: saved.id,
+        metadata: {
+          tabSwitchCount: saved.tabSwitchCount,
+          windowBlurCount: saved.windowBlurCount,
+          threshold,
+        },
+      });
+    }
 
     return saved;
   }

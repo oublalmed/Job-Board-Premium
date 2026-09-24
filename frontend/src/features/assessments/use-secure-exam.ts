@@ -35,6 +35,10 @@ export interface SecureExamState {
   readonly windowBlurred: boolean;
   /** Number of times the candidate left the tab or window during the attempt. */
   readonly leaveCount: number;
+  /** Times the tab was hidden (switched away / minimized). */
+  readonly tabSwitchCount: number;
+  /** Times the window lost focus. */
+  readonly windowBlurCount: number;
 }
 
 export interface SecureExam extends SecureExamState {
@@ -61,7 +65,10 @@ export function useSecureExam(enabled: boolean): SecureExam {
   const [isFullscreen, setIsFullscreen] = useState(readIsFullscreen);
   const [tabHidden, setTabHidden] = useState(false);
   const [windowBlurred, setWindowBlurred] = useState(false);
-  const [leaveCount, setLeaveCount] = useState(0);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [windowBlurCount, setWindowBlurCount] = useState(0);
+  // Total leave events — the single number the banner shows the candidate.
+  const leaveCount = tabSwitchCount + windowBlurCount;
 
   const enterFullscreen = useCallback(async () => {
     if (!CAN_USE_DOM) return;
@@ -97,11 +104,11 @@ export function useSecureExam(enabled: boolean): SecureExam {
     const onVisibility = () => {
       const hidden = document.visibilityState === 'hidden';
       setTabHidden(hidden);
-      if (hidden) setLeaveCount((c) => c + 1);
+      if (hidden) setTabSwitchCount((c) => c + 1);
     };
     const onWindowBlur = () => {
       setWindowBlurred(true);
-      setLeaveCount((c) => c + 1);
+      setWindowBlurCount((c) => c + 1);
     };
     const onWindowFocus = () => setWindowBlurred(false);
     const onFullscreenChange = () => setIsFullscreen(readIsFullscreen());
@@ -144,6 +151,8 @@ export function useSecureExam(enabled: boolean): SecureExam {
     tabHidden,
     windowBlurred,
     leaveCount,
+    tabSwitchCount,
+    windowBlurCount,
     enterFullscreen,
     exitFullscreen,
   };

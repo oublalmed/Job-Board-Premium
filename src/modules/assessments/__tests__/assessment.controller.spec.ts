@@ -51,6 +51,12 @@ describe('AssessmentController', () => {
         ...mockAssessment,
         status: AssessmentStatus.INCIDENT,
       }),
+      recordProctoringEvents: jest.fn().mockResolvedValue({
+        ...mockAssessment,
+        tabSwitchCount: 3,
+        windowBlurCount: 2,
+        proctoringFlagged: true,
+      }),
     };
     historyService = {
       getHistory: jest.fn().mockResolvedValue({
@@ -217,6 +223,24 @@ describe('AssessmentController', () => {
       expect(remediationService.getFeedback.mock.calls[0][0]).toBe(
         authenticatedUser.sub,
       );
+    });
+  });
+
+  describe('recordProctoringEvents (EF-EVAL-02 / §5.3)', () => {
+    it('forwards owner-scoped counts and returns the updated flag', async () => {
+      const result = await controller.recordProctoringEvents(
+        authenticatedUser,
+        'assessment-1',
+        { tabSwitches: 3, windowBlurs: 2 },
+      );
+
+      expect(service.recordProctoringEvents).toHaveBeenCalledWith(
+        authenticatedUser.sub,
+        'assessment-1',
+        { tabSwitches: 3, windowBlurs: 2 },
+      );
+      expect(result.proctoringFlagged).toBe(true);
+      expect(result.tabSwitchCount).toBe(3);
     });
   });
 

@@ -11,7 +11,7 @@ import {
   MessageCircle,
   Play,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,6 +37,7 @@ import {
   useAssessmentFeedback,
   useAssessmentFeedbackQuery,
   useUpdateRemediationProgress,
+  useReportProctoringEvents,
   useAssessmentHistory,
   useReportIncident,
   useResumeAssessment,
@@ -111,6 +112,25 @@ export default function AssessmentsPage() {
   // EF-EVAL-02 — browser-side deterrent layer, active only while an attempt
   // is genuinely in progress.
   const secureExam = useSecureExam(session?.status === 'in_progress');
+  const reportProctoring = useReportProctoringEvents();
+
+  // EF-EVAL-02 / §5.3 — report the behavioural counts to the backend whenever
+  // they change during an in-progress attempt (best-effort; a failed report
+  // never disrupts the exam). The mutation is a stable reference, so it is
+  // intentionally excluded from the dependency list.
+  const activeAssessmentId =
+    session?.status === 'in_progress' ? session.assessmentId : null;
+  const { tabSwitchCount, windowBlurCount } = secureExam;
+  useEffect(() => {
+    if (!activeAssessmentId) return;
+    if (tabSwitchCount === 0 && windowBlurCount === 0) return;
+    reportProctoring.mutate({
+      assessmentId: activeAssessmentId,
+      tabSwitches: tabSwitchCount,
+      windowBlurs: windowBlurCount,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAssessmentId, tabSwitchCount, windowBlurCount]);
 
   const start = useStartAssessment();
   const resume = useResumeAssessment();

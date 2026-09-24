@@ -515,6 +515,92 @@ describe('AssessmentService', () => {
         service.reportIncident(candidateId, 'assessment-1'),
       ).rejects.toThrow(BadRequestException);
     });
+  });
+
+  describe('recordProctoringEvents (EF-EVAL-02 / §5.3)', () => {
+    function inProgress(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'assessment-1',
+        candidateId,
+        status: AssessmentStatus.IN_PROGRESS,
+        tabSwitchCount: 0,
+        windowBlurCount: 0,
+        proctoringFlagged: false,
+        ...overrides,
+      };
+    }
+
+    it('stores counts monotonically (never below what was already recorded)', async () => {
+      assessmentRepo.findOne.mockResolvedValue(
+        inProgress({ tabSwitchCount: 3, windowBlurCount: 2 }),
+      );
+
+      const result = await service.recordProctoringEvents(
+        candidateId,
+        'assessment-1',
+        { tabSwitches: 1, windowBlurs: 4 },
+      );
+
+      // tab stays at the higher prior 3; blur rises to 4
+      expect(result.tabSwitchCount).toBe(3);
+      expect(result.windowBlurCount).toBe(4);
+    });
+
+    it('flags for review and audits once when leaves cross the threshold (default 5)', async () => {
+      assessmentRepo.findOne.mockResolvedValue(inProgress());
+
+      const result = await service.recordProctoringEvents(
+        candidateId,
+        'assessment-1',
+        { tabSwitches: 3, windowBlurs: 2 },
+      );
+
+      expect(result.proctoringFlagged).toBe(true);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_PROCTORING_FLAGGED,
+        }),
+      );
+    });
+
+    it('does not re-audit an already-flagged attempt', async () => {
+      assessmentRepo.findOne.mockResolvedValue(
+        inProgress({ tabSwitchCount: 5, proctoringFlagged: true }),
+      );
+
+      await service.recordProctoringEvents(candidateId, 'assessment-1', {
+        tabSwitches: 6,
+        windowBlurs: 0,
+      });
+
+      expect(auditService.log).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_PROCTORING_FLAGGED,
+        }),
+      );
+    });
+
+    it('rejects a non-owner (403) and a non-in-progress attempt (400)', async () => {
+      assessmentRepo.findOne.mockResolvedValueOnce(
+        inProgress({ candidateId: 'someone-else' }),
+      );
+      await expect(
+        service.recordProctoringEvents(candidateId, 'assessment-1', {
+          tabSwitches: 1,
+          windowBlurs: 0,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      assessmentRepo.findOne.mockResolvedValueOnce(
+        inProgress({ status: AssessmentStatus.COMPLETED }),
+      );
+      await expect(
+        service.recordProctoringEvents(candidateId, 'assessment-1', {
+          tabSwitches: 1,
+          windowBlurs: 0,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
 
     // Regression test for a real bug: a freshly-started assessment used to
     // be created as PENDING, and nothing ever transitioned it out of that

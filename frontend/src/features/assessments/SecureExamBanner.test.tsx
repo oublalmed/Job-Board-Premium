@@ -15,6 +15,8 @@ function makeExam(overrides: Partial<SecureExam> = {}): SecureExam {
     tabHidden: false,
     windowBlurred: false,
     leaveCount: 0,
+    tabSwitchCount: 0,
+    windowBlurCount: 0,
     enterFullscreen: vi.fn().mockResolvedValue(undefined),
     exitFullscreen: vi.fn().mockResolvedValue(undefined),
     ...overrides,

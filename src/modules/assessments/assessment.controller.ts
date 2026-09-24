@@ -22,6 +22,7 @@ import { ResumeAssessmentDto } from './dto/resume-assessment.dto.js';
 import { StartAssessmentResponseDto } from './dto/start-assessment-response.dto.js';
 import { RemediationFeedbackDto } from './dto/remediation-feedback.dto.js';
 import { UpdateRemediationProgressDto } from './dto/update-remediation-progress.dto.js';
+import { RecordProctoringEventsDto } from './dto/record-proctoring-events.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
@@ -83,6 +84,29 @@ export class AssessmentController {
     @Param('id', ParseUUIDPipe) assessmentId: string,
   ) {
     return this.assessmentService.reportIncident(user.sub, assessmentId);
+  }
+
+  // EF-EVAL-02 / §5.3 — the secure-exam client reports its cumulative
+  // tab-switch / window-blur counts for the in-progress attempt. Owner-scoped
+  // by the JWT subject; 200 with the updated flag so the client can surface it.
+  @Post(':id/proctoring-events')
+  @Roles(Role.CANDIDATE)
+  @HttpCode(HttpStatus.OK)
+  async recordProctoringEvents(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) assessmentId: string,
+    @Body() dto: RecordProctoringEventsDto,
+  ) {
+    const saved = await this.assessmentService.recordProctoringEvents(
+      user.sub,
+      assessmentId,
+      { tabSwitches: dto.tabSwitches, windowBlurs: dto.windowBlurs },
+    );
+    return {
+      tabSwitchCount: saved.tabSwitchCount,
+      windowBlurCount: saved.windowBlurCount,
+      proctoringFlagged: saved.proctoringFlagged,
+    };
   }
 
   @Get(':id/feedback')

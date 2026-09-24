@@ -170,6 +170,35 @@ export function useAssessmentFeedbackQuery(
   });
 }
 
+// EF-EVAL-02 / §5.3 — report the secure-exam client's cumulative tab-switch /
+// window-blur counts for the in-progress attempt. Best-effort behavioural
+// signal; the endpoint post-dates the generated schema, so raw fetch + bearer.
+export function useReportProctoringEvents() {
+  return useMutation({
+    mutationFn: async (input: {
+      assessmentId: string;
+      tabSwitches: number;
+      windowBlurs: number;
+    }) => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/assessments/${input.assessmentId}/proctoring-events`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          body: JSON.stringify({
+            tabSwitches: input.tabSwitches,
+            windowBlurs: input.windowBlurs,
+          }),
+        },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    },
+  });
+}
+
 // EF-CAND-09 — toggle a remediation resource's completion. The PUT endpoint
 // post-dates the generated schema, so it uses raw fetch + bearer. On success we
 // invalidate the owning assessment's feedback so the progress re-renders.

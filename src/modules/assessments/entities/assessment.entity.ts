@@ -84,6 +84,19 @@ export class Assessment {
   @Column({ name: 'multi_account_flagged', type: 'boolean', default: false })
   multiAccountFlagged!: boolean;
 
+  // EF-EVAL-02 / §5.3 behavioural-signals layer — cumulative counts reported by
+  // the secure-exam client during the attempt, and a review flag raised when
+  // they cross the configured threshold. First-party (no external proctoring
+  // vendor); a soft moderation signal, never a hard block.
+  @Column({ name: 'tab_switch_count', type: 'int', default: 0 })
+  tabSwitchCount!: number;
+
+  @Column({ name: 'window_blur_count', type: 'int', default: 0 })
+  windowBlurCount!: number;
+
+  @Column({ name: 'proctoring_flagged', type: 'boolean', default: false })
+  proctoringFlagged!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
