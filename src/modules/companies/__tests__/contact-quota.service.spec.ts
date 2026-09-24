@@ -175,6 +175,30 @@ describe('ContactQuotaService', () => {
       expect(result.contactsRemaining).toBe(0);
     });
 
+    it('surfaces lifecycle fields (endsAt, cancelAtPeriodEnd, pastDueSince) for EF-BILL-02/05', async () => {
+      const endsAt = new Date('2026-12-31T00:00:00.000Z');
+      const pastDueSince = new Date('2026-11-01T00:00:00.000Z');
+      subscriptionRepo.find.mockResolvedValue([
+        {
+          id: 'sub-1',
+          plan: 'growth',
+          status: SubscriptionStatus.PAST_DUE,
+          endsAt,
+          contactQuota: 60,
+          contactsUsed: 12,
+          quotaResetAt: null,
+          cancelAtPeriodEnd: true,
+          pastDueSince,
+        },
+      ]);
+
+      const result = await service.getQuotaStatus(companyId);
+
+      expect(result.endsAt).toBe(endsAt);
+      expect(result.cancelAtPeriodEnd).toBe(true);
+      expect(result.pastDueSince).toBe(pastDueSince);
+    });
+
     it('reports inactive (no throw) when there is no active subscription', async () => {
       subscriptionRepo.find.mockResolvedValue([]);
 
@@ -182,6 +206,9 @@ describe('ContactQuotaService', () => {
 
       expect(result.active).toBe(false);
       expect(result.contactsRemaining).toBeNull();
+      expect(result.endsAt).toBeNull();
+      expect(result.cancelAtPeriodEnd).toBe(false);
+      expect(result.pastDueSince).toBeNull();
     });
 
     it('reports inactive when the active-subscription invariant is violated', async () => {

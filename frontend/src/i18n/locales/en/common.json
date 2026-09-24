@@ -440,7 +440,20 @@
     "trialCodePlaceholder": "Enter your trial code",
     "redeem": "Redeem code",
     "redeemed": "Trial code activated successfully.",
-    "redeemError": "Invalid or expired code."
+    "redeemError": "Invalid or expired code.",
+    "statusTitle": "Current subscription",
+    "noActivePlan": "No active subscription.",
+    "plan": "Plan",
+    "renewsOn": "Renews on",
+    "endsOn": "Ends on",
+    "contactsRemaining": "Contacts remaining",
+    "cancelScheduled": "Cancellation is scheduled at the end of the current period.",
+    "dunningTitle": "Payment failed",
+    "dunningBody": "Your last payment failed. Update your payment method to avoid losing access.",
+    "status_trial": "Trial",
+    "status_active": "Active",
+    "status_past_due": "Past due",
+    "status_cancelled": "Cancelled"
   },
   "profileLinks": {
     "title": "External links",

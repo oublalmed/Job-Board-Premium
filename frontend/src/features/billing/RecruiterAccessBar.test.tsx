@@ -62,6 +62,9 @@ describe('RecruiterAccessBar', () => {
         contactsUsed: null,
         contactsRemaining: null,
         quotaResetAt: null,
+        endsAt: null,
+        cancelAtPeriodEnd: false,
+        pastDueSince: null,
       },
     });
 
@@ -91,6 +94,9 @@ describe('RecruiterAccessBar', () => {
         contactsUsed: 58,
         contactsRemaining: 42,
         quotaResetAt: null,
+        endsAt: null,
+        cancelAtPeriodEnd: false,
+        pastDueSince: null,
       },
     });
 
@@ -122,6 +128,9 @@ describe('RecruiterAccessBar', () => {
         contactsUsed: 100,
         contactsRemaining: 0,
         quotaResetAt: null,
+        endsAt: null,
+        cancelAtPeriodEnd: false,
+        pastDueSince: null,
       },
     });
 

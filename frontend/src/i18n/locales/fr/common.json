@@ -440,7 +440,20 @@
     "trialCodePlaceholder": "Entrez votre code d'essai",
     "redeem": "Utiliser le code",
     "redeemed": "Code d'essai activé avec succès.",
-    "redeemError": "Code invalide ou expiré."
+    "redeemError": "Code invalide ou expiré.",
+    "statusTitle": "Abonnement actuel",
+    "noActivePlan": "Aucun abonnement actif.",
+    "plan": "Forfait",
+    "renewsOn": "Renouvellement le",
+    "endsOn": "Se termine le",
+    "contactsRemaining": "Contacts restants",
+    "cancelScheduled": "L'annulation est programmée à la fin de la période en cours.",
+    "dunningTitle": "Paiement en échec",
+    "dunningBody": "Votre dernier paiement a échoué. Mettez à jour votre moyen de paiement pour éviter la suspension de l'accès.",
+    "status_trial": "Essai",
+    "status_active": "Actif",
+    "status_past_due": "Impayé",
+    "status_cancelled": "Annulé"
   },
   "profileLinks": {
     "title": "Liens externes",

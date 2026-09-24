@@ -29,4 +29,23 @@ export class ContactQuotaStatusDto {
 
   @ApiProperty({ nullable: true, format: 'date-time' })
   quotaResetAt!: Date | null;
+
+  // EF-BILL-02 / EF-BILL-05 — lifecycle surfaced to the recruiter.
+  @ApiProperty({
+    nullable: true,
+    format: 'date-time',
+    description: 'Current period end (renewal or expiry).',
+  })
+  endsAt!: Date | null;
+
+  @ApiProperty({ description: 'A cancellation is scheduled at period end.' })
+  cancelAtPeriodEnd!: boolean;
+
+  @ApiProperty({
+    nullable: true,
+    format: 'date-time',
+    description:
+      'Since when the subscription is past-due (dunning); null when healthy.',
+  })
+  pastDueSince!: Date | null;
 }

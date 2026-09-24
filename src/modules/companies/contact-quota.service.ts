@@ -30,6 +30,12 @@ export interface ContactQuotaStatus {
   contactsUsed: number | null;
   contactsRemaining: number | null;
   quotaResetAt: Date | null;
+  // EF-BILL-02 — lifecycle the UI surfaces: period end (renewal/expiry),
+  // whether a cancellation is scheduled at period end, and — EF-BILL-05 —
+  // since when the subscription has been past-due (dunning), null when healthy.
+  endsAt: Date | null;
+  cancelAtPeriodEnd: boolean;
+  pastDueSince: Date | null;
 }
 
 @Injectable()
@@ -68,6 +74,9 @@ export class ContactQuotaService implements ContactQuotaPort {
         contactsUsed: null,
         contactsRemaining: null,
         quotaResetAt: null,
+        endsAt: null,
+        cancelAtPeriodEnd: false,
+        pastDueSince: null,
       };
     }
 
@@ -83,6 +92,9 @@ export class ContactQuotaService implements ContactQuotaPort {
         subscription.contactQuota - subscription.contactsUsed,
       ),
       quotaResetAt: subscription.quotaResetAt,
+      endsAt: subscription.endsAt,
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      pastDueSince: subscription.pastDueSince,
     };
   }
 

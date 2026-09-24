@@ -30,6 +30,11 @@ export interface ContactQuotaStatus {
   contactsUsed: number | null;
   contactsRemaining: number | null;
   quotaResetAt: string | null;
+  // EF-BILL-02 — current period end (renewal/expiry) and whether a cancellation
+  // is scheduled at that point. EF-BILL-05 — dunning: past-due since (or null).
+  endsAt: string | null;
+  cancelAtPeriodEnd: boolean;
+  pastDueSince: string | null;
 }
 
 async function authedGet<T>(path: string): Promise<T> {
