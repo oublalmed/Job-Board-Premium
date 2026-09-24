@@ -123,8 +123,34 @@ export class WebhookService {
 
     const expiresAt = new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000);
 
-    const plagiarismVerdict =
+    let plagiarismVerdict =
       PLAGIARISM_MAP[result.plagiarismVerdict] ?? PlagiarismVerdict.CLEAN;
+    const answerFingerprint = result.answerFingerprint ?? null;
+
+    // §5.3 plagiarism/collision layer — a first-party copy signal: if another
+    // candidate already produced the same answer fingerprint, escalate a CLEAN
+    // verdict to SUSPECTED (never downgrade a provider's stronger verdict).
+    let fingerprintCollision = false;
+    if (answerFingerprint) {
+      const collisions = await this.scoreRepo
+        .createQueryBuilder('s')
+        .innerJoin(
+          Assessment,
+          'a',
+          'a.id = s.assessment_id',
+        )
+        .where('s.answer_fingerprint = :fp', { fp: answerFingerprint })
+        .andWhere('a.candidate_id != :cid', {
+          cid: assessment.candidateId,
+        })
+        .getCount();
+      if (collisions > 0) {
+        fingerprintCollision = true;
+        if (plagiarismVerdict === PlagiarismVerdict.CLEAN) {
+          plagiarismVerdict = PlagiarismVerdict.SUSPECTED;
+        }
+      }
+    }
 
     const score = this.scoreRepo.create({
       assessmentId: assessment.id,
@@ -135,6 +161,7 @@ export class WebhookService {
       baremeVersion,
       testVersion: test?.version ?? 'unknown',
       plagiarismVerdict,
+      answerFingerprint,
       details: result.details,
       domainFeedback: result.domainFeedback,
       expiresAt,
@@ -163,6 +190,7 @@ export class WebhookService {
         value: normalizedScore,
         percentile: result.percentile,
         plagiarismVerdict,
+        fingerprintCollision,
         baremeVersion,
         testVersion: test?.version,
       },

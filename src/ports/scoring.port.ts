@@ -39,6 +39,11 @@ export interface AssessmentResult {
   // instead of score/maxScore.
   technicalScore?: number;
   psychotechnicalScore?: number;
+  // §5.3 plagiarism/collision layer — an OPAQUE fingerprint of the candidate's
+  // response set (a hash, never question/answer content). The platform stores
+  // it and flags collisions across different candidates; a provider that does
+  // not supply one simply omits it (no collision detection for that attempt).
+  answerFingerprint?: string;
 }
 
 export interface WebhookVerificationResult {

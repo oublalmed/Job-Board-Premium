@@ -582,7 +582,9 @@
       "highlighted": "Votre profil est indexé et mis en avant dans la CVthèque.",
       "visibleNotHighlighted": "Votre profil reste visible mais n'est pas mis en avant : améliorez les domaines faibles pour être mis en avant.",
       "resourcesTitle": "Ressources recommandées",
-      "resourcesProgress": "({{done}}/{{total}} complétées)"
+      "resourcesProgress": "({{done}}/{{total}} complétées)",
+      "baremeThresholds": "Barème : indexé si score ≥ {{score}} ou percentile ≥ {{percentile}} ; mis en avant si percentile ≥ {{highlight}}.",
+      "highlightReached": "Seuil de mise en avant atteint ✓"
     },
     "manual": {
       "title": "Reprendre avec un identifiant (autre session)",

@@ -28,6 +28,13 @@ export interface RemediationFeedback {
   resources: RemediationResource[];
   completedCount: number;
   totalCount: number;
+  // Barème §5.2 — indexation/highlight thresholds + whether highlight is met.
+  barème: {
+    indexationScoreMin: number;
+    indexationPercentileMin: number;
+    highlightPercentileMin: number;
+    highlightMet: boolean;
+  };
   reEligibleAt: string | null;
 }
 

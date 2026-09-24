@@ -641,6 +641,18 @@ function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
                   ? t('assessments.feedback.highlighted')
                   : t('assessments.feedback.visibleNotHighlighted')}
               </p>
+              {/* Barème §5.2 — the thresholds the candidate is measured
+                  against, so their standing is transparent. */}
+              <p className="rounded-md bg-muted/40 px-2 py-1.5 text-[11px] text-muted-foreground">
+                {t('assessments.feedback.baremeThresholds', {
+                  score: String(fb.barème.indexationScoreMin),
+                  percentile: String(fb.barème.indexationPercentileMin),
+                  highlight: String(fb.barème.highlightPercentileMin),
+                })}
+                {fb.barème.highlightMet
+                  ? ` · ${t('assessments.feedback.highlightReached')}`
+                  : ''}
+              </p>
               {fb.resources.length > 0 && (
                 <div className="flex flex-col gap-1">
                   <p className="text-xs font-medium text-foreground">

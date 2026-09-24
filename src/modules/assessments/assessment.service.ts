@@ -115,6 +115,10 @@ export class AssessmentService {
       ipAddress,
       deviceFingerprint,
       multiAccountFlagged,
+      // §5.3 subject-integrity layer — record which test version this attempt
+      // was served, giving an auditable trail of subject-version distribution
+      // (the active version is admin-rotated; one active test per specialty).
+      assignedTestVersion: test.version,
     });
 
     const saved = await this.assessmentRepo.save(assessment);
@@ -124,7 +128,7 @@ export class AssessmentService {
       action: AuditAction.ASSESSMENT_STARTED,
       entityType: 'assessment',
       entityId: saved.id,
-      metadata: { testId, externalId },
+      metadata: { testId, externalId, testVersion: test.version },
     });
 
     // Raise a moderation signal (never a hard block — shared NAT/corporate IPs

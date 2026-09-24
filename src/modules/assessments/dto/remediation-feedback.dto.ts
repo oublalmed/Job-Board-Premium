@@ -27,6 +27,20 @@ export class RemediationResourceDto {
   completed!: boolean;
 }
 
+export class BaremeDto {
+  @ApiProperty()
+  indexationScoreMin!: number;
+
+  @ApiProperty()
+  indexationPercentileMin!: number;
+
+  @ApiProperty()
+  highlightPercentileMin!: number;
+
+  @ApiProperty()
+  highlightMet!: boolean;
+}
+
 export class RemediationFeedbackDto {
   @ApiProperty()
   scoreValue!: number;
@@ -52,6 +66,11 @@ export class RemediationFeedbackDto {
 
   @ApiProperty()
   totalCount!: number;
+
+  // Barème §5.2 — the indexation/highlight thresholds and whether the highlight
+  // bar is met, surfaced to the candidate.
+  @ApiProperty({ type: BaremeDto })
+  barème!: BaremeDto;
 
   @ApiProperty({ nullable: true, type: String })
   reEligibleAt!: string | null;

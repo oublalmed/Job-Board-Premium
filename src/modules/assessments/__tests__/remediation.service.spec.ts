@@ -103,6 +103,7 @@ describe('RemediationService', () => {
     // only the typed fields defined on RemediationFeedback.
     expect(Object.keys(result).sort()).toEqual(
       [
+        'barème',
         'completedCount',
         'domainFeedback',
         'indexationThresholdMet',

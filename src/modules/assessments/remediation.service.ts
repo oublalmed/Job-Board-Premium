@@ -7,8 +7,10 @@ import { SettingsService } from '../settings/settings.service.js';
 import {
   INDEXATION_SCORE_MIN_KEY,
   INDEXATION_PERCENTILE_MIN_KEY,
+  FEATURING_PERCENTILE_MIN_KEY,
   DEFAULT_INDEXATION_SCORE_MIN,
   DEFAULT_INDEXATION_PERCENTILE_MIN,
+  DEFAULT_FEATURING_PERCENTILE_MIN,
 } from './indexation.service.js';
 import {
   COOLDOWN_SETTINGS_KEY,
@@ -34,6 +36,14 @@ export interface RemediationFeedback {
   // EF-CAND-09 — completion progress across the recommended resources.
   completedCount: number;
   totalCount: number;
+  // Barème §5.2 — the thresholds the candidate is measured against, surfaced so
+  // the standing (indexed? highlighted?) is transparent rather than opaque.
+  barème: {
+    indexationScoreMin: number;
+    indexationPercentileMin: number;
+    highlightPercentileMin: number;
+    highlightMet: boolean;
+  };
   reEligibleAt: string | null;
 }
 
@@ -75,22 +85,28 @@ export class RemediationService {
       throw new NotFoundException('Score not found for this assessment');
     }
 
-    const [scoreMin, percentileMin, cooldownDays] = await Promise.all([
-      this.settingsService
-        .getNumber(INDEXATION_SCORE_MIN_KEY)
-        .then((v) => v ?? DEFAULT_INDEXATION_SCORE_MIN),
-      this.settingsService
-        .getNumber(INDEXATION_PERCENTILE_MIN_KEY)
-        .then((v) => v ?? DEFAULT_INDEXATION_PERCENTILE_MIN),
-      this.settingsService
-        .getNumber(COOLDOWN_SETTINGS_KEY)
-        .then((v) => v ?? DEFAULT_COOLDOWN_DAYS),
-    ]);
+    const [scoreMin, percentileMin, highlightPercentileMin, cooldownDays] =
+      await Promise.all([
+        this.settingsService
+          .getNumber(INDEXATION_SCORE_MIN_KEY)
+          .then((v) => v ?? DEFAULT_INDEXATION_SCORE_MIN),
+        this.settingsService
+          .getNumber(INDEXATION_PERCENTILE_MIN_KEY)
+          .then((v) => v ?? DEFAULT_INDEXATION_PERCENTILE_MIN),
+        this.settingsService
+          .getNumber(FEATURING_PERCENTILE_MIN_KEY)
+          .then((v) => v ?? DEFAULT_FEATURING_PERCENTILE_MIN),
+        this.settingsService
+          .getNumber(COOLDOWN_SETTINGS_KEY)
+          .then((v) => v ?? DEFAULT_COOLDOWN_DAYS),
+      ]);
 
     const value = Number(score.value);
     const percentile = score.percentile !== null ? Number(score.percentile) : null;
     const indexationThresholdMet =
       value >= scoreMin || (percentile !== null && percentile >= percentileMin);
+    const highlightMet =
+      percentile !== null && percentile >= highlightPercentileMin;
 
     const domainFeedback = score.domainFeedback ?? [];
     const weakDomains = domainFeedback
@@ -123,6 +139,12 @@ export class RemediationService {
       resources,
       completedCount,
       totalCount: resources.length,
+      barème: {
+        indexationScoreMin: scoreMin,
+        indexationPercentileMin: percentileMin,
+        highlightPercentileMin,
+        highlightMet,
+      },
       reEligibleAt,
     };
   }

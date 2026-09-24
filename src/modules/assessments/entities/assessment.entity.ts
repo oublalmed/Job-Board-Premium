@@ -97,6 +97,11 @@ export class Assessment {
   @Column({ name: 'proctoring_flagged', type: 'boolean', default: false })
   proctoringFlagged!: boolean;
 
+  // §5.3 subject-integrity layer — the test version served for this attempt,
+  // recorded at start for an auditable subject-version trail.
+  @Column({ name: 'assigned_test_version', type: 'varchar', nullable: true })
+  assignedTestVersion!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
