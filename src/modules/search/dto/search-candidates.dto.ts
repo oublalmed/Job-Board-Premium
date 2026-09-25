@@ -39,6 +39,20 @@ export class SearchCandidatesDto {
   @IsString()
   location?: string;
 
+  // EF-SRCH-02 — availability filter (substring match on the candidate's label).
+  @IsOptional()
+  @IsString()
+  availability?: string;
+
+  // EF-SRCH-02 — salary budget: match candidates who disclosed a range whose
+  // minimum is at or below this figure (MAD). Masked ranges are not matched.
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100_000_000)
+  salaryMax?: number;
+
   @IsOptional()
   @IsString()
   cursor?: string;

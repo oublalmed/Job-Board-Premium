@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { SearchService } from '../search.service.js';
 import { CandidateProfile } from '../../candidates/entities/candidate-profile.entity.js';
 import { ProfileSkill } from '../../candidates/entities/profile-skill.entity.js';
+import { Conversation } from '../../messaging/entities/conversation.entity.js';
 
 function createMockQueryBuilder(): Record<string, jest.Mock> {
   const qb: Record<string, jest.Mock> = {};
@@ -37,6 +38,7 @@ describe('SearchService', () => {
   let profileSkillRepo: Record<string, jest.Mock>;
   let mainQb: Record<string, jest.Mock>;
   let skillQb: Record<string, jest.Mock>;
+  let conversationRepo: Record<string, jest.Mock>;
 
   function makeProfileEntity(overrides: Record<string, unknown> = {}) {
     return {
@@ -46,6 +48,12 @@ describe('SearchService', () => {
       headline: 'Backend dev',
       location: 'Casablanca',
       featured: false,
+      availability: 'Immédiate',
+      mobility: 'Casablanca',
+      salaryMin: 300000,
+      salaryMax: 450000,
+      salaryCurrency: 'MAD',
+      salaryVisible: true,
       ...overrides,
     };
   }
@@ -60,6 +68,8 @@ describe('SearchService', () => {
     profileSkillRepo = {
       createQueryBuilder: jest.fn().mockReturnValue(skillQb),
     };
+    // EF-SRCH-05 — no prior contact by default (count 0).
+    conversationRepo = { count: jest.fn().mockResolvedValue(0) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -71,6 +81,10 @@ describe('SearchService', () => {
         {
           provide: getRepositoryToken(ProfileSkill),
           useValue: profileSkillRepo,
+        },
+        {
+          provide: getRepositoryToken(Conversation),
+          useValue: conversationRepo,
         },
       ],
     }).compile();
@@ -144,6 +158,26 @@ describe('SearchService', () => {
         'profile.location ILIKE :location',
         { location: '%Rabat%' },
       );
+    });
+
+    it('applies availability as an ILIKE filter (EF-SRCH-02)', async () => {
+      await service.searchCandidates({ availability: 'Immédiate' });
+
+      expect(mainQb.andWhere).toHaveBeenCalledWith(
+        'profile.availability ILIKE :availability',
+        { availability: '%Immédiate%' },
+      );
+    });
+
+    it('applies the salary-budget filter only to disclosed ranges (EF-SRCH-02)', async () => {
+      await service.searchCandidates({ salaryMax: 450000 });
+
+      const call = mainQb.andWhere.mock.calls.find(
+        (c) => typeof c[0] === 'string' && c[0].includes('salaryMin <= :salaryMax'),
+      );
+      expect(call).toBeDefined();
+      expect(call![0]).toContain('profile.salaryVisible = true');
+      expect(call![1]).toEqual({ salaryMax: 450000 });
     });
   });
 
@@ -242,6 +276,25 @@ describe('SearchService', () => {
       expect(profileSkillRepo.createQueryBuilder).not.toHaveBeenCalled();
       expect(result.items).toEqual([]);
     });
+
+    it('anonymises the preview identity (EF-SRCH-05): last name → initial, flagged', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({
+        entities: [
+          makeProfileEntity({
+            id: 'p1',
+            firstName: 'Youssef',
+            lastName: 'El Amrani',
+          }),
+        ],
+        raw: [{ bestScoreValue: '70', bestScorePercentile: '65' }],
+      });
+
+      const result = await service.searchCandidates({});
+
+      expect(result.items[0].firstName).toBe('Youssef');
+      expect(result.items[0].lastName).toBe('E.');
+      expect(result.items[0].anonymized).toBe(true);
+    });
   });
 
   describe('getCandidateDetail (EF-GROW-04) — same visibility rule as the list, never more reachable', () => {
@@ -284,7 +337,7 @@ describe('SearchService', () => {
         { profileId: 'p1', name: 'React' },
       ]);
 
-      const result = await service.getCandidateDetail('p1');
+      const result = await service.getCandidateDetail('p1', { isAdmin: true });
 
       expect(result).toEqual({
         id: 'p1',
@@ -296,7 +349,64 @@ describe('SearchService', () => {
         score: 80,
         percentile: 90,
         featured: false,
+        availability: 'Immédiate',
+        mobility: 'Casablanca',
+        salaryMin: 300000,
+        salaryMax: 450000,
+        salaryCurrency: 'MAD',
       });
+    });
+
+    it('masks the salary range when the candidate hid it (EF-CAND-05), keeping availability/mobility', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({
+        entities: [makeProfileEntity({ id: 'p1', salaryVisible: false })],
+        raw: [{ bestScoreValue: '80', bestScorePercentile: '90' }],
+      });
+      skillQb.getRawMany.mockResolvedValue([]);
+
+      const result = await service.getCandidateDetail('p1', { isAdmin: true });
+
+      expect(result.salaryMin).toBeNull();
+      expect(result.salaryMax).toBeNull();
+      expect(result.salaryCurrency).toBeNull();
+      // availability & mobility are never masked
+      expect(result.availability).toBe('Immédiate');
+      expect(result.mobility).toBe('Casablanca');
+    });
+
+    it('anonymizes the last name for a recruiter with no prior contact (EF-SRCH-05)', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({
+        entities: [makeProfileEntity({ id: 'p1', userId: 'u1', lastName: 'Karimi' })],
+        raw: [{ bestScoreValue: '80', bestScorePercentile: '90' }],
+      });
+      skillQb.getRawMany.mockResolvedValue([]);
+      conversationRepo.count.mockResolvedValue(0); // no contact
+
+      const result = await service.getCandidateDetail('p1', {
+        companyId: 'company-1',
+      });
+
+      expect(conversationRepo.count).toHaveBeenCalledWith({
+        where: { companyId: 'company-1', candidateId: 'u1' },
+      });
+      expect(result.lastName).toBe('K.');
+      expect(result.anonymized).toBe(true);
+    });
+
+    it('reveals the full last name once the recruiter has contacted the candidate (EF-SRCH-05)', async () => {
+      mainQb.getRawAndEntities.mockResolvedValue({
+        entities: [makeProfileEntity({ id: 'p1', userId: 'u1', lastName: 'Karimi' })],
+        raw: [{ bestScoreValue: '80', bestScorePercentile: '90' }],
+      });
+      skillQb.getRawMany.mockResolvedValue([]);
+      conversationRepo.count.mockResolvedValue(1); // contact established
+
+      const result = await service.getCandidateDetail('p1', {
+        companyId: 'company-1',
+      });
+
+      expect(result.lastName).toBe('Karimi');
+      expect(result.anonymized).toBeUndefined();
     });
   });
 });

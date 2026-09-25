@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not, MoreThanOrEqual } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { Inject, Optional } from '@nestjs/common';
 import { Assessment, AssessmentStatus } from './entities/assessment.entity.js';
@@ -23,6 +23,24 @@ import {
   DEFAULT_COOLDOWN_DAYS,
   computeCooldownEnd,
 } from './cooldown.js';
+
+// §5.3 anti-cheat — how far back to look for the same device/IP used by a
+// different candidate. Overridable via the settings store.
+const MULTI_ACCOUNT_WINDOW_KEY = 'anti_cheat_multi_account_window_hours';
+const DEFAULT_MULTI_ACCOUNT_WINDOW_HOURS = 24;
+
+// §5.3 behavioural-signals layer — total secure-exam leave events (tab
+// switches + window blurs) at or above which an attempt is flagged for human
+// review. Overridable via the settings store; a soft signal, never a block.
+const PROCTORING_LEAVE_FLAG_THRESHOLD_KEY =
+  'anti_cheat_proctoring_leave_threshold';
+const DEFAULT_PROCTORING_LEAVE_FLAG_THRESHOLD = 5;
+
+/** Request-scoped signals used by the anti-cheat multi-account layer. */
+export interface AssessmentStartContext {
+  ipAddress?: string | null;
+  deviceFingerprint?: string | null;
+}
 
 @Injectable()
 export class AssessmentService {
@@ -43,6 +61,7 @@ export class AssessmentService {
   async startAssessment(
     candidateId: string,
     testId: string,
+    context: AssessmentStartContext = {},
   ): Promise<{ assessment: Assessment; assessmentUrl: string }> {
     const test = await this.testRepo.findOne({ where: { id: testId } });
     if (!test) {
@@ -53,6 +72,15 @@ export class AssessmentService {
     }
 
     await this.checkEligibility(candidateId, testId);
+
+    const ipAddress = context.ipAddress?.trim() || null;
+    const deviceFingerprint = context.deviceFingerprint?.trim() || null;
+    const sharedBy = await this.detectMultiAccount(
+      candidateId,
+      ipAddress,
+      deviceFingerprint,
+    );
+    const multiAccountFlagged = sharedBy !== null;
 
     const { externalId, assessmentUrl } =
       await this.scoringProvider.createAssessment({
@@ -84,6 +112,13 @@ export class AssessmentService {
       resumeToken: uuidv4(),
       expiresAt,
       startedAt: now,
+      ipAddress,
+      deviceFingerprint,
+      multiAccountFlagged,
+      // §5.3 subject-integrity layer — record which test version this attempt
+      // was served, giving an auditable trail of subject-version distribution
+      // (the active version is admin-rotated; one active test per specialty).
+      assignedTestVersion: test.version,
     });
 
     const saved = await this.assessmentRepo.save(assessment);
@@ -93,8 +128,21 @@ export class AssessmentService {
       action: AuditAction.ASSESSMENT_STARTED,
       entityType: 'assessment',
       entityId: saved.id,
-      metadata: { testId, externalId },
+      metadata: { testId, externalId, testVersion: test.version },
     });
+
+    // Raise a moderation signal (never a hard block — shared NAT/corporate IPs
+    // would false-positive) when this device/IP was just used by someone else.
+    if (multiAccountFlagged) {
+      await this.auditService.log({
+        actorId: candidateId,
+        action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
+        entityType: 'assessment',
+        entityId: saved.id,
+        ipAddress,
+        metadata: { testId, sharedBy },
+      });
+    }
 
     // EF-ADM-05 funnel — fire-and-forget.
     void this.analytics?.track(AnalyticsEventType.TEST_STARTED, candidateId, {
@@ -184,6 +232,71 @@ export class AssessmentService {
     return saved;
   }
 
+  // EF-EVAL-02 / §5.3 — record the secure-exam client's cumulative behavioural
+  // counts for an in-progress attempt. Owner-scoped; counts are monotonic
+  // (never decrease, so a tampered lower value can't erase prior signal). When
+  // total leave events cross the configured threshold the attempt is flagged
+  // for human review and audited — a soft moderation signal, never a block.
+  async recordProctoringEvents(
+    candidateId: string,
+    assessmentId: string,
+    events: { tabSwitches: number; windowBlurs: number },
+  ): Promise<Assessment> {
+    const assessment = await this.assessmentRepo.findOne({
+      where: { id: assessmentId },
+    });
+    if (!assessment) {
+      throw new NotFoundException('Assessment not found');
+    }
+    if (assessment.candidateId !== candidateId) {
+      throw new ForbiddenException('Access denied');
+    }
+    if (assessment.status !== AssessmentStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        'Proctoring events can only be recorded for an in-progress attempt',
+      );
+    }
+
+    assessment.tabSwitchCount = Math.max(
+      assessment.tabSwitchCount,
+      events.tabSwitches,
+    );
+    assessment.windowBlurCount = Math.max(
+      assessment.windowBlurCount,
+      events.windowBlurs,
+    );
+
+    const threshold =
+      (await this.settingsService.getNumber(
+        PROCTORING_LEAVE_FLAG_THRESHOLD_KEY,
+      )) ?? DEFAULT_PROCTORING_LEAVE_FLAG_THRESHOLD;
+    const totalLeaves =
+      assessment.tabSwitchCount + assessment.windowBlurCount;
+    const wasFlagged = assessment.proctoringFlagged;
+    if (totalLeaves >= threshold) {
+      assessment.proctoringFlagged = true;
+    }
+
+    const saved = await this.assessmentRepo.save(assessment);
+
+    // Audit the transition into flagged exactly once (not on every heartbeat).
+    if (!wasFlagged && saved.proctoringFlagged) {
+      await this.auditService.log({
+        actorId: candidateId,
+        action: AuditAction.ASSESSMENT_PROCTORING_FLAGGED,
+        entityType: 'assessment',
+        entityId: saved.id,
+        metadata: {
+          tabSwitchCount: saved.tabSwitchCount,
+          windowBlurCount: saved.windowBlurCount,
+          threshold,
+        },
+      });
+    }
+
+    return saved;
+  }
+
   private async checkEligibility(
     candidateId: string,
     testId: string,
@@ -229,5 +342,43 @@ export class AssessmentService {
         });
       }
     }
+  }
+
+  /**
+   * §5.3 anti-cheat (multi-account layer). Returns `'device'` when the same
+   * device fingerprint was used by a DIFFERENT candidate inside the detection
+   * window, else `null`.
+   *
+   * Flagging is deliberately DEVICE-ONLY. `ipAddress` is captured and stored
+   * for moderator context, but is NOT a flag trigger: behind a reverse
+   * proxy/load balancer (the normal deployment, and Express `trust proxy` is
+   * not enabled here) `req.ip` is the proxy's address — shared by every
+   * candidate — so an IP-based trigger would flag essentially everyone and
+   * drown the moderation trail in false positives. Re-enabling an IP signal
+   * requires a trusted-proxy setup that yields the real client IP.
+   */
+  private async detectMultiAccount(
+    candidateId: string,
+    _ipAddress: string | null,
+    deviceFingerprint: string | null,
+  ): Promise<'device' | null> {
+    if (!deviceFingerprint) {
+      return null;
+    }
+
+    const windowHours =
+      (await this.settingsService.getNumber(MULTI_ACCOUNT_WINDOW_KEY)) ??
+      DEFAULT_MULTI_ACCOUNT_WINDOW_HOURS;
+    const since = new Date(Date.now() - windowHours * 60 * 60 * 1000);
+
+    const byDevice = await this.assessmentRepo.count({
+      where: {
+        deviceFingerprint,
+        candidateId: Not(candidateId),
+        createdAt: MoreThanOrEqual(since),
+      },
+    });
+
+    return byDevice > 0 ? 'device' : null;
   }
 }

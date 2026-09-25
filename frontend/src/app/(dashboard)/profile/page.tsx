@@ -41,6 +41,7 @@ import {
 import {
   profileSchema,
   EMPTY_PROFILE_FORM,
+  SALARY_CURRENCY,
   type ProfileFormValues,
 } from '@/features/profile/schema';
 import {
@@ -55,6 +56,10 @@ import {
 } from '@/features/profile/queries';
 import { ScoreBadgeCard } from '@/features/badge/ScoreBadgeCard';
 import { ReferralCard } from '@/features/referral/ReferralCard';
+import { ProfileLinksCard } from '@/features/profile/ProfileLinksCard';
+import { CvScanBadge } from '@/features/profile/CvScanBadge';
+import { CertificationsCard } from '@/features/profile/CertificationsCard';
+import { ProjectsCard } from '@/features/profile/ProjectsCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -202,12 +207,21 @@ function CandidateProfile() {
       location: p.location ?? '',
       school: p.school ?? '',
       visibility: p.visibility ?? 'hidden',
+      availability: p.availability ?? '',
+      mobility: p.mobility ?? '',
+      salaryMin: p.salaryMin != null ? String(p.salaryMin) : '',
+      salaryMax: p.salaryMax != null ? String(p.salaryMax) : '',
+      salaryVisible: p.salaryVisible ?? true,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileQuery.data]);
 
   const completeness = profileQuery.data?.completeness.completeness ?? 0;
   const schoolVerified = profileQuery.data?.profile.schoolVerified ?? false;
+  // EF-CAND-06 — a profile can only be made visible once it has been scored and
+  // indexed. Mirror the backend guard in the UI so the candidate sees why the
+  // public options are unavailable instead of hitting a 403 on save.
+  const canBeVisible = profileQuery.data?.profile.indexedInCvtheque ?? false;
   const cv = cvQuery.data ?? null;
   const verification = verificationQuery.data ?? null;
   // useWatch (a hook) rather than form.watch() (a returned function) so the
@@ -409,13 +423,106 @@ function CandidateProfile() {
                       <FormLabel>{t('profile.visibility')}</FormLabel>
                       <FormControl>
                         <Select {...field}>
-                          <option value="public">{t('profile.visibilityPublic')}</option>
-                          <option value="recruiters_only">
+                          <option value="public" disabled={!canBeVisible}>
+                            {t('profile.visibilityPublic')}
+                          </option>
+                          <option
+                            value="recruiters_only"
+                            disabled={!canBeVisible}
+                          >
                             {t('profile.visibilityRecruitersOnly')}
                           </option>
                           <option value="hidden">{t('profile.visibilityHidden')}</option>
                         </Select>
                       </FormControl>
+                      {!canBeVisible && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('profile.visibilityLockedHint')}
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* EF-CAND-05 — availability, mobility, salary range (MAD), maskable */}
+                <FormField
+                  control={form.control}
+                  name="availability"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.availability')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t('profile.availabilityPlaceholder')}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mobility"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.mobility')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t('profile.mobilityPlaceholder')}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="salaryMin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t('profile.salaryMin')} ({SALARY_CURRENCY})
+                        </FormLabel>
+                        <FormControl>
+                          <Input inputMode="numeric" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="salaryMax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t('profile.salaryMax')} ({SALARY_CURRENCY})
+                        </FormLabel>
+                        <FormControl>
+                          <Input inputMode="numeric" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="salaryVisible"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="flex items-center gap-2 text-sm text-foreground">
+                        <input
+                          type="checkbox"
+                          className="size-4 accent-primary"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                        {t('profile.salaryVisible')}
+                      </label>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -434,12 +541,16 @@ function CandidateProfile() {
           {cv ? (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
-                <FileText className="size-5 text-primary" />
+                <FileText className="size-5 text-primary" aria-hidden="true" />
                 <div>
                   <p className="text-sm font-medium text-foreground">{cv.originalName}</p>
                   <p className="text-xs text-muted-foreground">
                     {(cv.size / 1024).toFixed(0)} KB
                   </p>
+                  {/* EF-CAND-03 — antivirus scan outcome. The scan is blocking
+                      server-side; showing its state here tells the candidate
+                      whether their CV is usable, pending, or was rejected. */}
+                  <CvScanBadge status={cv.scanStatus} />
                 </div>
               </div>
               <Button
@@ -554,9 +665,16 @@ function CandidateProfile() {
         </CardContent>
       </Card>
 
+      <ProfileLinksCard />
+
+      <CertificationsCard />
+
+      <ProjectsCard />
+
       <ScoreBadgeCard />
 
       <ReferralCard />
     </motion.div>
   );
 }
+

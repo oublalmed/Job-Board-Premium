@@ -1,13 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, QueryFailedError } from 'typeorm';
 import { ConversationService } from '../conversation.service.js';
 import { Conversation } from '../entities/conversation.entity.js';
 import { Message, MessageSenderRole } from '../entities/message.entity.js';
+import {
+  MessageReport,
+  MessageReportStatus,
+} from '../entities/message-report.entity.js';
 import { CandidateProfile } from '../../candidates/entities/candidate-profile.entity.js';
+import { AuditService } from '../../audit/audit.service.js';
+import { NotificationService } from '../../notifications/notification.service.js';
+import { NotificationType } from '../../notifications/entities/notification.entity.js';
 import { SubscriptionGuardService } from '../../companies/subscription-guard.service.js';
 import { ContactQuotaService } from '../../companies/contact-quota.service.js';
 import { ContactQuotaExceededException } from '../../companies/contact-quota.exceptions.js';
+import { FILE_SCANNER } from '../../../ports/file-scanner.port.js';
+import { OBJECT_STORAGE } from '../../../ports/object-storage.port.js';
 import {
   CandidateProfileNotFoundException,
   ConversationNotFoundException,
@@ -20,13 +34,20 @@ function uniqueViolation(): QueryFailedError {
     ),
     { code: '23505' },
   );
-  return new QueryFailedError('INSERT INTO "conversations" ...', [], driverError);
+  return new QueryFailedError(
+    'INSERT INTO "conversations" ...',
+    [],
+    driverError,
+  );
 }
 
 describe('ConversationService', () => {
   let service: ConversationService;
   let dataSource: { transaction: jest.Mock };
-  let subscriptionGuard: { assertActiveSubscription: jest.Mock; resolveCompanyId: jest.Mock };
+  let subscriptionGuard: {
+    assertActiveSubscription: jest.Mock;
+    resolveCompanyId: jest.Mock;
+  };
   let contactQuotaService: { consumeOneContact: jest.Mock };
   let candidateProfileRepo: { findOne: jest.Mock };
   let conversationRepo: { findOne: jest.Mock; find: jest.Mock };
@@ -40,9 +61,15 @@ describe('ConversationService', () => {
   let managerConversationRepo: { create: jest.Mock; save: jest.Mock };
   let managerMessageRepo: { create: jest.Mock; save: jest.Mock };
   let manager: { getRepository: jest.Mock };
+  let notificationService: { create: jest.Mock };
+  let messageReportRepo: Record<string, jest.Mock>;
+  let auditService: { log: jest.Mock };
+  let fileScanner: { scan: jest.Mock };
+  let objectStorage: { upload: jest.Mock; getSignedUrl: jest.Mock };
 
   const recruiterUserId = 'recruiter-user-1';
   const candidateProfileId = 'candidate-profile-1';
+  const candidateUserId = 'candidate-user-1';
   const companyId = 'company-1';
 
   beforeEach(async () => {
@@ -79,8 +106,24 @@ describe('ConversationService', () => {
       consumeOneContact: jest.fn().mockResolvedValue(undefined),
     };
     candidateProfileRepo = {
-      findOne: jest.fn().mockResolvedValue({ id: candidateProfileId }),
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: candidateProfileId, userId: candidateUserId }),
     };
+    notificationService = {
+      create: jest.fn().mockResolvedValue(undefined),
+    };
+    messageReportRepo = {
+      create: jest.fn((data: unknown) => data),
+      save: jest.fn((data: unknown) =>
+        Promise.resolve({
+          id: 'report-1',
+          status: 'open',
+          ...(data as object),
+        }),
+      ),
+    };
+    auditService = { log: jest.fn().mockResolvedValue(undefined) };
     conversationRepo = {
       findOne: jest.fn(),
       find: jest.fn().mockResolvedValue([]),
@@ -91,7 +134,15 @@ describe('ConversationService', () => {
         Promise.resolve({ id: 'message-1', ...(data as object) }),
       ),
       find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
       update: jest.fn().mockResolvedValue({ affected: 0 }),
+    };
+    fileScanner = {
+      scan: jest.fn().mockResolvedValue({ clean: true }),
+    };
+    objectStorage = {
+      upload: jest.fn().mockResolvedValue({ key: 'k', url: 'https://stub/k' }),
+      getSignedUrl: jest.fn().mockResolvedValue('https://stub/signed'),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -104,8 +155,19 @@ describe('ConversationService', () => {
           provide: getRepositoryToken(CandidateProfile),
           useValue: candidateProfileRepo,
         },
-        { provide: getRepositoryToken(Conversation), useValue: conversationRepo },
+        {
+          provide: getRepositoryToken(Conversation),
+          useValue: conversationRepo,
+        },
         { provide: getRepositoryToken(Message), useValue: messageRepo },
+        {
+          provide: getRepositoryToken(MessageReport),
+          useValue: messageReportRepo,
+        },
+        { provide: AuditService, useValue: auditService },
+        { provide: NotificationService, useValue: notificationService },
+        { provide: FILE_SCANNER, useValue: fileScanner },
+        { provide: OBJECT_STORAGE, useValue: objectStorage },
       ],
     }).compile();
 
@@ -141,9 +203,7 @@ describe('ConversationService', () => {
           body: 'Bonjour, votre profil nous intéresse',
         }),
       );
-      expect(result).toEqual(
-        expect.objectContaining({ id: 'conversation-1' }),
-      );
+      expect(result).toEqual(expect.objectContaining({ id: 'conversation-1' }));
     });
 
     it('throws CandidateProfileNotFoundException and never opens a transaction when the profile does not exist', async () => {
@@ -226,7 +286,11 @@ describe('ConversationService', () => {
 
   describe('sendMessage', () => {
     it('lets a recruiter of the conversation’s own company send a message, scoping the lookup to companyId in the WHERE', async () => {
-      const conversation = { id: 'conversation-1', companyId, candidateId: candidateProfileId };
+      const conversation = {
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      };
       conversationRepo.findOne.mockResolvedValue(conversation);
 
       await service.sendMessage('conversation-1', recruiterUserId, 'reply');
@@ -246,8 +310,14 @@ describe('ConversationService', () => {
       subscriptionGuard.resolveCompanyId.mockRejectedValue(
         new Error('not a recruiter'),
       );
-      candidateProfileRepo.findOne.mockResolvedValue({ id: candidateProfileId });
-      const conversation = { id: 'conversation-1', companyId, candidateId: candidateProfileId };
+      candidateProfileRepo.findOne.mockResolvedValue({
+        id: candidateProfileId,
+      });
+      const conversation = {
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      };
       conversationRepo.findOne.mockResolvedValue(conversation);
 
       await service.sendMessage('conversation-1', 'candidate-user-1', 'reply');
@@ -283,6 +353,350 @@ describe('ConversationService', () => {
       await expect(
         service.sendMessage('conversation-1', 'other-recruiter', 'x'),
       ).rejects.toThrow(ConversationNotFoundException);
+    });
+  });
+
+  describe('sendAttachment (EF-MSG-03)', () => {
+    const pdf = {
+      buffer: Buffer.from('%PDF-1.4 fake'),
+      originalname: 'cv.pdf',
+      mimetype: 'application/pdf',
+      size: 1024,
+    };
+
+    function authorizeRecruiterThread() {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+    }
+
+    it('blocks a non-participant (same 404 as isolation) and never uploads', async () => {
+      subscriptionGuard.resolveCompanyId.mockResolvedValue('other-company');
+      conversationRepo.findOne.mockResolvedValue(null);
+      candidateProfileRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.sendAttachment('conversation-1', 'stranger', pdf),
+      ).rejects.toThrow(ConversationNotFoundException);
+      expect(objectStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('rejects a disallowed mime type before scanning or uploading', async () => {
+      authorizeRecruiterThread();
+
+      await expect(
+        service.sendAttachment('conversation-1', recruiterUserId, {
+          ...pdf,
+          mimetype: 'image/png',
+          originalname: 'x.png',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(fileScanner.scan).not.toHaveBeenCalled();
+      expect(objectStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('rejects a file larger than 5MB', async () => {
+      authorizeRecruiterThread();
+
+      await expect(
+        service.sendAttachment('conversation-1', recruiterUserId, {
+          ...pdf,
+          size: 6 * 1024 * 1024,
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(objectStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('rejects a file the antivirus flags as infected and never uploads', async () => {
+      authorizeRecruiterThread();
+      fileScanner.scan.mockResolvedValue({ clean: false, threat: 'EICAR' });
+
+      await expect(
+        service.sendAttachment('conversation-1', recruiterUserId, pdf),
+      ).rejects.toThrow(BadRequestException);
+      expect(objectStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('stores the binary and persists attachment metadata on a clean upload', async () => {
+      authorizeRecruiterThread();
+
+      await service.sendAttachment(
+        'conversation-1',
+        recruiterUserId,
+        pdf,
+        'Voici mon CV',
+      );
+
+      expect(objectStorage.upload).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contentType: 'application/pdf',
+          body: pdf.buffer,
+        }),
+      );
+      expect(messageRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: 'Voici mon CV',
+          attachmentOriginalName: 'cv.pdf',
+          attachmentMimeType: 'application/pdf',
+          attachmentSize: 1024,
+          attachmentStorageKey: expect.stringContaining(
+            'message-attachments/conversation-1/',
+          ),
+        }),
+      );
+    });
+
+    it('sanitizes a path-traversal filename before building the storage key', async () => {
+      authorizeRecruiterThread();
+
+      await service.sendAttachment('conversation-1', recruiterUserId, {
+        ...pdf,
+        originalname: '../../../etc/passwd\u0000.pdf',
+      });
+
+      const savedKey = (
+        objectStorage.upload.mock.calls[0][0] as { key: string }
+      ).key;
+      // Must stay under the intended prefix — no traversal, no separators,
+      // no control chars leaking from the client-supplied name.
+      expect(savedKey.startsWith('message-attachments/conversation-1/')).toBe(
+        true,
+      );
+      const tail = savedKey.slice('message-attachments/conversation-1/'.length);
+      expect(tail).not.toContain('..');
+      expect(tail).not.toContain('/');
+      expect(tail).not.toContain('\u0000');
+    });
+  });
+
+  describe('getAttachmentSignedUrl (EF-MSG-03)', () => {
+    it('returns 403 for a non-participant', async () => {
+      subscriptionGuard.resolveCompanyId.mockResolvedValue('other-company');
+      conversationRepo.findOne.mockResolvedValue(null);
+      candidateProfileRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.getAttachmentSignedUrl(
+          'conversation-1',
+          'message-1',
+          'stranger',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(objectStorage.getSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('returns a signed URL for a participant when the message carries an attachment', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      });
+      messageRepo.findOne.mockResolvedValue({
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        attachmentStorageKey: 'message-attachments/conversation-1/x-cv.pdf',
+        attachmentOriginalName: 'cv.pdf',
+        attachmentMimeType: 'application/pdf',
+      });
+
+      const result = await service.getAttachmentSignedUrl(
+        'conversation-1',
+        'message-1',
+        recruiterUserId,
+      );
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          url: 'https://stub/signed',
+          originalName: 'cv.pdf',
+        }),
+      );
+    });
+
+    it('404s when the message has no attachment', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+      });
+      messageRepo.findOne.mockResolvedValue({
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        attachmentStorageKey: null,
+      });
+
+      await expect(
+        service.getAttachmentSignedUrl(
+          'conversation-1',
+          'message-1',
+          recruiterUserId,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('new-message notifications (EF-MSG-02)', () => {
+    it('notifies the candidate when a recruiter opens a conversation', async () => {
+      await service.openConversation(recruiterUserId, candidateProfileId, 'hi');
+
+      expect(notificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientUserId: candidateUserId,
+          type: NotificationType.NEW_MESSAGE,
+        }),
+      );
+    });
+
+    it('notifies the candidate when the recruiter replies', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+
+      await service.sendMessage('conversation-1', recruiterUserId, 'reply');
+
+      expect(notificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientUserId: candidateUserId,
+          type: NotificationType.NEW_MESSAGE,
+        }),
+      );
+    });
+
+    it('notifies the opening recruiter when the candidate replies', async () => {
+      subscriptionGuard.resolveCompanyId.mockRejectedValue(
+        new Error('not a recruiter'),
+      );
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+
+      await service.sendMessage('conversation-1', candidateUserId, 'reply');
+
+      expect(notificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientUserId: recruiterUserId,
+          type: NotificationType.NEW_MESSAGE,
+        }),
+      );
+    });
+
+    it('never lets a notification failure break sending a message', async () => {
+      notificationService.create.mockRejectedValue(new Error('notif down'));
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+
+      await expect(
+        service.sendMessage('conversation-1', recruiterUserId, 'reply'),
+      ).resolves.toEqual(expect.objectContaining({ id: 'message-1' }));
+    });
+  });
+
+  describe('reportConversation (EF-MSG-05)', () => {
+    it('lets an authorized participant file a report and records an audit entry', async () => {
+      conversationRepo.findOne.mockResolvedValue({
+        id: 'conversation-1',
+        companyId,
+        candidateId: candidateProfileId,
+        recruiterId: recruiterUserId,
+      });
+
+      const result = await service.reportConversation(
+        'conversation-1',
+        recruiterUserId,
+        'Contenu inapproprié',
+      );
+
+      expect(messageReportRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversationId: 'conversation-1',
+          reporterUserId: recruiterUserId,
+          reason: 'Contenu inapproprié',
+        }),
+      );
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorId: recruiterUserId,
+          entityType: 'conversation',
+          entityId: 'conversation-1',
+        }),
+      );
+      expect(result).toEqual({ id: 'report-1', status: 'open' });
+    });
+
+    it('rejects a report from a non-participant (same 404 as isolation)', async () => {
+      subscriptionGuard.resolveCompanyId.mockResolvedValue('other-company');
+      conversationRepo.findOne.mockResolvedValue(null);
+      candidateProfileRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.reportConversation('conversation-1', 'stranger', 'spam'),
+      ).rejects.toThrow(ConversationNotFoundException);
+      expect(messageReportRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('moderation queue (EF-ADM-01)', () => {
+    it('lists reports filtered by status, newest first', async () => {
+      messageReportRepo.find = jest
+        .fn()
+        .mockResolvedValue([{ id: 'report-1' }]);
+
+      const result = await service.listReports(MessageReportStatus.OPEN);
+
+      expect(messageReportRepo.find).toHaveBeenCalledWith({
+        where: { status: MessageReportStatus.OPEN },
+        order: { createdAt: 'DESC' },
+      });
+      expect(result).toEqual([{ id: 'report-1' }]);
+    });
+
+    it('updates a report status and records an audit entry', async () => {
+      messageReportRepo.findOne = jest.fn().mockResolvedValue({
+        id: 'report-1',
+        status: MessageReportStatus.OPEN,
+      });
+
+      const result = await service.updateReportStatus(
+        'report-1',
+        MessageReportStatus.REVIEWED,
+        'moderator-1',
+      );
+
+      expect(messageReportRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: MessageReportStatus.REVIEWED }),
+      );
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorId: 'moderator-1',
+          entityType: 'message_report',
+        }),
+      );
+      expect(result.status).toBe(MessageReportStatus.REVIEWED);
+    });
+
+    it('404s when updating a nonexistent report', async () => {
+      messageReportRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.updateReportStatus(
+          'missing',
+          MessageReportStatus.DISMISSED,
+          'moderator-1',
+        ),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -361,7 +775,10 @@ describe('ConversationService', () => {
         },
       ]);
 
-      const result = await service.listMessages('conversation-1', recruiterUserId);
+      const result = await service.listMessages(
+        'conversation-1',
+        recruiterUserId,
+      );
 
       expect(messageRepo.update).toHaveBeenCalledWith(
         expect.objectContaining({ conversationId: 'conversation-1' }),

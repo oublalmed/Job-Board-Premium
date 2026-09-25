@@ -18,6 +18,17 @@ export class InvoiceService {
     private readonly objectStorage: ObjectStorage,
   ) {}
 
+  // EF-BILL-03 — the company's own invoices, newest first. Scoped by the
+  // resolved companyId (ADR-0001) so a recruiter only ever sees their own
+  // company's legal records.
+  async listForUser(userId: string): Promise<Invoice[]> {
+    const companyId = await this.subscriptionGuard.resolveCompanyId(userId);
+    return this.invoiceRepo.find({
+      where: { companyId },
+      order: { issuedAt: 'DESC' },
+    });
+  }
+
   // companyId baked into the WHERE clause itself (ADR-0001) — a recruiter
   // from another company gets the same 404 as a nonexistent invoice,
   // never a look-then-check on a row already loaded into memory.

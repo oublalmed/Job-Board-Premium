@@ -14,6 +14,9 @@ dist/
 *.swp
 *.swo
 
+# Redis snapshot from local e2e runs (redis-server default dump)
+dump.rdb
+
 # OS
 .DS_Store
 Thumbs.db
@@ -24,3 +27,6 @@ coverage/
 # Logs
 *.log
 logs/
+
+# Claude Code agent worktrees (ephemeral, harness-managed)
+.claude/worktrees/

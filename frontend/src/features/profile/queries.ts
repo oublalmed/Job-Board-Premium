@@ -16,6 +16,18 @@ export interface CandidateProfileData {
     school?: string | null;
     schoolVerified?: boolean;
     visibility?: 'public' | 'recruiters_only' | 'hidden';
+    // EF-CAND-06 — true once the candidate has been scored and indexed into the
+    // CVthèque. The backend refuses (403) any switch to a visible state while
+    // this is false; the UI mirrors that rule instead of letting the request
+    // fail silently.
+    indexedInCvtheque?: boolean;
+    // EF-CAND-05 — availability / mobility / salary expectation (MAD, maskable).
+    availability?: string | null;
+    mobility?: string | null;
+    salaryMin?: number | null;
+    salaryMax?: number | null;
+    salaryCurrency?: string | null;
+    salaryVisible?: boolean;
   };
   completeness: {
     completeness: number;
@@ -51,13 +63,75 @@ export interface RecruiterSummary {
   createdAt: string;
 }
 
+export type ProfileLinkType = 'github' | 'portfolio' | 'linkedin' | 'other';
+
+// EF-CAND-04 — result of the asynchronous accessibility verification. A link is
+// 'pending' until the background worker probes it.
+export type LinkAccessibilityStatus = 'pending' | 'reachable' | 'unreachable';
+
+export interface ProfileLink {
+  id: string;
+  type: ProfileLinkType;
+  url: string;
+  label: string | null;
+  accessibilityStatus: LinkAccessibilityStatus;
+  checkedAt: string | null;
+  createdAt: string;
+}
+
+export interface CreateProfileLinkInput {
+  type: ProfileLinkType;
+  url: string;
+  label?: string;
+}
+
+// EF-CAND-07 — structured certifications. The backend endpoints are not part
+// of the generated openapi schema, so these hooks use raw fetch + bearer
+// (the repo convention for endpoints not covered by `apiClient`).
+export interface Certification {
+  id: string;
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate: string | null;
+  credentialUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CertificationInput {
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate?: string;
+  credentialUrl?: string;
+}
+
 export const profileKeys = {
   all: ['profile'] as const,
   me: () => [...profileKeys.all, 'me'] as const,
   cv: () => [...profileKeys.all, 'cv'] as const,
   schoolVerification: () => [...profileKeys.all, 'school-verification'] as const,
+  links: () => [...profileKeys.all, 'links'] as const,
+  certifications: () => [...profileKeys.all, 'certifications'] as const,
+  projects: () => [...profileKeys.all, 'projects'] as const,
   recruiterSelf: (userId?: string) => ['recruiter', 'self', userId] as const,
 };
+
+async function fetchWithAuth(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  return fetch(`${baseUrl}${path}`, {
+    ...init,
+    headers: {
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      Authorization: `Bearer ${getAccessToken()}`,
+      ...(init.headers ?? {}),
+    },
+  });
+}
 
 export function useCandidateProfile() {
   return useQuery({
@@ -174,6 +248,145 @@ export function useUploadDiploma() {
   });
 }
 
+// EF-CAND-04 — external profile links (github/portfolio/linkedin/other).
+// The backend CRUD existed but no UI ever called it.
+export function useProfileLinks() {
+  return useQuery({
+    queryKey: profileKeys.links(),
+    queryFn: async () =>
+      (unwrap(await apiClient.GET('/api/v1/candidates/links')) ??
+        []) as unknown as ProfileLink[],
+  });
+}
+
+export function useAddProfileLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateProfileLinkInput) =>
+      unwrap(
+        await apiClient.POST('/api/v1/candidates/links', {
+          body: input as never,
+        }),
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.links() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+export function useDeleteProfileLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await apiClient.DELETE('/api/v1/candidates/links/{id}', {
+          params: { path: { id } },
+        }),
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.links() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+// EF-CAND-04 — re-run the accessibility check for a link (e.g. after the
+// candidate fixed a broken URL). The verify endpoint is not in the generated
+// openapi schema, so this uses the raw fetch + bearer convention.
+export function useReverifyProfileLink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(
+        `/api/v1/candidates/links/${id}/verify`,
+        { method: 'POST' },
+      );
+      if (!res.ok) throw new Error(`Re-verify failed (${res.status})`);
+      return (await res.json()) as ProfileLink;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.links() });
+    },
+  });
+}
+
+// EF-CAND-07 — certifications CRUD (raw fetch + bearer; see fetchWithAuth).
+export function useCertifications() {
+  return useQuery({
+    queryKey: profileKeys.certifications(),
+    queryFn: async () => {
+      const res = await fetchWithAuth('/api/v1/candidates/certifications');
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Certification[];
+    },
+  });
+}
+
+export function useAddCertification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CertificationInput) => {
+      const res = await fetchWithAuth('/api/v1/candidates/certifications', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Certification;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: profileKeys.certifications(),
+      });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+export function useUpdateCertification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: CertificationInput;
+    }) => {
+      const res = await fetchWithAuth(
+        `/api/v1/candidates/certifications/${id}`,
+        { method: 'PUT', body: JSON.stringify(input) },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Certification;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: profileKeys.certifications(),
+      });
+    },
+  });
+}
+
+export function useDeleteCertification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(
+        `/api/v1/candidates/certifications/${id}`,
+        { method: 'DELETE' },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: profileKeys.certifications(),
+      });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
 export function useRecruiterSelf(userId: string | undefined) {
   return useQuery({
     queryKey: profileKeys.recruiterSelf(userId),
@@ -191,6 +404,86 @@ export function useRecruiterSelf(userId: string | undefined) {
         recruiter: list.find((r) => r.userId === userId) ?? null,
         companyName: companyData?.company?.name ?? null,
       };
+    },
+  });
+}
+
+// EF-CAND-07 — structured projects. Same raw fetch + bearer pattern as
+// certifications: the endpoints post-date the generated OpenAPI client.
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  url: string | null;
+  role: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface ProjectInput {
+  title: string;
+  description: string;
+  url?: string;
+  role?: string;
+  startDate?: string;
+  endDate?: string;
+}
+export function useProjects() {
+  return useQuery({
+    queryKey: profileKeys.projects(),
+    queryFn: async () => {
+      const res = await fetchWithAuth('/api/v1/candidates/projects');
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Project[];
+    },
+  });
+}
+export function useAddProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ProjectInput) => {
+      const res = await fetchWithAuth('/api/v1/candidates/projects', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Project;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.projects() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: ProjectInput }) => {
+      const res = await fetchWithAuth(`/api/v1/candidates/projects/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Project;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.projects() });
+    },
+  });
+}
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(`/api/v1/candidates/projects/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.projects() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
     },
   });
 }

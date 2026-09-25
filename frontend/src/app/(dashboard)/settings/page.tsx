@@ -1,6 +1,14 @@
 'use client';
 
-import { UserCog, Mail, Shield, Download, Trash2, Loader2 } from 'lucide-react';
+import {
+  UserCog,
+  Mail,
+  Shield,
+  Download,
+  FileText,
+  Trash2,
+  Loader2,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -10,7 +18,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useDeleteAccount, useExportData } from '@/features/settings/queries';
+import {
+  useDeleteAccount,
+  useExportData,
+  useExportDataPdf,
+} from '@/features/settings/queries';
+import { DataRequestsCard } from '@/features/data-requests/DataRequestsCard';
+import { SecurityCard } from '@/features/settings/SecurityCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -24,12 +38,20 @@ export default function SettingsPage() {
   const { toast } = useToast();
 
   const exportData = useExportData();
+  const exportPdf = useExportDataPdf();
   const deleteAccount = useDeleteAccount();
 
   const isCandidate = user?.roles.includes('candidate');
 
   function handleExport() {
     exportData.mutate(undefined, {
+      onSuccess: () => toast(t('settings.exported'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
+  }
+
+  function handleExportPdf() {
+    exportPdf.mutate(undefined, {
       onSuccess: () => toast(t('settings.exported'), 'success'),
       onError: () => toast(t('common.error'), 'error'),
     });
@@ -82,7 +104,10 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      <SecurityCard />
+
       {isCandidate && (
+        <>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -98,20 +123,40 @@ export default function SettingsPage() {
                   {t('settings.exportDataDescription')}
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0 gap-2"
-                onClick={handleExport}
-                disabled={exportData.isPending}
-              >
-                {exportData.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Download className="size-4" />
-                )}
-                {exportData.isPending ? t('settings.exporting') : t('settings.exportData')}
-              </Button>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleExport}
+                  disabled={exportData.isPending}
+                >
+                  {exportData.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Download className="size-4" />
+                  )}
+                  {exportData.isPending
+                    ? t('settings.exporting')
+                    : t('settings.exportJson')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleExportPdf}
+                  disabled={exportPdf.isPending}
+                >
+                  {exportPdf.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <FileText className="size-4" />
+                  )}
+                  {exportPdf.isPending
+                    ? t('settings.exporting')
+                    : t('settings.exportPdf')}
+                </Button>
+              </div>
             </div>
 
             <div className="rounded-xl border border-destructive/20 bg-destructive/[0.02] p-5">
@@ -142,6 +187,9 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <DataRequestsCard />
+        </>
       )}
     </motion.div>
   );

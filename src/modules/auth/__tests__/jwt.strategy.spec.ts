@@ -24,6 +24,18 @@ describe('JwtStrategy', () => {
       sub: 'user-1',
       email: 'test@example.com',
       roles: [Role.CANDIDATE],
+      mfa: false,
     });
+  });
+
+  it('propagates the mfa claim when present', () => {
+    const result = strategy.validate({
+      sub: 'user-1',
+      email: 'test@example.com',
+      roles: [Role.ADMIN],
+      mfa: true,
+    });
+
+    expect(result.mfa).toBe(true);
   });
 });

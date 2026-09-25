@@ -1,12 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CompanyController } from '../company.controller.js';
 import { CompanyService } from '../company.service.js';
+import { SubscriptionGuardService } from '../subscription-guard.service.js';
+import { ContactQuotaService } from '../contact-quota.service.js';
 import type { JwtPayload } from '../../../common/interfaces/request-with-user.interface.js';
 import { Role } from '../../../common/enums/role.enum.js';
 
 describe('CompanyController', () => {
   let controller: CompanyController;
   let service: Record<string, jest.Mock>;
+  let subscriptionGuard: { resolveCompanyId: jest.Mock };
+  let contactQuotaService: { getQuotaStatus: jest.Mock };
 
   const authenticatedUser: JwtPayload = {
     sub: 'user-1',
@@ -24,10 +28,28 @@ describe('CompanyController', () => {
       createCompany: jest.fn().mockResolvedValue(mockResult),
       getMyCompany: jest.fn().mockResolvedValue(mockResult),
     };
+    subscriptionGuard = {
+      resolveCompanyId: jest.fn().mockResolvedValue('company-1'),
+    };
+    contactQuotaService = {
+      getQuotaStatus: jest.fn().mockResolvedValue({
+        active: true,
+        plan: 'growth',
+        status: 'active',
+        contactQuota: 60,
+        contactsUsed: 12,
+        contactsRemaining: 48,
+        quotaResetAt: null,
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CompanyController],
-      providers: [{ provide: CompanyService, useValue: service }],
+      providers: [
+        { provide: CompanyService, useValue: service },
+        { provide: SubscriptionGuardService, useValue: subscriptionGuard },
+        { provide: ContactQuotaService, useValue: contactQuotaService },
+      ],
     }).compile();
 
     controller = module.get(CompanyController);
@@ -50,6 +72,18 @@ describe('CompanyController', () => {
 
       expect(service.getMyCompany).toHaveBeenCalledWith('user-1');
       expect(result).toBe(mockResult);
+    });
+  });
+
+  describe('getContactQuota', () => {
+    it('resolves the company then returns its quota snapshot', async () => {
+      const result = await controller.getContactQuota(authenticatedUser);
+
+      expect(subscriptionGuard.resolveCompanyId).toHaveBeenCalledWith('user-1');
+      expect(contactQuotaService.getQuotaStatus).toHaveBeenCalledWith(
+        'company-1',
+      );
+      expect(result.contactsRemaining).toBe(48);
     });
   });
 });

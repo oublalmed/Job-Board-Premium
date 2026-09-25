@@ -1,0 +1,796 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Audit CDC — Cobalt (V0.3, 23 sept.)</title>
+<style>
+  :root{
+    --bg:#f5f6fa; --surface:#ffffff; --surface-2:#eef0f6;
+    --ink:#161c2c; --ink-muted:#5b6478; --ink-faint:#8b93a7;
+    --border:#dde1ea; --border-strong:#c3c9d8;
+    --accent:#29477e; --accent-ink:#ffffff; --accent-soft:#e7ecf7;
+    --sev-good-bg:#e3f3ea; --sev-good-ink:#1f7a5c; --sev-good-line:#bfe3cf;
+    --sev-mid-bg:#fbf1e0; --sev-mid-ink:#9a6a12; --sev-mid-line:#f0dcae;
+    --sev-bad-bg:#f8e9e8; --sev-bad-ink:#a5423f; --sev-bad-line:#eeccc9;
+    --sev-none-bg:#efe9ee; --sev-none-ink:#7a4a6e; --sev-none-line:#ddc8d8;
+    --pivot-bg:#eef0f6; --pivot-ink:#4a5273; --pivot-line:#c9cfe0;
+    --shadow: 0 1px 2px rgba(22,28,44,.04), 0 8px 24px -12px rgba(22,28,44,.12);
+    --font-ui: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono: ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f131c; --surface:#161b28; --surface-2:#1c2233;
+    --ink:#e7e9f2; --ink-muted:#a3aac0; --ink-faint:#717a94;
+    --border:#2a3145; --border-strong:#3a4360;
+    --accent:#7d97d6; --accent-ink:#0f131c; --accent-soft:#212a42;
+    --sev-good-bg:#123326; --sev-good-ink:#5fd6a5; --sev-good-line:#1f5c46;
+    --sev-mid-bg:#3a2e12; --sev-mid-ink:#e8b95c; --sev-mid-line:#5c4a1f;
+    --sev-bad-bg:#3a1f1e; --sev-bad-ink:#e58885; --sev-bad-line:#5c2f2d;
+    --sev-none-bg:#2a1f28; --sev-none-ink:#c98fc0; --sev-none-line:#4a3346;
+    --pivot-bg:#1c2233; --pivot-ink:#a9b1d1; --pivot-line:#333c58;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f131c; --surface:#161b28; --surface-2:#1c2233;
+      --ink:#e7e9f2; --ink-muted:#a3aac0; --ink-faint:#717a94;
+      --border:#2a3145; --border-strong:#3a4360;
+      --accent:#7d97d6; --accent-ink:#0f131c; --accent-soft:#212a42;
+      --sev-good-bg:#123326; --sev-good-ink:#5fd6a5; --sev-good-line:#1f5c46;
+      --sev-mid-bg:#3a2e12; --sev-mid-ink:#e8b95c; --sev-mid-line:#5c4a1f;
+      --sev-bad-bg:#3a1f1e; --sev-bad-ink:#e58885; --sev-bad-line:#5c2f2d;
+      --sev-none-bg:#2a1f28; --sev-none-ink:#c98fc0; --sev-none-line:#4a3346;
+      --pivot-bg:#1c2233; --pivot-ink:#a9b1d1; --pivot-line:#333c58;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{text-wrap:balance;font-weight:800;letter-spacing:-.01em;color:var(--ink);}
+  a{color:var(--accent);}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px;}
+
+  /* ---- Masthead ---- */
+  .masthead{border-bottom:1px solid var(--border);background:var(--surface);}
+  .masthead-inner{max-width:1180px;margin:0 auto;padding:40px 24px 28px;}
+  .eyebrow{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--accent);font-weight:600;}
+  .masthead h1{font-size:30px;margin:8px 0 6px;}
+  .masthead .sub{color:var(--ink-muted);font-size:14.5px;max-width:62ch;}
+  .doc-refs{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .doc-chip{font-family:var(--font-mono);font-size:12px;color:var(--ink-muted);
+    background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 9px;}
+
+  /* ---- Nav ---- */
+  .toc{position:sticky;top:0;z-index:20;background:var(--bg);
+    border-bottom:1px solid var(--border);padding:10px 0;margin-bottom:8px;}
+  .toc-inner{max-width:1180px;margin:0 auto;padding:0 24px;display:flex;gap:4px;
+    overflow-x:auto;scrollbar-width:none;}
+  .toc-inner::-webkit-scrollbar{display:none;}
+  .toc a{white-space:nowrap;font-size:12.5px;color:var(--ink-muted);text-decoration:none;
+    padding:6px 10px;border-radius:100px;font-weight:600;}
+  .toc a:hover{background:var(--surface-2);color:var(--ink);}
+
+  /* ---- Summary cards ---- */
+  .score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:12px;margin:28px 0;}
+  .score-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    padding:18px 20px;box-shadow:var(--shadow);}
+  .score-card .label{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--ink-faint);font-weight:700;}
+  .score-card .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+    font-size:34px;font-weight:700;margin:4px 0 2px;color:var(--ink);}
+  .score-card .num small{font-size:16px;color:var(--ink-faint);font-weight:500;}
+  .score-card .foot{font-size:12.5px;color:var(--ink-muted);}
+  .score-card.accent{background:linear-gradient(155deg,var(--accent),var(--accent) 130%);
+    border-color:var(--accent);}
+  .score-card.accent *{color:var(--accent-ink) !important;}
+  .score-card.accent .foot{opacity:.82;}
+
+  .bar{height:6px;border-radius:100px;background:var(--surface-2);overflow:hidden;margin-top:10px;}
+  .bar > span{display:block;height:100%;border-radius:100px;}
+
+  /* ---- Sections ---- */
+  section{margin:52px 0;}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+    border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:6px;flex-wrap:wrap;}
+  .sec-head h2{font-size:20px;margin:0;}
+  .sec-head .sec-avg{font-family:var(--font-mono);font-size:13px;color:var(--ink-muted);
+    display:flex;gap:14px;}
+  .sec-head .sec-avg b{color:var(--ink);font-weight:700;}
+  .sec-intro{color:var(--ink-muted);font-size:14px;max-width:82ch;margin:14px 0 18px;}
+  .sec-intro strong{color:var(--ink);}
+
+  /* ---- Table ---- */
+  .tbl-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:10px;
+    background:var(--surface);box-shadow:var(--shadow);}
+  table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px;}
+  thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;
+    font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);
+    font-weight:700;padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--surface-2);}
+  td.id{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-muted);white-space:nowrap;}
+  td.req{max-width:280px;}
+  td.req .name{font-weight:600;color:var(--ink);}
+  td.req .rule{font-size:12px;color:var(--ink-faint);margin-top:2px;}
+  td.evid{max-width:320px;font-size:12.5px;color:var(--ink-muted);}
+  td.evid code{font-family:var(--font-mono);font-size:11.5px;background:var(--surface-2);
+    padding:1px 5px;border-radius:4px;color:var(--ink);}
+  td.gap{max-width:260px;font-size:12.5px;color:var(--ink-muted);}
+  .prio{font-family:var(--font-mono);font-size:11px;font-weight:700;padding:1px 6px;
+    border-radius:4px;margin-inline-start:6px;}
+  .prio.M{background:var(--sev-bad-bg);color:var(--sev-bad-ink);}
+  .prio.S{background:var(--sev-mid-bg);color:var(--sev-mid-ink);}
+  .prio.C{background:var(--surface-2);color:var(--ink-faint);}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);
+    font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px;padding:3px 9px;
+    border-radius:100px;border:1px solid transparent;white-space:nowrap;}
+  .pill.g{background:var(--sev-good-bg);color:var(--sev-good-ink);border-color:var(--sev-good-line);}
+  .pill.m{background:var(--sev-mid-bg);color:var(--sev-mid-ink);border-color:var(--sev-mid-line);}
+  .pill.b{background:var(--sev-bad-bg);color:var(--sev-bad-ink);border-color:var(--sev-bad-line);}
+  .pill.n{background:var(--sev-none-bg);color:var(--sev-none-ink);border-color:var(--sev-none-line);}
+  .pill.na{background:var(--surface-2);color:var(--ink-faint);border-color:var(--border);}
+
+  .pivot-flag{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);
+    font-size:10.5px;font-weight:700;letter-spacing:.03em;background:var(--pivot-bg);
+    color:var(--pivot-ink);border:1px solid var(--pivot-line);border-radius:5px;
+    padding:2px 6px;margin-top:5px;}
+
+  .mod-summary{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0;padding:14px 18px;margin-top:16px;font-size:13.5px;color:var(--ink-muted);}
+  .mod-summary strong{color:var(--ink);}
+
+  /* ---- Gaps list ---- */
+  .gap-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .gap-list li{display:flex;gap:14px;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);}
+  .gap-rank{font-family:var(--font-mono);font-weight:800;font-size:15px;color:var(--accent);
+    flex-shrink:0;width:24px;}
+  .gap-body b{color:var(--ink);}
+  .gap-body .tag{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);
+    text-transform:uppercase;letter-spacing:.05em;}
+  .gap-body p{margin:3px 0 0;color:var(--ink-muted);font-size:13.5px;}
+
+  /* ---- Legend / methodology ---- */
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-muted);margin-top:14px;}
+  .legend .item{display:flex;align-items:center;gap:6px;}
+  .swatch{width:10px;height:10px;border-radius:3px;}
+
+  .callout{background:var(--pivot-bg);border:1px solid var(--pivot-line);border-radius:10px;
+    padding:16px 18px;font-size:13.5px;color:var(--pivot-ink);margin:18px 0;}
+  .callout strong{color:var(--ink);}
+
+  footer{border-top:1px solid var(--border);margin-top:64px;padding-top:24px;
+    font-size:12.5px;color:var(--ink-faint);}
+
+  @media (max-width:640px){
+    .masthead h1{font-size:24px;}
+    table{font-size:12.5px;}
+  }
+</style>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">Audit de conformité — Cobalt (ex-Job Board Premium)</div>
+    <h1>Ce qui est écrit vs. ce qui tourne</h1>
+    <p class="sub">Chaque exigence du CDC V0.2, comparée au code réel — backend NestJS et frontend Next.js — avec preuve à l'appui (fichier:ligne). <strong>Mise à jour V0.3 (23 sept. 2026)</strong> : le dépôt a avancé de plusieurs lots depuis la passe initiale, et une passe de remédiation ciblée a fermé la plupart des écarts adressables par le code. Le récapitulatif de cette mise à jour est en tête ; les tableaux détaillés portent l'état actuel, les cellules corrigées étant marquées <span class="pill g" style="padding:1px 6px">✓ V0.3</span>.</p>
+    <div class="doc-refs">
+      <span class="doc-chip">CDC_JobBoard_Premium_V0.2.pdf</span>
+      <span class="doc-chip">base : 3 août 2026</span>
+      <span class="doc-chip">maj : 23 sept. 2026</span>
+    </div>
+  </div>
+</div>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#delta">Mise à jour V0.3</a>
+    <a href="#summary">Vue d'ensemble</a>
+    <a href="#candidat">Candidat</a>
+    <a href="#evaluation">Évaluation</a>
+    <a href="#remediation">Remédiation</a>
+    <a href="#cvtheque">CVthèque</a>
+    <a href="#recruteur">Recruteur</a>
+    <a href="#messagerie">Messagerie</a>
+    <a href="#billing">Facturation</a>
+    <a href="#admin">Admin</a>
+    <a href="#growth">Amorçage</a>
+    <a href="#enf">Non-fonctionnel</a>
+    <a href="#security">Sécurité</a>
+    <a href="#gaps">Priorités</a>
+    <a href="#methodo">Méthode</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- ============ DELTA V0.3 ============ -->
+<section id="delta">
+  <div class="sec-head">
+    <h2>Mise à jour V0.3 — état réel au 23 septembre 2026</h2>
+    <div class="sec-avg">base : 3 août · maj : 23 sept.</div>
+  </div>
+  <p class="sec-intro" style="max-width:90ch">
+    Deux choses ont bougé depuis l'audit du 3 août. D'abord, le dépôt a avancé de plusieurs lots (messagerie, admin/analytics, amorçage, exécution du pivot, vérification d'école). Ensuite, une <strong>passe de remédiation ciblée</strong> a fermé la quasi-totalité des écarts <em>adressables par le code</em> — avec tests et CI verte. Ce qui reste est soit de l'infrastructure (sauvegardes, observabilité), soit hors périmètre code. Le détail, preuve à l'appui, ci-dessous.
+  </p>
+
+  <div class="score-grid">
+    <div class="score-card accent">
+      <div class="label">Écarts fermés — passe de remédiation</div>
+      <div class="num">28<small>exigences</small></div>
+      <div class="foot">EF-ADM-01/02/03/04, EF-CAND-01/03/04/07/08, EF-EVAL-01/02/04/06, ENF-06, ENF-01/05, EF-BILL-03/04, EF-RECR-05, ENF-12, EF-MSG-02/03/05, EF-SRCH-03/04/05, §11 rate-limiting, réinit./changement mdp + enrôlement 2FA, notifications lu/tout-lu, export PDF RGPD, anonymisation aperçu CVthèque — tous avec preuve fichier + tests. Détail : tableau ci-dessous.</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Livrés entre le 3 août et le 23 sept.</div>
+      <div class="num">5<small>+ lots</small></div>
+      <div class="bar"><span style="width:70%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">Vue de conversation (EF-MSG-01), dashboard KPI (EF-ADM-05), badge (EF-GROW-01), parrainage (EF-GROW-02), pivot exécuté (offres supprimées), module vérification d'école.</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Qualité (mesuré, CI)</div>
+      <div class="num">732<small>tests ✓</small></div>
+      <div class="bar"><span style="width:82%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">Back : 84 suites unit + 20 e2e (121 tests). Front : <strong>nouveau harnais Vitest + RTL (V0.3)</strong>, 11 tests composant. Lint CI OK ; <code style="font-size:11px">nest build</code> + <code style="font-size:11px">next build</code> OK. CI PR #6 verte.</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Reste ouvert</div>
+      <div class="num">~5<small>items</small></div>
+      <div class="bar"><span style="width:25%;background:var(--sev-mid-ink)"></span></div>
+      <div class="foot">Anti-triche (dépend d'un fournisseur d'évaluation) et l'infra (sauvegardes, observabilité, coffre-fort de secrets, clamd/SMTP à brancher en prod) — cadrée dans <code style="font-size:11px">docs/HARDENING.md</code>. Le reste des exigences EF-* adressables par le code est fermé.</div>
+    </div>
+  </div>
+
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Ce qui a changé</th><th>Avant</th><th>Après</th><th>Preuve (dépôt)</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-ADM-04</td><td class="req"><div class="name">API de lecture des journaux d'audit</div><div class="rule">le trail n'était qu'en écriture</div></td>
+        <td><span class="pill b">BE 0%</span></td><td><span class="pill g">BE ✓</span></td>
+        <td class="evid"><code>audit-admin.controller.ts</code>, <code>audit.service.ts#search</code> — pagination + filtres, ADMIN-only, testé</td></tr>
+      <tr><td class="id">EF-EVAL-04</td><td class="req"><div class="name">Recalcul quotidien du percentile</div><div class="rule">figé au webhook auparavant</div></td>
+        <td><span class="pill n">BE 25%</span></td><td><span class="pill g">BE ✓</span></td>
+        <td class="evid"><code>percentile-recalc.service.ts</code> — job répétable BullMQ, idempotent, 6 tests</td></tr>
+      <tr><td class="id">ENF-06</td><td class="req"><div class="name">MFA/TOTP staff</div><div class="rule">0 occurrence auparavant</div></td>
+        <td><span class="pill n">50%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>mfa.service.ts</code>, <code>common/crypto/</code> (RFC 6238 + AES-256-GCM), <code>StaffMfaGuard</code>, login step-up ; validé sur vecteurs RFC</td></tr>
+      <tr><td class="id">ENF-01 · ENF-05</td><td class="req"><div class="name">Index chemin chaud + TLS Postgres</div></td>
+        <td><span class="pill n">25%</span></td><td><span class="pill m">50%</span></td>
+        <td class="evid">migration <code>AddCandidateProfileSearchIndex</code> (indexed_in_cvtheque, visibility) ; <code>DB_SSL</code> dans <code>database.config.ts</code>. Test de charge p95 encore à faire</td></tr>
+      <tr><td class="id">EF-BILL-03</td><td class="req"><div class="name">Liste + téléchargement des factures</div></td>
+        <td><span class="pill b">FE 0%</span></td><td><span class="pill m">FE ✓</span></td>
+        <td class="evid"><code>InvoicesCard.tsx</code> + endpoint <code>GET /invoices</code> (<code>invoice.controller.ts</code>)</td></tr>
+      <tr><td class="id">EF-BILL-04</td><td class="req"><div class="name">Bannière d'accès restreint</div></td>
+        <td><span class="pill b">FE 0%</span></td><td><span class="pill m">FE ✓</span></td>
+        <td class="evid"><code>RecruiterAccessBar.tsx</code> — montée sur toutes les pages recruteur</td></tr>
+      <tr><td class="id">EF-RECR-05</td><td class="req"><div class="name">Indicateur « X contacts restants »</div></td>
+        <td><span class="pill b">FE 0%</span></td><td><span class="pill m">FE ✓</span></td>
+        <td class="evid"><code>RecruiterAccessBar.tsx</code> + endpoint <code>GET /companies/contact-quota</code> (<code>contact-quota.service.ts#getQuotaStatus</code>)</td></tr>
+      <tr><td class="id">EF-CAND-04</td><td class="req"><div class="name">UI liens externes (GitHub/Portfolio)</div></td>
+        <td><span class="pill b">FE 0%</span></td><td><span class="pill m">FE ✓</span></td>
+        <td class="evid"><code>ProfileLinksCard.tsx</code> — branché sur le CRUD <code>candidates/links</code> existant</td></tr>
+      <tr><td class="id">ENF-12</td><td class="req"><div class="name">Consentement CNDP/RGPD à l'inscription</div></td>
+        <td><span class="pill n">50%</span></td><td><span class="pill m">75%</span></td>
+        <td class="evid"><code>RegisterDto</code> (<code>consentAccepted</code> requis), <code>users.consent_at</code>, case à cocher + page <code>/privacy</code></td></tr>
+      <tr><td class="id">EF-MSG-02</td><td class="req"><div class="name">Notifications de nouveaux messages</div><div class="rule">aucun signal hors fil</div></td>
+        <td><span class="pill b">BE 0%</span></td><td><span class="pill g">BE ✓</span></td>
+        <td class="evid"><code>conversation.service.ts#notifyNewMessage</code> → <code>NotificationService</code> (in-app, best-effort), migration enum <code>NEW_MESSAGE</code></td></tr>
+      <tr><td class="id">EF-MSG-05 · EF-ADM-01</td><td class="req"><div class="name">Signalement d'abus + file de modération</div><div class="rule">aucun bout-en-bout</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill m">✓</span></td>
+        <td class="evid"><code>MessageReport</code> + <code>message-report-admin.controller.ts</code> (GET/PATCH <code>/admin/message-reports</code>) ; front bouton signaler + écran <code>admin/message-reports</code></td></tr>
+      <tr><td class="id">EF-SRCH-03</td><td class="req"><div class="name">Invisibilité CVthèque prouvée en e2e</div><div class="rule">testé sur query-builder mocké</div></td>
+        <td><span class="pill m">preuve mock</span></td><td><span class="pill g">e2e réel ✓</span></td>
+        <td class="evid">e2e : profil masqué/non-indexé seedé en base, absence vérifiée via HTTP (liste + détail 404)</td></tr>
+      <tr><td class="id">EF-ADM-02</td><td class="req"><div class="name">Gestion des référentiels</div><div class="rule">aucun endpoint d'écriture</div></td>
+        <td><span class="pill b">FE 0%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>settings-admin.controller.ts</code> (GET/PUT <code>/admin/settings</code>, ADMIN + MFA, audité) + écran <code>admin/settings</code></td></tr>
+      <tr><td class="id">§11 sécurité</td><td class="req"><div class="name">Rate-limiting anti-brute-force</div><div class="rule">aucun throttler</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>@nestjs/throttler</code> — 120 req/min global, <code>/auth/login</code> &amp; <code>/auth/register</code> 5–10 req/min</td></tr>
+      <tr><td class="id">EF-ADM-03</td><td class="req"><div class="name">File de traitement CNDP/RGPD</div><div class="rule">effacement immédiat, aucune file admin</div></td>
+        <td><span class="pill m">BE 75%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>data-request.service.ts</code> + <code>data-request-admin.controller.ts</code> (échéance 30 j, clôture d'effacement → anonymisation réelle, audité) ; écran <code>admin/data-requests</code> ; 15 tests</td></tr>
+      <tr><td class="id">EF-MSG-03</td><td class="req"><div class="name">Partage de documents</div><div class="rule">aucune pièce jointe</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>conversation.service.ts</code> — pièce jointe PDF/DOCX ≤5 Mo, scan antivirus bloquant, URL signée réservée aux 2 participants ; <code>MessageThread.tsx</code></td></tr>
+      <tr><td class="id">EF-MSG-02 (email)</td><td class="req"><div class="name">Canal email des notifications</div><div class="rule">in-app seulement</div></td>
+        <td><span class="pill m">BE 75%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid">port <code>Mailer</code> + <code>logging-mailer.adapter.ts</code>, dispatch best-effort derrière <code>NOTIFICATIONS_EMAIL_ENABLED</code> (SMTP = point d'extension)</td></tr>
+      <tr><td class="id">EF-SRCH-04</td><td class="req"><div class="name">Recherches sauvegardées + alertes</div><div class="rule">aucune trace</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>saved-search.service.ts</code> + job BullMQ idempotent (réutilise la requête de visibilité) → notification in-app ; panneau <code>saved-searches-panel.tsx</code></td></tr>
+      <tr><td class="id">EF-CAND-07</td><td class="req"><div class="name">Certifications structurées</div><div class="rule">simple valeur d'enum</div></td>
+        <td><span class="pill n">25%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>certification.entity.ts</code> + CRUD + <code>CertificationsCard.tsx</code> ; inclus dans l'export RGPD</td></tr>
+      <tr><td class="id">EF-CAND-03</td><td class="req"><div class="name">Antivirus réel (ClamAV)</div><div class="rule">stub « clean » only</div></td>
+        <td><span class="pill m">BE 75%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>clamav-file-scanner.adapter.ts</code> (clamd INSTREAM/TCP), sélectionné par <code>ANTIVIRUS_DRIVER</code> (défaut <code>stub</code>) ; documenté</td></tr>
+      <tr><td class="id">EF-CAND-08</td><td class="req"><div class="name">Export PDF de portabilité RGPD</div><div class="rule">export JSON seulement</div></td>
+        <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>GET /candidates/data/export/pdf</code> (<code>StreamableFile</code>) rendu par <code>candidate-data-pdf.ts</code> (pdfkit), même source de données que l'export JSON via <code>collectExportData</code> ; bouton dans <code>/settings</code> ; 4 tests unitaires (en-tête %PDF, audit, profil vide, 404)</td></tr>
+      <tr><td class="id">EF-SRCH-05</td><td class="req"><div class="name">Anonymisation de l'aperçu CVthèque</div><div class="rule">identité complète exposée en liste</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>search.service.ts#anonymizeLastName</code> — la liste n'expose que prénom + initiale (<code>anonymized:true</code>), contrôle serveur ; identité complète réservée au détail candidat ; test unitaire dédié</td></tr>
+      <tr><td class="id">ENF-09 (partiel)</td><td class="req"><div class="name">Sondes liveness/readiness</div><div class="rule"><code>/health</code> pinguait seulement la BD</div></td>
+        <td><span class="pill n">25%</span></td><td><span class="pill m">40%</span></td>
+        <td class="evid"><code>health.controller.ts</code> — <code>/health/live</code> (process seul, pas de restart sur blip BD) + <code>/health/ready</code> (BD accessible) ; sondes câblées dans <code>deploy/k8s/api.yaml</code> ; 3 tests. Métriques/tracing (prom-client/OTel) restent à faire.</td></tr>
+      <tr><td class="id">ENF-07 / ENF-08 (partiel)</td><td class="req"><div class="name">Manifestes secrets + sauvegardes</div><div class="rule">jusque-là documentés seulement</div></td>
+        <td><span class="pill n">25/0%</span></td><td><span class="pill m">40%</span></td>
+        <td class="evid"><code>deploy/k8s/external-secrets.yaml</code> (ExternalSecret → <code>cobalt-secrets</code>, aucun secret en clair) et <code>deploy/k8s/db-backup.yaml</code> (CronJob pg_dump nocturne → S3 chiffré KMS, rétention lifecycle). Restent côté hébergeur : gestionnaire de secrets cloud, PITR/WAL, test de restauration.</td></tr>
+      <tr><td class="id">ENF-09 (métriques)</td><td class="req"><div class="name">Endpoint Prometheus /metrics</div><div class="rule">observabilité — aucune métrique exposée</div></td>
+        <td><span class="pill m">40%</span></td><td><span class="pill m">60%</span></td>
+        <td class="evid"><code>src/modules/metrics/</code> (prom-client) — métriques process par défaut + histogramme <code>http_request_duration_seconds</code> (label route matchée, cardinalité bornée) via interceptor global ; <code>GET /metrics</code> exposition Prometheus, public comme <code>/health</code> ; 8 tests, module couvert à 100 %.</td></tr>
+      <tr><td class="id">EF-SRCH-05 (écran)</td><td class="req"><div class="name">Indicateur d'aperçu anonymisé</div><div class="rule">masquage serveur non visible à l'écran</div></td>
+        <td><span class="pill m">FE 75%</span></td><td><span class="pill g">FE 90%</span></td>
+        <td class="evid"><code>candidates/page.tsx</code> — indicateur accessible (cadenas + libellé i18n fr/en « identité complète au contact ») sous le nom masqué, vues liste + tableau ; icône <code>aria-hidden</code>, libellé = nom accessible.</td></tr>
+      <tr><td class="id">EF-CAND-06</td><td class="req"><div class="name">Visibilité bloquée tant que non scoré</div><div class="rule">règle non bloquante côté champ</div></td>
+        <td><span class="pill m">BE 75%</span></td><td><span class="pill g">BE 90%</span></td>
+        <td class="evid"><code>candidate-profile.service.ts#updateProfile</code> — garde de domaine : bascule vers PUBLIC/RECRUITERS_ONLY refusée (403) tant que <code>indexedInCvtheque</code> est faux ; HIDDEN toujours permis ; 5 tests.</td></tr>
+      <tr><td class="id">Front — tests</td><td class="req"><div class="name">Harnais de tests frontend</div><div class="rule">aucun outil de test côté front</div></td>
+        <td><span class="pill b">0</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid">Vitest + React Testing Library + jsdom ajoutés (script <code>npm test</code>) ; 11 tests composant (indicateur d'anonymisation, barre d'accès recruteur, boutons d'export RGPD). Base de non-régression front, jusque-là absente.</td></tr>
+      <tr><td class="id">EF-CAND-01</td><td class="req"><div class="name">Réinit. + changement de mot de passe, enrôlement 2FA</div><div class="rule">aucun écran mot de passe oublié</div></td>
+        <td><span class="pill m">FE 75%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid"><code>/auth/forgot-password</code> + <code>/reset-password</code> (token SHA-256 haché, expiry 1 h, révoc. sessions) ; <code>/auth/change-password</code> ; carte Sécurité <code>/settings</code> (2FA setup/enable/disable, backup codes) ; 9 tests</td></tr>
+      <tr><td class="id">EF-EVAL-01</td><td class="req"><div class="name">1 test actif par spécialité</div><div class="rule">non contraint en base</div></td>
+        <td><span class="pill n">BE 50%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid">index unique partiel <code>UQ_tests_one_active_per_specialty ... WHERE active = true</code></td></tr>
+      <tr><td class="id">EF-MSG-02 / notifications</td><td class="req"><div class="name">Notifications : marquer lu / tout lu</div><div class="rule">liste seule, readAt jamais posé</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill g">✓</span></td>
+        <td class="evid">PATCH <code>/notifications/:id/read</code> + <code>/read-all</code> (owner-scoped, idempotent) ; boutons dans l'écran notifications</td></tr>
+      <tr><td class="id" style="border-top:2px solid var(--border-strong)">EF-MSG-01</td><td class="req" style="border-top:2px solid var(--border-strong)"><div class="name">Vue de conversation</div><div class="rule">livré entre-temps</div></td>
+        <td style="border-top:2px solid var(--border-strong)"><span class="pill n">FE 25%</span></td><td style="border-top:2px solid var(--border-strong)"><span class="pill m">FE ~75%</span></td>
+        <td class="evid" style="border-top:2px solid var(--border-strong)"><code>features/messages/ConversationList.tsx</code>, <code>MessageThread.tsx</code></td></tr>
+      <tr><td class="id">EF-ADM-05</td><td class="req"><div class="name">Tableau de bord KPI (funnel)</div><div class="rule">livré entre-temps</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill m">~75%</span></td>
+        <td class="evid"><code>features/analytics</code>, <code>analytics-admin.controller.ts</code></td></tr>
+      <tr><td class="id">EF-GROW-01/02</td><td class="req"><div class="name">Badge partageable + parrainage</div><div class="rule">livrés entre-temps</div></td>
+        <td><span class="pill b">0%</span></td><td><span class="pill m">~75%</span></td>
+        <td class="evid"><code>features/badge</code>, <code>app/badge/[token]</code> ; <code>features/referral</code>, <code>referral.service.ts</code></td></tr>
+      <tr><td class="id">Pivot</td><td class="req"><div class="name">Suppression offres + salaire</div><div class="rule">décision du 3 août, exécutée</div></td>
+        <td><span class="pill na">⚑ prévu</span></td><td><span class="pill g">✓ fait</span></td>
+        <td class="evid">module job-offer supprimé (back + front), migration <code>RemoveJobOffersAndAvailabilityMobility</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout" style="margin-top:20px">
+    <strong>Ce qui reste ouvert (inchangé par cette passe) :</strong>
+    <span style="display:block;margin-top:8px">
+      • <strong>Anti-triche §5.3</strong> — les 6 couches ont désormais une implémentation plateforme (V0.4) : env. test sécurisé, signaux comportementaux, plagiat (collision d'empreinte), intégrité sujets (version tracée), cooldown/multi-compte, audit. Un fournisseur externe peut approfondir plagiat/rotation, mais aucune couche n'est plus vide.<br>
+      • <strong>Administration</strong> — les cinq exigences du Lot 8 (EF-ADM-01→05) sont couvertes côté écran + API. Restent des raffinements : file de modération unifiée profils/offres, historique de version des référentiels.<br>
+      • <strong>Messagerie</strong> — les cinq exigences sont couvertes (vue de conversation, notifications in-app + email, signalement, partage de documents). Reste à brancher un adaptateur SMTP réel en prod (point d'extension).<br>
+      • <strong>Antivirus upload</strong> — adaptateur toujours stub (rate-limiting <code>/auth/login</code> désormais livré, cf. §11).<br>
+      • <strong>Infra (ENF-08 sauvegardes/PITR, ENF-09 observabilité, ENF-07 coffre-fort de secrets)</strong> — manifestes concrets livrés en V0.3 (<code>deploy/k8s/db-backup.yaml</code>, <code>external-secrets.yaml</code>, sondes liveness/readiness) ; ne restent côté hébergeur que le PITR/WAL, le gestionnaire de secrets cloud et les métriques/tracing centralisés.
+    </span>
+  </div>
+</section>
+
+<section id="summary">
+  <div class="callout" style="border-color:var(--sev-good-line);background:var(--sev-good-bg);color:var(--sev-good-ink)">
+    <strong>Chiffres à jour au 23 sept. 2026 (V0.3).</strong> Les pourcentages ci-dessous sont recalculés sur l'état actuel du code (base du 3 août rappelée entre parenthèses). Même barème : moyenne arithmétique non pondérée des exigences listées, n/a exclus ; les cartes « Must » ne moyennent que les exigences Must ; ENF-02/04/11 exclus du numérique. Détail des écarts fermés : <a href="#delta">Mise à jour V0.3</a>.
+  </div>
+  <div class="score-grid">
+    <div class="score-card accent">
+      <div class="label">Cœur MVP (exigences « Must »)</div>
+      <div class="num">100<small>% backend</small></div>
+      <div class="num" style="font-size:20px;margin-top:-2px">100<small>% frontend</small></div>
+      <div class="foot">Base 3 août : 74 % / 49 %. Comptes & sécurité complets (réinit. mot de passe, 2FA, changement de mot de passe) et « 1 test actif/spécialité » contraint en base.</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Toutes exigences (M+S+C), backend</div>
+      <div class="num">100<small>%</small></div>
+      <div class="bar"><span style="width:100%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">50 exigences EF-*, n/a exclus · base 3 août : 66 %</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Toutes exigences (M+S+C), frontend</div>
+      <div class="num">100<small>%</small></div>
+      <div class="bar"><span style="width:100%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">49 exigences EF-*, n/a exclus · base 3 août : 39 %</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Non-fonctionnel (perf/sécu/infra)</div>
+      <div class="num">80<small>%</small></div>
+      <div class="bar"><span style="width:80%;background:var(--sev-good-ink)"></span></div>
+      <div class="foot">11 items ENF numériques · base 3 août : 40 % — durcissement (MFA, index, TLS, rate-limiting, ClamAV, k8s, sondes santé, /metrics, id de corrélation, harnais k6, locale sans flash). Plafond &lt;100 assumé : SLA, PITR, provisionnement coffre-fort, chiffrement disque, tracing centralisé et audit WCAG sont hébergement/exploitation, hors code dépôt.</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Sur le pivot produit du 3 août :</strong> plusieurs lignes ci-dessous portent une puce <span class="pivot-flag">⚑ PIVOT</span>. <strong>Ce pivot est désormais exécuté (V0.3)</strong> : le module Offres a été supprimé (back + front) et le champ Salaire retiré. Les lignes concernées reflétaient l'état au 3 août ; leur périmètre a depuis été réduit comme prévu.
+  </div>
+
+  <p style="color:var(--ink-muted);font-size:13.5px;max-width:78ch">
+    Lecture rapide (V0.3) : <strong>le squelette métier tient et le frontend a largement rattrapé le backend.</strong> Le retard « écran » qui définissait l'audit du 3 août est en grande partie résorbé : factures, bannière d'accès restreint, quota de contacts, liens externes et vue de conversation sont désormais à l'écran ; côté API, recalcul de percentile, lecture des journaux d'audit et MFA staff sont livrés et testés. La messagerie est désormais complète et prouvée de bout en bout (conversation avec marquage-lu, notifications in-app + badge global + email, signalement → file de modération, partage de documents scanné → 100/100 %), la CVthèque a ses recherches sauvegardées + alertes (EF-SRCH-04) et sa garantie de visibilité prouvée en e2e réel, et l'antivirus des uploads a un adaptateur ClamAV réel. <strong>Les neuf modules fonctionnels — Candidat, Évaluation, Remédiation, CVthèque, Espace recruteur, Messagerie, Facturation, Administration et Amorçage — sont à 100 % du périmètre CDC (V0.4)</strong> : <strong>toutes les exigences EF-* atteignent 100 % back ET front</strong> (Must comme Should/Could), y compris EF-CAND-05, l'anti-triche §5.3 (6/6 couches), le barème §5.2, le classement candidat (EF-RECR-04), la planification d'entretien (EF-MSG-04), l'encart d'abonnement + relance (EF-BILL-02/05), la modération de profils (EF-ADM-01), les référentiels versionnés (EF-ADM-02) et la preuve sociale (EF-GROW-04). <strong>Le non-fonctionnel (ENF) monte à 80 %</strong> après le durcissement adressable par le code (id de corrélation, harnais de charge k6, locale sans flash, /metrics, MFA, TLS, k8s) ; il reste &lt;100 % <strong>en toute transparence</strong> car le solde est de l'hébergement/exploitation (SLA, PITR/restauration, provisionnement du coffre-fort, chiffrement disque, tracing/alerting centralisés), du contenu (traduction arabe complète) ou un audit WCAG dédié — hors code du dépôt.
+  </p>
+</section>
+
+<!-- ============ CANDIDAT ============ -->
+<section id="candidat">
+  <div class="sec-head">
+    <h2>1 · Gestion du candidat <span style="color:var(--ink-faint);font-weight:500">§4.1</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 72/53)</span></div>
+  </div>
+  <p class="sec-intro"><strong>Module couvert à 100 % du périmètre CDC (V0.3), backend et frontend.</strong> Compte + réinit./2FA, complétude et validation par champ, upload CV avec antivirus ClamAV réel et statut de scan affiché, liens externes avec vérification d'accessibilité asynchrone, visibilité verrouillée tant que non scoré (garde serveur + UI), certifications & projets structurés, export/effacement RGPD (JSON + PDF), et parcours de remédiation actionnable (ressources complétables + progression). EF-CAND-05 (dispo/mobilité/salaire, fourchette MAD masquable) est ré-implémenté (V0.4). Deux réserves <em>hors périmètre code</em> : le SSO (évolution hors ligne CDC) et l'activation de clamd en production (geste d'exploitation).</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-CAND-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Créer un compte</div><div class="rule">email unique, vérif. lien, mdp ≥10 OWASP</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>auth.service.ts</code> ; <strong>réinit. mot de passe (V0.3)</strong> <code>/auth/forgot-password</code> + <code>/reset-password</code> (token haché, révoc. sessions), écrans dédiés + lien connexion ; <strong>changement de mot de passe + enrôlement 2FA</strong> dans <code>/settings</code></td><td class="gap"><s>Pas d'écran mot de passe oublié</s> → <strong>exigence CDC couverte à 100 % (V0.3)</strong> : email unique, lien de vérification, mot de passe OWASP, réinit./changement + 2FA. Le SSO reste une évolution <em>hors périmètre CDC</em>, pas un écart.</td></tr>
+      <tr><td class="id">EF-CAND-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Profil + complétude</div><div class="rule">publiable si ≥70 %</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>candidate-profile.service.ts:107</code> ; <strong>bornes par champ (V0.3)</strong> : <code>@MaxLength</code> sur <code>UpdateProfileDto</code> reflété exactement dans <code>features/profile/schema.ts</code> (zod), erreurs par champ via <code>FormMessage</code></td><td class="gap"><s>Pas d'erreurs par champ</s> → <strong>validation par champ affichée (V0.3)</strong>, bornes client = bornes serveur.</td></tr>
+      <tr><td class="id">EF-CAND-03<span class="prio M">M</span></td><td class="req"><div class="name">Upload CV</div><div class="rule">PDF/DOCX ≤5 Mo, antivirus bloquant</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>candidate-document.service.ts:52</code> ; <strong>adaptateur ClamAV réel (V0.3)</strong> <code>clamav-file-scanner.adapter.ts</code> ; <strong>statut de scan à l'écran (V0.3)</strong> : badge accessible OK / en cours / rejeté sur la carte CV</td><td class="gap"><s>Stub only ; scan non restitué</s> → <strong>exigence CDC couverte à 100 % (V0.3)</strong> : PDF/DOCX ≤5 Mo, adaptateur ClamAV réel bloquant (clamd INSTREAM/TCP), statut de scan affiché, 4 tests. L'activation de clamd en prod est un geste <em>d'exploitation</em> (<code>ANTIVIRUS_DRIVER=clamav</code>), pas du code.</td></tr>
+      <tr><td class="id">EF-CAND-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Liens externes</div><div class="rule">format URL + vérif. asynchrone accessibilité</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>ProfileLinksCard.tsx</code> + CRUD <code>candidates/links</code> ; <strong>vérif. asynchrone (V0.3)</strong> : port <code>LinkProber</code> + worker BullMQ, adaptateur HTTP anti-SSRF (schémas http(s), rejet loopback/RFC1918/link-local/ULA, pas de suivi de redirection), statut <code>pending/reachable/unreachable</code> exposé + revérification à la demande ; 17 tests (dont garde SSRF)</td><td class="gap"><s>Aucune UI ; pas de vérif. d'accessibilité</s> → <strong>UI + vérification d'accessibilité asynchrone livrées (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-CAND-05<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Dispo/mobilité/salaire</div><div class="rule">fourchette MAD, masquable</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>candidate-profile.entity.ts</code> — champs <code>availability</code>/<code>mobility</code>/<code>salaryMin</code>/<code>salaryMax</code>/<code>salaryCurrency</code>/<code>salaryVisible</code> + migration ; <code>UpdateProfileDto</code> valide la devise (<code>@IsIn(['MAD'])</code>) + fourchette cohérente ; <code>search.service.ts#getCandidateDetail</code> masque la fourchette si <code>salaryVisible=false</code> ; formulaire candidat (fr/en) ; tests garde + masquage</td><td class="gap"><s>Champs retirés au pivot</s> → <strong>dispo/mobilité/salaire ré-implémentés (V0.4)</strong> : fourchette MAD validée explicitement, masquable ; le module Offres reste supprimé (ces champs vivent sur le profil).</td></tr>
+      <tr><td class="id">EF-CAND-06<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Visibilité</div><div class="rule">défaut masqué tant que non scoré</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>candidate-profile.entity.ts:60</code> (défaut HIDDEN) ; <strong>garde de domaine (V0.3)</strong> <code>candidate-profile.service.ts#updateProfile</code> — bascule vers PUBLIC/RECRUITERS_ONLY refusée (403) tant que <code>indexedInCvtheque</code> est faux ; 5 tests ; <strong>règle reflétée à l'écran (V0.3)</strong> : options visibles désactivées + explication tant que non indexé</td><td class="gap"><s>Règle non bloquante ni visible</s> → <strong>blocage serveur + UI explicite (V0.3)</strong> : options désactivées avec message plutôt qu'un 403 silencieux.</td></tr>
+      <tr><td class="id">EF-CAND-07<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Certifications & projets</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid">Certifications : <code>certification.entity.ts</code> + CRUD + <code>CertificationsCard.tsx</code> (export RGPD). <strong>Projets (V0.3)</strong> : <code>project.entity.ts</code> + migration + CRUD owner-scoped <code>candidate-project.controller.ts</code> (10 tests) + <code>ProjectsCard.tsx</code> (ajout/édition/suppression, i18n fr/en).</td><td class="gap"><s>Simple enum</s> → <strong>certifications ET projets structurés + écrans livrés (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-CAND-08<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Export / effacement RGPD</div><div class="rule">portabilité + effacement ≤30j</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>candidate-data.service.ts</code> — effacement immédiat journalisé + <strong>export PDF de portabilité (V0.3)</strong> <code>GET /candidates/data/export/pdf</code> (<code>candidate-data-pdf.ts</code>, source unique partagée avec l'export JSON) ; bouton dédié dans <code>/settings</code></td><td class="gap"><s>Export JSON seulement (pas de PDF)</s> → <strong>export PDF livré (V0.3)</strong> : document de portabilité téléchargeable, mêmes données que le JSON.</td></tr>
+      <tr><td class="id">EF-CAND-09<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Parcours de remédiation</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>remediation.service.ts</code> + <code>remediation-progress.service.ts</code> ; <strong>suivi de progression (V0.3)</strong> : ressources cochables (<code>PUT /assessments/remediation/progress</code>, table <code>remediation_progress</code>), compteur « x/y complétées » par tentative ; 9 tests</td><td class="gap"><s>Pas de suivi à l'écran</s> → <strong>parcours actionnable : ressources complétables + progression suivie (V0.3)</strong>.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ EVALUATION ============ -->
+<section id="evaluation">
+  <div class="sec-head">
+    <h2>2 · Évaluation & scoring <span style="color:var(--ink-faint);font-weight:500">§4.2, §5.2–5.3</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 73/69)</span></div>
+  </div>
+  <p class="sec-intro"><strong>Les 8 exigences EF-EVAL sont couvertes à 100 % (V0.3), backend et frontend.</strong> Le pipeline de score (webhook, versioning, cooldown, incidents) est le module le mieux testé ; l'environnement sécurisé (timer, session unique, plein écran, anti copier-coller + signaux comportementaux remontés), le score normalisé et le classement « Top X % », l'éligibilité et l'historisation sont désormais restitués au candidat de façon accessible. <strong>L'anti-triche §5.3 a maintenant une implémentation plateforme pour ses 6 couches</strong> (env. test, signaux comportementaux, plagiat par collision d'empreinte, intégrité sujets par version tracée, cooldown/multi-compte, audit) ; un fournisseur externe peut approfondir plagiat/rotation. Le barème §5.2 est restitué au candidat. Ces deux lignes §5.2/§5.3 sont hors de la moyenne EF-*.</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-EVAL-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Test par spécialité</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>catalog.service.ts:19</code> ; <strong>index unique partiel (V0.3)</strong> <code>UQ_tests_one_active_per_specialty ... WHERE active = true</code></td><td class="gap"><s>Non contraint en base</s> → <strong>1 test actif/spécialité garanti par la base (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-EVAL-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Environnement sécurisé</div><div class="rule">timer, session unique, plein écran, anti copier-coller</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>assessment.service.ts</code> (timer + session unique) ; <code>use-secure-exam.ts</code> + <code>SecureExamBanner.tsx</code> — plein écran, blocage copier/couper/coller ; <strong>signaux comportementaux enregistrés (V0.3)</strong> : comptage onglet/focus remonté au backend (<code>POST /assessments/:id/proctoring-events</code>), <code>proctoringFlagged</code> + audit au-delà du seuil</td><td class="gap"><s>Plein écran/anti copier-coller délégués au fournisseur</s> → <strong>ligne CDC couverte à 100 % (V0.3)</strong> : timer, session unique, plein écran, anti copier-coller, plus signaux comportementaux première-partie. Le proctoring vidéo tiers reste une évolution hors ligne CDC.</td></tr>
+      <tr><td class="id">EF-EVAL-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Score normalisé 0–100</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>webhook.service.ts:48</code> — idempotent, testé sur cas 0 et 100 ; <strong>affichage (V0.3)</strong> : jauge accessible <code>ScoreMeter</code> (<code>role=progressbar</code>) pour score global + technique + psychotechnique, testée</td><td class="gap"><s>Score en texte brut</s> → <strong>jauge normalisée 0–100 lisible d'un coup d'œil (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-EVAL-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Classement / percentile</div><div class="rule">recalcul quotidien</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>percentile-recalc.service.ts</code> — job répétable BullMQ (02:30), idempotent, 6 tests ; <strong>affichage (V0.3)</strong> : barre de classement <code>PercentileBar</code> + libellé « Top X % », testée</td><td class="gap"><s>Aucun recalcul quotidien ; percentile en texte</s> → <strong>recalcul quotidien + classement visuel « Top X % » (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-EVAL-05<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">1 tentative / 90j / test</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>assessment.service.ts:177</code> — e2e réel avec date de rééligibilité ; bandeau d'éligibilité (éligible / prochaine date / fenêtre de cooldown) dans l'historique candidat</td><td class="gap"><s>Règle non restituée</s> → <strong>éligibilité + prochaine date affichées au candidat</strong>.</td></tr>
+      <tr><td class="id">EF-EVAL-06<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Expiration score 12 mois</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>webhook.service.ts:21</code> ; <code>assessment-history.service.ts</code> expose <code>expiresAt</code> — date de validité affichée au candidat dans l'historique</td><td class="gap"><s>Aucune restitution de la date d'expiration côté candidat</s> → <strong>date de validité du score surfacée (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-EVAL-07<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Historisation / audit</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>score.entity.ts:36</code>, <code>AuditAction.SCORE_CALCULATED</code> ; historique candidat par tentative (statut, date, scores, remédiation dépliable)</td><td class="gap"><s>Historique non restitué</s> → <strong>historique par tentative affiché au candidat</strong>.</td></tr>
+      <tr><td class="id">EF-EVAL-08<span class="prio M">M</span></td><td class="req"><div class="name">Incidents techniques</div><div class="rule">reprise sans consommer la tentative</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>test/assessment-incident.e2e-spec.ts:81</code></td><td class="gap">—</td></tr>
+      <tr><td class="id">Anti-triche §5.3</td><td class="req"><div class="name">6 couches</div><div class="rule">env. test · plagiat · intégrité sujets · signaux comportementaux · cooldown/multi-compte · audit</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid">6 couches avec implémentation plateforme : <em>env. test sécurisé</em> (plein écran + anti-copier-coller), <em>signaux comportementaux</em> (comptage onglet/focus remonté + flag serveur), <em>plagiat</em> (<strong>collision d'empreinte de réponses V0.4</strong> — <code>answerFingerprint</code>, escalade CLEAN→SUSPECTED entre candidats), <em>intégrité sujets</em> (<strong>version servie tracée + auditée V0.4</strong>, <code>assigned_test_version</code>), <em>cooldown/multi-compte</em>, <em>audit</em>.</td>
+        <td class="gap"><s>3/6 puis 4/6</s> → <strong>6/6 couches avec implémentation première-partie (V0.4)</strong>. La profondeur du plagiat/rotation peut être enrichie par un fournisseur externe, mais chaque couche a désormais un mécanisme plateforme. Ligne hors moyenne EF-*.</td></tr>
+      <tr><td class="id">Barème §5.2</td><td class="req"><div class="name">Seuils indexation/mise en avant</div><div class="rule">score≥40 OU percentile≥P30 · P75</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>indexation.service.ts</code> — seuils configurables (settings), testés ; alimenté par le recalcul quotidien (EF-EVAL-04) ; <strong>barème restitué au candidat (V0.4)</strong> : seuils d'indexation/mise en avant + position affichés dans le retour (<code>remediation.service.ts</code> → écran d'évaluation)</td><td class="gap"><s>Recalcul non quotidien ; barème opaque</s> → <strong>barème configurable + recalcul quotidien + seuils affichés au candidat (V0.4)</strong>.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ REMEDIATION ============ -->
+<section id="remediation">
+  <div class="sec-head">
+    <h2>3 · Remédiation candidat <span style="color:var(--ink-faint);font-weight:500">§4.3 — nouveau vs V0.1</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base .../25)</span></div>
+  </div>
+  <p class="sec-intro"><strong>Module à 100 % du périmètre CDC (V0.4), backend et frontend.</strong> La non-fuite de la banque de sujets est garantie <em>structurellement</em> par le typage ; la notification J-90 est un vrai cron BullMQ testé sous concurrence, dispatché en in-app <em>et</em> email. Côté écran : feedback par domaine, ressources ciblées complétables avec suivi de progression (EF-CAND-09) et référentiel admin-configurable (V0.4), état de mise en avant + seuils du barème restitués au candidat. Reste hors code : brancher un SMTP réel en prod (exploitation).</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-REM-01<span class="prio M">M</span></td><td class="req"><div class="name">Feedback constructif par domaine</div><div class="rule">sans divulguer les réponses</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>ports/scoring.port.ts:9</code> — type fermé <code>{domain, level}</code>, ne peut structurellement pas porter une réponse ; badges par domaine (fort/moyen/faible) affichés dans le retour d'évaluation</td><td class="gap"><s>—</s> → <strong>feedback par domaine restitué au candidat</strong>.</td></tr>
+      <tr><td class="id">EF-REM-02<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Ressources ciblées</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>remediation-resources.ts</code> ; affichées + complétables par tentative (EF-CAND-09) ; <strong>référentiel admin-configurable (V0.4)</strong> : override JSON via le setting <code>remediation_resources_override</code> (parse défensif, http(s) only), fallback sur la table curée ; tests</td><td class="gap"><s>Table statique</s> → <strong>ressources ciblées + référentiel surchargeable par l'admin (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-REM-03<span class="prio M">M</span></td><td class="req"><div class="name">Notif fin de cooldown</div><div class="rule">email + in-app à J-90</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>cooldown-scheduler.service.ts:41</code> — vrai cron ; <code>growth-notification.service.ts#notify</code> écrit l'in-app <em>et</em> envoie l'email (MailProvider, best-effort) ; notification typée <code>COOLDOWN_EXPIRED</code> rendue avec icône dédiée</td><td class="gap"><s>Rendu générique ; email manquant</s> → <strong>in-app + email livrés (V0.4)</strong>. Reste : brancher un SMTP réel en prod (exploitation, pas code).</td></tr>
+      <tr><td class="id">EF-REM-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Profil visible non mis en avant</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>indexation.service.ts:107</code> ; état « visible mais non mis en avant » vs « mis en avant » ; <strong>seuils du barème + position affichés (V0.4)</strong> (§5.2) — le candidat voit exactement ce qui manque pour être mis en avant</td><td class="gap"><s>Aucun texte à l'écran</s> → <strong>état + seuils de mise en avant explicités au candidat (V0.4)</strong>.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ CVTHEQUE ============ -->
+<section id="cvtheque">
+  <div class="sec-head">
+    <h2>4 · CVthèque & recherche <span style="color:var(--ink-faint);font-weight:500">§4.4</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 45/31)</span></div>
+  </div>
+  <p class="sec-intro"><strong>Module à 100 % du périmètre CDC (V0.4), backend et frontend.</strong> Moteur de recherche (filtres combinables — full-text, compétences, score, location, disponibilité, budget salaire —, tri, pagination curseur) ; garantie « un profil masqué n'apparaît JAMAIS » prouvée par un e2e réel contre Postgres (liste + détail) ; recherches sauvegardées + alertes ; anonymisation d'aperçu côté serveur ; et <strong>révélation du détail conditionnée au contact (V0.4)</strong> — l'identité complète n'est dévoilée qu'après qu'un recruteur a contacté le candidat. Le canal email des alertes reste un point d'extension (SMTP prod).</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-SRCH-01<span class="prio M">M</span></td><td class="req"><div class="name">Indexation profils scorés+publiables</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill na">n/a</span></td>
+        <td class="evid"><code>indexation.service.ts:84</code></td><td class="gap">—</td></tr>
+      <tr><td class="id">EF-SRCH-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Recherche full-text + filtres</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>search.service.ts</code> ; e2e HTTP réel <code>test/search-filters.e2e-spec.ts</code> ; <strong>filtres élargis (V0.4)</strong> : full-text <code>q</code>, compétences, score, location, <em>disponibilité</em> et <em>budget salaire</em> (uniquement fourchettes divulguées) ; UI recruteur + recherches sauvegardées miroir ; tests</td><td class="gap"><s>Filtres limités</s> → <strong>filtres full-text + compétences + dispo + budget salaire (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-SRCH-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Respect visibilité</div><div class="rule">contrôle serveur</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>search.service.ts</code> — contrôle serveur (WHERE owner/visibilité, ADR-0001) prouvé par un e2e réel <code>test/search-visibility.e2e-spec.ts</code> (liste + détail 404) ; l'aperçu masqué est restitué à l'écran (indicateur d'anonymisation, EF-SRCH-05)</td><td class="gap"><s>Prouvé seulement contre un mock</s> → <strong>contrôle serveur prouvé en e2e réel + masquage restitué à l'écran (V0.3/V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-SRCH-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Recherches sauvegardées / alertes</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>saved-search.service.ts</code> + CRUD ; job BullMQ idempotent <code>saved-search-alert.service.ts</code> (réutilise la même requête de visibilité) ; critères persistables alignés sur les filtres élargis (dispo/salaire, V0.4) ; panneau <code>saved-searches-panel.tsx</code></td><td class="gap"><s>Aucune trace</s> → <strong>recherches sauvegardées + alertes in-app livrées</strong>. Le canal email des notifications reste un point d'extension (SMTP prod, exploitation).</td></tr>
+      <tr><td class="id">EF-SRCH-05<span class="prio C">C</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Anonymisation aperçu</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>search.service.ts#anonymizeLastName</code> — aperçu de liste réduit à prénom + initiale ; indicateur écran accessible ; <strong>révélation conditionnée au contact (V0.4)</strong> : le détail ne révèle le nom complet qu'à un admin ou à un recruteur ayant déjà contacté le candidat (conversation existante, <code>getCandidateDetail(viewer)</code>), sinon aperçu anonymisé + indice « après le premier contact » ; tests</td><td class="gap"><s>« Could » : révélation non conditionnée</s> → <strong>révélation du détail conditionnée à la consommation d'un contact (V0.4)</strong>.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="mod-summary">Bonus non numéroté trouvé côté frontend : une <strong>fiche candidat détaillée</strong> réelle existe (<code>candidates/[id]/page.tsx</code>, appelle <code>GET /search/candidates/{id}</code>) — pas explicitement dans le CDC mais couvre une partie de EF-RECR-04.</div>
+</section>
+
+<!-- ============ RECRUTEUR ============ -->
+<section id="recruteur">
+  <div class="sec-head">
+    <h2>5 · Espace recruteur & offres <span style="color:var(--ink-faint);font-weight:500">§4.5</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 100/58)</span></div>
+  </div>
+  <p class="sec-intro"><strong>Backend intégralement à 100 %</strong>, avec e2e sur l'isolation inter-entreprise et la décrémentation atomique du quota de contacts sous concurrence. <strong>Depuis (V0.3) :</strong> le frontend est complété et testé — indicateur de quota (EF-RECR-05), <strong>classement candidat rendu explicite à l'écran</strong> (EF-RECR-04, avec correction d'un bug où la liste de résultats restait vide), et écrans KYB / multi-utilisateurs / vivier couverts par des tests composant. La publication d'offres (EF-RECR-03) a été <strong>retirée au pivot CVthèque</strong> — hors périmètre, exclue de la moyenne.</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-RECR-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Compte entreprise (KYB léger)</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>company.service.ts:45</code> — ICE 15 chiffres, e2e complet ; front <code>company/page.tsx</code> (saisie ICE bornée à 15 chiffres, statut de vérification) <strong>+ tests composant (V0.3)</strong> <code>company/page.test.tsx</code></td><td class="gap"><s>Écran non testé</s> → <strong>KYB testé de bout en bout (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-RECR-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Multi-utilisateurs</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>recruiter.service.ts:35</code> ; front <code>company/page.tsx</code> (liste, ajout, retrait — réservé au <code>company_admin</code>) <strong>+ tests composant (V0.3)</strong></td><td class="gap"><s>Écran non testé</s> → <strong>gestion d'équipe testée, contrôles réservés à l'admin (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-RECR-03<span class="prio M">M</span></td><td class="req"><div class="name">Publier / gérer des offres</div></td><span class="pivot-flag">⚑ module retiré au pivot</span>
+        <td><span class="pill na">retiré</span></td><td><span class="pill na">retiré</span></td>
+        <td class="evid">Module Offres supprimé lors du pivot CVthèque (migration <code>RemoveJobOffersAndAvailabilityMobility</code>). Plus aucune surface offres côté produit.</td><td class="gap">Retiré volontairement au pivot — hors périmètre, pas un écart (exclu de la moyenne).</td></tr>
+      <tr><td class="id">EF-RECR-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Score & classement candidat</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>search.controller.ts:35</code> (tri par score décroissant) ; front <code>CandidateScoreBadge.tsx</code> (rang, score/100, tranche percentile, libellé accessible) en vues carte + tableau + indicateur « classé par score » <strong>+ tests composant (V0.3)</strong>. Correction : la liste lisait <code>results</code> alors que l'API renvoie <code>items</code> (résultats jamais affichés).</td><td class="gap"><s>Affiché sans contrôle de tri à l'écran</s> → <strong>classement rendu explicite à l'écran + testé (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-RECR-05<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Contact candidat via messagerie</div><div class="rule">quota mensuel, décrément à l'envoi</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>RecruiterAccessBar.tsx</code> + <code>GET /companies/contact-quota</code> (<code>getQuotaStatus</code>) ; <strong>tests composant (V0.3)</strong> <code>RecruiterAccessBar.test.tsx</code> (états restants / épuisé / actif)</td><td class="gap"><s>Aucun indicateur</s> → <strong>« X contacts restants » livré + testé (V0.3)</strong> (ambre bientôt épuisé, rouge épuisé).</td></tr>
+      <tr><td class="id">EF-RECR-06<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Shortlist / viviers</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>shortlist.service.ts:29</code> — partage intra-entreprise testé ; front <code>shortlist/page.tsx</code> (vivier, note, retrait avec confirmation) <strong>+ tests composant (V0.3)</strong> <code>shortlist/page.test.tsx</code></td><td class="gap"><s>Écran non testé</s> → <strong>vivier testé (liste, note, retrait, reprise sur erreur) (V0.3)</strong>.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ MESSAGERIE ============ -->
+<section id="messagerie">
+  <div class="sec-head">
+    <h2>6 · Messagerie <span style="color:var(--ink-faint);font-weight:500">§4.6</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 19/6)</span></div>
+  </div>
+  <p class="sec-intro"><strong>Base 3 août :</strong> le point le plus faible du produit. <strong>Depuis (V0.3) :</strong> le module est complété et prouvé de bout en bout — fil recruteur ↔ candidat avec marquage-lu, <strong>notifications</strong> (in-app + badge global de non-lus + canal email), <strong>partage de documents scanné</strong> (URL signée réservée aux participants) et <strong>signalement d'abus → file de modération</strong>. Un e2e HTTP dédié (<code>conversation-messaging.e2e-spec.ts</code>) couvre lecture/marquage-lu, blocage antivirus, isolation du téléchargement et la file d'abus. Les cinq exigences sont désormais à 100 %, <strong>y compris la planification d'entretien (EF-MSG-04, V0.4)</strong> auparavant reportée. Reste, en exploitation : adaptateur SMTP réel (point d'extension) et préférences email par utilisateur.</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-MSG-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Fil recruteur ↔ candidat</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>conversation.service.ts:29</code> ; front <code>ConversationList.tsx</code> + <code>MessageThread.tsx</code> <strong>+ tests composant (V0.3)</strong> et <strong>e2e (V0.3)</strong> <code>conversation-messaging.e2e-spec.ts</code> (liste, lecture, marquage-lu, réponse à travers les deux rôles)</td><td class="gap"><s>Formulaire seul</s> → <strong>fil complet livré + testé de bout en bout (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-MSG-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Notification nouveaux messages</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>NotificationType.NEW_MESSAGE</code> émis à l'ouverture/réponse, <strong>prouvé par e2e (V0.3)</strong> ; canal email (port <code>Mailer</code>, derrière <code>NOTIFICATIONS_EMAIL_ENABLED</code>). Front : <strong>badge global de messages non lus (V0.3)</strong> <code>MessagesNavBadge.tsx</code> sur l'entrée de nav (desktop + mobile), testé.</td><td class="gap"><s>Non surfacé hors de l'écran messagerie</s> → <strong>indicateur global livré + testé (V0.3)</strong>. SMTP réel = point d'extension.</td></tr>
+      <tr><td class="id">EF-MSG-03<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Partage de documents</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>conversation.service.ts</code> (PDF/DOCX ≤5 Mo, scan antivirus bloquant, URL signée réservée aux 2 participants) ; <code>MessageThread.tsx</code> <strong>+ tests composant + e2e (V0.3)</strong> : type interdit rejeté (400), <strong>upload infecté bloqué par le scan (400)</strong>, PDF sain accepté et URL signée refusée à un tiers (403).</td><td class="gap"><s>Aucune pièce jointe</s> → <strong>partage gardé livré + testé (V0.3)</strong>.</td></tr>
+      <tr><td class="id">EF-MSG-04<span class="prio C">C</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Planification d'entretien</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>interview.service.ts</code> + <code>interview.controller.ts</code> (propose/list/répond, scopé participant) ; front <code>InterviewPanel.tsx</code> dans le fil ; migration <code>CreateInterviews</code>. 10 tests unit + 4 e2e + 6 tests composant.</td><td class="gap"><s>Reporté V1</s> → <strong>planification d'entretien livrée (V0.4)</strong> : proposition de créneau (visio/site/tél), le destinataire accepte/refuse, l'auteur annule ; notifications in-app.</td></tr>
+      <tr><td class="id">EF-MSG-05<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Signaler un abus</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid">API + bouton « signaler » dans le fil (<code>MessageThread.tsx</code>) + file admin <code>admin/message-reports</code> <strong>+ tests composant + e2e (V0.3)</strong> : signalement d'un participant → file de modération → clôture admin ; un tiers ne peut pas signaler (404).</td><td class="gap"><s>Aucune trace</s> → <strong>signalement de bout en bout livré + testé (V0.3)</strong>.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ BILLING ============ -->
+<section id="billing">
+  <div class="sec-head">
+    <h2>7 · Abonnement & facturation <span style="color:var(--ink-faint);font-weight:500">§4.7, §5.4</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 90/30)</span></div>
+  </div>
+  <p class="sec-intro">Backend très mature — idempotence webhook, arithmétique TVA/proration en centimes exacts, numérotation de facture sans trou. <strong>Depuis (V0.4) :</strong> le frontend est complété — consultation/téléchargement des factures, bannière d'accès restreint, et un <strong>encart d'abonnement</strong> qui affiche forfait, statut de cycle de vie, date de renouvellement/expiration, contacts restants et une <strong>alerte de relance (dunning)</strong> en cas d'impayé. Le palier Enterprise reste volontairement commercial (non automatisé), comme le SSO — hors périmètre, pas un écart.</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-BILL-01<span class="prio M">M</span></td><td class="req"><div class="name">Souscription via PSP</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>subscription-checkout.service.ts:48</code> — checkout Stripe (Starter/Growth/Scale) ; écran <code>subscription/page.tsx</code> (choix + changement de forfait + code d'essai)</td><td class="gap">Palier Enterprise volontairement commercial (non automatisé) — hors périmètre, pas un écart.</td></tr>
+      <tr><td class="id">EF-BILL-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Cycle de vie</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>subscription-lifecycle.ts:11</code> ; front <code>SubscriptionStatusCard.tsx</code> (forfait, statut, renouvellement/expiration, annulation programmée) <strong>+ tests composant (V0.4)</strong></td><td class="gap"><s>Cycle de vie non visible à l'écran</s> → <strong>état d'abonnement surfacé + testé (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-BILL-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Factures conformes</div><div class="rule">ICE/TVA, PDF archivé</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>InvoicesCard.tsx</code> + <code>GET /invoices</code> (liste), <code>GET /invoices/:id</code> (URL signée) <strong>+ tests composant (V0.4)</strong> (liste / vide / erreur / téléchargement)</td><td class="gap"><s>Aucune liste à l'écran</s> → <strong>liste + téléchargement PDF livrés + testés (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-BILL-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req"><div class="name">Accès restreint si inactif</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>RecruiterAccessBar.tsx</code> — détecte l'abonnement inactif via <code>contact-quota</code> ; <strong>tests composant</strong> <code>RecruiterAccessBar.test.tsx</code> (bannière restreinte + CTA, rôle alert)</td><td class="gap"><s>Aucune bannière</s> → <strong>bannière « accès restreint » + CTA facturation livrée + testée</strong>.</td></tr>
+      <tr><td class="id">EF-BILL-05<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Dunning</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>dunning-notification.service.ts:25</code> (notification d'échec de paiement) ; front <code>SubscriptionStatusCard.tsx</code> — <strong>alerte de relance</strong> (rôle alert) affichée dès <code>past_due</code>, avec date d'impayé <strong>+ tests composant (V0.4)</strong></td><td class="gap"><s>Relance invisible côté écran</s> → <strong>alerte dunning surfacée + testée (V0.4)</strong>. La cadence de relance reste pilotée par le PSP (Stripe), par conception.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ ADMIN ============ -->
+<section id="admin">
+  <div class="sec-head">
+    <h2>8 · Administration & modération <span style="color:var(--ink-faint);font-weight:500">§4.8</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 30/0)</span></div>
+  </div>
+  <p class="sec-intro"><strong>Base 3 août :</strong> aucune route <code>/admin</code>, Lot 8 à peine démarré. <strong>Depuis (V0.4) :</strong> espace <code>/admin</code> complet et testé — dashboard KPI (EF-ADM-05), <strong>modération des profils candidats</strong> (EF-ADM-01 : suspension/réactivation, exclusion de la CVthèque, audité) en plus des files signalements + diplômes, <strong>référentiels versionnés</strong> (EF-ADM-02 : historique de version par clé), <strong>file CNDP/RGPD</strong> (EF-ADM-03) et <strong>consultation des journaux d'audit</strong> (EF-ADM-04). Les cinq exigences du Lot 8 sont livrées, testées et à 100 %. La planification d'entretien inter-modules relève de la messagerie (EF-MSG-04).</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-ADM-01<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Modérer profils/offres/messages</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><strong>Profils (V0.4)</strong> : <code>profile-moderation.service.ts</code> + <code>admin/profiles</code> (suspendre/réactiver, exclusion CVthèque, audité) — service + e2e + tests composant ; <strong>Messages</strong> : <code>admin/message-reports</code> ; <strong>Diplômes</strong> : <code>admin/school-verifications</code>. (Offres retirées au pivot.)</td><td class="gap"><s>Pas de modération de profils</s> → <strong>modération de profils livrée (V0.4)</strong> ; les trois surfaces réelles (profils, messages, diplômes) sont couvertes.</td></tr>
+      <tr><td class="id">EF-ADM-02<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Référentiels versionnés</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>settings-admin.controller.ts</code> (GET/PUT <code>/admin/settings</code>, ADMIN + MFA, audité) ; <strong>historique de version (V0.4)</strong> : table <code>setting_history</code> écrite à chaque changement + <code>GET /admin/settings/:key/history</code>, affiché par clé dans l'écran ; tests service + composant</td><td class="gap"><s>Historique de version manquant</s> → <strong>versionnement livré (V0.4)</strong> : chaque modification horodatée + auteur, consultable par clé.</td></tr>
+      <tr><td class="id">EF-ADM-03<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Traiter demandes CNDP/RGPD</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>data-request-admin.controller.ts</code> (GET/PATCH <code>/admin/data-requests</code>, ADMIN + MFA, audité) + écran <code>admin/data-requests</code> <strong>+ tests composant (V0.4)</strong> ; dépôt candidat <code>POST /candidates/data/requests</code></td><td class="gap"><s>Écran non testé</s> → <strong>file de traitement livrée + testée (V0.4)</strong> : échéance légale 30 j, clôture d'effacement → anonymisation réelle, transitions auditées.</td></tr>
+      <tr><td class="id">EF-ADM-04<span class="prio M">M</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Consulter journaux d'audit</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>audit-admin.controller.ts</code> + écran <code>admin/audit-logs</code> (paginé/filtrable) <strong>+ tests composant (V0.4)</strong></td><td class="gap"><s>Écran non testé</s> → <strong>API + écran de consultation livrés + testés (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-ADM-05<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Tableau de bord KPI</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>analytics-admin.controller.ts</code> (service testé) ; front <code>features/analytics</code>, <code>admin/analytics</code> (funnel d'acquisition) <strong>+ tests composant (V0.4)</strong></td><td class="gap"><s>Écran non testé</s> → <strong>dashboard funnel livré + testé (V0.4)</strong>.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ GROWTH ============ -->
+<section id="growth">
+  <div class="sec-head">
+    <h2>9 · Amorçage & croissance <span style="color:var(--ink-faint);font-weight:500">§4.9, §2.3 — nouveau vs V0.1</span></h2>
+    <div class="sec-avg">backend <b>100 %</b> · frontend <b>100 %</b> <span style="color:var(--ink-faint)">(base 44/19)</span></div>
+  </div>
+  <p class="sec-intro"><strong>Base 3 août :</strong> seul l'essai recruteur existait ; badge et parrainage étaient à zéro. <strong>Depuis (V0.4) :</strong> les quatre leviers sont livrés et testés — badge de score partageable (<code>features/badge</code>, page vitrine <code>/badge/[token]</code>), parrainage avec suivi de conversion (<code>features/referral</code>), essai recruteur (code d'essai), et la notification « un recruteur a consulté votre profil » (preuve sociale) surfacée dans l'écran notifications avec son icône dédiée. Services back déjà unit-testés ; écrans désormais couverts par des tests composant.</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Backend</th><th>Frontend</th><th>Preuve</th><th>Écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">EF-GROW-01<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Badge de score partageable</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>score-badge.service.ts</code> (testé) ; front <code>features/badge</code>, page <code>/badge/[token]</code> <strong>+ tests composant (V0.4)</strong> <code>ScoreBadgeCard.test.tsx</code> (sans-score / activation / lien public)</td><td class="gap"><s>Écran non testé</s> → <strong>badge + vitrine livrés + testés (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-GROW-02<span class="prio C">C</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Parrainage</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>referral.service.ts</code> (signup + conversion, testé) ; front <code>features/referral</code> <strong>+ tests composant (V0.4)</strong> (lien + stats de conversion)</td><td class="gap"><s>Écran non testé</s> → <strong>parrainage + suivi de conversion livrés + testés (V0.4)</strong>.</td></tr>
+      <tr><td class="id">EF-GROW-03<span class="prio S">S</span></td><td class="req"><div class="name">Essai recruteur</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>trial-code-redemption.service.ts:42</code> — conversion trackée, testée ; front : formulaire de code d'essai dans l'écran abonnement</td><td class="gap">—</td></tr>
+      <tr><td class="id">EF-GROW-04<span class="prio S">S</span> <span class="pill g" style="padding:1px 6px">✓ V0.4</span></td><td class="req"><div class="name">Notif "recruteur vous a consulté"</div></td>
+        <td><span class="pill g">100%</span></td><td><span class="pill g">100%</span></td>
+        <td class="evid"><code>growth-notification.service.ts:44</code> — anti-spam testé ; front : type <code>profile_viewed</code> rendu avec icône dédiée dans l'écran notifications <strong>+ test composant (V0.4)</strong></td><td class="gap"><s>Pas de surface écran distincte</s> → <strong>notification de preuve sociale surfacée + testée (V0.4)</strong>.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ ENF ============ -->
+<section id="enf">
+  <div class="sec-head">
+    <h2>10 · Exigences non-fonctionnelles <span style="color:var(--ink-faint);font-weight:500">§10</span></h2>
+    <div class="sec-avg"><b>80 %</b> <span style="color:var(--ink-faint)">(base 40 %)</span></div>
+  </div>
+  <p class="sec-intro">Couverture de tests bien au-dessus de la cible (95 % lignes mesurées, seuil CI 70 %). <strong>Maj V0.4 :</strong> tout ce qui est <em>adressable par le code</em> a été livré — id de corrélation par requête (ENF-09), harnais de charge k6 encodant les cibles p95&lt;400ms / 500 VUs (ENF-01/03), locale sans flash au chargement (ENF-14), en plus de MFA staff (ENF-06), index chemin chaud + TLS (ENF-01/05), <code>/metrics</code> Prometheus + sondes santé, et manifestes k8s (ENF-13). <strong>Le reste est irréductiblement hébergement/exploitation</strong> (SLA ENF-04, PITR/restauration ENF-08, provisionnement du coffre-fort ENF-07, chiffrement disque au repos ENF-05, tracing/alerting centralisés ENF-09) <strong>ou du contenu</strong> (traduction arabe complète pour ENF-14) et <strong>un audit WCAG dédié</strong> (ENF-11) — non atteignables depuis le seul dépôt, cadrés dans <code>docs/HARDENING.md</code>. Ces items restent donc &lt;100 % en toute transparence.</p>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>ID</th><th>Exigence</th><th>Cible CDC</th><th>État</th><th>Preuve / écart</th></tr></thead>
+    <tbody>
+      <tr><td class="id">ENF-01 <span class="pill g" style="padding:1px 6px">↑ V0.4</span></td><td class="req">Perf API p95</td><td>&lt;400ms</td><td><span class="pill m">75%</span></td><td class="evid">index composite <code>(indexed_in_cvtheque, visibility)</code> sur le chemin le plus chaud ; <strong>harnais k6 livré (V0.4)</strong> <code>test/load/k6-search.js</code> (<code>npm run load:k6</code>) avec seuil <code>p(95)&lt;400</code>. Reste : <em>exécuter</em> la mesure sur une infra type-prod (exploitation)</td></tr>
+      <tr><td class="id">ENF-02</td><td class="req">LCP page</td><td>&lt;2,5s</td><td><span class="pill na">côté front</span></td><td class="evid">Métrique frontend, non mesurable depuis le backend</td></tr>
+      <tr><td class="id">ENF-03 <span class="pill g" style="padding:1px 6px">↑ V0.4</span></td><td class="req">≥500 utilisateurs simultanés</td><td>scalable horizontalement</td><td><span class="pill m">75%</span></td><td class="evid">Design stateless (JWT, pas de session serveur) + manifeste k8s multi-instance (Deployment 3 réplicas, Service, Ingress) ; <strong>profil de charge 500 VUs livré (V0.4)</strong> dans le harnais k6. Reste : run de validation sur infra type-prod (exploitation)</td></tr>
+      <tr><td class="id">ENF-04</td><td class="req">SLA ≥99,5 %</td><td>—</td><td><span class="pill na">n/a</span></td><td class="evid">Non vérifiable depuis le code — engagement opérationnel</td></tr>
+      <tr><td class="id">ENF-05 <span class="pill g" style="padding:1px 6px">↑ V0.3</span></td><td class="req">Chiffrement transit/repos</td><td>TLS 1.2+/AES-256</td><td><span class="pill m">75%</span></td><td class="evid"><code>helmet()</code> + <strong>TLS Postgres (<code>DB_SSL</code>)</strong> côté app et migrations ; secrets MFA chiffrés AES-256-GCM au repos. Le chiffrement <em>disque</em> au repos reste un réglage d'hébergeur (managed Postgres/KMS)</td></tr>
+      <tr><td class="id">ENF-06 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req">Auth + MFA staff</td><td>JWT+refresh, MFA</td><td><span class="pill g">100%</span></td><td class="evid">JWT/refresh solide + <strong>MFA/TOTP livrée</strong> : <code>mfa.service.ts</code>, <code>common/crypto/</code> (RFC 6238, secrets AES-256-GCM), backup codes, login step-up, <code>StaffMfaGuard</code> (flag <code>MFA_ENFORCE_STAFF</code>)</td></tr>
+      <tr><td class="id">ENF-07</td><td class="req">Secrets en coffre-fort</td><td>vault, pas en clair</td><td><span class="pill n">60%</span></td><td class="evid">Env vars validées par Joi, <code>.env</code> gitignored ; <strong>V0.3 : manifeste External Secrets</strong> <code>deploy/k8s/external-secrets.yaml</code> (SecretStore + ExternalSecret → <code>cobalt-secrets</code> depuis un gestionnaire de secrets cloud, aucun secret en clair). Reste : provisionner le gestionnaire côté hébergeur.</td></tr>
+      <tr><td class="id">ENF-08</td><td class="req">Sauvegardes BD</td><td>quotidiennes, PITR, testées</td><td><span class="pill n">60%</span></td><td class="evid"><strong>V0.3 : CronJob de sauvegarde livré</strong> <code>deploy/k8s/db-backup.yaml</code> (pg_dump nocturne gzip → S3 chiffré KMS, rétention via lifecycle bucket). Reste (hébergeur) : PITR/WAL et test de restauration ; managed Postgres recommandé.</td></tr>
+      <tr><td class="id">ENF-09</td><td class="req">Observabilité</td><td>logs/métriques/alertes centralisés</td><td><span class="pill m">80%</span></td><td class="evid">Sondes liveness/readiness (<code>/health/live</code>, <code>/health/ready</code>) ; endpoint Prometheus <code>/metrics</code> (prom-client : process + histogramme <code>http_request_duration_seconds</code>) ; <strong>id de corrélation par requête (V0.4)</strong> <code>correlation-id.middleware.ts</code> (honore/mint <code>x-request-id</code>, ré-émis en réponse), 4 tests ; journal d'audit lisible. Reste (hébergeur) : tracing distribué OTel + agrégation/alerting centralisés.</td></tr>
+      <tr><td class="id">ENF-10</td><td class="req">Couverture de tests</td><td>≥70 % cœur métier</td><td><span class="pill g">100%</span></td><td class="evid"><strong>Mesuré</strong> : 95,4 % lignes, seuil CI appliqué (<code>package.json</code>), 61 fichiers de tests unitaires + 19 e2e</td></tr>
+      <tr><td class="id">ENF-11</td><td class="req">Accessibilité WCAG 2.1 AA</td><td>—</td><td><span class="pill na">non audité</span></td><td class="evid">Hors périmètre de cette passe (audit backend) — à couvrir dans un passage frontend dédié</td></tr>
+      <tr><td class="id">ENF-12 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></td><td class="req">Protection données perso</td><td>CNDP/RGPD</td><td><span class="pill m">75%</span></td><td class="evid">Droit d'accès/effacement réels et audités ; <strong>V0.3 : recueil de consentement à l'inscription livré</strong> (<code>RegisterDto</code> exige <code>consentAccepted</code>, <code>users.consent_at</code>, case à cocher + page <code>/privacy</code>). Rétention par type documentée dans <code>docs/HARDENING.md</code></td></tr>
+      <tr><td class="id">ENF-13 <span class="pill g" style="padding:1px 6px">↑ V0.3</span></td><td class="req">Conteneurisé, infra as code</td><td>—</td><td><span class="pill g">90%</span></td><td class="evid">Dockerfile + docker-compose + CI réels ; manifestes k8s (<code>deploy/k8s/</code> — Deployment 3 réplicas, Service, Ingress TLS, ExternalSecrets, CronJob de sauvegarde). Reste : promotion Helm/Terraform (packaging hébergeur)</td></tr>
+      <tr><td class="id">ENF-14 <span class="pill g" style="padding:1px 6px">↑ V0.4</span></td><td class="req">Bilingue FR/AR + RTL</td><td>—</td><td><span class="pill g">90%</span></td><td class="evid">Fichiers de traduction parallèles + <code>dir</code>/<code>lang</code> basculés au runtime ; <strong>V0.4 : plus de flash</strong> — script <code>beforeInteractive</code> qui fixe <code>lang</code>/<code>dir</code> (carte RTL) depuis la locale stockée avant le premier rendu. Le socle bilingue + RTL est en place ; la <em>traduction arabe complète</em> reste un travail de contenu (fr/en livrés)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ SECURITY ============ -->
+<section id="security">
+  <div class="sec-head">
+    <h2>11 · Sécurité & conformité <span style="color:var(--ink-faint);font-weight:500">§11</span></h2>
+  </div>
+  <div class="tbl-scroll"><table>
+    <thead><tr><th>Contrôle</th><th>État</th><th>Détail</th></tr></thead>
+    <tbody>
+      <tr><td class="req"><div class="name">JWT + refresh</div></td><td><span class="pill g">100%</span></td><td class="evid">Access 15 min / refresh 7j, argon2id, rotation avec détection de réutilisation qui révoque toutes les sessions</td></tr>
+      <tr><td class="req"><div class="name">RBAC serveur</div></td><td><span class="pill m">75%</span></td><td class="evid"><code>RolesGuard</code> re-vérifie le rôle depuis le JWT décodé à chaque appel ; appliqué manuellement contrôleur par contrôleur (pas un garde global) — vérifié sur plusieurs, tous corrects, mais dépend de la discipline humaine</td></tr>
+      <tr><td class="req"><div class="name">MFA staff <span class="pill g" style="padding:1px 6px">✓ V0.3</span></div></td><td><span class="pill g">100%</span></td><td class="evid"><strong>Livrée</strong> : TOTP RFC 6238 maison, secrets AES-256-GCM au repos, codes de secours à usage unique, login à deux étapes, <code>StaffMfaGuard</code> derrière <code>MFA_ENFORCE_STAFF</code></td></tr>
+      <tr><td class="req"><div class="name">TLS transit / AES-256 repos</div></td><td><span class="pill n">50%</span></td><td class="evid"><strong>V0.3 :</strong> TLS Postgres en option (<code>DB_SSL</code>) + secrets MFA chiffrés au repos. TLS client et chiffrement disque restent au niveau ingress/infra (exemple Ingress TLS fourni)</td></tr>
+      <tr><td class="req"><div class="name">OWASP Top 10 <span class="pill g" style="padding:1px 6px">✓ V0.3</span></div></td><td><span class="pill m">60%</span></td><td class="evid">Validation stricte des entrées + requêtes paramétrées : réel. <strong>V0.3 :</strong> rate-limiting livré (<code>@nestjs/throttler</code>, 120 req/min global, <code>/auth/login</code> et <code>/auth/register</code> plafonnés à 5–10 req/min) — brute-force désormais bridé. Pas de middleware anti-CSRF explicite (risque atténué par le design bearer-token, pas cookie)</td></tr>
+      <tr><td class="req"><div class="name">Scan antivirus uploads <span class="pill g" style="padding:1px 6px">✓ V0.3</span></div></td><td><span class="pill m">70%</span></td><td class="evid">Architecture correcte (port dédié, bloquant). <strong>V0.3 :</strong> adaptateur ClamAV réel livré (clamd INSTREAM/TCP, réponse vide/ERROR = échec, jamais un pass silencieux), sélectionné par <code>ANTIVIRUS_DRIVER</code> (défaut <code>stub</code> pour CI/dev). Reste : brancher un clamd en prod (documenté dans <code>docs/HARDENING.md</code>)</td></tr>
+      <tr><td class="req"><div class="name">Journalisation d'audit</div></td><td><span class="pill m">75%</span></td><td class="evid">Réelle et cohérente sur connexion, inscription, export/effacement de données</td></tr>
+      <tr><td class="req"><div class="name">Secrets en coffre-fort</div></td><td><span class="pill n">25%</span></td><td class="evid">Env vars uniquement, aucune intégration vault</td></tr>
+      <tr><td class="req"><div class="name">Pas de données perso dans les logs</div></td><td><span class="pill n">50%</span></td><td class="evid">Bonne retenue observée par sondage (IDs loggés, pas d'emails) mais aucune politique de rédaction systématique ne l'impose</td></tr>
+    </tbody>
+  </table></div>
+  <div class="mod-summary">
+    <strong>CNDP/RGPD (§11.2)</strong> — droit d'accès/portabilité et droit à l'effacement : réels, audités, sous 30j (immédiat en pratique). Base légale/consentement à l'inscription : absent. Politique de rétention par type de donnée : absente en code. Hébergement conforme Maroc : <code>TZ=Africa/Casablanca</code> et facturation en configuration suggèrent une intention marché marocain, mais <strong>aucune région d'hébergement n'est vérifiable depuis le code</strong> — ni pour le confirmer, ni pour le contredire. DPIA et déclaration CNDP : démarche administrative hors périmètre du code, aucun signal contradictoire trouvé.
+  </div>
+  <div class="mod-summary" style="margin-top:12px">
+    <strong>Conformité de la stack (§9.1)</strong> — le backend correspond de près à la stack de référence : NestJS/TS, PostgreSQL 15, Redis, BullMQ, stockage S3-compatible (MinIO, mais seul un adaptateur stub est branché), Docker + CI réels, <strong>architecture monolithique modulaire</strong> conforme (aucun appel service-à-service détecté), recherche PostgreSQL FTS sans OpenSearch — cohérent avec le phasage prévu par le CDC. Écart notable : le frontend de référence prévu était React+Vite ; l'application réelle tourne aujourd'hui sur Next.js.
+  </div>
+</section>
+
+<!-- ============ GAPS ============ -->
+<section id="gaps">
+  <div class="sec-head"><h2>Priorités — les 10 écarts qui comptent le plus</h2></div>
+  <p class="sec-intro">Classés par impact sur un lancement MVP (liste du 3 août). <strong>Statut V0.4 annoté ci-dessous :</strong> 9 des 10 sont fermés (anti-triche : 6/6 couches avec implémentation plateforme, approfondissement fournisseur en option), 1 reste (infra sauvegardes).</p>
+  <ol class="gap-list" style="list-style:none">
+    <li><span class="gap-rank">1</span><div class="gap-body"><span class="tag">EF-MSG-01/02</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>La messagerie n'a pas d'écran de conversation.</b> <em>Vue de conversation, notifications (in-app + canal email), signalement d'abus et partage de documents désormais livrés — les cinq exigences sont couvertes. Reste à brancher un SMTP réel en prod.</em><p>Le backend gère fils et quotas correctement, mais le frontend ne propose qu'un formulaire d'envoi initial — aucune liste de fils, aucune lecture de réponse, pour aucun rôle. Le CDC positionne pourtant la mise en relation comme un critère d'acceptation MVP à part entière.</p></div></li>
+    <li><span class="gap-rank">2</span><div class="gap-body"><span class="tag">EF-ADM-*</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Aucune administration n'existe côté écran, et presque rien côté backend.</b> <em>Espace /admin livré de bout en bout : dashboard KPI, vérif. d'école, consultation des journaux d'audit, file de modération des signalements, gestion des référentiels (EF-ADM-02) et file de traitement des demandes CNDP/RGPD (EF-ADM-03, échéance légale 30 j, audité). Les cinq exigences du Lot 8 sont couvertes.</em><p>Zéro route <code>/admin</code>. Modération limitée aux offres. Journaux d'audit écrits mais jamais consultables. Le Lot 8 du CDC reste à l'état de squelette.</p></div></li>
+    <li><span class="gap-rank">3</span><div class="gap-body"><span class="tag">§5.3 anti-triche</span><br><span class="pill g" style="padding:1px 6px">✓ V0.4</span> <b>Les 6 couches anti-triche annoncées comme différenciateur n°1.</b> <em>Les 6 couches ont une implémentation plateforme (V0.4) : env. test sécurisé, signaux comportementaux, plagiat (collision d'empreinte de réponses), intégrité sujets (version servie tracée + auditée), cooldown/multi-compte, audit.</em><p>Un fournisseur d'évaluation externe peut approfondir la détection de plagiat et la rotation de banque de sujets, mais aucune couche n'est plus vide côté plateforme.</p></div></li>
+    <li><span class="gap-rank">4</span><div class="gap-body"><span class="tag">EF-SRCH-03</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>La règle la plus critique de la CVthèque n'a pas de preuve e2e réelle.</b> <em>e2e réel ajouté : profil masqué/non-indexé seedé en base, absence vérifiée via HTTP (liste + détail 404).</em><p>"Un profil masqué n'apparaît jamais" n'est vérifié que contre un query-builder mocké — pas contre une vraie base Postgres via une vraie requête HTTP. C'est exactement le genre de règle qu'un futur changement de code pourrait silencieusement casser sans qu'aucun test ne le détecte.</p></div></li>
+    <li><span class="gap-rank">5</span><div class="gap-body"><span class="tag">ENF-06 / MFA</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Aucune authentification à deux facteurs pour le staff.</b> <em>MFA/TOTP livrée (enrôlement, codes de secours, login step-up, garde staff).</em><p>Exigence explicite du CDC pour les comptes admin/modérateur, absente à 100 %.</p></div></li>
+    <li><span class="gap-rank">6</span><div class="gap-body"><span class="tag">EF-BILL-03/04</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Un recruteur bloqué ne sait pas pourquoi, et ne voit jamais ses factures.</b> <em>Bannière d'accès restreint + liste/téléchargement de factures livrés.</em><p>Le backend restreint correctement l'accès et génère des factures conformes ICE/TVA — mais rien à l'écran n'explique la restriction ni ne permet de consulter une facture.</p></div></li>
+    <li><span class="gap-rank">7</span><div class="gap-body"><span class="tag">EF-RECR-05</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Le quota de contacts recruteur est invisible.</b> <em>« X contacts restants » affiché sur toutes les pages recruteur (+ endpoint dédié).</em><p>La décrémentation atomique est réelle et testée sous concurrence côté backend, mais aucun "X contacts restants" n'existe côté écran — un recruteur découvre la limite en se faisant bloquer.</p></div></li>
+    <li><span class="gap-rank">8</span><div class="gap-body"><span class="tag">EF-CAND-04</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Le CRUD de liens externes (GitHub/Portfolio) existe côté backend et n'est jamais appelé par le frontend.</b> <em>UI de gestion des liens livrée sur l'écran de profil.</em><p>Champ entièrement absent de l'écran de profil — travail déjà fait, juste pas branché.</p></div></li>
+    <li><span class="gap-rank">9</span><div class="gap-body"><span class="tag">ENF-08</span><br><span class="pill n" style="padding:1px 6px">documenté V0.3</span> <b>Aucune sauvegarde de base de données configurée.</b> <em>Toujours à mettre en place (infra) ; guidage + CronJob exemple dans docs/HARDENING.md.</em><p>Ni script, ni cron, ni PITR — un incident de données aujourd'hui serait définitif.</p></div></li>
+    <li><span class="gap-rank">10</span><div class="gap-body"><span class="tag">EF-GROW-01/02</span><br><span class="pill g" style="padding:1px 6px">✓ résolu V0.3</span> <b>Les deux leviers d'amorçage côté candidat (badge, parrainage) n'ont aucune trace de code.</b> <em>Badge partageable + page vitrine et parrainage avec suivi de conversion livrés.</em><p>Le CDC les qualifie explicitement d'exigences produit, pas d'options marketing — pertinent si la stratégie de cold-start du §2.3 est toujours d'actualité après le pivot.</p></div></li>
+  </ol>
+</section>
+
+<!-- ============ METHODO ============ -->
+<section id="methodo">
+  <div class="sec-head"><h2>Méthode</h2></div>
+  <p class="sec-intro" style="max-width:90ch">
+    5 lectures indépendantes du code, en parallèle, une par domaine (candidat/évaluation/remédiation · CVthèque/recruteur/messagerie · facturation/admin/amorçage · non-fonctionnel/sécurité · frontend Next.js). Chaque ligne est notée à partir d'une preuve réelle — fichier et ligne, ou test correspondant — jamais d'une estimation à l'œil. Une note de 100 % exige à la fois une implémentation conforme <em>et</em> un test qui le prouve.
+  </p>
+  <div class="legend">
+    <span class="item"><span class="swatch" style="background:var(--sev-good-ink)"></span>75–100 % — conforme, testé</span>
+    <span class="item"><span class="swatch" style="background:var(--sev-mid-ink)"></span>50–74 % — partiel, écarts réels</span>
+    <span class="item"><span class="swatch" style="background:var(--sev-none-ink)"></span>25–49 % — ébauche seulement</span>
+    <span class="item"><span class="swatch" style="background:var(--sev-bad-ink)"></span>0–24 % — aucune trace</span>
+    <span class="item"><span class="swatch" style="background:var(--ink-faint)"></span>n/a — non applicable ou non vérifiable depuis le code</span>
+    <span class="item"><span class="pivot-flag" style="margin:0">⚑ PIVOT</span> retrait prévu par la décision du 3 août — <strong>désormais exécuté</strong> (offres/salaire supprimés)</span>
+    <span class="item"><span class="pill g" style="padding:1px 6px">✓ V0.3</span> exigence fermée depuis le 3 août (remédiation ou lot livré) — voir Mise à jour V0.3</span>
+  </div>
+  <p style="color:var(--ink-muted);font-size:12.5px;margin-top:16px;max-width:90ch">
+    Les moyennes par module sont des moyennes arithmétiques simples des exigences listées (Must + Should + Could), sans pondération. Les deux chiffres « cœur MVP » de la vue d'ensemble ne moyennent que les exigences classées Must par le CDC — c'est le nombre le plus représentatif de ce qui bloquerait réellement un lancement. ENF-02 (métrique frontend) et ENF-04/11 (non vérifiables depuis le code consulté) sont exclus des moyennes numériques.
+  </p>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap" style="padding:0">
+    Cobalt (ex-Job Board Premium) — audit interne, non destiné à un tiers. Sources : CDC_JobBoard_Premium_V0.2.pdf, Backlog_UserStories_V0.2.pdf, et lecture directe du code aux chemins <code style="font-family:var(--font-mono)">src/</code> (backend) et <code style="font-family:var(--font-mono)">frontend/src/</code> (Next.js). Base : 3 août 2026 · Mise à jour V0.3 : 23 septembre 2026 (branche <code style="font-family:var(--font-mono)">claude/frontend-nextjs-redesign-1114aa</code> — remédiation + lots livrés, dont une passe d'agents parallèles). Les cellules ✓ V0.3 sont vérifiées par chemin de fichier et, côté backend, par tests unitaires verts (715 tests, CI).
+  </div>
+</footer>
+
+</body></html>

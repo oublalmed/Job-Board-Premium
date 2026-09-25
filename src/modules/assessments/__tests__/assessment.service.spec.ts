@@ -59,6 +59,8 @@ describe('AssessmentService', () => {
         .fn()
         .mockImplementation((e: Record<string, unknown>) => Promise.resolve(e)),
       findOne: jest.fn().mockResolvedValue(null),
+      // §5.3 anti-cheat detection — no prior device/IP match by default.
+      count: jest.fn().mockResolvedValue(0),
     };
 
     testRepo = {
@@ -107,6 +109,84 @@ describe('AssessmentService', () => {
     }).compile();
 
     service = module.get(AssessmentService);
+  });
+
+  describe('§5.3 anti-cheat — multi-account detection', () => {
+    it('does not flag when no device/IP context is provided', async () => {
+      const result = await service.startAssessment(candidateId, testId);
+
+      expect(result.assessment.multiAccountFlagged).toBe(false);
+      expect(assessmentRepo.count).not.toHaveBeenCalled();
+      expect(auditService.log).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
+        }),
+      );
+    });
+
+    it('stores IP + fingerprint and does not flag when they are unseen', async () => {
+      assessmentRepo.count.mockResolvedValue(0);
+
+      const result = await service.startAssessment(candidateId, testId, {
+        ipAddress: '196.200.1.1',
+        deviceFingerprint: 'fp-abc',
+      });
+
+      expect(result.assessment.ipAddress).toBe('196.200.1.1');
+      expect(result.assessment.deviceFingerprint).toBe('fp-abc');
+      expect(result.assessment.multiAccountFlagged).toBe(false);
+    });
+
+    it('flags and audits when the same device was used by another candidate', async () => {
+      // First count() call (device) matches; IP is never reached.
+      assessmentRepo.count.mockResolvedValueOnce(1);
+
+      const result = await service.startAssessment(candidateId, testId, {
+        ipAddress: '196.200.1.1',
+        deviceFingerprint: 'fp-shared',
+      });
+
+      expect(result.assessment.multiAccountFlagged).toBe(true);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
+          metadata: expect.objectContaining({ sharedBy: 'device' }),
+        }),
+      );
+    });
+
+    it('does NOT flag on a shared IP alone (proxy false-positive guard)', async () => {
+      // No device fingerprint sent — only the (proxy-shared) IP is present.
+      // Flagging is device-only, so this must not raise a flag and must not
+      // even run a detection count.
+      const result = await service.startAssessment(candidateId, testId, {
+        ipAddress: '196.200.1.1',
+      });
+
+      expect(result.assessment.multiAccountFlagged).toBe(false);
+      expect(result.assessment.ipAddress).toBe('196.200.1.1');
+      expect(assessmentRepo.count).not.toHaveBeenCalled();
+      expect(auditService.log).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_MULTI_ACCOUNT_FLAGGED,
+        }),
+      );
+    });
+
+    it('scopes the detection to OTHER candidates within the window', async () => {
+      assessmentRepo.count.mockResolvedValue(0);
+
+      await service.startAssessment(candidateId, testId, {
+        deviceFingerprint: 'fp-abc',
+      });
+
+      const where = assessmentRepo.count.mock.calls[0][0].where;
+      expect(where.deviceFingerprint).toBe('fp-abc');
+      // candidateId filter is a TypeORM Not(...) operator, and createdAt a
+      // MoreThanOrEqual(...) — both present means "others, recently".
+      expect(where.candidateId).toBeDefined();
+      expect(where.createdAt).toBeDefined();
+    });
   });
 
   describe('US-EVAL-02 — Scenario 1: passage nominal', () => {
@@ -433,6 +513,92 @@ describe('AssessmentService', () => {
 
       await expect(
         service.reportIncident(candidateId, 'assessment-1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('recordProctoringEvents (EF-EVAL-02 / §5.3)', () => {
+    function inProgress(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'assessment-1',
+        candidateId,
+        status: AssessmentStatus.IN_PROGRESS,
+        tabSwitchCount: 0,
+        windowBlurCount: 0,
+        proctoringFlagged: false,
+        ...overrides,
+      };
+    }
+
+    it('stores counts monotonically (never below what was already recorded)', async () => {
+      assessmentRepo.findOne.mockResolvedValue(
+        inProgress({ tabSwitchCount: 3, windowBlurCount: 2 }),
+      );
+
+      const result = await service.recordProctoringEvents(
+        candidateId,
+        'assessment-1',
+        { tabSwitches: 1, windowBlurs: 4 },
+      );
+
+      // tab stays at the higher prior 3; blur rises to 4
+      expect(result.tabSwitchCount).toBe(3);
+      expect(result.windowBlurCount).toBe(4);
+    });
+
+    it('flags for review and audits once when leaves cross the threshold (default 5)', async () => {
+      assessmentRepo.findOne.mockResolvedValue(inProgress());
+
+      const result = await service.recordProctoringEvents(
+        candidateId,
+        'assessment-1',
+        { tabSwitches: 3, windowBlurs: 2 },
+      );
+
+      expect(result.proctoringFlagged).toBe(true);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_PROCTORING_FLAGGED,
+        }),
+      );
+    });
+
+    it('does not re-audit an already-flagged attempt', async () => {
+      assessmentRepo.findOne.mockResolvedValue(
+        inProgress({ tabSwitchCount: 5, proctoringFlagged: true }),
+      );
+
+      await service.recordProctoringEvents(candidateId, 'assessment-1', {
+        tabSwitches: 6,
+        windowBlurs: 0,
+      });
+
+      expect(auditService.log).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_PROCTORING_FLAGGED,
+        }),
+      );
+    });
+
+    it('rejects a non-owner (403) and a non-in-progress attempt (400)', async () => {
+      assessmentRepo.findOne.mockResolvedValueOnce(
+        inProgress({ candidateId: 'someone-else' }),
+      );
+      await expect(
+        service.recordProctoringEvents(candidateId, 'assessment-1', {
+          tabSwitches: 1,
+          windowBlurs: 0,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      assessmentRepo.findOne.mockResolvedValueOnce(
+        inProgress({ status: AssessmentStatus.COMPLETED }),
+      );
+      await expect(
+        service.recordProctoringEvents(candidateId, 'assessment-1', {
+          tabSwitches: 1,
+          windowBlurs: 0,
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 

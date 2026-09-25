@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
+import { correlationIdMiddleware } from './common/middleware/correlation-id.middleware.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -30,6 +31,10 @@ async function bootstrap() {
   app.setGlobalPrefix(apiPrefix);
 
   app.use(helmet());
+
+  // ENF-09 — correlation id on every request/response, before anything else
+  // runs, so it is available for the whole request lifecycle.
+  app.use(correlationIdMiddleware);
 
   app.useGlobalPipes(
     new ValidationPipe({

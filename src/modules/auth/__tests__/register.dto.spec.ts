@@ -6,12 +6,29 @@ describe('RegisterDto', () => {
   const validData = {
     email: 'user@example.com',
     password: 'StrongP@ss1',
+    consentAccepted: true,
   };
 
   it('should pass with valid email and OWASP-compliant password', async () => {
     const dto = plainToInstance(RegisterDto, validData);
     const errors = await validate(dto);
     expect(errors).toHaveLength(0);
+  });
+
+  it('should reject registration without consent (ENF-12)', async () => {
+    for (const consentAccepted of [false, undefined]) {
+      const dto = plainToInstance(RegisterDto, {
+        ...validData,
+        consentAccepted,
+      });
+      const errors = await validate(dto);
+      const messages = errors.flatMap((e) =>
+        Object.values(e.constraints ?? {}),
+      );
+      expect(messages).toEqual(
+        expect.arrayContaining([expect.stringContaining('Consent')]),
+      );
+    }
   });
 
   it('should reject password shorter than 10 characters', async () => {

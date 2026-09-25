@@ -4,6 +4,7 @@ import { EntityManager, In, IsNull, MoreThan, Repository } from 'typeorm';
 import {
   Subscription,
   SubscriptionStatus,
+  SubscriptionPlan,
 } from './entities/subscription.entity.js';
 import type { ContactQuotaPort } from '../../ports/contact-quota.port.js';
 import {
@@ -17,12 +18,85 @@ const ACTIVE_SUBSCRIPTION_STATUSES = [
   SubscriptionStatus.ACTIVE,
 ];
 
+// EF-RECR-05 — a recruiter-facing snapshot of the monthly contact quota, so
+// the UI can show "X contacts restants" before the limit is hit. `active` is
+// false when there is no single active subscription (also the signal the UI
+// uses to explain restricted access, EF-BILL-04) rather than throwing.
+export interface ContactQuotaStatus {
+  active: boolean;
+  plan: SubscriptionPlan | null;
+  status: SubscriptionStatus | null;
+  contactQuota: number | null;
+  contactsUsed: number | null;
+  contactsRemaining: number | null;
+  quotaResetAt: Date | null;
+  // EF-BILL-02 — lifecycle the UI surfaces: period end (renewal/expiry),
+  // whether a cancellation is scheduled at period end, and — EF-BILL-05 —
+  // since when the subscription has been past-due (dunning), null when healthy.
+  endsAt: Date | null;
+  cancelAtPeriodEnd: boolean;
+  pastDueSince: Date | null;
+}
+
 @Injectable()
 export class ContactQuotaService implements ContactQuotaPort {
   constructor(
     @InjectRepository(Subscription)
     private readonly subscriptionRepo: Repository<Subscription>,
   ) {}
+
+  // EF-RECR-05 — read-only quota snapshot. Non-throwing: an inactive or
+  // ambiguous subscription state resolves to `active: false` so the caller
+  // can render a restricted-access message rather than surface a 4xx.
+  async getQuotaStatus(companyId: string): Promise<ContactQuotaStatus> {
+    const now = new Date();
+    const subscriptions = await this.subscriptionRepo.find({
+      where: [
+        {
+          companyId,
+          status: In(ACTIVE_SUBSCRIPTION_STATUSES),
+          endsAt: IsNull(),
+        },
+        {
+          companyId,
+          status: In(ACTIVE_SUBSCRIPTION_STATUSES),
+          endsAt: MoreThan(now),
+        },
+      ],
+    });
+
+    if (subscriptions.length !== 1) {
+      return {
+        active: false,
+        plan: null,
+        status: null,
+        contactQuota: null,
+        contactsUsed: null,
+        contactsRemaining: null,
+        quotaResetAt: null,
+        endsAt: null,
+        cancelAtPeriodEnd: false,
+        pastDueSince: null,
+      };
+    }
+
+    const subscription = subscriptions[0];
+    return {
+      active: true,
+      plan: subscription.plan,
+      status: subscription.status,
+      contactQuota: subscription.contactQuota,
+      contactsUsed: subscription.contactsUsed,
+      contactsRemaining: Math.max(
+        0,
+        subscription.contactQuota - subscription.contactsUsed,
+      ),
+      quotaResetAt: subscription.quotaResetAt,
+      endsAt: subscription.endsAt,
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      pastDueSince: subscription.pastDueSince,
+    };
+  }
 
   // manager is optional and defaults to this.subscriptionRepo's own
   // connection (Lot 5A behavior, unchanged). Callers that must decrement

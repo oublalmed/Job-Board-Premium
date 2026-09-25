@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CandidateProfile } from './entities/candidate-profile.entity.js';
+import {
+  CandidateProfile,
+  ProfileVisibility,
+} from './entities/candidate-profile.entity.js';
 import { ProfileSkill } from './entities/profile-skill.entity.js';
 import { Experience } from './entities/experience.entity.js';
 import { ProfileLink } from './entities/profile-link.entity.js';
@@ -83,6 +91,12 @@ export class CandidateProfileService {
         | 'location'
         | 'school'
         | 'visibility'
+        | 'availability'
+        | 'mobility'
+        | 'salaryMin'
+        | 'salaryMax'
+        | 'salaryCurrency'
+        | 'salaryVisible'
       >
     >,
   ): Promise<CandidateProfile> {
@@ -90,6 +104,39 @@ export class CandidateProfileService {
       where: { id: profileId },
     });
     if (!profile) throw new NotFoundException('Profile not found');
+
+    // EF-CAND-05 — a salary range must be coherent. Compare against the
+    // incoming value where provided, else the stored one, so a partial update
+    // (only min, only max) is still validated against the effective range.
+    const effectiveMin = data.salaryMin ?? profile.salaryMin;
+    const effectiveMax = data.salaryMax ?? profile.salaryMax;
+    if (
+      effectiveMin !== null &&
+      effectiveMin !== undefined &&
+      effectiveMax !== null &&
+      effectiveMax !== undefined &&
+      effectiveMin > effectiveMax
+    ) {
+      throw new BadRequestException(
+        'Le salaire minimum ne peut pas dépasser le salaire maximum.',
+      );
+    }
+
+    // EF-CAND-06 — visibilité : défaut masqué tant que non scoré. Un profil
+    // qui n'est pas encore indexé dans la CVthèque (donc ni scoré ni
+    // publiable, cf. IndexationService) ne peut pas devenir visible : on
+    // refuse tout passage à une visibilité non-HIDDEN. Le retour à HIDDEN
+    // reste autorisé à tout moment, et les profils déjà indexés ne sont
+    // pas affectés.
+    if (
+      data.visibility !== undefined &&
+      data.visibility !== ProfileVisibility.HIDDEN &&
+      !profile.indexedInCvtheque
+    ) {
+      throw new ForbiddenException(
+        'Votre profil doit être évalué et publiable avant de devenir visible.',
+      );
+    }
 
     Object.assign(profile, data);
     const saved = await this.profileRepo.save(profile);

@@ -7,16 +7,29 @@ import { SettingsService } from '../settings/settings.service.js';
 import {
   INDEXATION_SCORE_MIN_KEY,
   INDEXATION_PERCENTILE_MIN_KEY,
+  FEATURING_PERCENTILE_MIN_KEY,
   DEFAULT_INDEXATION_SCORE_MIN,
   DEFAULT_INDEXATION_PERCENTILE_MIN,
+  DEFAULT_FEATURING_PERCENTILE_MIN,
 } from './indexation.service.js';
 import {
   COOLDOWN_SETTINGS_KEY,
   DEFAULT_COOLDOWN_DAYS,
   computeCooldownEnd,
 } from './cooldown.js';
-import { resourcesForDomain, RemediationResource } from './remediation-resources.js';
+import {
+  resourcesForDomainWith,
+  parseResourceOverride,
+  REMEDIATION_RESOURCES_OVERRIDE_KEY,
+  RemediationResource,
+} from './remediation-resources.js';
+import { RemediationProgressService } from './remediation-progress.service.js';
 import type { DomainFeedbackEntry } from '../../ports/scoring.port.js';
+
+// EF-CAND-09 — a resource plus whether the candidate has completed it.
+export interface RemediationResourceProgress extends RemediationResource {
+  completed: boolean;
+}
 
 export interface RemediationFeedback {
   scoreValue: number;
@@ -24,7 +37,18 @@ export interface RemediationFeedback {
   psychotechnicalScore: number | null;
   indexationThresholdMet: boolean;
   domainFeedback: DomainFeedbackEntry[];
-  resources: RemediationResource[];
+  resources: RemediationResourceProgress[];
+  // EF-CAND-09 — completion progress across the recommended resources.
+  completedCount: number;
+  totalCount: number;
+  // Barème §5.2 — the thresholds the candidate is measured against, surfaced so
+  // the standing (indexed? highlighted?) is transparent rather than opaque.
+  barème: {
+    indexationScoreMin: number;
+    indexationPercentileMin: number;
+    highlightPercentileMin: number;
+    highlightMet: boolean;
+  };
   reEligibleAt: string | null;
 }
 
@@ -36,6 +60,7 @@ export class RemediationService {
     @InjectRepository(Score)
     private readonly scoreRepo: Repository<Score>,
     private readonly settingsService: SettingsService,
+    private readonly progressService: RemediationProgressService,
   ) {}
 
   // WHERE-scoped by (id, candidateId) in the same query, never a load then
@@ -65,29 +90,50 @@ export class RemediationService {
       throw new NotFoundException('Score not found for this assessment');
     }
 
-    const [scoreMin, percentileMin, cooldownDays] = await Promise.all([
-      this.settingsService
-        .getNumber(INDEXATION_SCORE_MIN_KEY)
-        .then((v) => v ?? DEFAULT_INDEXATION_SCORE_MIN),
-      this.settingsService
-        .getNumber(INDEXATION_PERCENTILE_MIN_KEY)
-        .then((v) => v ?? DEFAULT_INDEXATION_PERCENTILE_MIN),
-      this.settingsService
-        .getNumber(COOLDOWN_SETTINGS_KEY)
-        .then((v) => v ?? DEFAULT_COOLDOWN_DAYS),
-    ]);
+    const [scoreMin, percentileMin, highlightPercentileMin, cooldownDays] =
+      await Promise.all([
+        this.settingsService
+          .getNumber(INDEXATION_SCORE_MIN_KEY)
+          .then((v) => v ?? DEFAULT_INDEXATION_SCORE_MIN),
+        this.settingsService
+          .getNumber(INDEXATION_PERCENTILE_MIN_KEY)
+          .then((v) => v ?? DEFAULT_INDEXATION_PERCENTILE_MIN),
+        this.settingsService
+          .getNumber(FEATURING_PERCENTILE_MIN_KEY)
+          .then((v) => v ?? DEFAULT_FEATURING_PERCENTILE_MIN),
+        this.settingsService
+          .getNumber(COOLDOWN_SETTINGS_KEY)
+          .then((v) => v ?? DEFAULT_COOLDOWN_DAYS),
+      ]);
 
     const value = Number(score.value);
     const percentile = score.percentile !== null ? Number(score.percentile) : null;
     const indexationThresholdMet =
       value >= scoreMin || (percentile !== null && percentile >= percentileMin);
+    const highlightMet =
+      percentile !== null && percentile >= highlightPercentileMin;
 
     const domainFeedback = score.domainFeedback ?? [];
     const weakDomains = domainFeedback
       .filter((entry) => entry.level === 'weak')
       .map((entry) => entry.domain);
 
-    const resources = weakDomains.flatMap((domain) => resourcesForDomain(domain));
+    // EF-REM-02 — honour an admin-configured resource override (settings),
+    // falling back to the curated static table per weak domain.
+    const override = parseResourceOverride(
+      await this.settingsService.get(REMEDIATION_RESOURCES_OVERRIDE_KEY),
+    );
+    const rawResources = weakDomains.flatMap((domain) =>
+      resourcesForDomainWith(domain, override),
+    );
+    // EF-CAND-09 — annotate each resource with the candidate's completion
+    // state so the UI can render an actionable, trackable journey.
+    const completed = await this.progressService.completedUrls(candidateId);
+    const resources: RemediationResourceProgress[] = rawResources.map((r) => ({
+      ...r,
+      completed: completed.has(r.url),
+    }));
+    const completedCount = resources.filter((r) => r.completed).length;
 
     const reEligibleAt = assessment.completedAt
       ? computeCooldownEnd(assessment.completedAt, cooldownDays).toISOString()
@@ -101,6 +147,14 @@ export class RemediationService {
       indexationThresholdMet,
       domainFeedback,
       resources,
+      completedCount,
+      totalCount: resources.length,
+      barème: {
+        indexationScoreMin: scoreMin,
+        indexationPercentileMin: percentileMin,
+        highlightPercentileMin,
+        highlightMet,
+      },
       reEligibleAt,
     };
   }

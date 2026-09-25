@@ -21,6 +21,7 @@ describe('AuditService', () => {
           ...entity,
         } as AuditLog),
       ),
+      findAndCount: jest.fn().mockResolvedValue([[], 0]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -66,5 +67,68 @@ describe('AuditService', () => {
     expect(result.entityType).toBeNull();
     expect(result.entityId).toBeNull();
     expect(result.metadata).toBeNull();
+  });
+
+  describe('search', () => {
+    it('applies defaults (newest first, page 1, limit 20) and clamps pagination', async () => {
+      const result = await service.search({ page: 0, limit: 5000 });
+
+      expect(repo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {},
+          order: { createdAt: 'DESC', id: 'DESC' },
+          skip: 0,
+          take: 100,
+        }),
+      );
+      expect(result).toEqual({
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 100,
+        pageCount: 0,
+      });
+    });
+
+    it('builds exact-match filters and a closed date range', async () => {
+      await service.search({
+        action: AuditAction.USER_LOGIN,
+        actorId: 'user-123',
+        entityType: 'user',
+        entityId: 'user-123',
+        from: '2026-01-01T00:00:00.000Z',
+        to: '2026-02-01T00:00:00.000Z',
+        page: 2,
+        limit: 10,
+      });
+
+      const call = (repo.findAndCount as jest.Mock).mock.calls[0][0];
+      expect(call.skip).toBe(10);
+      expect(call.take).toBe(10);
+      expect(call.where.action).toBe(AuditAction.USER_LOGIN);
+      expect(call.where.actorId).toBe('user-123');
+      expect(call.where.entityType).toBe('user');
+      expect(call.where.entityId).toBe('user-123');
+      // Between(...) FindOperator over createdAt
+      expect(call.where.createdAt).toBeDefined();
+    });
+
+    it('computes pageCount from total and limit', async () => {
+      (repo.findAndCount as jest.Mock).mockResolvedValueOnce([
+        [{ id: 'a' } as AuditLog],
+        45,
+      ]);
+
+      const result = await service.search({ limit: 20 });
+
+      expect(result.total).toBe(45);
+      expect(result.pageCount).toBe(3);
+    });
+
+    it('supports an open-ended (from only) date range', async () => {
+      await service.search({ from: '2026-01-01T00:00:00.000Z' });
+      const call = (repo.findAndCount as jest.Mock).mock.calls[0][0];
+      expect(call.where.createdAt).toBeDefined();
+    });
   });
 });

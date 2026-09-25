@@ -43,6 +43,7 @@ jobs:
       DB_PASSWORD: test_password
       DB_DATABASE: jobboard_test
       DB_SYNCHRONIZE: 'true'
+      LINK_PROBER_DRIVER: stub
       REDIS_HOST: localhost
       REDIS_PORT: 6379
       REDIS_PASSWORD: ''
@@ -129,6 +130,7 @@ jobs:
       DB_PASSWORD: test_password
       DB_DATABASE: jobboard_migration_test
       DB_SYNCHRONIZE: 'false'
+      LINK_PROBER_DRIVER: stub
       REDIS_HOST: localhost
       REDIS_PORT: 6379
       REDIS_PASSWORD: ''

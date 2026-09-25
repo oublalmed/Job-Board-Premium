@@ -33,6 +33,11 @@ function buildQuery(
     .filter(Boolean);
   if (skills.length) params.skills = skills;
   if (filters.location.trim()) params.location = filters.location.trim();
+  if (filters.availability.trim())
+    params.availability = filters.availability.trim();
+  const salaryMax = Number(filters.salaryMax);
+  if (filters.salaryMax.trim() && Number.isFinite(salaryMax) && salaryMax >= 0)
+    params.salaryMax = salaryMax;
   if (cursor) params.cursor = cursor;
   return params;
 }

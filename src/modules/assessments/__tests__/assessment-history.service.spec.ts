@@ -53,6 +53,7 @@ describe('AssessmentHistoryService', () => {
         test: { specialty: { name: 'Développement Logiciel' } },
       },
     ]);
+    const expiresAt = new Date('2027-01-01T00:00:00.000Z');
     scoreRepo.find.mockResolvedValue([
       {
         assessmentId: 'a1',
@@ -60,6 +61,7 @@ describe('AssessmentHistoryService', () => {
         percentile: '84',
         technicalScore: '88.00',
         psychotechnicalScore: '79.00',
+        expiresAt,
       },
     ]);
 
@@ -77,6 +79,7 @@ describe('AssessmentHistoryService', () => {
         percentile: 84,
         technicalScore: 88,
         psychotechnicalScore: 79,
+        expiresAt: expiresAt.toISOString(),
       },
     });
     // Cooldown long elapsed (test date is in the past) → eligible again.

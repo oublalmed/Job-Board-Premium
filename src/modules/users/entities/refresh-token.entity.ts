@@ -31,6 +31,12 @@ export class RefreshToken {
   @Column({ default: false })
   revoked!: boolean;
 
+  // ENF-06 — whether the session that minted this token satisfied MFA. Threaded
+  // through refresh rotation so a step-up authentication survives token refresh
+  // and StaffMfaGuard keeps trusting the session without a re-login.
+  @Column({ name: 'mfa_authenticated', default: false })
+  mfaAuthenticated!: boolean;
+
   @Column({ name: 'replaced_by', type: 'varchar', nullable: true })
   replacedBy!: string | null;
 

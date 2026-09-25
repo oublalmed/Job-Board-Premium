@@ -11,7 +11,7 @@ import {
   MessageCircle,
   Play,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,16 +35,22 @@ import { formatDateCasablanca } from '@/lib/format';
 import {
   useAssessmentCatalog,
   useAssessmentFeedback,
+  useAssessmentFeedbackQuery,
+  useUpdateRemediationProgress,
+  useReportProctoringEvents,
   useAssessmentHistory,
   useReportIncident,
   useResumeAssessment,
   useStartAssessment,
   type AssessmentHistoryItem,
 } from '@/features/assessments/queries';
+import { ScoreMeter, PercentileBar } from '@/features/assessments/ScoreMeter';
 import {
   useAssessmentSession,
   type AssessmentStatus,
 } from '@/features/assessments/session-store';
+import { useSecureExam } from '@/features/assessments/use-secure-exam';
+import { SecureExamBanner } from '@/features/assessments/SecureExamBanner';
 import {
   manualResumeSchema,
   EMPTY_MANUAL_RESUME,
@@ -103,6 +109,29 @@ export default function AssessmentsPage() {
 
   const { session, setSession, updateStatus } = useAssessmentSession();
 
+  // EF-EVAL-02 — browser-side deterrent layer, active only while an attempt
+  // is genuinely in progress.
+  const secureExam = useSecureExam(session?.status === 'in_progress');
+  const reportProctoring = useReportProctoringEvents();
+
+  // EF-EVAL-02 / §5.3 — report the behavioural counts to the backend whenever
+  // they change during an in-progress attempt (best-effort; a failed report
+  // never disrupts the exam). The mutation is a stable reference, so it is
+  // intentionally excluded from the dependency list.
+  const activeAssessmentId =
+    session?.status === 'in_progress' ? session.assessmentId : null;
+  const { tabSwitchCount, windowBlurCount } = secureExam;
+  useEffect(() => {
+    if (!activeAssessmentId) return;
+    if (tabSwitchCount === 0 && windowBlurCount === 0) return;
+    reportProctoring.mutate({
+      assessmentId: activeAssessmentId,
+      tabSwitches: tabSwitchCount,
+      windowBlurs: windowBlurCount,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAssessmentId, tabSwitchCount, windowBlurCount]);
+
   const start = useStartAssessment();
   const resume = useResumeAssessment();
   const incident = useReportIncident();
@@ -127,6 +156,12 @@ export default function AssessmentsPage() {
           status: data.assessment.status,
         });
         feedback.reset();
+        // EF-EVAL-02 — best-effort fullscreen entry on start; the secure-exam
+        // banner exposes a reliable gesture-driven fallback if the browser
+        // denies this deferred (post-mutation) request.
+        if (data.assessment.status === 'in_progress') {
+          void secureExam.enterFullscreen();
+        }
         toast(t('assessments.started'), 'success');
       },
       onError: (err) => {
@@ -206,6 +241,7 @@ export default function AssessmentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            <SecureExamBanner exam={secureExam} />
             <p className="text-sm text-muted-foreground">
               {t('assessments.session.testLabel')}{' '}
               <span className="font-medium text-foreground">
@@ -304,6 +340,35 @@ export default function AssessmentsPage() {
                       date: formatDateCasablanca(new Date(feedbackData.reEligibleAt), locale),
                     })}
                   </p>
+                )}
+                {/* EF-REM-04 — the candidate is told whether their profile is
+                    highlighted in the CVthèque or merely visible. */}
+                <p className="text-xs text-muted-foreground">
+                  {feedbackData.indexationThresholdMet
+                    ? t('assessments.feedback.highlighted')
+                    : t('assessments.feedback.visibleNotHighlighted')}
+                </p>
+                {/* EF-REM-02 — targeted resources to improve weak domains. */}
+                {feedbackData.resources.length > 0 && (
+                  <div className="flex flex-col gap-1.5 border-t border-border/60 pt-3">
+                    <p className="text-xs font-medium text-foreground">
+                      {t('assessments.feedback.resourcesTitle')}
+                    </p>
+                    <ul className="flex flex-col gap-1">
+                      {feedbackData.resources.map((r) => (
+                        <li key={r.url}>
+                          <a
+                            href={r.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-primary hover:underline underline-offset-4"
+                          >
+                            {r.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
             )}
@@ -462,20 +527,17 @@ export default function AssessmentsPage() {
   );
 }
 
-function ScoreStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col rounded-lg border border-border/60 px-3 py-2">
-      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
-      <span className="text-sm font-semibold text-foreground">{value}</span>
-    </div>
-  );
-}
-
 function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
   const { t, locale } = useLocale();
   const badge = STATUS_BADGE[item.status];
+  const [open, setOpen] = useState(false);
+  // EF-CAND-09 — remediation guidance for a past completed attempt, fetched
+  // lazily only when the candidate expands the row.
+  const isCompleted = item.status === 'completed';
+  const feedback = useAssessmentFeedbackQuery(item.id, open && isCompleted);
+  const fb = feedback.data;
+  // EF-CAND-09 — toggle completion of a remediation resource.
+  const progress = useUpdateRemediationProgress(item.id);
   return (
     <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -491,33 +553,152 @@ function HistoryRow({ item }: { item: AssessmentHistoryItem }) {
             </span>
           )}
         </div>
-        <Badge variant={badge.variant}>{t(badge.key)}</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={badge.variant}>{t(badge.key)}</Badge>
+          {isCompleted && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOpen((o) => !o)}
+              aria-expanded={open}
+            >
+              {open
+                ? t('assessments.history.hideRemediation')
+                : t('assessments.history.viewRemediation')}
+            </Button>
+          )}
+        </div>
       </div>
       {item.score && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <ScoreStat
+          <ScoreMeter
             label={t('assessments.history.composite')}
-            value={`${Math.round(item.score.value)}/100`}
+            value={item.score.value}
           />
           {item.score.technicalScore != null && (
-            <ScoreStat
+            <ScoreMeter
               label={t('assessments.history.technical')}
-              value={`${Math.round(item.score.technicalScore)}/100`}
+              value={item.score.technicalScore}
             />
           )}
           {item.score.psychotechnicalScore != null && (
-            <ScoreStat
+            <ScoreMeter
               label={t('assessments.history.psychotechnical')}
-              value={`${Math.round(item.score.psychotechnicalScore)}/100`}
+              value={item.score.psychotechnicalScore}
             />
           )}
           {item.score.percentile != null && (
-            <ScoreStat
-              label="%"
-              value={t('assessments.history.percentile', {
-                value: String(Math.round(item.score.percentile)),
+            <PercentileBar
+              label={t('assessments.history.ranking')}
+              rankLabel={t('assessments.history.rankingTop', {
+                value: String(Math.max(1, 100 - Math.round(item.score.percentile))),
               })}
+              percentile={item.score.percentile}
             />
+          )}
+        </div>
+      )}
+      {item.score?.expiresAt && (
+        <p className="text-xs text-muted-foreground">
+          {t('assessments.history.scoreExpires', {
+            date: new Date(item.score.expiresAt).toLocaleDateString(),
+          })}
+        </p>
+      )}
+      {open && isCompleted && (
+        <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-muted/30 p-3">
+          {feedback.isLoading && (
+            <p className="text-xs text-muted-foreground">
+              {t('common.loading')}
+            </p>
+          )}
+          {feedback.isError && (
+            <p className="text-xs text-destructive">{t('common.error')}</p>
+          )}
+          {fb && (
+            <>
+              {fb.domainFeedback.length > 0 && (
+                <ul className="flex flex-wrap gap-2">
+                  {fb.domainFeedback.map((d) => (
+                    <li key={d.domain}>
+                      <Badge
+                        variant={
+                          d.level === 'strong'
+                            ? 'success'
+                            : d.level === 'medium'
+                              ? 'warning'
+                              : 'destructive'
+                        }
+                      >
+                        {d.domain}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {fb.indexationThresholdMet
+                  ? t('assessments.feedback.highlighted')
+                  : t('assessments.feedback.visibleNotHighlighted')}
+              </p>
+              {/* Barème §5.2 — the thresholds the candidate is measured
+                  against, so their standing is transparent. */}
+              <p className="rounded-md bg-muted/40 px-2 py-1.5 text-[11px] text-muted-foreground">
+                {t('assessments.feedback.baremeThresholds', {
+                  score: String(fb.barème.indexationScoreMin),
+                  percentile: String(fb.barème.indexationPercentileMin),
+                  highlight: String(fb.barème.highlightPercentileMin),
+                })}
+                {fb.barème.highlightMet
+                  ? ` · ${t('assessments.feedback.highlightReached')}`
+                  : ''}
+              </p>
+              {fb.resources.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-medium text-foreground">
+                    {t('assessments.feedback.resourcesTitle')}{' '}
+                    <span className="font-normal text-muted-foreground">
+                      {t('assessments.feedback.resourcesProgress', {
+                        done: String(fb.completedCount),
+                        total: String(fb.totalCount),
+                      })}
+                    </span>
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {fb.resources.map((r, idx) => {
+                      const inputId = `remediation-${item.id}-${idx}`;
+                      return (
+                        <li key={r.url} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={inputId}
+                            checked={r.completed}
+                            disabled={progress.isPending}
+                            onChange={(e) =>
+                              progress.mutate({
+                                url: r.url,
+                                completed: e.target.checked,
+                              })
+                            }
+                            className="size-3.5 shrink-0 accent-primary"
+                          />
+                          <label htmlFor={inputId} className="text-xs">
+                            <a
+                              href={r.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary hover:underline underline-offset-4"
+                            >
+                              {r.title}
+                            </a>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

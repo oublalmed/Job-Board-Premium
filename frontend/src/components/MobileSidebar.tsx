@@ -17,10 +17,16 @@ import {
   ClipboardList,
   GraduationCap,
   BarChart3,
+  ScrollText,
+  Flag,
+  SlidersHorizontal,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { cn } from '@/lib/utils';
+import { MessagesNavBadge } from '@/features/messages/MessagesNavBadge';
 
 interface SidebarLink {
   href: string;
@@ -65,6 +71,36 @@ export function MobileSidebar() {
       label: t('analytics.navLabel'),
       icon: BarChart3,
       roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/message-reports',
+      label: t('moderation.navLabel'),
+      icon: Flag,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/profiles',
+      label: t('adminProfiles.navLabel'),
+      icon: ShieldAlert,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/audit-logs',
+      label: t('auditLog.navLabel'),
+      icon: ScrollText,
+      roles: ['admin'],
+    },
+    {
+      href: '/admin/data-requests',
+      label: t('dataRequests.navLabel'),
+      icon: ShieldCheck,
+      roles: ['admin'],
+    },
+    {
+      href: '/admin/settings',
+      label: t('adminSettings.navLabel'),
+      icon: SlidersHorizontal,
+      roles: ['admin'],
     },
     { href: '/messages', label: t('nav.messages'), icon: MessageSquare },
     { href: '/notifications', label: t('nav.notifications'), icon: Bell },
@@ -124,6 +160,7 @@ export function MobileSidebar() {
                   >
                     <Icon className="size-4 shrink-0" />
                     {link.label}
+                    {link.href === '/messages' && <MessagesNavBadge />}
                   </Link>
                 );
               })}

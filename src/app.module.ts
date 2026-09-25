@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { RedisConnectionModule } from './redis/redis-connection.module.js';
 import { SharedRedisConnectionService } from './redis/shared-redis-connection.service.js';
 import {
@@ -14,6 +15,8 @@ import {
   scoringConfig,
   paymentConfig,
   legalConfig,
+  notificationsConfig,
+  antivirusConfig,
   configValidationSchema,
 } from './config/index.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -27,6 +30,7 @@ import { BillingModule } from './modules/billing/billing.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { SchoolVerificationModule } from './modules/school-verification/school-verification.module.js';
 import { GrowthModule } from './modules/growth/growth.module.js';
@@ -47,10 +51,17 @@ import { PortsModule } from './ports/ports.module.js';
         scoringConfig,
         paymentConfig,
         legalConfig,
+        notificationsConfig,
+        antivirusConfig,
       ],
       validationSchema: configValidationSchema,
       validationOptions: { abortEarly: true },
     }),
+    // §11 (OWASP) — rate-limiting store. A generous global default; the
+    // sensitive auth endpoints apply a much stricter per-route limit via
+    // @Throttle + ThrottlerGuard (see AuthController). In-memory storage is
+    // fine for a single instance; back it with Redis for multi-instance.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -63,6 +74,15 @@ import { PortsModule } from './ports/ports.module.js';
         database: config.getOrThrow<string>('database.database'),
         synchronize: config.get<boolean>('database.synchronize', false),
         logging: config.get<boolean>('database.logging', false),
+        // ENF-05 — TLS to Postgres when DB_SSL=true.
+        ssl: config.get<boolean>('database.ssl', false)
+          ? {
+              rejectUnauthorized: config.get<boolean>(
+                'database.sslRejectUnauthorized',
+                true,
+              ),
+            }
+          : false,
         autoLoadEntities: true,
         migrations: ['dist/database/migrations/*.js'],
         migrationsRun: false,
@@ -96,6 +116,7 @@ import { PortsModule } from './ports/ports.module.js';
     AuditModule,
     SettingsModule,
     HealthModule,
+    MetricsModule,
     NotificationsModule,
     SchoolVerificationModule,
     GrowthModule,

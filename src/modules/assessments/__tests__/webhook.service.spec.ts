@@ -468,4 +468,51 @@ describe('WebhookService', () => {
       );
     });
   });
+
+  describe('§5.3 answer-fingerprint plagiarism/collision', () => {
+    function mockCollisionCount(count: number) {
+      scoreRepo.createQueryBuilder = jest.fn().mockReturnValue({
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockResolvedValue(count),
+      });
+    }
+
+    it('stores the fingerprint and escalates to SUSPECTED on a cross-candidate collision', async () => {
+      scoringProvider.getResult.mockResolvedValue({
+        ...mockResult,
+        plagiarismVerdict: 'clean' as const,
+        answerFingerprint: 'fp-xyz',
+      });
+      mockCollisionCount(1);
+
+      await service.processWebhook(validPayload, validSignature);
+
+      expect(scoreRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          answerFingerprint: 'fp-xyz',
+          plagiarismVerdict: PlagiarismVerdict.SUSPECTED,
+        }),
+      );
+    });
+
+    it('keeps CLEAN when the fingerprint is unique (no collision)', async () => {
+      scoringProvider.getResult.mockResolvedValue({
+        ...mockResult,
+        plagiarismVerdict: 'clean' as const,
+        answerFingerprint: 'fp-unique',
+      });
+      mockCollisionCount(0);
+
+      await service.processWebhook(validPayload, validSignature);
+
+      expect(scoreRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          answerFingerprint: 'fp-unique',
+          plagiarismVerdict: PlagiarismVerdict.CLEAN,
+        }),
+      );
+    });
+  });
 });

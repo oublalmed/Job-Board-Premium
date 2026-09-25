@@ -1,18 +1,40 @@
 'use client';
 
-import { Bell, CheckCheck, AlertCircle } from 'lucide-react';
+import {
+  Bell,
+  CheckCheck,
+  AlertCircle,
+  RefreshCw,
+  Eye,
+  MessageSquare,
+  Search,
+} from 'lucide-react';
+import type { ComponentType } from 'react';
 import { motion } from 'framer-motion';
 import { useLocale } from '@/i18n/locale-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useNotifications } from '@/features/notifications/queries';
+import {
+  useNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from '@/features/notifications/queries';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+};
+
+// EF-REM-03 — each notification type gets its own icon so a "cooldown ended"
+// notice reads differently from a profile view or a new message.
+const TYPE_ICON: Record<string, ComponentType<{ className?: string }>> = {
+  cooldown_expired: RefreshCw,
+  profile_viewed: Eye,
+  new_message: MessageSquare,
+  saved_search_alert: Search,
 };
 
 function timeAgo(dateStr: string): string {
@@ -30,6 +52,8 @@ function timeAgo(dateStr: string): string {
 export default function NotificationsPage() {
   const { t } = useLocale();
   const { data, isLoading, isError, refetch } = useNotifications();
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
   const notifications = data ?? [];
   const unreadCount = notifications.filter((n) => !n.readAt).length;
 
@@ -40,11 +64,27 @@ export default function NotificationsPage() {
         {!isLoading && !isError && notifications.length > 0 && (
           <div className="flex items-center gap-2">
             {unreadCount > 0 ? (
-              <Badge variant="default">{unreadCount} new</Badge>
+              <>
+                <Badge variant="default">
+                  {t('notifications.unreadCount', {
+                    count: String(unreadCount),
+                  })}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={markAllRead.isPending}
+                  onClick={() => markAllRead.mutate()}
+                >
+                  <CheckCheck className="size-4" />
+                  {t('notifications.markAllRead')}
+                </Button>
+              </>
             ) : (
               <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <CheckCheck className="size-4" />
-                All read
+                {t('notifications.allRead')}
               </span>
             )}
           </div>
@@ -86,7 +126,10 @@ export default function NotificationsPage() {
               <CardContent className="flex items-start gap-4 p-5">
                 <div className="relative mt-0.5">
                   <div className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
-                    <Bell className="size-5 text-primary" />
+                    {(() => {
+                      const Icon = TYPE_ICON[n.type as string] ?? Bell;
+                      return <Icon className="size-5 text-primary" />;
+                    })()}
                   </div>
                   {!n.readAt && (
                     <div className="absolute -end-0.5 -top-0.5 size-3 animate-pulse rounded-full border-2 border-card bg-primary" />
@@ -97,6 +140,19 @@ export default function NotificationsPage() {
                   {n.body && <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">{timeAgo(n.createdAt)}</p>
                 </div>
+                {!n.readAt && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 text-muted-foreground"
+                    disabled={markRead.isPending}
+                    onClick={() => markRead.mutate(n.id)}
+                    aria-label={t('notifications.markRead')}
+                    title={t('notifications.markRead')}
+                  >
+                    <CheckCheck className="size-4" />
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}

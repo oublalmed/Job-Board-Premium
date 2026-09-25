@@ -12,9 +12,10 @@ import { SettingsService } from '../settings/settings.service.js';
 // diverging copy of these thresholds.
 export const INDEXATION_SCORE_MIN_KEY = 'indexation_score_min';
 export const INDEXATION_PERCENTILE_MIN_KEY = 'indexation_percentile_min';
+export const FEATURING_PERCENTILE_MIN_KEY = 'featuring_percentile_min';
 export const DEFAULT_INDEXATION_SCORE_MIN = 40;
 export const DEFAULT_INDEXATION_PERCENTILE_MIN = 30;
-const DEFAULT_FEATURING_PERCENTILE_MIN = 75;
+export const DEFAULT_FEATURING_PERCENTILE_MIN = 75;
 const DEFAULT_COMPLETENESS_THRESHOLD = 70;
 
 @Injectable()
@@ -74,7 +75,7 @@ export class IndexationService {
         .getNumber(INDEXATION_PERCENTILE_MIN_KEY)
         .then((v) => v ?? DEFAULT_INDEXATION_PERCENTILE_MIN),
       this.settingsService
-        .getNumber('featuring_percentile_min')
+        .getNumber(FEATURING_PERCENTILE_MIN_KEY)
         .then((v) => v ?? DEFAULT_FEATURING_PERCENTILE_MIN),
       this.settingsService
         .getNumber('completeness_threshold_publishable')

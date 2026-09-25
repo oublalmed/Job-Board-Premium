@@ -31,6 +31,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'candidate' | 'recruiter'>('candidate');
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,6 +56,12 @@ export default function RegisterPage() {
       return;
     }
 
+    // ENF-12 — explicit consent is mandatory (the backend enforces it too).
+    if (!consent) {
+      setError(t('auth.register.consentRequired'));
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // referralCode is a real backend field (EF-GROW-02) not yet in the
@@ -62,7 +69,12 @@ export default function RegisterPage() {
       // sending fields the stale client type doesn't know about. Read from
       // the URL at submit time (no state) to keep the page prerenderable.
       const referralCode = new URLSearchParams(window.location.search).get('ref');
-      const body: Record<string, unknown> = { email, password, roles: [role] };
+      const body: Record<string, unknown> = {
+        email,
+        password,
+        roles: [role],
+        consentAccepted: consent,
+      };
       if (referralCode) body.referralCode = referralCode;
       const { error: apiError } = await apiClient.POST('/api/v1/auth/register', {
         body: body as never,
@@ -181,6 +193,30 @@ export default function RegisterPage() {
                 <p id="register-password-hint" className="text-xs text-muted-foreground">
                   {t('auth.register.passwordHint')}
                 </p>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <input
+                  id="register-consent"
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 size-4 shrink-0 rounded border-input accent-primary"
+                  aria-describedby="register-consent-label"
+                />
+                <Label
+                  htmlFor="register-consent"
+                  id="register-consent-label"
+                  className="text-xs font-normal leading-relaxed text-muted-foreground"
+                >
+                  {t('auth.register.consentLabel')}{' '}
+                  <Link
+                    href="/privacy"
+                    className="text-primary hover:underline underline-offset-4"
+                  >
+                    {t('auth.register.consentPolicyLink')}
+                  </Link>
+                </Label>
               </div>
 
               {error && (

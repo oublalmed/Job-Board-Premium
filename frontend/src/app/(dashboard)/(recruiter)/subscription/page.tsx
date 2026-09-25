@@ -35,6 +35,8 @@ import {
   useRedeemTrialCode,
   useSubscribe,
 } from '@/features/subscription/queries';
+import { InvoicesCard } from '@/features/billing/InvoicesCard';
+import { SubscriptionStatusCard } from '@/features/billing/SubscriptionStatusCard';
 
 const PLAN_META: Record<Plan, { label: string; icon: typeof Zap; description: string }> = {
   starter: { label: 'Starter', icon: Zap, description: 'For small teams' },
@@ -107,6 +109,9 @@ export default function SubscriptionPage() {
   return (
     <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <h1 className="text-2xl font-bold text-foreground">{t('subscription.title')}</h1>
+
+      {/* EF-BILL-02 / EF-BILL-05 — current subscription state, renewal & dunning. */}
+      <SubscriptionStatusCard />
 
       <Card>
         <CardHeader>
@@ -234,6 +239,8 @@ export default function SubscriptionPage() {
           </Form>
         </CardContent>
       </Card>
+
+      <InvoicesCard />
 
       <Card className="overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-destructive/60 to-destructive/20" />

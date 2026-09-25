@@ -7,6 +7,7 @@ import { CandidateProfile } from './entities/candidate-profile.entity.js';
 import { Experience } from './entities/experience.entity.js';
 import { ProfileSkill } from './entities/profile-skill.entity.js';
 import { ProfileLink } from './entities/profile-link.entity.js';
+import { Certification } from './entities/certification.entity.js';
 import { Document } from './entities/document.entity.js';
 import {
   OBJECT_STORAGE,
@@ -14,6 +15,10 @@ import {
 } from '../../ports/object-storage.port.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
+import {
+  generateCandidateDataPdf,
+  type CandidateDataExport,
+} from './candidate-data-pdf.js';
 
 @Injectable()
 export class CandidateDataService {
@@ -30,6 +35,8 @@ export class CandidateDataService {
     private readonly profileSkillRepo: Repository<ProfileSkill>,
     @InjectRepository(ProfileLink)
     private readonly profileLinkRepo: Repository<ProfileLink>,
+    @InjectRepository(Certification)
+    private readonly certificationRepo: Repository<Certification>,
     @InjectRepository(Document)
     private readonly documentRepo: Repository<Document>,
     @Inject(OBJECT_STORAGE)
@@ -37,7 +44,34 @@ export class CandidateDataService {
     private readonly auditService: AuditService,
   ) {}
 
-  async exportData(userId: string) {
+  // Machine-readable portability export (EF-CAND-08).
+  async exportData(userId: string): Promise<CandidateDataExport> {
+    const data = await this.collectExportData(userId);
+    await this.logExport(userId);
+    return data;
+  }
+
+  // Human-readable portability export (EF-CAND-08) — the same data rendered
+  // to an archivable PDF. Reuses collectExportData so the two forms cannot
+  // diverge.
+  async exportDataPdf(userId: string): Promise<Buffer> {
+    const data = await this.collectExportData(userId);
+    await this.logExport(userId);
+    return generateCandidateDataPdf(data);
+  }
+
+  private async logExport(userId: string): Promise<void> {
+    await this.auditService.log({
+      actorId: userId,
+      action: AuditAction.USER_DATA_EXPORTED,
+      entityType: 'User',
+      entityId: userId,
+    });
+  }
+
+  private async collectExportData(
+    userId: string,
+  ): Promise<CandidateDataExport> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException();
@@ -45,28 +79,25 @@ export class CandidateDataService {
 
     const profile = await this.profileRepo.findOne({ where: { userId } });
 
-    const [experiences, profileSkills, links, documents] = await Promise.all([
-      profile
-        ? this.experienceRepo.find({ where: { profileId: profile.id } })
-        : Promise.resolve([]),
-      profile
-        ? this.profileSkillRepo.find({
-            where: { profileId: profile.id },
-            relations: { skill: true },
-          })
-        : Promise.resolve([]),
-      profile
-        ? this.profileLinkRepo.find({ where: { profileId: profile.id } })
-        : Promise.resolve([]),
-      this.documentRepo.find({ where: { ownerId: userId } }),
-    ]);
-
-    await this.auditService.log({
-      actorId: userId,
-      action: AuditAction.USER_DATA_EXPORTED,
-      entityType: 'User',
-      entityId: userId,
-    });
+    const [experiences, profileSkills, links, certifications, documents] =
+      await Promise.all([
+        profile
+          ? this.experienceRepo.find({ where: { profileId: profile.id } })
+          : Promise.resolve([]),
+        profile
+          ? this.profileSkillRepo.find({
+              where: { profileId: profile.id },
+              relations: { skill: true },
+            })
+          : Promise.resolve([]),
+        profile
+          ? this.profileLinkRepo.find({ where: { profileId: profile.id } })
+          : Promise.resolve([]),
+        profile
+          ? this.certificationRepo.find({ where: { profileId: profile.id } })
+          : Promise.resolve([]),
+        this.documentRepo.find({ where: { ownerId: userId } }),
+      ]);
 
     return {
       exportDate: new Date().toISOString(),
@@ -107,6 +138,13 @@ export class CandidateDataService {
         type: l.type,
         url: l.url,
         label: l.label,
+      })),
+      certifications: certifications.map((c) => ({
+        name: c.name,
+        issuer: c.issuer,
+        issueDate: c.issueDate,
+        expiryDate: c.expiryDate,
+        credentialUrl: c.credentialUrl,
       })),
       documents: documents.map((d) => ({
         type: d.type,

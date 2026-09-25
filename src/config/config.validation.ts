@@ -17,6 +17,8 @@ export const configValidationSchema = Joi.object({
   DB_DATABASE: Joi.string().required(),
   DB_SYNCHRONIZE: Joi.boolean().default(false),
   DB_LOGGING: Joi.boolean().default(false),
+  DB_SSL: Joi.boolean().default(false),
+  DB_SSL_REJECT_UNAUTHORIZED: Joi.boolean().default(true),
 
   // Redis
   REDIS_HOST: Joi.string().required(),
@@ -28,6 +30,11 @@ export const configValidationSchema = Joi.object({
   JWT_ACCESS_EXPIRATION: Joi.string().default('15m'),
   JWT_REFRESH_SECRET: Joi.string().min(16).required(),
   JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
+
+  // MFA / TOTP (ENF-06)
+  MFA_ISSUER: Joi.string().default('Cobalt'),
+  MFA_ENCRYPTION_KEY: Joi.string().allow('').default(''),
+  MFA_ENFORCE_STAFF: Joi.boolean().default(false),
 
   // Storage
   STORAGE_ENDPOINT: Joi.string().uri().required(),
@@ -47,6 +54,8 @@ export const configValidationSchema = Joi.object({
   TRIAL_DURATION_DAYS: Joi.number().min(1).default(14),
   SUBSCRIPTION_GRACE_PERIOD_DAYS: Joi.number().min(0).default(7),
   COOLDOWN_SWEEP_CRON: Joi.string().default('0 3 * * *'),
+  PERCENTILE_RECALC_CRON: Joi.string().default('30 2 * * *'),
+  SAVED_SEARCH_ALERT_CRON: Joi.string().default('0 7 * * *'),
   PROFILE_VIEW_NOTIFICATION_COOLDOWN_HOURS: Joi.number().min(0).default(24),
   PASSWORD_MIN_LENGTH: Joi.number().min(8).default(10),
   MAX_CV_SIZE_BYTES: Joi.number().default(5242880),
@@ -77,4 +86,14 @@ export const configValidationSchema = Joi.object({
   INVOICE_ISSUER_NAME: Joi.string().allow('').default(''),
   INVOICE_ISSUER_ICE: Joi.string().allow('').default(''),
   INVOICE_ISSUER_ADDRESS: Joi.string().allow('').default(''),
+
+  // Notifications email channel (EF-MSG-02) — off by default; 'smtp' is a
+  // documented extension point, only 'log' is wired today.
+  NOTIFICATIONS_EMAIL_ENABLED: Joi.boolean().default(false),
+  MAIL_DRIVER: Joi.string().valid('log', 'smtp').default('log'),
+  // Antivirus (EF-CAND-03) — `stub` is the default so CI/local/dev behavior
+  // is unchanged; `clamav` streams uploads to a clamd daemon over TCP.
+  ANTIVIRUS_DRIVER: Joi.string().valid('stub', 'clamav').default('stub'),
+  CLAMAV_HOST: Joi.string().default('localhost'),
+  CLAMAV_PORT: Joi.number().default(3310),
 });

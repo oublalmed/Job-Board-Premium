@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Table2,
   AlertCircle,
+  ArrowDownWideNarrow,
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -28,12 +29,16 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable } from '@/components/ui/data-table';
 import { useCandidateSearchStore } from '@/features/candidates/search-store';
+import { SavedSearchesPanel } from '@/features/candidates/saved-searches-panel';
+import { AnonymizedHint } from '@/features/candidates/AnonymizedHint';
+import { CandidateScoreBadge } from '@/features/candidates/CandidateScoreBadge';
 import {
   useAddToShortlist,
   useCandidateSearch,
 } from '@/features/candidates/queries';
 import {
   activeFilterCount,
+  isAnonymized,
   type CandidateFilters,
   type CandidateResult,
 } from '@/features/candidates/types';
@@ -64,7 +69,7 @@ export default function CandidatesPage() {
   const addToShortlist = useAddToShortlist();
 
   const candidates = useMemo(
-    () => search.data?.pages.flatMap((p) => p.results ?? []) ?? [],
+    () => search.data?.pages.flatMap((p) => p.items ?? []) ?? [],
     [search.data],
   );
 
@@ -72,6 +77,12 @@ export default function CandidatesPage() {
 
   function runSearch() {
     apply(draft);
+  }
+
+  // Re-apply a saved search: hydrate the visible filter inputs and run it.
+  function applySavedSearch(next: CandidateFilters) {
+    setDraft(next);
+    apply(next);
   }
 
   function handleAdd(id: string) {
@@ -115,6 +126,7 @@ export default function CandidatesPage() {
                 {c.headline && (
                   <p className="truncate text-xs text-muted-foreground">{c.headline}</p>
                 )}
+                {isAnonymized(c) && <AnonymizedHint />}
               </div>
             </div>
           );
@@ -124,6 +136,21 @@ export default function CandidatesPage() {
         accessorKey: 'location',
         header: t('search.location'),
         cell: ({ row }) => row.original.location ?? '—',
+      },
+      {
+        id: 'score',
+        // EF-RECR-04 — the score/ranking column, made explicit on screen. The
+        // list is server-ordered by score desc, so the row index (1-based) is
+        // the candidate's rank.
+        header: t('search.rankHeader'),
+        enableSorting: false,
+        cell: ({ row }) => (
+          <CandidateScoreBadge
+            score={row.original.score}
+            percentile={row.original.percentile}
+            rank={row.index + 1}
+          />
+        ),
       },
       {
         id: 'actions',
@@ -258,11 +285,51 @@ export default function CandidatesPage() {
                     placeholder={t('search.locationPlaceholder')}
                   />
                 </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">{t('search.availability')}</Label>
+                  <Input
+                    value={draft.availability}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, availability: e.target.value }))
+                    }
+                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                    placeholder={t('search.availabilityPlaceholder')}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs">{t('search.salaryMax')}</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={draft.salaryMax}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, salaryMax: e.target.value }))
+                    }
+                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                    placeholder={t('search.salaryMaxPlaceholder')}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
+
+        <SavedSearchesPanel
+          currentFilters={draft}
+          onApply={applySavedSearch}
+        />
       </div>
+
+      {/* EF-RECR-04 — the ranking basis, made explicit on screen: the result
+          set is ordered by evaluation score, highest first. */}
+      {!search.isError && !search.isLoading && candidates.length > 0 && (
+        <div
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          role="status"
+        >
+          <ArrowDownWideNarrow className="size-3.5 shrink-0" aria-hidden="true" />
+          <span>{t('search.sortedByScore')}</span>
+        </div>
+      )}
 
       {/* Error state */}
       {search.isError && (
@@ -291,14 +358,14 @@ export default function CandidatesPage() {
           )}
 
           {!search.isLoading &&
-            candidates.map((candidate) => (
+            candidates.map((candidate, index) => (
               <Card key={candidate.id} className="transition-all duration-200 hover:shadow-md">
                 <CardContent className="flex items-center gap-6 p-5">
                   <div className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-lg font-semibold text-primary">
                     {(candidate.firstName?.[0] ?? '?').toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h3 className="truncate font-semibold text-foreground">
                         {candidate.firstName} {candidate.lastName}
                       </h3>
@@ -308,12 +375,20 @@ export default function CandidatesPage() {
                           Featured
                         </Badge>
                       )}
+                      {/* EF-RECR-04 — rank (1-based position in the
+                          score-ordered list) + score, on screen. */}
+                      <CandidateScoreBadge
+                        score={candidate.score}
+                        percentile={candidate.percentile}
+                        rank={index + 1}
+                      />
                     </div>
                     {candidate.headline && (
                       <p className="truncate text-sm text-muted-foreground">
                         {candidate.headline}
                       </p>
                     )}
+                    {isAnonymized(candidate) && <AnonymizedHint />}
                     <div className="mt-1 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                       {candidate.location && (
                         <span className="flex items-center gap-1">

@@ -10,6 +10,16 @@ export default new DataSource({
   username: process.env['DB_USERNAME'] ?? 'jobboard',
   password: process.env['DB_PASSWORD'] ?? '',
   database: process.env['DB_DATABASE'] ?? 'jobboard_dev',
+  // ENF-05 — match the runtime app's TLS behaviour when running migrations.
+  ssl:
+    process.env['DB_SSL'] === 'true'
+      ? {
+          rejectUnauthorized:
+            (
+              process.env['DB_SSL_REJECT_UNAUTHORIZED'] ?? 'true'
+            ).toLowerCase() !== 'false',
+        }
+      : false,
   entities: ['src/**/*.entity.ts'],
   migrations: ['src/database/migrations/*.ts'],
   synchronize: false,

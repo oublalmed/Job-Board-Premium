@@ -35,6 +35,23 @@ export class Message {
   @Column({ type: 'text' })
   body!: string;
 
+  // EF-MSG-03 — a single optional document attachment. Nullable columns on
+  // `message` (rather than a separate message_attachment entity) is the
+  // simpler model given the one-attachment-per-message rule. The binary lives
+  // in object storage; only its metadata is persisted here. `storageKey` is
+  // never exposed to clients — downloads go through the signed-url endpoint.
+  @Column({ name: 'attachment_storage_key', type: 'text', nullable: true })
+  attachmentStorageKey!: string | null;
+
+  @Column({ name: 'attachment_original_name', type: 'text', nullable: true })
+  attachmentOriginalName!: string | null;
+
+  @Column({ name: 'attachment_mime_type', type: 'text', nullable: true })
+  attachmentMimeType!: string | null;
+
+  @Column({ name: 'attachment_size', type: 'integer', nullable: true })
+  attachmentSize!: number | null;
+
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
   readAt!: Date | null;
 

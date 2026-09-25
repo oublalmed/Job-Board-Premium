@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { MfaService } from './mfa.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { UsersModule } from '../users/users.module.js';
 import { RefreshToken } from '../users/entities/refresh-token.entity.js';
@@ -30,7 +31,7 @@ import { GrowthModule } from '../growth/growth.module.js';
     TypeOrmModule.forFeature([RefreshToken]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  providers: [AuthService, MfaService, JwtStrategy],
+  exports: [AuthService, MfaService],
 })
 export class AuthModule {}

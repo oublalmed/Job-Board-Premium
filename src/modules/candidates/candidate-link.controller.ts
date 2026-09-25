@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -36,6 +38,18 @@ export class CandidateLinkController {
     @Body() dto: CreateProfileLinkDto,
   ) {
     return this.linkService.create(user.sub, dto);
+  }
+
+  // EF-CAND-04 — re-run the asynchronous accessibility check for a link. 202
+  // Accepted: the check runs in the background; the returned link is in the
+  // 'pending' state until the worker resolves it.
+  @Post(':id/verify')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async reverify(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.linkService.reverify(user.sub, id);
   }
 
   @Delete(':id')

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { getAccessToken } from '@/auth/token-store';
 import { unwrap } from '@/lib/api';
+import { sumUnread } from './queries.helpers';
 import type { OpenConversationValues } from './schema';
 
 // The conversation/message read endpoints post-date the last OpenAPI
@@ -44,6 +45,12 @@ export interface ConversationSummary {
   updatedAt: string;
 }
 
+export interface MessageAttachment {
+  originalName: string;
+  mimeType: string;
+  size: number;
+}
+
 export interface MessageView {
   id: string;
   body: string;
@@ -51,12 +58,44 @@ export interface MessageView {
   mine: boolean;
   readAt: string | null;
   createdAt: string;
+  // EF-MSG-03 — attachment metadata; the binary is fetched on demand via a
+  // signed URL (fetchAttachmentUrl), never linked directly.
+  attachment: MessageAttachment | null;
+}
+
+// EF-MSG-04 — interview scheduling within a conversation.
+export type InterviewMode = 'onsite' | 'video' | 'phone';
+export type InterviewStatus = 'proposed' | 'accepted' | 'declined' | 'cancelled';
+
+export interface InterviewView {
+  id: string;
+  status: InterviewStatus;
+  mode: InterviewMode;
+  scheduledAt: string;
+  durationMinutes: number;
+  location: string | null;
+  note: string | null;
+  proposedByRole: MessageSenderRole;
+  // Whether the current viewer proposed this slot (proposer cancels;
+  // counterpart accepts/declines).
+  mine: boolean;
+  respondedAt: string | null;
+  createdAt: string;
+}
+
+export interface ProposeInterviewInput {
+  mode: InterviewMode;
+  scheduledAt: string;
+  durationMinutes?: number;
+  location?: string;
+  note?: string;
 }
 
 export const messageKeys = {
   all: ['conversations'] as const,
   list: () => [...messageKeys.all, 'list'] as const,
   thread: (id: string) => [...messageKeys.all, 'thread', id] as const,
+  interviews: (id: string) => [...messageKeys.all, 'interviews', id] as const,
 };
 
 export function useConversations() {
@@ -64,6 +103,15 @@ export function useConversations() {
     queryKey: messageKeys.list(),
     queryFn: () => authedJson<ConversationSummary[]>('/api/v1/conversations'),
   });
+}
+
+// EF-MSG-02 — reuses the (cached, focus-refetched) conversations query so the
+// nav badge stays in sync with the messages screen without a second request.
+// `sumUnread` lives in queries.helpers.ts so it stays unit-testable without
+// mocking this module's react-query hooks.
+export function useUnreadMessageCount(): number {
+  const { data } = useConversations();
+  return sumUnread(data);
 }
 
 export function useMessages(conversationId: string | null) {
@@ -94,6 +142,55 @@ export function useSendMessage(conversationId: string) {
   });
 }
 
+// EF-MSG-03 — attach ONE document (PDF/DOCX ≤5MB) to a new message. Uses raw
+// FormData: Content-Type is left unset so the browser adds the multipart
+// boundary itself (authedJson would force application/json).
+export function useSendAttachment(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { file: File; body?: string }) => {
+      const form = new FormData();
+      form.append('file', input.file);
+      if (input.body) form.append('body', input.body);
+      const res = await fetch(
+        `${BASE}/api/v1/conversations/${conversationId}/messages/attachment`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getAccessToken()}` },
+          body: form,
+        },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as MessageView;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: messageKeys.thread(conversationId),
+      });
+      void queryClient.invalidateQueries({ queryKey: messageKeys.list() });
+    },
+  });
+}
+
+// EF-MSG-03 — resolve a short-lived signed URL for an attachment on demand
+// (authorized to the two conversation participants only).
+export function fetchAttachmentUrl(conversationId: string, messageId: string) {
+  return authedJson<{ url: string; originalName: string; mimeType: string }>(
+    `/api/v1/conversations/${conversationId}/messages/${messageId}/attachment`,
+  );
+}
+
+// EF-MSG-05 — flag a conversation for abuse.
+export function useReportConversation(conversationId: string) {
+  return useMutation({
+    mutationFn: (reason: string) =>
+      authedJson<{ id: string; status: string }>(
+        `/api/v1/conversations/${conversationId}/report`,
+        { method: 'POST', body: JSON.stringify({ reason }) },
+      ),
+  });
+}
+
 export function useOpenConversation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -108,6 +205,51 @@ export function useOpenConversation() {
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: messageKeys.list() });
+    },
+  });
+}
+
+// EF-MSG-04 — interview scheduling. Endpoints post-date the OpenAPI schema, so
+// they use the same fetch+bearer helper as the rest of the messaging surface.
+export function useInterviews(conversationId: string | null) {
+  return useQuery({
+    queryKey: messageKeys.interviews(conversationId ?? ''),
+    enabled: !!conversationId,
+    queryFn: () =>
+      authedJson<InterviewView[]>(
+        `/api/v1/conversations/${conversationId}/interviews`,
+      ),
+  });
+}
+
+export function useProposeInterview(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ProposeInterviewInput) =>
+      authedJson<InterviewView>(
+        `/api/v1/conversations/${conversationId}/interviews`,
+        { method: 'POST', body: JSON.stringify(input) },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: messageKeys.interviews(conversationId),
+      });
+    },
+  });
+}
+
+export function useRespondInterview(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { interviewId: string; status: InterviewStatus }) =>
+      authedJson<InterviewView>(
+        `/api/v1/conversations/${conversationId}/interviews/${input.interviewId}`,
+        { method: 'PATCH', body: JSON.stringify({ status: input.status }) },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: messageKeys.interviews(conversationId),
+      });
     },
   });
 }

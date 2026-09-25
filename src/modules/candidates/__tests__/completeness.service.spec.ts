@@ -1,7 +1,11 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CandidateProfileService } from '../candidate-profile.service.js';
-import { CandidateProfile } from '../entities/candidate-profile.entity.js';
+import {
+  CandidateProfile,
+  ProfileVisibility,
+} from '../entities/candidate-profile.entity.js';
 import { ProfileSkill } from '../entities/profile-skill.entity.js';
 import { Experience } from '../entities/experience.entity.js';
 import { ProfileLink } from '../entities/profile-link.entity.js';
@@ -288,6 +292,84 @@ describe('CandidateProfileService — completeness calculation', () => {
       expect(profileRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ completeness: expect.any(Number) }),
       );
+    });
+  });
+
+  // EF-CAND-06 — a profile must be scored + publishable (indexedInCvtheque)
+  // before it can be made visible. The guard lives in updateProfile.
+  describe('updateProfile — EF-CAND-06 visibility guard', () => {
+    it('should reject making an unindexed profile PUBLIC', async () => {
+      profileRepo.findOne.mockResolvedValue({
+        ...baseProfile,
+        indexedInCvtheque: false,
+        visibility: ProfileVisibility.HIDDEN,
+      });
+
+      await expect(
+        service.updateProfile(profileId, {
+          visibility: ProfileVisibility.PUBLIC,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(profileRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('should reject making an unindexed profile RECRUITERS_ONLY', async () => {
+      profileRepo.findOne.mockResolvedValue({
+        ...baseProfile,
+        indexedInCvtheque: false,
+        visibility: ProfileVisibility.HIDDEN,
+      });
+
+      await expect(
+        service.updateProfile(profileId, {
+          visibility: ProfileVisibility.RECRUITERS_ONLY,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow setting HIDDEN on an unindexed profile', async () => {
+      profileRepo.findOne.mockResolvedValue({
+        ...baseProfile,
+        indexedInCvtheque: false,
+        visibility: ProfileVisibility.HIDDEN,
+      });
+
+      const result = await service.updateProfile(profileId, {
+        visibility: ProfileVisibility.HIDDEN,
+      });
+
+      expect(result.visibility).toBe(ProfileVisibility.HIDDEN);
+      expect(profileRepo.save).toHaveBeenCalled();
+    });
+
+    it('should allow making an already-indexed profile PUBLIC', async () => {
+      profileRepo.findOne.mockResolvedValue({
+        ...baseProfile,
+        indexedInCvtheque: true,
+        visibility: ProfileVisibility.HIDDEN,
+      });
+
+      const result = await service.updateProfile(profileId, {
+        visibility: ProfileVisibility.PUBLIC,
+      });
+
+      expect(result.visibility).toBe(ProfileVisibility.PUBLIC);
+      expect(profileRepo.save).toHaveBeenCalled();
+    });
+
+    it('should allow a non-visibility update on an unindexed profile', async () => {
+      profileRepo.findOne.mockResolvedValue({
+        ...baseProfile,
+        indexedInCvtheque: false,
+        visibility: ProfileVisibility.HIDDEN,
+      });
+
+      const result = await service.updateProfile(profileId, {
+        headline: 'Dev Full Stack',
+      });
+
+      expect(result.headline).toBe('Dev Full Stack');
+      expect(profileRepo.save).toHaveBeenCalled();
     });
   });
 });

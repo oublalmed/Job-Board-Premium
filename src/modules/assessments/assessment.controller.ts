@@ -1,9 +1,14 @@
 import {
   Controller,
   Post,
+  Put,
   Get,
   Body,
   Param,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Ip,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
@@ -11,10 +16,13 @@ import { ApiResponse } from '@nestjs/swagger';
 import { AssessmentService } from './assessment.service.js';
 import { AssessmentHistoryService } from './assessment-history.service.js';
 import { RemediationService } from './remediation.service.js';
+import { RemediationProgressService } from './remediation-progress.service.js';
 import { StartAssessmentDto } from './dto/start-assessment.dto.js';
 import { ResumeAssessmentDto } from './dto/resume-assessment.dto.js';
 import { StartAssessmentResponseDto } from './dto/start-assessment-response.dto.js';
 import { RemediationFeedbackDto } from './dto/remediation-feedback.dto.js';
+import { UpdateRemediationProgressDto } from './dto/update-remediation-progress.dto.js';
+import { RecordProctoringEventsDto } from './dto/record-proctoring-events.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
@@ -29,6 +37,7 @@ export class AssessmentController {
     private readonly assessmentService: AssessmentService,
     private readonly assessmentHistoryService: AssessmentHistoryService,
     private readonly remediationService: RemediationService,
+    private readonly remediationProgressService: RemediationProgressService,
   ) {}
 
   @Get('mine')
@@ -43,8 +52,15 @@ export class AssessmentController {
   async startAssessment(
     @CurrentUser() user: JwtPayload,
     @Body() dto: StartAssessmentDto,
+    @Ip() ip: string,
+    @Headers('x-device-fingerprint') deviceFingerprint?: string,
   ) {
-    return this.assessmentService.startAssessment(user.sub, dto.testId);
+    // §5.3 anti-cheat: IP + an opaque client device fingerprint feed the
+    // multi-account detection; both are optional and never trusted for auth.
+    return this.assessmentService.startAssessment(user.sub, dto.testId, {
+      ipAddress: ip,
+      deviceFingerprint,
+    });
   }
 
   @Post('resume')
@@ -70,6 +86,29 @@ export class AssessmentController {
     return this.assessmentService.reportIncident(user.sub, assessmentId);
   }
 
+  // EF-EVAL-02 / §5.3 — the secure-exam client reports its cumulative
+  // tab-switch / window-blur counts for the in-progress attempt. Owner-scoped
+  // by the JWT subject; 200 with the updated flag so the client can surface it.
+  @Post(':id/proctoring-events')
+  @Roles(Role.CANDIDATE)
+  @HttpCode(HttpStatus.OK)
+  async recordProctoringEvents(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) assessmentId: string,
+    @Body() dto: RecordProctoringEventsDto,
+  ) {
+    const saved = await this.assessmentService.recordProctoringEvents(
+      user.sub,
+      assessmentId,
+      { tabSwitches: dto.tabSwitches, windowBlurs: dto.windowBlurs },
+    );
+    return {
+      tabSwitchCount: saved.tabSwitchCount,
+      windowBlurCount: saved.windowBlurCount,
+      proctoringFlagged: saved.proctoringFlagged,
+    };
+  }
+
   @Get(':id/feedback')
   @Roles(Role.CANDIDATE)
   @ApiResponse({ status: 200, type: RemediationFeedbackDto })
@@ -78,5 +117,22 @@ export class AssessmentController {
     @Param('id', ParseUUIDPipe) assessmentId: string,
   ) {
     return this.remediationService.getFeedback(user.sub, assessmentId);
+  }
+
+  // EF-CAND-09 — mark a remediation resource complete / incomplete for the
+  // current candidate. Idempotent; owner-scoped by the JWT subject. 204 (no
+  // body): the client already knows the new state it requested.
+  @Put('remediation/progress')
+  @Roles(Role.CANDIDATE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updateRemediationProgress(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateRemediationProgressDto,
+  ): Promise<void> {
+    await this.remediationProgressService.setCompleted(
+      user.sub,
+      dto.url,
+      dto.completed,
+    );
   }
 }

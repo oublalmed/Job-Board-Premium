@@ -5,6 +5,7 @@ import {
   OneToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { Assessment } from './assessment.entity.js';
 import type { DomainFeedbackEntry } from '../../../ports/scoring.port.js';
@@ -60,6 +61,14 @@ export class Score {
     default: PlagiarismVerdict.CLEAN,
   })
   plagiarismVerdict!: PlagiarismVerdict;
+
+  // §5.3 plagiarism/collision layer — an opaque answer fingerprint supplied by
+  // the scoring provider (a hash, never question/answer content, so the
+  // no-leak guarantee holds). Two scores from *different* candidates sharing a
+  // fingerprint is a copy signal, detected first-party in WebhookService.
+  @Column({ name: 'answer_fingerprint', type: 'varchar', nullable: true })
+  @Index('IDX_scores_answer_fingerprint')
+  answerFingerprint!: string | null;
 
   @Column({ name: 'details', type: 'jsonb', nullable: true })
   details!: Record<string, unknown> | null;

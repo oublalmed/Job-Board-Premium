@@ -15,11 +15,21 @@ import {
   Assessment,
   AssessmentStatus,
 } from '../assessments/entities/assessment.entity.js';
+import { Conversation } from '../messaging/entities/conversation.entity.js';
 import { SearchCandidatesDto } from './dto/search-candidates.dto.js';
 import type {
   CandidateSearchResultDto,
   SearchCandidatesResult,
 } from './dto/candidate-search-result.dto.js';
+
+// EF-SRCH-05 — who is viewing a candidate detail, and whether they have earned
+// the full-identity reveal (admin, or a recruiter who already contacted the
+// candidate — i.e. a conversation exists between their company and the
+// candidate).
+export interface CandidateDetailViewer {
+  isAdmin?: boolean;
+  companyId?: string;
+}
 
 interface CursorPayload {
   score: number;
@@ -49,6 +59,17 @@ interface RawScoreRow {
   bestScorePercentile: string | null;
 }
 
+// EF-SRCH-05 — reduce a last name to an initial for the anonymised search
+// preview ("El Amrani" -> "E."). Null/blank stays null so the UI shows no
+// spurious placeholder.
+export function anonymizeLastName(lastName: string | null): string | null {
+  const trimmed = lastName?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return `${trimmed.charAt(0).toUpperCase()}.`;
+}
+
 @Injectable()
 export class SearchService {
   constructor(
@@ -56,6 +77,8 @@ export class SearchService {
     private readonly profileRepo: Repository<CandidateProfile>,
     @InjectRepository(ProfileSkill)
     private readonly profileSkillRepo: Repository<ProfileSkill>,
+    @InjectRepository(Conversation)
+    private readonly conversationRepo: Repository<Conversation>,
   ) {}
 
   async searchCandidates(
@@ -83,10 +106,15 @@ export class SearchService {
 
     const skillsByProfile = await this.loadSkills(page.map((p) => p.id));
 
+    // EF-SRCH-05 — anonymised preview: the list only ever exposes the first
+    // name + last initial. Full identity is revealed on the candidate detail
+    // (getCandidateDetail), the point at which a recruiter has singled a
+    // candidate out. This narrows PII exposure of the browsable index without
+    // hiding the signal a recruiter searches on (skills, score, headline).
     const items: CandidateSearchResultDto[] = page.map((profile, i) => ({
       id: profile.id,
       firstName: profile.firstName,
-      lastName: profile.lastName,
+      lastName: anonymizeLastName(profile.lastName),
       headline: profile.headline,
       location: profile.location,
       skills: skillsByProfile.get(profile.id) ?? [],
@@ -97,6 +125,7 @@ export class SearchService {
           ? Number(rawPage[i].bestScorePercentile)
           : null,
       featured: profile.featured,
+      anonymized: true,
     }));
 
     let nextCursor: string | null = null;
@@ -116,7 +145,10 @@ export class SearchService {
   // never more reachable than what would already show up in a search, and
   // a hidden/nonexistent profile are indistinguishable (404 either way —
   // ADR-0001, same reasoning as EF-SRCH-03's list-side filter).
-  async getCandidateDetail(id: string): Promise<CandidateSearchResultDto> {
+  async getCandidateDetail(
+    id: string,
+    viewer: CandidateDetailViewer = {},
+  ): Promise<CandidateSearchResultDto> {
     const qb = this.profileRepo
       .createQueryBuilder('profile')
       .leftJoin(
@@ -128,6 +160,9 @@ export class SearchService {
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
       .where('profile.id = :id', { id })
       .andWhere('profile.indexedInCvtheque = true')
+      // EF-ADM-01 — an admin-suspended profile is never reachable, whatever the
+      // candidate's own visibility says.
+      .andWhere('profile.moderationStatus = :modActive', { modActive: 'active' })
       .andWhere('profile.visibility IN (:...visibilities)', {
         visibilities: [
           ProfileVisibility.PUBLIC,
@@ -143,10 +178,22 @@ export class SearchService {
     const profile = entities[0];
     const skillsByProfile = await this.loadSkills([profile.id]);
 
+    // EF-SRCH-05 — full identity is revealed only to a viewer who has earned it:
+    // an admin, or a recruiter whose company already contacted this candidate
+    // (a conversation exists). Otherwise the detail keeps the anonymized
+    // preview (first name + last initial), same as the list.
+    const identityRevealed =
+      viewer.isAdmin === true ||
+      (viewer.companyId !== undefined &&
+        (await this.hasContact(viewer.companyId, profile.userId)));
+
     return {
       id: profile.id,
       firstName: profile.firstName,
-      lastName: profile.lastName,
+      lastName: identityRevealed
+        ? profile.lastName
+        : anonymizeLastName(profile.lastName),
+      anonymized: identityRevealed ? undefined : true,
       headline: profile.headline,
       location: profile.location,
       skills: skillsByProfile.get(profile.id) ?? [],
@@ -157,7 +204,45 @@ export class SearchService {
           ? Number(raw[0].bestScorePercentile)
           : null,
       featured: profile.featured,
+      // EF-CAND-05 — availability/mobility always shown; the salary range is
+      // withheld (masked) unless the candidate chose to expose it.
+      availability: profile.availability,
+      mobility: profile.mobility,
+      salaryMin: profile.salaryVisible ? profile.salaryMin : null,
+      salaryMax: profile.salaryVisible ? profile.salaryMax : null,
+      salaryCurrency: profile.salaryVisible ? profile.salaryCurrency : null,
     };
+  }
+
+  // EF-SRCH-05 — a company has "contacted" a candidate once a conversation
+  // exists between them (the same unique (candidate, company) pair that
+  // consuming a contact opens). Owner-scoped to the viewer's company.
+  private async hasContact(
+    companyId: string,
+    candidateUserId: string,
+  ): Promise<boolean> {
+    const count = await this.conversationRepo.count({
+      where: { companyId, candidateId: candidateUserId },
+    });
+    return count > 0;
+  }
+
+  // EF-SRCH-04 — the saved-search alert sweep asks "how many candidates match
+  // this saved criteria that became visible since `since`?". It reuses the
+  // exact same filter + visibility predicates as the recruiter-facing search
+  // (buildQuery), so a masked/non-indexed profile can never be counted here
+  // either — only the freshness window (`profile.updatedAt > since`, i.e.
+  // newly indexed/updated into the CVthèque) is added. A null `since` (a
+  // saved search that has never alerted) counts every current match.
+  async countNewMatches(
+    filters: SearchCandidatesDto,
+    since: Date | null,
+  ): Promise<number> {
+    const qb = this.buildQuery(filters);
+    if (since) {
+      qb.andWhere('profile.updatedAt > :since', { since });
+    }
+    return qb.getCount();
   }
 
   private buildQuery(
@@ -174,6 +259,8 @@ export class SearchService {
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
       .addSelect('COALESCE(best_score.best_value, 0)', 'sortScore')
       .where('profile.indexedInCvtheque = true')
+      // EF-ADM-01 — admin-suspended profiles never appear in the CVthèque.
+      .andWhere('profile.moderationStatus = :modActive', { modActive: 'active' })
       .andWhere('profile.visibility IN (:...visibilities)', {
         visibilities: [
           ProfileVisibility.PUBLIC,
@@ -211,6 +298,22 @@ export class SearchService {
       qb.andWhere('profile.location ILIKE :location', {
         location: `%${filters.location}%`,
       });
+    }
+
+    // EF-SRCH-02 — availability substring filter.
+    if (filters.availability) {
+      qb.andWhere('profile.availability ILIKE :availability', {
+        availability: `%${filters.availability}%`,
+      });
+    }
+
+    // EF-SRCH-02 — salary budget: only candidates who disclosed a range
+    // (salaryVisible) whose minimum expectation fits the recruiter's budget.
+    if (filters.salaryMax !== undefined) {
+      qb.andWhere(
+        'profile.salaryVisible = true AND profile.salaryMin IS NOT NULL AND profile.salaryMin <= :salaryMax',
+        { salaryMax: filters.salaryMax },
+      );
     }
 
     if (filters.cursor) {

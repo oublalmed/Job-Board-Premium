@@ -5,12 +5,14 @@ import { RemediationService } from '../remediation.service.js';
 import { Assessment, AssessmentStatus } from '../entities/assessment.entity.js';
 import { Score, PlagiarismVerdict } from '../entities/score.entity.js';
 import { SettingsService } from '../../settings/settings.service.js';
+import { RemediationProgressService } from '../remediation-progress.service.js';
 
 describe('RemediationService', () => {
   let service: RemediationService;
   let assessmentRepo: Record<string, jest.Mock>;
   let scoreRepo: Record<string, jest.Mock>;
   let settingsService: Record<string, jest.Mock>;
+  let progressService: Record<string, jest.Mock>;
 
   const candidateId = 'candidate-1';
   const assessmentId = 'assessment-1';
@@ -48,6 +50,10 @@ describe('RemediationService', () => {
     scoreRepo = { findOne: jest.fn().mockResolvedValue(makeScore()) };
     settingsService = {
       getNumber: jest.fn().mockResolvedValue(null), // fall back to defaults
+      get: jest.fn().mockResolvedValue(null), // no resource override by default
+    };
+    progressService = {
+      completedUrls: jest.fn().mockResolvedValue(new Set<string>()),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,6 +62,10 @@ describe('RemediationService', () => {
         { provide: getRepositoryToken(Assessment), useValue: assessmentRepo },
         { provide: getRepositoryToken(Score), useValue: scoreRepo },
         { provide: SettingsService, useValue: settingsService },
+        {
+          provide: RemediationProgressService,
+          useValue: progressService,
+        },
       ],
     }).compile();
 
@@ -94,6 +104,8 @@ describe('RemediationService', () => {
     // only the typed fields defined on RemediationFeedback.
     expect(Object.keys(result).sort()).toEqual(
       [
+        'barème',
+        'completedCount',
         'domainFeedback',
         'indexationThresholdMet',
         'psychotechnicalScore',
@@ -101,8 +113,45 @@ describe('RemediationService', () => {
         'resources',
         'scoreValue',
         'technicalScore',
+        'totalCount',
       ].sort(),
     );
+  });
+
+  it('honours an admin resource override from settings (EF-REM-02)', async () => {
+    settingsService.get.mockResolvedValue(
+      JSON.stringify({
+        Algorithmes: [
+          { title: 'Override course', url: 'https://example.com/override' },
+        ],
+      }),
+    );
+
+    const result = await service.getFeedback(candidateId, assessmentId);
+
+    expect(settingsService.get).toHaveBeenCalledWith(
+      'remediation_resources_override',
+    );
+    expect(result.resources.some((r) => r.url === 'https://example.com/override')).toBe(
+      true,
+    );
+  });
+
+  it('annotates resources with completion state and counts (EF-CAND-09)', async () => {
+    // The Algorithmes weak-domain resource is the MIT OCW link.
+    progressService.completedUrls.mockResolvedValue(
+      new Set([
+        'https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/',
+      ]),
+    );
+
+    const result = await service.getFeedback(candidateId, assessmentId);
+
+    expect(progressService.completedUrls).toHaveBeenCalledWith(candidateId);
+    expect(result.totalCount).toBe(result.resources.length);
+    expect(result.completedCount).toBe(1);
+    const completed = result.resources.filter((r) => r.completed);
+    expect(completed).toHaveLength(1);
   });
 
   it('reports indexationThresholdMet=true when the score clears the bar', async () => {

@@ -140,10 +140,17 @@ describe('Conversations (e2e) — Lot 5B, ouverture de fil transactionnelle', ()
       const res = await request(app.getHttpServer())
         .post(path('/conversations'))
         .set('Authorization', `Bearer ${recruiter.token}`)
-        .send({ candidateProfileId, message: 'Bonjour, votre profil nous intéresse' })
+        .send({
+          candidateProfileId,
+          message: 'Bonjour, votre profil nous intéresse',
+        })
         .expect(201);
 
-      const body = res.body as { id: string; candidateId: string; companyId: string };
+      const body = res.body as {
+        id: string;
+        candidateId: string;
+        companyId: string;
+      };
       expect(body.candidateId).toBe(candidateProfileId);
       expect(body.companyId).toBe(companyId);
 
@@ -178,6 +185,9 @@ describe('Conversations (e2e) — Lot 5B, ouverture de fil transactionnelle', ()
       // service. Repository.prototype.save is patched process-wide but
       // scoped to entities targeting Message, and restored immediately
       // after, so it only affects this one call.
+      // Intentional unbound reference: captured only to restore it verbatim
+      // after the spy is done (see afterEach/finally below).
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const originalSave = Repository.prototype.save;
       const saveSpy = jest
         .spyOn(Repository.prototype, 'save')
@@ -190,9 +200,10 @@ describe('Conversations (e2e) — Lot 5B, ouverture de fil transactionnelle', ()
               new Error('simulated failure inserting the first message'),
             );
           }
-          return (
-            originalSave as (...a: unknown[]) => unknown
-          ).apply(this, args) as Promise<unknown>;
+          return (originalSave as (...a: unknown[]) => unknown).apply(
+            this,
+            args,
+          ) as Promise<unknown>;
         });
 
       try {

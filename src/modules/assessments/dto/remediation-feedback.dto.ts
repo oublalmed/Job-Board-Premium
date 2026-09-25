@@ -21,6 +21,24 @@ export class RemediationResourceDto {
 
   @ApiProperty()
   url!: string;
+
+  // EF-CAND-09 — whether the candidate has marked this resource completed.
+  @ApiProperty()
+  completed!: boolean;
+}
+
+export class BaremeDto {
+  @ApiProperty()
+  indexationScoreMin!: number;
+
+  @ApiProperty()
+  indexationPercentileMin!: number;
+
+  @ApiProperty()
+  highlightPercentileMin!: number;
+
+  @ApiProperty()
+  highlightMet!: boolean;
 }
 
 export class RemediationFeedbackDto {
@@ -41,6 +59,18 @@ export class RemediationFeedbackDto {
 
   @ApiProperty({ type: RemediationResourceDto, isArray: true })
   resources!: RemediationResourceDto[];
+
+  // EF-CAND-09 — completion progress across the recommended resources.
+  @ApiProperty()
+  completedCount!: number;
+
+  @ApiProperty()
+  totalCount!: number;
+
+  // Barème §5.2 — the indexation/highlight thresholds and whether the highlight
+  // bar is met, surfaced to the candidate.
+  @ApiProperty({ type: BaremeDto })
+  barème!: BaremeDto;
 
   @ApiProperty({ nullable: true, type: String })
   reEligibleAt!: string | null;

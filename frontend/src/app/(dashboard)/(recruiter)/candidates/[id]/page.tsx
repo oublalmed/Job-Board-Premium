@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Loader2,
   TrendingUp,
+  Lock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocale } from '@/i18n/locale-context';
@@ -116,8 +117,43 @@ export default function CandidateDetailPage() {
                 )}
               </div>
 
+              {candidate.anonymized && (
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Lock className="size-3.5" aria-hidden="true" />
+                  {t('candidateDetail.anonymizedHint')}
+                </p>
+              )}
+
               {candidate.headline && (
                 <p className="mt-1 text-muted-foreground">{candidate.headline}</p>
+              )}
+
+              {/* EF-CAND-05 — availability / mobility / salary (when disclosed) */}
+              {(candidate.availability ||
+                candidate.mobility ||
+                candidate.salaryMin != null) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {candidate.availability && (
+                    <Badge variant="secondary">
+                      {t('candidateDetail.availability')}: {candidate.availability}
+                    </Badge>
+                  )}
+                  {candidate.mobility && (
+                    <Badge variant="secondary">
+                      {t('candidateDetail.mobility')}: {candidate.mobility}
+                    </Badge>
+                  )}
+                  {candidate.salaryMin != null && (
+                    <Badge variant="secondary">
+                      {t('candidateDetail.salary')}:{' '}
+                      {candidate.salaryMin.toLocaleString()}
+                      {candidate.salaryMax != null
+                        ? `–${candidate.salaryMax.toLocaleString()}`
+                        : ''}{' '}
+                      {candidate.salaryCurrency ?? 'MAD'}
+                    </Badge>
+                  )}
+                </div>
               )}
 
               <div className="mt-4 flex flex-wrap gap-3">

@@ -87,6 +87,9 @@ export class StubScoringAdapter implements ScoringProvider {
       domainFeedback: buildStubDomainFeedback(score),
       technicalScore,
       psychotechnicalScore,
+      // Unique per assessment so the stub never triggers a spurious collision;
+      // a real provider returns the same fingerprint only for matching answers.
+      answerFingerprint: `stub-${externalId}`,
     });
   }
 

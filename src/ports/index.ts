@@ -23,6 +23,9 @@ export {
 export type { MailProvider, SendMailRequest } from './mail.port.js';
 export { MAIL_PROVIDER } from './mail.port.js';
 
+export type { Mailer, SendMailParams } from './mailer.port.js';
+export { MAILER } from './mailer.port.js';
+
 export type { FileScanner, ScanResult } from './file-scanner.port.js';
 export { FILE_SCANNER } from './file-scanner.port.js';
 

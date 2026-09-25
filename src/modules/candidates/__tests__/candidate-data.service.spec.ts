@@ -7,6 +7,7 @@ import { CandidateProfile } from '../entities/candidate-profile.entity.js';
 import { Experience, ExperienceType } from '../entities/experience.entity.js';
 import { ProfileSkill } from '../entities/profile-skill.entity.js';
 import { ProfileLink, LinkType } from '../entities/profile-link.entity.js';
+import { Certification } from '../entities/certification.entity.js';
 import {
   Document,
   DocumentType,
@@ -24,6 +25,7 @@ describe('CandidateDataService', () => {
   let experienceRepo: Record<string, jest.Mock>;
   let profileSkillRepo: Record<string, jest.Mock>;
   let profileLinkRepo: Record<string, jest.Mock>;
+  let certificationRepo: Record<string, jest.Mock>;
   let documentRepo: Record<string, jest.Mock>;
   let objectStorage: Record<string, jest.Mock>;
   let auditService: Record<string, jest.Mock>;
@@ -82,6 +84,17 @@ describe('CandidateDataService', () => {
     },
   ];
 
+  const mockCertifications: Partial<Certification>[] = [
+    {
+      id: 'cert-001',
+      name: 'AWS Certified Solutions Architect',
+      issuer: 'Amazon Web Services',
+      issueDate: '2024-03-01',
+      expiryDate: '2027-03-01',
+      credentialUrl: 'https://verify.aws/abc123',
+    },
+  ];
+
   const mockDocuments: Partial<Document>[] = [
     {
       id: 'doc-001',
@@ -107,6 +120,7 @@ describe('CandidateDataService', () => {
     experienceRepo = { find: jest.fn() };
     profileSkillRepo = { find: jest.fn() };
     profileLinkRepo = { find: jest.fn() };
+    certificationRepo = { find: jest.fn() };
     documentRepo = {
       find: jest.fn(),
       remove: jest.fn(),
@@ -128,6 +142,10 @@ describe('CandidateDataService', () => {
           useValue: profileSkillRepo,
         },
         { provide: getRepositoryToken(ProfileLink), useValue: profileLinkRepo },
+        {
+          provide: getRepositoryToken(Certification),
+          useValue: certificationRepo,
+        },
         { provide: getRepositoryToken(Document), useValue: documentRepo },
         { provide: OBJECT_STORAGE, useValue: objectStorage },
         { provide: AuditService, useValue: auditService },
@@ -146,6 +164,7 @@ describe('CandidateDataService', () => {
       experienceRepo.find.mockResolvedValue(mockExperiences);
       profileSkillRepo.find.mockResolvedValue(mockProfileSkills);
       profileLinkRepo.find.mockResolvedValue(mockLinks);
+      certificationRepo.find.mockResolvedValue(mockCertifications);
       documentRepo.find.mockResolvedValue(mockDocuments);
 
       const result = await service.exportData(userId);
@@ -161,6 +180,11 @@ describe('CandidateDataService', () => {
       expect(result.skills[0].name).toBe('TypeScript');
       expect(result.links).toHaveLength(1);
       expect(result.links[0].url).toBe('https://github.com/youssef');
+      expect(result.certifications).toHaveLength(1);
+      expect(result.certifications[0].name).toBe(
+        'AWS Certified Solutions Architect',
+      );
+      expect(result.certifications[0].issuer).toBe('Amazon Web Services');
       expect(result.documents).toHaveLength(1);
       expect(result.documents[0].originalName).toBe('mon-cv.pdf');
     });
@@ -175,6 +199,7 @@ describe('CandidateDataService', () => {
       experienceRepo.find.mockResolvedValue([]);
       profileSkillRepo.find.mockResolvedValue([]);
       profileLinkRepo.find.mockResolvedValue([]);
+      certificationRepo.find.mockResolvedValue([]);
       documentRepo.find.mockResolvedValue([]);
 
       const result = await service.exportData(userId);
@@ -227,7 +252,70 @@ describe('CandidateDataService', () => {
       expect(result.experiences).toEqual([]);
       expect(result.skills).toEqual([]);
       expect(result.links).toEqual([]);
+      expect(result.certifications).toEqual([]);
       expect(result.documents).toEqual([]);
+    });
+  });
+
+  // ── PDF portability export (EF-CAND-08) ────────────────────────────
+
+  describe('exportDataPdf', () => {
+    const seedFullExport = (): void => {
+      userRepo.findOne.mockResolvedValue(mockUser);
+      profileRepo.findOne.mockResolvedValue(mockProfile);
+      experienceRepo.find.mockResolvedValue(mockExperiences);
+      profileSkillRepo.find.mockResolvedValue(mockProfileSkills);
+      profileLinkRepo.find.mockResolvedValue(mockLinks);
+      certificationRepo.find.mockResolvedValue(mockCertifications);
+      documentRepo.find.mockResolvedValue(mockDocuments);
+    };
+
+    it('renders a non-empty PDF document (%PDF header)', async () => {
+      seedFullExport();
+
+      const pdf = await service.exportDataPdf(userId);
+
+      expect(Buffer.isBuffer(pdf)).toBe(true);
+      expect(pdf.length).toBeGreaterThan(0);
+      // Every PDF starts with the "%PDF-" magic bytes.
+      expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    });
+
+    it('logs the export in the audit trail', async () => {
+      seedFullExport();
+
+      await service.exportDataPdf(userId);
+
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorId: userId,
+          action: AuditAction.USER_DATA_EXPORTED,
+          entityType: 'User',
+          entityId: userId,
+        }),
+      );
+    });
+
+    it('throws NotFoundException if the user does not exist', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.exportDataPdf(userId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('renders even when the candidate has no profile', async () => {
+      userRepo.findOne.mockResolvedValue(mockUser);
+      profileRepo.findOne.mockResolvedValue(null);
+      experienceRepo.find.mockResolvedValue([]);
+      profileSkillRepo.find.mockResolvedValue([]);
+      profileLinkRepo.find.mockResolvedValue([]);
+      certificationRepo.find.mockResolvedValue([]);
+      documentRepo.find.mockResolvedValue([]);
+
+      const pdf = await service.exportDataPdf(userId);
+
+      expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
     });
   });
 

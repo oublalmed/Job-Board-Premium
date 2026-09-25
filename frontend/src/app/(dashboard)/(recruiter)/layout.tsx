@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { APP_NAME } from '@/lib/brand';
+import { RecruiterAccessBar } from '@/features/billing/RecruiterAccessBar';
 
 // Server Component (no 'use client') so it can export per-section
 // metadata. No theming here — the app uses a single unified Cobalt theme.
@@ -15,5 +16,12 @@ export default function RecruiterLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      {/* EF-BILL-04 / EF-RECR-05 — subscription-restriction notice and contact
+          quota, surfaced on every recruiter page. */}
+      <RecruiterAccessBar />
+      {children}
+    </>
+  );
 }
