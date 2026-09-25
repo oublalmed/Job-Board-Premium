@@ -5,12 +5,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { In, Not, Repository } from 'typeorm';
 import {
   Subscription,
   SubscriptionPlan,
   SubscriptionStatus,
 } from './entities/subscription.entity.js';
+import { Company } from './entities/company.entity.js';
+import { Recruiter } from './entities/recruiter.entity.js';
+import { resolveContactQuotaForPlan } from '../billing/plan-quota.js';
 
 export interface AdminSubscriptionRow {
   id: string;
@@ -31,6 +35,26 @@ export interface AdminSubscriptionList {
   counts: Record<string, number>;
 }
 
+// A company an admin can assign a pack to — i.e. one that has at least one
+// recruiter. Carries the recruiter contacts and the current live plan (if any)
+// so the admin sees what each company is on before changing it.
+export interface AssignableCompanyRow {
+  companyId: string;
+  companyName: string;
+  recruiterEmails: string[];
+  currentPlan: SubscriptionPlan | null;
+  currentStatus: SubscriptionStatus | null;
+}
+
+// Statuses that still hold a company's single "live" subscription slot. Terminal
+// rows (CANCELLED/EXPIRED) accumulate and are ignored when assigning.
+const LIVE_STATUSES: SubscriptionStatus[] = [
+  SubscriptionStatus.TRIAL,
+  SubscriptionStatus.ACTIVE,
+  SubscriptionStatus.PAST_DUE,
+  SubscriptionStatus.SUSPENDED,
+];
+
 // Admin-side management of recruiter subscriptions: a read overview across all
 // companies plus an administrative cancel. Distinct from the recruiter-facing
 // self-service flow (subscription-checkout) — this is staff tooling.
@@ -39,6 +63,11 @@ export class SubscriptionAdminService {
   constructor(
     @InjectRepository(Subscription)
     private readonly subscriptionRepo: Repository<Subscription>,
+    @InjectRepository(Company)
+    private readonly companyRepo: Repository<Company>,
+    @InjectRepository(Recruiter)
+    private readonly recruiterRepo: Repository<Recruiter>,
+    private readonly configService: ConfigService,
   ) {}
 
   async list(status?: SubscriptionStatus): Promise<AdminSubscriptionList> {
@@ -138,6 +167,118 @@ export class SubscriptionAdminService {
 
     sub.status = SubscriptionStatus.ACTIVE;
     return this.toRow(await this.subscriptionRepo.save(sub), sub.company);
+  }
+
+  // Companies an admin can assign a pack to: those with at least one recruiter
+  // (the real recruiter accounts, not orphan/test companies). Each row carries
+  // the recruiter emails and the current live plan so the admin can decide.
+  async listAssignableCompanies(): Promise<AssignableCompanyRow[]> {
+    const recruiters = await this.recruiterRepo.find({
+      relations: { company: true, user: true },
+    });
+
+    // Group recruiters by company, collecting contact emails.
+    const byCompany = new Map<
+      string,
+      { name: string; emails: Set<string> }
+    >();
+    for (const r of recruiters) {
+      if (!r.company) continue;
+      const entry = byCompany.get(r.companyId) ?? {
+        name: r.company.name,
+        emails: new Set<string>(),
+      };
+      if (r.user?.email) entry.emails.add(r.user.email);
+      byCompany.set(r.companyId, entry);
+    }
+
+    const companyIds = [...byCompany.keys()];
+    if (companyIds.length === 0) return [];
+
+    // The current live subscription per company (most recent wins if several).
+    const liveSubs = await this.subscriptionRepo.find({
+      where: { companyId: In(companyIds), status: In(LIVE_STATUSES) },
+      order: { createdAt: 'DESC' },
+    });
+    const liveByCompany = new Map<string, Subscription>();
+    for (const s of liveSubs) {
+      if (!liveByCompany.has(s.companyId)) liveByCompany.set(s.companyId, s);
+    }
+
+    return [...byCompany.entries()]
+      .map(([companyId, info]) => {
+        const live = liveByCompany.get(companyId);
+        return {
+          companyId,
+          companyName: info.name,
+          recruiterEmails: [...info.emails].sort(),
+          currentPlan: live?.plan ?? null,
+          currentStatus: live?.status ?? null,
+        };
+      })
+      .sort((a, b) => a.companyName.localeCompare(b.companyName));
+  }
+
+  // Assign (or change) a company's pack, per its contract. Reuses the company's
+  // existing live subscription slot when there is one — updating its plan and
+  // quota and (re)activating it — rather than creating a second live row, which
+  // the partial unique index (UQ_subscriptions_company_active) forbids. The
+  // quota defaults to the plan's configured allowance; ENTERPRISE has no
+  // automated quota, so an explicit contactQuota is required for it.
+  async assignPlan(
+    companyId: string,
+    plan: SubscriptionPlan,
+    contactQuota?: number,
+  ): Promise<AdminSubscriptionRow> {
+    const company = await this.companyRepo.findOne({ where: { id: companyId } });
+    if (!company) throw new NotFoundException('Company not found');
+
+    const quota = this.resolveQuota(plan, contactQuota);
+
+    const existing = await this.subscriptionRepo.findOne({
+      where: { companyId, status: In(LIVE_STATUSES) },
+      order: { createdAt: 'DESC' },
+      relations: { company: true },
+    });
+
+    const now = new Date();
+    if (existing) {
+      existing.plan = plan;
+      existing.contactQuota = quota;
+      existing.status = SubscriptionStatus.ACTIVE;
+      existing.cancelAtPeriodEnd = false;
+      existing.pastDueSince = null;
+      // Admin-managed assignment is open-ended (no vendor billing cycle here).
+      existing.endsAt = null;
+      const saved = await this.subscriptionRepo.save(existing);
+      return this.toRow(saved, existing.company ?? company);
+    }
+
+    const created = this.subscriptionRepo.create({
+      companyId,
+      plan,
+      status: SubscriptionStatus.ACTIVE,
+      startsAt: now,
+      endsAt: null,
+      contactQuota: quota,
+      contactsUsed: 0,
+      cancelAtPeriodEnd: false,
+    });
+    const saved = await this.subscriptionRepo.save(created);
+    return this.toRow(saved, company);
+  }
+
+  // A plan's contact allowance: an explicit override wins (and is the only way
+  // to provision ENTERPRISE, whose quota is negotiated per contract); otherwise
+  // the configured per-plan default is used.
+  private resolveQuota(plan: SubscriptionPlan, override?: number): number {
+    if (override !== undefined) return override;
+    if (plan === SubscriptionPlan.ENTERPRISE) {
+      throw new BadRequestException(
+        'A contact quota is required for the Enterprise plan (negotiated per contract)',
+      );
+    }
+    return resolveContactQuotaForPlan(plan, this.configService);
   }
 
   private async load(id: string): Promise<Subscription> {

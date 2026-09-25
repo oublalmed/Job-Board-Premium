@@ -581,8 +581,8 @@
     "quotaExhausted": "Quota used up this month",
     "quotaLow": "Quota almost used up",
     "restrictedTitle": "Restricted access",
-    "restrictedDescription": "Your subscription is not active. Reactivate it to contact candidates and access all features.",
-    "restrictedCta": "Manage subscription"
+    "restrictedDescription": "Your subscription is not active. Contact your administrator to have a pack assigned to you per your contract.",
+    "restrictedAdminHint": "Contact your administrator"
   },
   "candidateDetail": {
     "title": "Candidate profile",
@@ -761,7 +761,21 @@
     "suspendConfirm": "Suspend this subscription? The recruiter will lose CV database access until it is reactivated.",
     "suspended": "Subscription suspended.",
     "reactivate": "Reactivate",
-    "reactivated": "Subscription reactivated."
+    "reactivated": "Subscription reactivated.",
+    "assignTitle": "Assign a pack",
+    "assignSubtitle": "Assign a pack to a recruiter according to their contract.",
+    "assignCompany": "Company (recruiter)",
+    "assignCompanyPlaceholder": "Select a company",
+    "assignNoPlan": "no pack",
+    "assignPlan": "Pack",
+    "assignQuota": "Contact quota",
+    "assignQuotaDefault": "Pack default",
+    "assignQuotaRequiredPlaceholder": "Required for Enterprise",
+    "assignButton": "Assign pack",
+    "assignDone": "Pack assigned successfully.",
+    "assignError": "Failed to assign the pack.",
+    "assignSelectCompany": "Please select a company.",
+    "assignQuotaRequired": "A contact quota is required for the Enterprise pack."
   },
   "adminSettings": {
     "navLabel": "System settings",

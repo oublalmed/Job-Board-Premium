@@ -8,6 +8,7 @@ import {
   XCircle,
   PauseCircle,
   PlayCircle,
+  PackagePlus,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocale } from '@/i18n/locale-context';
@@ -21,7 +22,10 @@ import {
   useCancelSubscription,
   useSuspendSubscription,
   useReactivateSubscription,
+  useAssignableCompanies,
+  useAssignPlan,
   type SubscriptionStatus,
+  type SubscriptionPlan,
 } from '@/features/admin/subscriptions';
 
 const fadeUp = {
@@ -49,6 +53,8 @@ const OVERVIEW_STATUSES = [
   'cancelled',
   'expired',
 ] as const;
+
+const PLANS: SubscriptionPlan[] = ['starter', 'growth', 'scale', 'enterprise'];
 
 const STATUS_VARIANT: Record<
   SubscriptionStatus,
@@ -115,6 +121,8 @@ export default function AdminSubscriptionsPage() {
           </p>
         </div>
       </div>
+
+      <AssignPackCard />
 
       {/* Overview tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -281,5 +289,154 @@ export default function AdminSubscriptionsPage() {
         </Card>
       )}
     </motion.div>
+  );
+}
+
+// Admin assigns (or changes) a company's pack per its contract. Recruiters no
+// longer self-serve — this is the single place a plan is provisioned.
+function AssignPackCard() {
+  const { t } = useLocale();
+  const { toast } = useToast();
+  const { data: companies, isLoading } = useAssignableCompanies();
+  const assign = useAssignPlan();
+
+  const [companyId, setCompanyId] = useState('');
+  const [plan, setPlan] = useState<SubscriptionPlan>('starter');
+  const [quota, setQuota] = useState('');
+
+  const isEnterprise = plan === 'enterprise';
+  const quotaRequired = isEnterprise; // Enterprise quota is per-contract.
+  const canSubmit =
+    !!companyId && (!quotaRequired || quota.trim() !== '') && !assign.isPending;
+
+  const fieldClass =
+    'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!companyId) {
+      toast(t('adminSubscriptions.assignSelectCompany'), 'error');
+      return;
+    }
+    let contactQuota: number | undefined;
+    if (quota.trim() !== '') {
+      const n = Number(quota);
+      if (!Number.isFinite(n) || n < 0) {
+        toast(t('common.error'), 'error');
+        return;
+      }
+      contactQuota = Math.floor(n);
+    } else if (quotaRequired) {
+      toast(t('adminSubscriptions.assignQuotaRequired'), 'error');
+      return;
+    }
+    assign.mutate(
+      { companyId, plan, contactQuota },
+      {
+        onSuccess: () => {
+          toast(t('adminSubscriptions.assignDone'), 'success');
+          setCompanyId('');
+          setQuota('');
+        },
+        onError: () => toast(t('adminSubscriptions.assignError'), 'error'),
+      },
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <PackagePlus className="size-5 text-primary" />
+          <div>
+            <h2 className="text-base font-semibold text-foreground">
+              {t('adminSubscriptions.assignTitle')}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {t('adminSubscriptions.assignSubtitle')}
+            </p>
+          </div>
+        </div>
+
+        <form
+          onSubmit={onSubmit}
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
+        >
+          <label className="flex flex-col gap-1 lg:col-span-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t('adminSubscriptions.assignCompany')}
+            </span>
+            <select
+              className={fieldClass}
+              value={companyId}
+              onChange={(e) => setCompanyId(e.target.value)}
+              disabled={isLoading}
+            >
+              <option value="">
+                {isLoading
+                  ? t('common.loading')
+                  : t('adminSubscriptions.assignCompanyPlaceholder')}
+              </option>
+              {(companies ?? []).map((c) => (
+                <option key={c.companyId} value={c.companyId}>
+                  {c.companyName}
+                  {c.currentPlan
+                    ? ` — ${t(`adminSubscriptions.plan_${c.currentPlan}`)}`
+                    : ` — ${t('adminSubscriptions.assignNoPlan')}`}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t('adminSubscriptions.assignPlan')}
+            </span>
+            <select
+              className={fieldClass}
+              value={plan}
+              onChange={(e) => setPlan(e.target.value as SubscriptionPlan)}
+            >
+              {PLANS.map((p) => (
+                <option key={p} value={p}>
+                  {t(`adminSubscriptions.plan_${p}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t('adminSubscriptions.assignQuota')}
+              {quotaRequired ? ' *' : ''}
+            </span>
+            <input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              className={fieldClass}
+              value={quota}
+              onChange={(e) => setQuota(e.target.value)}
+              placeholder={
+                quotaRequired
+                  ? t('adminSubscriptions.assignQuotaRequiredPlaceholder')
+                  : t('adminSubscriptions.assignQuotaDefault')
+              }
+            />
+          </label>
+
+          <div className="lg:col-span-4">
+            <Button type="submit" className="gap-2" disabled={!canSubmit}>
+              {assign.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <PackagePlus className="size-4" />
+              )}
+              {t('adminSubscriptions.assignButton')}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

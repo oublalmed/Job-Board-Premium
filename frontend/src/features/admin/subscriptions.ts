@@ -48,9 +48,25 @@ export interface AdminSubscriptionList {
   counts: Record<string, number>;
 }
 
+// A company (with recruiters) an admin can assign a pack to.
+export interface AssignableCompany {
+  companyId: string;
+  companyName: string;
+  recruiterEmails: string[];
+  currentPlan: SubscriptionPlan | null;
+  currentStatus: SubscriptionStatus | null;
+}
+
+export interface AssignPlanInput {
+  companyId: string;
+  plan: SubscriptionPlan;
+  contactQuota?: number;
+}
+
 export const subscriptionAdminKeys = {
   all: ['admin', 'subscriptions'] as const,
   list: (status: string) => [...subscriptionAdminKeys.all, status] as const,
+  companies: () => [...subscriptionAdminKeys.all, 'companies'] as const,
 };
 
 export function useAdminSubscriptions(status: string) {
@@ -95,4 +111,28 @@ export function useSuspendSubscription() {
 // Lift the hold: SUSPENDED -> ACTIVE.
 export function useReactivateSubscription() {
   return useSubscriptionAction('reactivate');
+}
+
+// Companies (with recruiters) the admin can assign a pack to.
+export function useAssignableCompanies() {
+  return useQuery({
+    queryKey: subscriptionAdminKeys.companies(),
+    queryFn: () =>
+      authedJson<AssignableCompany[]>('/api/v1/admin/subscriptions/companies'),
+  });
+}
+
+// Assign / change a company's pack per its contract.
+export function useAssignPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AssignPlanInput) =>
+      authedJson<AdminSubscription>('/api/v1/admin/subscriptions/assign', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: subscriptionAdminKeys.all });
+    },
+  });
 }

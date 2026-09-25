@@ -46,7 +46,6 @@ export function DashboardSidebar() {
     { href: '/candidates', label: t('nav.candidates'), icon: Search, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin'] },
-    { href: '/subscription', label: t('nav.subscription'), icon: CreditCard, roles: ['recruiter', 'company_admin'] },
     { href: '/assessments', label: t('assessments.title'), icon: ClipboardList, roles: ['candidate'] },
     {
       href: '/admin/school-verifications',

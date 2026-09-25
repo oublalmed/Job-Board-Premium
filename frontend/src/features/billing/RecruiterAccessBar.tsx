@@ -1,9 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { AlertTriangle, Users } from 'lucide-react';
 import { useLocale } from '@/i18n/locale-context';
-import { Button } from '@/components/ui/button';
 import { useContactQuota } from './queries';
 
 // A contact allowance is "low" at 10% remaining, with a floor of 3, so small
@@ -16,10 +14,12 @@ function isLow(remaining: number, quota: number): boolean {
  * EF-BILL-04 + EF-RECR-05 — mounted across every recruiter page.
  *
  * When the subscription is inactive it explains *why* access is restricted
- * (the backend's subscription guard otherwise blocks silently) and links to
- * billing. When active, it surfaces the remaining contact quota before the
- * limit is hit. Fails silent while loading / on error so it never blocks the
- * page it wraps.
+ * (the backend's subscription guard otherwise blocks silently). Plans are no
+ * longer self-served by recruiters — an administrator assigns the pack per
+ * contract — so it points the recruiter to their administrator rather than to
+ * a checkout page. When active, it surfaces the remaining contact quota before
+ * the limit is hit. Fails silent while loading / on error so it never blocks
+ * the page it wraps.
  */
 export function RecruiterAccessBar() {
   const { t } = useLocale();
@@ -44,9 +44,9 @@ export function RecruiterAccessBar() {
             </p>
           </div>
         </div>
-        <Button asChild size="sm" className="shrink-0 self-start sm:self-center">
-          <Link href="/subscription">{t('billing.restrictedCta')}</Link>
-        </Button>
+        <span className="shrink-0 self-start rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive sm:self-center">
+          {t('billing.restrictedAdminHint')}
+        </span>
       </div>
     );
   }

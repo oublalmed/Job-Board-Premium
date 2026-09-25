@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
   Patch,
+  Post,
   Param,
   Query,
   ParseUUIDPipe,
@@ -14,6 +16,7 @@ import { Roles } from '../../common/decorators/roles.decorator.js';
 import { Role } from '../../common/enums/role.enum.js';
 import { SubscriptionAdminService } from './subscription-admin.service.js';
 import { SubscriptionStatus } from './entities/subscription.entity.js';
+import { AssignPlanDto } from './dto/assign-plan.dto.js';
 
 // Admin management of recruiter subscriptions. ADMIN/MODERATOR only, staff MFA
 // enforced — same posture as the other admin controllers.
@@ -31,6 +34,18 @@ export class SubscriptionAdminController {
       ? (status as SubscriptionStatus)
       : undefined;
     return this.service.list(parsed);
+  }
+
+  // Companies (with recruiters) an admin can assign a pack to.
+  @Get('companies')
+  async companies() {
+    return this.service.listAssignableCompanies();
+  }
+
+  // Assign / change a company's pack per its contract.
+  @Post('assign')
+  async assign(@Body() dto: AssignPlanDto) {
+    return this.service.assignPlan(dto.companyId, dto.plan, dto.contactQuota);
   }
 
   @Patch(':id/cancel')

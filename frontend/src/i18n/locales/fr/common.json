@@ -581,8 +581,8 @@
     "quotaExhausted": "Quota épuisé ce mois-ci",
     "quotaLow": "Quota bientôt épuisé",
     "restrictedTitle": "Accès restreint",
-    "restrictedDescription": "Votre abonnement n'est pas actif. Réactivez-le pour contacter des candidats et accéder à toutes les fonctionnalités.",
-    "restrictedCta": "Gérer l'abonnement"
+    "restrictedDescription": "Votre abonnement n'est pas actif. Contactez votre administrateur pour qu'il vous attribue un pack selon votre contrat.",
+    "restrictedAdminHint": "Contactez votre administrateur"
   },
   "candidateDetail": {
     "title": "Profil du candidat",
@@ -761,7 +761,21 @@
     "suspendConfirm": "Suspendre cet abonnement ? Le recruteur perdra l'accès à la CVthèque jusqu'à réactivation.",
     "suspended": "Abonnement suspendu.",
     "reactivate": "Réactiver",
-    "reactivated": "Abonnement réactivé."
+    "reactivated": "Abonnement réactivé.",
+    "assignTitle": "Attribuer un pack",
+    "assignSubtitle": "Attribuez un pack à un recruteur selon son contrat.",
+    "assignCompany": "Entreprise (recruteur)",
+    "assignCompanyPlaceholder": "Sélectionnez une entreprise",
+    "assignNoPlan": "aucun pack",
+    "assignPlan": "Pack",
+    "assignQuota": "Quota de contacts",
+    "assignQuotaDefault": "Par défaut du pack",
+    "assignQuotaRequiredPlaceholder": "Requis pour Enterprise",
+    "assignButton": "Attribuer le pack",
+    "assignDone": "Pack attribué avec succès.",
+    "assignError": "Échec de l'attribution du pack.",
+    "assignSelectCompany": "Veuillez sélectionner une entreprise.",
+    "assignQuotaRequired": "Un quota de contacts est requis pour le pack Enterprise."
   },
   "adminSettings": {
     "navLabel": "Paramètres système",

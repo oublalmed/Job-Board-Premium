@@ -581,8 +581,8 @@
     "quotaExhausted": "استُنفدت الحصّة هذا الشهر",
     "quotaLow": "الحصّة على وشك النفاد",
     "restrictedTitle": "وصول مقيّد",
-    "restrictedDescription": "اشتراكك غير نشط. أعِد تفعيله للتواصل مع المرشّحين والوصول إلى جميع الميزات.",
-    "restrictedCta": "إدارة الاشتراك"
+    "restrictedDescription": "اشتراكك غير نشط. تواصل مع المسؤول لتخصيص باقة لك وفق عقدك.",
+    "restrictedAdminHint": "تواصل مع المسؤول"
   },
   "candidateDetail": {
     "title": "ملف المرشّح",
@@ -761,7 +761,21 @@
     "suspendConfirm": "تعليق هذا الاشتراك؟ سيفقد المُوظِّف الوصول إلى قاعدة السير الذاتية حتى إعادة التفعيل.",
     "suspended": "تمّ تعليق الاشتراك.",
     "reactivate": "إعادة التفعيل",
-    "reactivated": "تمّت إعادة تفعيل الاشتراك."
+    "reactivated": "تمّت إعادة تفعيل الاشتراك.",
+    "assignTitle": "تخصيص باقة",
+    "assignSubtitle": "خصّص باقة لأحد المُوظِّفين وفق عقده.",
+    "assignCompany": "الشركة (المُوظِّف)",
+    "assignCompanyPlaceholder": "اختر شركة",
+    "assignNoPlan": "لا توجد باقة",
+    "assignPlan": "الباقة",
+    "assignQuota": "حصة جهات الاتصال",
+    "assignQuotaDefault": "القيمة الافتراضية للباقة",
+    "assignQuotaRequiredPlaceholder": "مطلوبة لباقة Enterprise",
+    "assignButton": "تخصيص الباقة",
+    "assignDone": "تمّ تخصيص الباقة بنجاح.",
+    "assignError": "فشل تخصيص الباقة.",
+    "assignSelectCompany": "الرجاء اختيار شركة.",
+    "assignQuotaRequired": "حصة جهات الاتصال مطلوبة لباقة Enterprise."
   },
   "adminSettings": {
     "navLabel": "إعدادات النظام",
