@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from '@/i18n/locale-context';
+import type { SupportedLocale } from '@/i18n';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,7 +70,7 @@ const fadeUp = {
 function describeStartError(
   body: unknown,
   t: (key: string, vars?: Record<string, string>) => string,
-  locale: 'fr' | 'en',
+  locale: SupportedLocale,
 ): string {
   const b = body as { message?: string; reEligibleAt?: string } | undefined;
   const message = b?.message ?? '';

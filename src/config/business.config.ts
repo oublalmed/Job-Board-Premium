@@ -45,6 +45,15 @@ export const businessConfig = registerAs('business', () => ({
   // newly indexed into the CVthèque since the last alert. Standard 5-field
   // cron, default daily at 07:00 (after the overnight indexation/recalc jobs).
   savedSearchAlertCron: process.env['SAVED_SEARCH_ALERT_CRON'] ?? '0 7 * * *',
+  // ENF-12 — data-retention sweep. Purges transient read notifications past
+  // their retention window (legally-mandated records — audit, invoices — have
+  // their own retention and are never touched here). Default daily at 04:00,
+  // after the overnight jobs; window default 90 days.
+  dataRetentionCron: process.env['DATA_RETENTION_CRON'] ?? '0 4 * * *',
+  notificationRetentionDays: parseInt(
+    process.env['NOTIFICATION_RETENTION_DAYS'] ?? '90',
+    10,
+  ),
   // EF-CAND-04 — external profile-link accessibility verification. Driver
   // selects the outbound prober: 'http' (default) performs a real SSRF-guarded
   // request; 'stub' keeps CI/dev hermetic (no network). Timeout bounds each
