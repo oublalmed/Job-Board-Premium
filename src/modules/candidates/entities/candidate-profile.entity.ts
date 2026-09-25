@@ -16,6 +16,15 @@ export enum ProfileVisibility {
   HIDDEN = 'hidden',
 }
 
+// The kind of contract the candidate is looking for. Values are the canonical
+// human-readable labels so existing text-based displays render them as-is.
+export enum ContractType {
+  CDI = 'CDI',
+  CDD = 'CDD',
+  PFE = 'PFE',
+  FREELANCE = 'Freelance',
+}
+
 // EF-ADM-01 — admin-owned moderation state, distinct from the candidate's own
 // `visibility` choice. A SUSPENDED profile is excluded from the CVthèque
 // regardless of what the candidate sets, and cannot be un-suspended by them.
@@ -103,6 +112,16 @@ export class CandidateProfile {
   // fields; the offers module stays removed — these live on the profile.)
   @Column({ type: 'varchar', nullable: true })
   availability!: string | null;
+
+  // Desired contract type (CDI/CDD/PFE/Freelance). Nullable — the candidate
+  // may leave it unspecified.
+  @Column({
+    name: 'contract_type',
+    type: 'enum',
+    enum: ContractType,
+    nullable: true,
+  })
+  contractType!: ContractType | null;
 
   @Column({ type: 'varchar', nullable: true })
   mobility!: string | null;

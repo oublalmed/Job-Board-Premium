@@ -15,14 +15,24 @@ export const SUBSCRIPTION_STATUS_TRANSITIONS: Readonly<
     SubscriptionStatus.ACTIVE,
     SubscriptionStatus.EXPIRED,
     SubscriptionStatus.CANCELLED,
+    SubscriptionStatus.SUSPENDED,
   ],
   [SubscriptionStatus.ACTIVE]: [
     SubscriptionStatus.PAST_DUE,
     SubscriptionStatus.CANCELLED,
+    SubscriptionStatus.SUSPENDED,
   ],
   [SubscriptionStatus.PAST_DUE]: [
     SubscriptionStatus.ACTIVE,
     SubscriptionStatus.CANCELLED,
+    SubscriptionStatus.SUSPENDED,
+  ],
+  // Admin hold — reversible back to ACTIVE (reactivate) or closed out to a
+  // terminal state. SUSPENDED is reached from any non-terminal status above.
+  [SubscriptionStatus.SUSPENDED]: [
+    SubscriptionStatus.ACTIVE,
+    SubscriptionStatus.CANCELLED,
+    SubscriptionStatus.EXPIRED,
   ],
   [SubscriptionStatus.CANCELLED]: [],
   [SubscriptionStatus.EXPIRED]: [],

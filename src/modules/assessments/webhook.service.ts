@@ -89,6 +89,50 @@ export class WebhookService {
       );
     }
 
+    return this.finalizeAssessment(assessment);
+  }
+
+  // Local/dev only (see AssessmentController.completeForDev): finish an
+  // in-progress attempt the candidate owns, without a real provider webhook.
+  // The stub scoring provider produces a deterministic result, so this drives
+  // the exact same scoring + indexation path a real webhook would — it is how
+  // an assessment becomes "completed" when there is no external exam vendor
+  // wired up locally. Owner-scoped; refuses anything not in progress.
+  async simulateCompletion(
+    candidateId: string,
+    assessmentId: string,
+  ): Promise<{ alreadyProcessed: boolean; scoreId: string }> {
+    const assessment = await this.assessmentRepo.findOne({
+      where: { id: assessmentId },
+    });
+    if (!assessment) {
+      throw new NotFoundException('Assessment not found');
+    }
+    if (assessment.candidateId !== candidateId) {
+      throw new ForbiddenException('Access denied');
+    }
+    if (assessment.status !== AssessmentStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        'Only an in-progress assessment can be completed',
+      );
+    }
+    return this.finalizeAssessment(assessment);
+  }
+
+  // Shared tail of both the real webhook and the local simulation: fetch the
+  // provider result for an assessment, persist its Score, mark it COMPLETED and
+  // re-apply the CVthèque indexation thresholds. Idempotent — a second call for
+  // an already-scored assessment is a no-op.
+  private async finalizeAssessment(
+    assessment: Assessment,
+  ): Promise<{ alreadyProcessed: boolean; scoreId: string }> {
+    const externalId = assessment.externalAssessmentId;
+    if (!externalId) {
+      throw new BadRequestException(
+        'Assessment has no external provider reference',
+      );
+    }
+
     const existingScore = await this.scoreRepo.findOne({
       where: { assessmentId: assessment.id },
     });

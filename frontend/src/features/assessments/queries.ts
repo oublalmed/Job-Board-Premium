@@ -136,6 +136,32 @@ export function useResumeAssessment() {
   });
 }
 
+// Local/dev only — finish an in-progress attempt without a real scoring vendor
+// (the backend endpoint is refused in production). Drives the same scoring +
+// indexation path a real provider webhook would, then refreshes the history and
+// catalog so the new score and cooldown state appear. Raw fetch + bearer: the
+// endpoint post-dates the generated OpenAPI schema.
+export function useSimulateCompletion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (assessmentId: string) => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/assessments/${assessmentId}/complete-dev`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getAccessToken()}` },
+        },
+      );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as { alreadyProcessed: boolean; scoreId: string };
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: assessmentKeys.history() });
+      void queryClient.invalidateQueries({ queryKey: assessmentKeys.catalog() });
+    },
+  });
+}
+
 export function useReportIncident() {
   return useMutation({
     mutationFn: async (assessmentId: string) =>

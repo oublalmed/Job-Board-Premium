@@ -15,6 +15,9 @@ import {
   Table2,
   AlertCircle,
   ArrowDownWideNarrow,
+  GraduationCap,
+  ShieldCheck,
+  ClipboardCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -136,6 +139,38 @@ export default function CandidatesPage() {
         accessorKey: 'location',
         header: t('search.location'),
         cell: ({ row }) => row.original.location ?? '—',
+      },
+      {
+        accessorKey: 'school',
+        header: t('search.school'),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const c = row.original;
+          if (!c.school) return '—';
+          return (
+            <span className="flex items-center gap-1">
+              <GraduationCap className="size-3.5 text-muted-foreground" />
+              <span className="truncate">{c.school}</span>
+              {c.schoolVerified && (
+                <ShieldCheck
+                  className="size-3.5 shrink-0 text-success"
+                  aria-label={t('search.schoolVerified')}
+                />
+              )}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'assessments',
+        header: t('search.assessments'),
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1 text-sm">
+            <ClipboardCheck className="size-3.5 text-muted-foreground" />
+            {row.original.assessmentCount ?? 0}
+          </span>
+        ),
       },
       {
         id: 'score',
@@ -395,6 +430,23 @@ export default function CandidatesPage() {
                           <MapPin className="size-3" /> {candidate.location}
                         </span>
                       )}
+                      {candidate.school && (
+                        <span className="flex items-center gap-1">
+                          <GraduationCap className="size-3" /> {candidate.school}
+                          {candidate.schoolVerified && (
+                            <ShieldCheck
+                              className="size-3 text-success"
+                              aria-label={t('search.schoolVerified')}
+                            />
+                          )}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <ClipboardCheck className="size-3" />
+                        {t('search.assessmentsCount', {
+                          count: String(candidate.assessmentCount ?? 0),
+                        })}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

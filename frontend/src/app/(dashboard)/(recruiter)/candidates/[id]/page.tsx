@@ -11,6 +11,16 @@ import {
   Loader2,
   TrendingUp,
   Lock,
+  Briefcase,
+  GraduationCap,
+  FolderGit2,
+  Award,
+  Link2,
+  Download,
+  FileText,
+  ExternalLink,
+  ShieldCheck,
+  ClipboardCheck,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocale } from '@/i18n/locale-context';
@@ -23,6 +33,7 @@ import {
   useAddToShortlist,
   useCandidateDetail,
 } from '@/features/candidates/queries';
+import { CandidateScoreBadge } from '@/features/candidates/CandidateScoreBadge';
 import { MessagePopup } from '@/features/messages/MessagePopup';
 
 const fadeUp = {
@@ -31,8 +42,35 @@ const fadeUp = {
   transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
 };
 
+// "2022-05-01" -> "mai 2022" in the active locale; falsy -> null.
+function formatMonth(date: string | null, locale: string): string | null {
+  if (!date) return null;
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return date;
+  return d.toLocaleDateString(locale, { year: 'numeric', month: 'short' });
+}
+
+function formatRange(
+  start: string | null,
+  end: string | null,
+  locale: string,
+  present: string,
+): string {
+  const s = formatMonth(start, locale);
+  const e = end ? formatMonth(end, locale) : present;
+  if (!s) return e === present ? '' : (e ?? '');
+  return `${s} — ${e}`;
+}
+
+// Human-readable file size for the CV download button.
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function CandidateDetailPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
@@ -89,6 +127,13 @@ export default function CandidateDetailPage() {
   const fullName =
     [candidate.firstName, candidate.lastName].filter(Boolean).join(' ') || '—';
 
+  const experiences = candidate.experiences ?? [];
+  const work = experiences.filter((e) => e.type === 'work');
+  const education = experiences.filter((e) => e.type === 'education');
+  const projects = candidate.projects ?? [];
+  const certifications = candidate.certifications ?? [];
+  const links = candidate.links ?? [];
+
   return (
     <motion.div className="flex flex-col gap-6" {...fadeUp}>
       <div className="flex items-center gap-4">
@@ -127,6 +172,33 @@ export default function CandidateDetailPage() {
               {candidate.headline && (
                 <p className="mt-1 text-muted-foreground">{candidate.headline}</p>
               )}
+
+              {/* Valuing signals: score, school (+verified) and completed
+                  evaluations — the same comparison signals as the list card. */}
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+                <CandidateScoreBadge
+                  score={candidate.score ?? 0}
+                  percentile={candidate.percentile ?? null}
+                />
+                {candidate.school && (
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <GraduationCap className="size-4" />
+                    {candidate.school}
+                    {candidate.schoolVerified && (
+                      <ShieldCheck
+                        className="size-4 text-success"
+                        aria-label={t('search.schoolVerified')}
+                      />
+                    )}
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <ClipboardCheck className="size-4" />
+                  {t('search.assessmentsCount', {
+                    count: String(candidate.assessmentCount ?? 0),
+                  })}
+                </span>
+              </div>
 
               {/* EF-CAND-05 — availability / mobility / salary (when disclosed) */}
               {(candidate.availability ||
@@ -183,6 +255,27 @@ export default function CandidateDetailPage() {
                 <MessageSquare className="size-4" />
                 {t('search.contact')}
               </Button>
+              {candidate.cv ? (
+                <a
+                  href={candidate.cv.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={candidate.cv.originalName}
+                >
+                  <Button variant="outline" className="w-full gap-2">
+                    <Download className="size-4" />
+                    {t('candidateDetail.downloadCv')}
+                    <span className="text-xs text-muted-foreground">
+                      ({formatBytes(candidate.cv.size)})
+                    </span>
+                  </Button>
+                </a>
+              ) : candidate.anonymized ? (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Lock className="size-3.5" aria-hidden="true" />
+                  {t('candidateDetail.cvLockedHint')}
+                </span>
+              ) : null}
             </div>
           </div>
         </CardContent>
@@ -204,6 +297,214 @@ export default function CandidateDetailPage() {
                 </Badge>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {candidate.bio && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="size-4 text-primary" />
+              {t('candidateDetail.about')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="whitespace-pre-line text-sm text-muted-foreground">
+              {candidate.bio}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {work.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Briefcase className="size-4 text-primary" />
+              {t('candidateDetail.experience')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {work.map((e, i) => (
+              <div
+                key={`${e.title}-${i}`}
+                className="border-s-2 border-border ps-4"
+              >
+                <p className="text-sm font-medium text-foreground">{e.title}</p>
+                <p className="text-sm text-muted-foreground">{e.organization}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatRange(
+                    e.startDate,
+                    e.endDate,
+                    locale,
+                    t('candidateDetail.present'),
+                  )}
+                </p>
+                {e.description && (
+                  <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
+                    {e.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {education.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <GraduationCap className="size-4 text-primary" />
+              {t('candidateDetail.education')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {education.map((e, i) => (
+              <div
+                key={`${e.title}-${i}`}
+                className="border-s-2 border-border ps-4"
+              >
+                <p className="text-sm font-medium text-foreground">{e.title}</p>
+                <p className="text-sm text-muted-foreground">{e.organization}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatRange(
+                    e.startDate,
+                    e.endDate,
+                    locale,
+                    t('candidateDetail.present'),
+                  )}
+                </p>
+                {e.description && (
+                  <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
+                    {e.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {projects.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FolderGit2 className="size-4 text-primary" />
+              {t('candidateDetail.projects')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {projects.map((p, i) => (
+              <div
+                key={`${p.title}-${i}`}
+                className="border-s-2 border-border ps-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">{p.title}</p>
+                  {p.url && (
+                    <a
+                      href={p.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <ExternalLink className="size-3" />
+                      {t('candidateDetail.viewProject')}
+                    </a>
+                  )}
+                </div>
+                {(p.role ||
+                  formatRange(
+                    p.startDate,
+                    p.endDate,
+                    locale,
+                    t('candidateDetail.present'),
+                  )) && (
+                  <p className="text-xs text-muted-foreground">
+                    {[
+                      p.role,
+                      formatRange(
+                        p.startDate,
+                        p.endDate,
+                        locale,
+                        t('candidateDetail.present'),
+                      ),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                )}
+                <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
+                  {p.description}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {certifications.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Award className="size-4 text-primary" />
+              {t('candidateDetail.certifications')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {certifications.map((c, i) => (
+              <div
+                key={`${c.name}-${i}`}
+                className="flex flex-wrap items-center justify-between gap-2"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{c.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {[c.issuer, formatMonth(c.issueDate, locale)]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                </div>
+                {c.credentialUrl && (
+                  <a
+                    href={c.credentialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <ExternalLink className="size-3" />
+                    {t('candidateDetail.viewCredential')}
+                  </a>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {links.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Link2 className="size-4 text-primary" />
+              {t('candidateDetail.links')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {links.map((l, i) => (
+              <a
+                key={`${l.url}-${i}`}
+                href={l.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-accent"
+              >
+                <ExternalLink className="size-3.5" />
+                {l.label || l.type}
+              </a>
+            ))}
           </CardContent>
         </Card>
       )}

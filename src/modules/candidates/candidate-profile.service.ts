@@ -92,6 +92,7 @@ export class CandidateProfileService {
         | 'school'
         | 'visibility'
         | 'availability'
+        | 'contractType'
         | 'mobility'
         | 'salaryMin'
         | 'salaryMax'
@@ -130,12 +131,24 @@ export class CandidateProfileService {
     // pas affectés.
     if (
       data.visibility !== undefined &&
-      data.visibility !== ProfileVisibility.HIDDEN &&
-      !profile.indexedInCvtheque
+      data.visibility !== ProfileVisibility.HIDDEN
     ) {
-      throw new ForbiddenException(
-        'Votre profil doit être évalué et publiable avant de devenir visible.',
-      );
+      if (!profile.indexedInCvtheque) {
+        throw new ForbiddenException(
+          'Votre profil doit être évalué et publiable avant de devenir visible.',
+        );
+      }
+      // La vérification de l'école est obligatoire pour publier : un
+      // justificatif (diplôme/attestation) doit avoir été téléversé. Le
+      // document DIPLOMA est créé par SchoolVerificationService.submit().
+      const diploma = await this.documentRepo.findOne({
+        where: { ownerId: profile.userId, type: DocumentType.DIPLOMA },
+      });
+      if (!diploma) {
+        throw new ForbiddenException(
+          "Vous devez téléverser un justificatif d'école avant de rendre votre profil visible.",
+        );
+      }
     }
 
     Object.assign(profile, data);

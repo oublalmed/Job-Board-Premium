@@ -91,6 +91,15 @@ export const configValidationSchema = Joi.object({
   // documented extension point, only 'log' is wired today.
   NOTIFICATIONS_EMAIL_ENABLED: Joi.boolean().default(false),
   MAIL_DRIVER: Joi.string().valid('log', 'smtp').default('log'),
+  // SMTP delivery (used when MAIL_DRIVER=smtp) — points at a local catcher
+  // (Mailpit :1025) in dev or a managed relay elsewhere.
+  SMTP_HOST: Joi.string().default('localhost'),
+  SMTP_PORT: Joi.number().default(1025),
+  SMTP_USER: Joi.string().allow('').default(''),
+  SMTP_PASSWORD: Joi.string().allow('').default(''),
+  MAIL_FROM: Joi.string().allow('').default(''),
+  // Front-end origin used to build verify/reset links in emails.
+  APP_WEB_URL: Joi.string().default('http://localhost:3001'),
   // Antivirus (EF-CAND-03) — `stub` is the default so CI/local/dev behavior
   // is unchanged; `clamav` streams uploads to a clamd daemon over TCP.
   ANTIVIRUS_DRIVER: Joi.string().valid('stub', 'clamav').default('stub'),
