@@ -7,8 +7,13 @@ import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import { correlationIdMiddleware } from './common/middleware/correlation-id.middleware.js';
+import { startTracing } from './observability/tracing.js';
 
 async function bootstrap() {
+  // ENF-09 — start OpenTelemetry first (no-op unless OTEL_ENABLED=true) so
+  // HTTP/Express spans capture the whole request lifecycle.
+  startTracing();
+
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     rawBody: true,

@@ -1,12 +1,30 @@
 import fr from './locales/fr/common.json';
 import en from './locales/en/common.json';
+import ar from './locales/ar/common.json';
 
-export const SUPPORTED_LOCALES = ['fr', 'en'] as const;
+export const SUPPORTED_LOCALES = ['fr', 'en', 'ar'] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+
+/**
+ * ENF-14 — locales whose script is written right-to-left. The single source
+ * of truth for RTL, consumed by the locale context (runtime `dir`) and by the
+ * before-paint no-flash script in the root layout. Keep the two in sync.
+ */
+export const RTL_LOCALES: ReadonlySet<SupportedLocale> = new Set<SupportedLocale>([
+  'ar',
+]);
+
+export function isRtlLocale(locale: SupportedLocale): boolean {
+  return RTL_LOCALES.has(locale);
+}
+
+export function textDirection(locale: SupportedLocale): 'rtl' | 'ltr' {
+  return isRtlLocale(locale) ? 'rtl' : 'ltr';
+}
 
 type TranslationTree = typeof fr;
 
-const translations: Record<SupportedLocale, TranslationTree> = { fr, en };
+const translations: Record<SupportedLocale, TranslationTree> = { fr, en, ar };
 
 function getNestedValue(obj: unknown, path: string): string {
   let current: unknown = obj;

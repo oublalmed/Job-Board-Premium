@@ -3,6 +3,14 @@
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import type { Notification } from '@/features/notifications/queries';
+import type { SupportedLocale } from '@/i18n';
+
+// BCP-47 tag per app locale for the weekday labels (Casablanca-centric).
+const WEEKDAY_INTL_LOCALE: Record<SupportedLocale, string> = {
+  fr: 'fr-FR',
+  en: 'en-US',
+  ar: 'ar-MA',
+};
 
 interface ActivityDatum {
   key: string;
@@ -12,8 +20,8 @@ interface ActivityDatum {
 
 // Bucket notifications into the trailing 7 calendar days. Pure/deterministic
 // so the chart is a plain function of its data.
-function buildData(notifications: Notification[], locale: 'fr' | 'en'): ActivityDatum[] {
-  const intl = locale === 'fr' ? 'fr-FR' : 'en-US';
+function buildData(notifications: Notification[], locale: SupportedLocale): ActivityDatum[] {
+  const intl = WEEKDAY_INTL_LOCALE[locale] ?? 'fr-FR';
   const now = new Date();
   const days: ActivityDatum[] = [];
   const index = new Map<string, number>();
@@ -46,7 +54,7 @@ export function ActivityChart({
 }: {
   notifications: Notification[];
   label: string;
-  locale: 'fr' | 'en';
+  locale: SupportedLocale;
 }) {
   const data = buildData(notifications, locale);
   return (

@@ -12,6 +12,7 @@ import {
   SUPPORTED_LOCALES,
   t as translate,
   tArray,
+  textDirection,
   type SupportedLocale,
 } from './index';
 
@@ -72,12 +73,21 @@ function setStoredLocale(next: SupportedLocale) {
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const locale = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  // Sync external systems (the <html lang> attribute + the persisted
-  // choice) whenever the locale changes. No setState here, so no cascading
-  // render — this is the intended use of an effect.
+  // Sync external systems (the <html lang>/<html dir> attributes + the
+  // persisted choice) whenever the locale changes. No setState here, so no
+  // cascading render — this is the intended use of an effect. ENF-14: `dir`
+  // flips to "rtl" for Arabic so the whole layout mirrors (logical CSS
+  // properties + Tailwind's ltr:/rtl: variants do the rest).
   useEffect(() => {
-    document.documentElement.lang = locale;
-    localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    const el = document.documentElement;
+    el.lang = locale;
+    el.dir = textDirection(locale);
+    try {
+      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    } catch {
+      // Storage can be blocked (private mode, cookie policy); the locale still
+      // applies for this session, we just cannot persist the choice.
+    }
   }, [locale]);
 
   const setLocale = useCallback((newLocale: SupportedLocale) => {
