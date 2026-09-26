@@ -15,6 +15,10 @@ import {
   Table2,
   AlertCircle,
   ArrowDownWideNarrow,
+  GraduationCap,
+  ShieldCheck,
+  ClipboardCheck,
+  MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -32,6 +36,7 @@ import { useCandidateSearchStore } from '@/features/candidates/search-store';
 import { SavedSearchesPanel } from '@/features/candidates/saved-searches-panel';
 import { AnonymizedHint } from '@/features/candidates/AnonymizedHint';
 import { CandidateScoreBadge } from '@/features/candidates/CandidateScoreBadge';
+import { MessagePopup } from '@/features/messages/MessagePopup';
 import {
   useAddToShortlist,
   useCandidateSearch,
@@ -64,6 +69,11 @@ export default function CandidatesPage() {
 
   const [draft, setDraft] = useState<CandidateFilters>(filters);
   const [showFilters, setShowFilters] = useState(false);
+  // The candidate whose "Contacter" popup is open (from a list card / table row).
+  const [contactTarget, setContactTarget] = useState<{
+    id: string;
+    name: string | null;
+  } | null>(null);
 
   const search = useCandidateSearch(filters, hasSearched);
   const addToShortlist = useAddToShortlist();
@@ -83,6 +93,13 @@ export default function CandidatesPage() {
   function applySavedSearch(next: CandidateFilters) {
     setDraft(next);
     apply(next);
+  }
+
+  function openContact(c: CandidateResult) {
+    setContactTarget({
+      id: c.id,
+      name: [c.firstName, c.lastName].filter(Boolean).join(' ') || null,
+    });
   }
 
   function handleAdd(id: string) {
@@ -138,6 +155,38 @@ export default function CandidatesPage() {
         cell: ({ row }) => row.original.location ?? '—',
       },
       {
+        accessorKey: 'school',
+        header: t('search.school'),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const c = row.original;
+          if (!c.school) return '—';
+          return (
+            <span className="flex items-center gap-1">
+              <GraduationCap className="size-3.5 text-muted-foreground" />
+              <span className="truncate">{c.school}</span>
+              {c.schoolVerified && (
+                <ShieldCheck
+                  className="size-3.5 shrink-0 text-success"
+                  aria-label={t('search.schoolVerified')}
+                />
+              )}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'assessments',
+        header: t('search.assessments'),
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1 text-sm">
+            <ClipboardCheck className="size-3.5 text-muted-foreground" />
+            {row.original.assessmentCount ?? 0}
+          </span>
+        ),
+      },
+      {
         id: 'score',
         // EF-RECR-04 — the score/ranking column, made explicit on screen. The
         // list is server-ordered by score desc, so the row index (1-based) is
@@ -179,6 +228,14 @@ export default function CandidatesPage() {
                   <UserPlus className="size-3.5" />
                 )}
                 <span className="hidden lg:inline">{t('search.addToShortlist')}</span>
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => openContact(c)}
+              >
+                <MessageSquare className="size-3.5" />
+                <span className="hidden lg:inline">{t('search.contact')}</span>
               </Button>
             </div>
           );
@@ -395,6 +452,23 @@ export default function CandidatesPage() {
                           <MapPin className="size-3" /> {candidate.location}
                         </span>
                       )}
+                      {candidate.school && (
+                        <span className="flex items-center gap-1">
+                          <GraduationCap className="size-3" /> {candidate.school}
+                          {candidate.schoolVerified && (
+                            <ShieldCheck
+                              className="size-3 text-success"
+                              aria-label={t('search.schoolVerified')}
+                            />
+                          )}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <ClipboardCheck className="size-3" />
+                        {t('search.assessmentsCount', {
+                          count: String(candidate.assessmentCount ?? 0),
+                        })}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -417,6 +491,14 @@ export default function CandidatesPage() {
                         <UserPlus className="size-3.5" />
                       )}
                       <span className="hidden sm:inline">{t('search.addToShortlist')}</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => openContact(candidate)}
+                    >
+                      <MessageSquare className="size-3.5" />
+                      <span className="hidden sm:inline">{t('search.contact')}</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -451,6 +533,18 @@ export default function CandidatesPage() {
             {t('search.loadMore')}
           </Button>
         </div>
+      )}
+
+      {contactTarget && (
+        <MessagePopup
+          key={contactTarget.id}
+          open
+          onOpenChange={(o) => {
+            if (!o) setContactTarget(null);
+          }}
+          candidateProfileId={contactTarget.id}
+          candidateName={contactTarget.name}
+        />
       )}
     </motion.div>
   );

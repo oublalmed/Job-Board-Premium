@@ -9,7 +9,10 @@ import {
   Max,
   MaxLength,
 } from 'class-validator';
-import { ProfileVisibility } from '../entities/candidate-profile.entity.js';
+import {
+  ProfileVisibility,
+  ContractType,
+} from '../entities/candidate-profile.entity.js';
 
 // EF-CAND-05 — the platform operates in a single currency; the salary range is
 // always expressed in MAD, validated explicitly rather than left implicit.
@@ -59,6 +62,11 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(60)
   availability?: string;
+
+  // Desired contract type (CDI/CDD/PFE/Freelance).
+  @IsOptional()
+  @IsEnum(ContractType)
+  contractType?: ContractType;
 
   @IsOptional()
   @IsString()

@@ -13,6 +13,10 @@ import { SubscriptionGuardService } from './subscription-guard.service.js';
 import { ShortlistService } from './shortlist.service.js';
 import { ShortlistController } from './shortlist.controller.js';
 import { ContactQuotaService } from './contact-quota.service.js';
+import { SubscriptionAdminService } from './subscription-admin.service.js';
+import { SubscriptionAdminController } from './subscription-admin.controller.js';
+import { RecruiterAdminService } from './recruiter-admin.service.js';
+import { RecruiterAdminController } from './recruiter-admin.controller.js';
 import { UsersModule } from '../users/users.module.js';
 import { CandidatesModule } from '../candidates/candidates.module.js';
 import { CONTACT_QUOTA_PORT } from '../../ports/contact-quota.port.js';
@@ -33,6 +37,8 @@ import { CONTACT_QUOTA_PORT } from '../../ports/contact-quota.port.js';
     PublicCompanyController,
     RecruiterController,
     ShortlistController,
+    SubscriptionAdminController,
+    RecruiterAdminController,
   ],
   providers: [
     CompanyService,
@@ -40,6 +46,8 @@ import { CONTACT_QUOTA_PORT } from '../../ports/contact-quota.port.js';
     SubscriptionGuardService,
     ShortlistService,
     ContactQuotaService,
+    SubscriptionAdminService,
+    RecruiterAdminService,
     { provide: CONTACT_QUOTA_PORT, useClass: ContactQuotaService },
   ],
   exports: [

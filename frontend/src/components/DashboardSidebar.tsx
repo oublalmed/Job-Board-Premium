@@ -20,6 +20,7 @@ import {
   SlidersHorizontal,
   ShieldCheck,
   ShieldAlert,
+  UserPlus,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -40,11 +41,12 @@ export function DashboardSidebar() {
 
   const links: SidebarLink[] = [
     { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
-    { href: '/profile', label: t('nav.profile'), icon: User },
+    // "Mon profil" is the candidate/recruiter self-profile editor — not part of
+    // a staff (admin/moderator) console, so it is role-scoped to end users.
+    { href: '/profile', label: t('nav.profile'), icon: User, roles: ['candidate', 'recruiter', 'company_admin'] },
     { href: '/candidates', label: t('nav.candidates'), icon: Search, roles: ['recruiter', 'company_admin', 'admin'] },
     { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin', 'admin'] },
-    { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin', 'admin'] },
-    { href: '/subscription', label: t('nav.subscription'), icon: CreditCard, roles: ['recruiter', 'company_admin'] },
+    { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin'] },
     { href: '/assessments', label: t('assessments.title'), icon: ClipboardList, roles: ['candidate'] },
     {
       href: '/admin/school-verifications',
@@ -62,6 +64,12 @@ export function DashboardSidebar() {
       href: '/admin/message-reports',
       label: t('moderation.navLabel'),
       icon: Flag,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/integrity',
+      label: t('adminIntegrity.navLabel'),
+      icon: ShieldAlert,
       roles: ['admin', 'moderator'],
     },
     {
@@ -83,12 +91,25 @@ export function DashboardSidebar() {
       roles: ['admin'],
     },
     {
+      href: '/admin/recruiters',
+      label: t('adminRecruiters.navLabel'),
+      icon: UserPlus,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/subscriptions',
+      label: t('adminSubscriptions.navLabel'),
+      icon: CreditCard,
+      roles: ['admin', 'moderator'],
+    },
+    {
       href: '/admin/settings',
       label: t('adminSettings.navLabel'),
       icon: SlidersHorizontal,
       roles: ['admin'],
     },
-    { href: '/messages', label: t('nav.messages'), icon: MessageSquare },
+    // Recruiter<->candidate messaging — not a staff console feature.
+    { href: '/messages', label: t('nav.messages'), icon: MessageSquare, roles: ['candidate', 'recruiter', 'company_admin'] },
     { href: '/notifications', label: t('nav.notifications'), icon: Bell },
     { href: '/settings', label: t('nav.settings'), icon: Settings },
   ];

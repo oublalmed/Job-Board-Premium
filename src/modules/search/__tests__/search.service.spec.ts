@@ -5,6 +5,12 @@ import { SearchService } from '../search.service.js';
 import { CandidateProfile } from '../../candidates/entities/candidate-profile.entity.js';
 import { ProfileSkill } from '../../candidates/entities/profile-skill.entity.js';
 import { Conversation } from '../../messaging/entities/conversation.entity.js';
+import { Experience } from '../../candidates/entities/experience.entity.js';
+import { Project } from '../../candidates/entities/project.entity.js';
+import { Certification } from '../../candidates/entities/certification.entity.js';
+import { ProfileLink } from '../../candidates/entities/profile-link.entity.js';
+import { Document } from '../../candidates/entities/document.entity.js';
+import { OBJECT_STORAGE } from '../../../ports/object-storage.port.js';
 
 function createMockQueryBuilder(): Record<string, jest.Mock> {
   const qb: Record<string, jest.Mock> = {};
@@ -71,6 +77,19 @@ describe('SearchService', () => {
     // EF-SRCH-05 — no prior contact by default (count 0).
     conversationRepo = { count: jest.fn().mockResolvedValue(0) };
 
+    // EF-CAND-07 — the "proof of work" sections getCandidateDetail loads
+    // (experience/education, projects, certifications, personal links) and the
+    // gated CV document. Empty by default; individual tests override as needed.
+    const findEmpty = () => ({ find: jest.fn().mockResolvedValue([]) });
+    const experienceRepo = findEmpty();
+    const projectRepo = findEmpty();
+    const certificationRepo = findEmpty();
+    const profileLinkRepo = findEmpty();
+    const documentRepo = { findOne: jest.fn().mockResolvedValue(null) };
+    const objectStorage = {
+      getSignedUrl: jest.fn().mockResolvedValue('https://stub/download'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SearchService,
@@ -86,6 +105,18 @@ describe('SearchService', () => {
           provide: getRepositoryToken(Conversation),
           useValue: conversationRepo,
         },
+        { provide: getRepositoryToken(Experience), useValue: experienceRepo },
+        { provide: getRepositoryToken(Project), useValue: projectRepo },
+        {
+          provide: getRepositoryToken(Certification),
+          useValue: certificationRepo,
+        },
+        {
+          provide: getRepositoryToken(ProfileLink),
+          useValue: profileLinkRepo,
+        },
+        { provide: getRepositoryToken(Document), useValue: documentRepo },
+        { provide: OBJECT_STORAGE, useValue: objectStorage },
       ],
     }).compile();
 
@@ -173,7 +204,8 @@ describe('SearchService', () => {
       await service.searchCandidates({ salaryMax: 450000 });
 
       const call = mainQb.andWhere.mock.calls.find(
-        (c) => typeof c[0] === 'string' && c[0].includes('salaryMin <= :salaryMax'),
+        (c) =>
+          typeof c[0] === 'string' && c[0].includes('salaryMin <= :salaryMax'),
       );
       expect(call).toBeDefined();
       expect(call![0]).toContain('profile.salaryVisible = true');
@@ -349,11 +381,18 @@ describe('SearchService', () => {
         score: 80,
         percentile: 90,
         featured: false,
+        assessmentCount: 0,
         availability: 'Immédiate',
         mobility: 'Casablanca',
         salaryMin: 300000,
         salaryMax: 450000,
         salaryCurrency: 'MAD',
+        // EF-CAND-07 — proof-of-work sections; empty for this profile.
+        experiences: [],
+        projects: [],
+        certifications: [],
+        links: [],
+        cv: null,
       });
     });
 
@@ -376,7 +415,9 @@ describe('SearchService', () => {
 
     it('anonymizes the last name for a recruiter with no prior contact (EF-SRCH-05)', async () => {
       mainQb.getRawAndEntities.mockResolvedValue({
-        entities: [makeProfileEntity({ id: 'p1', userId: 'u1', lastName: 'Karimi' })],
+        entities: [
+          makeProfileEntity({ id: 'p1', userId: 'u1', lastName: 'Karimi' }),
+        ],
         raw: [{ bestScoreValue: '80', bestScorePercentile: '90' }],
       });
       skillQb.getRawMany.mockResolvedValue([]);
@@ -386,8 +427,10 @@ describe('SearchService', () => {
         companyId: 'company-1',
       });
 
+      // EF-SRCH-05 — Conversation.candidateId is the candidate *profile* id
+      // (FK to CandidateProfile), so contact is matched against profile.id.
       expect(conversationRepo.count).toHaveBeenCalledWith({
-        where: { companyId: 'company-1', candidateId: 'u1' },
+        where: { companyId: 'company-1', candidateId: 'p1' },
       });
       expect(result.lastName).toBe('K.');
       expect(result.anonymized).toBe(true);
@@ -395,7 +438,9 @@ describe('SearchService', () => {
 
     it('reveals the full last name once the recruiter has contacted the candidate (EF-SRCH-05)', async () => {
       mainQb.getRawAndEntities.mockResolvedValue({
-        entities: [makeProfileEntity({ id: 'p1', userId: 'u1', lastName: 'Karimi' })],
+        entities: [
+          makeProfileEntity({ id: 'p1', userId: 'u1', lastName: 'Karimi' }),
+        ],
         raw: [{ bestScoreValue: '80', bestScorePercentile: '90' }],
       });
       skillQb.getRawMany.mockResolvedValue([]);

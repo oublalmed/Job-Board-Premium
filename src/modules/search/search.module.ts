@@ -14,6 +14,11 @@ import { CandidateProfileView } from './entities/candidate-profile-view.entity.j
 import { ProfileViewCooldown } from './entities/profile-view-cooldown.entity.js';
 import { SavedSearch } from './entities/saved-search.entity.js';
 import { Conversation } from '../messaging/entities/conversation.entity.js';
+import { Experience } from '../candidates/entities/experience.entity.js';
+import { Project } from '../candidates/entities/project.entity.js';
+import { Certification } from '../candidates/entities/certification.entity.js';
+import { ProfileLink } from '../candidates/entities/profile-link.entity.js';
+import { Document } from '../candidates/entities/document.entity.js';
 import { CandidatesModule } from '../candidates/candidates.module.js';
 import { AssessmentsModule } from '../assessments/assessments.module.js';
 import { CompaniesModule } from '../companies/companies.module.js';
@@ -27,6 +32,11 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
       ProfileViewCooldown,
       SavedSearch,
       Conversation,
+      Experience,
+      Project,
+      Certification,
+      ProfileLink,
+      Document,
     ]),
     BullModule.registerQueue({ name: SAVED_SEARCH_ALERT_QUEUE }),
     CandidatesModule,

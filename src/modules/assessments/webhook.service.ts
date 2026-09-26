@@ -89,6 +89,53 @@ export class WebhookService {
       );
     }
 
+    return this.finalizeAssessment(assessment);
+  }
+
+  // Local/dev only (see AssessmentController.completeForDev): finish an
+  // in-progress attempt the candidate owns, without a real provider webhook.
+  // The stub scoring provider produces a deterministic result, so this drives
+  // the exact same scoring + indexation path a real webhook would — it is how
+  // an assessment becomes "completed" when there is no external exam vendor
+  // wired up locally. Owner-scoped; refuses anything not in progress.
+  async simulateCompletion(
+    candidateId: string,
+    assessmentId: string,
+  ): Promise<{ alreadyProcessed: boolean; scoreId: string }> {
+    const assessment = await this.assessmentRepo.findOne({
+      where: { id: assessmentId },
+    });
+    if (!assessment) {
+      throw new NotFoundException('Assessment not found');
+    }
+    if (assessment.candidateId !== candidateId) {
+      throw new ForbiddenException('Access denied');
+    }
+    if (assessment.status !== AssessmentStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        'Only an in-progress assessment can be completed',
+      );
+    }
+    return this.finalizeAssessment(assessment);
+  }
+
+  // Shared tail of the real webhook, the local exam and the dev simulation:
+  // persist a result's Score, mark the attempt COMPLETED and re-apply the
+  // CVthèque indexation thresholds. Idempotent — a second call for an
+  // already-scored assessment is a no-op. When `providedResult` is given (the
+  // in-app exam grades locally) it is used as-is; otherwise the result is
+  // fetched from the scoring provider.
+  async finalizeAssessment(
+    assessment: Assessment,
+    providedResult?: AssessmentResult,
+  ): Promise<{ alreadyProcessed: boolean; scoreId: string }> {
+    const externalId = assessment.externalAssessmentId;
+    if (!externalId && !providedResult) {
+      throw new BadRequestException(
+        'Assessment has no external provider reference',
+      );
+    }
+
     const existingScore = await this.scoreRepo.findOne({
       where: { assessmentId: assessment.id },
     });
@@ -100,7 +147,9 @@ export class WebhookService {
       return { alreadyProcessed: true, scoreId: existingScore.id };
     }
 
-    const result = await this.scoringProvider.getResult(externalId);
+    const result =
+      providedResult ??
+      (externalId ? await this.scoringProvider.getResult(externalId) : null);
     if (!result) {
       throw new BadRequestException(
         `No result available from provider for ${externalId}`,

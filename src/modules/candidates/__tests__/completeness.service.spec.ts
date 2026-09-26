@@ -342,11 +342,16 @@ describe('CandidateProfileService — completeness calculation', () => {
       expect(profileRepo.save).toHaveBeenCalled();
     });
 
-    it('should allow making an already-indexed profile PUBLIC', async () => {
+    it('should allow making an already-indexed profile PUBLIC (with a school justificatif on file)', async () => {
       profileRepo.findOne.mockResolvedValue({
         ...baseProfile,
         indexedInCvtheque: true,
         visibility: ProfileVisibility.HIDDEN,
+      });
+      // EF-CAND-06 — publishing requires an uploaded DIPLOMA document.
+      documentRepo.findOne.mockResolvedValue({
+        id: 'doc-diploma',
+        type: DocumentType.DIPLOMA,
       });
 
       const result = await service.updateProfile(profileId, {
@@ -355,6 +360,23 @@ describe('CandidateProfileService — completeness calculation', () => {
 
       expect(result.visibility).toBe(ProfileVisibility.PUBLIC);
       expect(profileRepo.save).toHaveBeenCalled();
+    });
+
+    it('should refuse publishing an indexed profile without a school justificatif', async () => {
+      profileRepo.findOne.mockResolvedValue({
+        ...baseProfile,
+        indexedInCvtheque: true,
+        visibility: ProfileVisibility.HIDDEN,
+      });
+      // No DIPLOMA document uploaded (repo returns null by default).
+      documentRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateProfile(profileId, {
+          visibility: ProfileVisibility.PUBLIC,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(profileRepo.save).not.toHaveBeenCalled();
     });
 
     it('should allow a non-visibility update on an unindexed profile', async () => {

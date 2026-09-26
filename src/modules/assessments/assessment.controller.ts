@@ -11,12 +11,16 @@ import {
   Ip,
   UseGuards,
   ParseUUIDPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 import { AssessmentService } from './assessment.service.js';
 import { AssessmentHistoryService } from './assessment-history.service.js';
 import { RemediationService } from './remediation.service.js';
 import { RemediationProgressService } from './remediation-progress.service.js';
+import { WebhookService } from './webhook.service.js';
+import { ExamService } from './exam.service.js';
+import { SubmitExamDto } from './dto/submit-exam.dto.js';
 import { StartAssessmentDto } from './dto/start-assessment.dto.js';
 import { ResumeAssessmentDto } from './dto/resume-assessment.dto.js';
 import { StartAssessmentResponseDto } from './dto/start-assessment-response.dto.js';
@@ -38,6 +42,8 @@ export class AssessmentController {
     private readonly assessmentHistoryService: AssessmentHistoryService,
     private readonly remediationService: RemediationService,
     private readonly remediationProgressService: RemediationProgressService,
+    private readonly webhookService: WebhookService,
+    private readonly examService: ExamService,
   ) {}
 
   @Get('mine')
@@ -107,6 +113,45 @@ export class AssessmentController {
       windowBlurCount: saved.windowBlurCount,
       proctoringFlagged: saved.proctoringFlagged,
     };
+  }
+
+  // The in-app exam: fetch the questions for an in-progress attempt (answer
+  // keys stripped server-side).
+  @Get(':id/exam')
+  @Roles(Role.CANDIDATE)
+  async getExam(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) assessmentId: string,
+  ) {
+    return this.examService.getExam(user.sub, assessmentId);
+  }
+
+  // Submit the exam answers — graded locally, then the attempt is completed and
+  // scored through the same path a provider webhook would use.
+  @Post(':id/submit')
+  @Roles(Role.CANDIDATE)
+  async submitExam(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) assessmentId: string,
+    @Body() dto: SubmitExamDto,
+  ) {
+    return this.examService.submitExam(user.sub, assessmentId, dto.answers);
+  }
+
+  // Local/dev only — complete an in-progress attempt without a real scoring
+  // vendor, so the full flow (score, feedback, CVthèque indexation) is
+  // exercisable on a developer's machine. Hard-refused in production, where a
+  // genuine provider webhook is the only path to a score.
+  @Post(':id/complete-dev')
+  @Roles(Role.CANDIDATE)
+  async completeForDev(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) assessmentId: string,
+  ) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ForbiddenException('Not available in production');
+    }
+    return this.webhookService.simulateCompletion(user.sub, assessmentId);
   }
 
   @Get(':id/feedback')

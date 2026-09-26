@@ -205,6 +205,9 @@ export function useOpenConversation() {
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: messageKeys.list() });
+      // Contacting the candidate reveals their full identity + CV on the
+      // detail view (EF-SRCH-05), so refresh the candidate queries too.
+      void queryClient.invalidateQueries({ queryKey: ['candidates'] });
     },
   });
 }

@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  ExternalLink,
   Loader2,
   MessageCircle,
   Play,
@@ -45,6 +44,7 @@ import {
   useStartAssessment,
   type AssessmentHistoryItem,
 } from '@/features/assessments/queries';
+import { ExamRunner } from '@/features/assessments/ExamRunner';
 import { ScoreMeter, PercentileBar } from '@/features/assessments/ScoreMeter';
 import {
   useAssessmentSession,
@@ -194,6 +194,12 @@ export default function AssessmentsPage() {
     });
   });
 
+  function handleExamCompleted() {
+    updateStatus('completed');
+    // Surface the freshly computed score + remediation right away.
+    handleViewFeedback();
+  }
+
   function handleReportIncident() {
     if (!session) return;
     incident.mutate(session.assessmentId, {
@@ -251,29 +257,31 @@ export default function AssessmentsPage() {
                 )?.name ?? session.testId}
               </span>
             </p>
-            <div className="flex flex-wrap gap-2">
-              <Button asChild className="gap-2">
-                <a href={session.assessmentUrl} target="_blank" rel="noreferrer">
-                  <ExternalLink className="size-4" />
-                  {t('assessments.session.continueButton')}
-                </a>
-              </Button>
+            {session.status === 'in_progress' ? (
+              <>
+                {/* The actual exam — questions to answer, then real grading. */}
+                <ExamRunner
+                  assessmentId={session.assessmentId}
+                  onCompleted={handleExamCompleted}
+                />
+                <Button
+                  variant="outline"
+                  className="gap-2 self-start"
+                  onClick={handleReportIncident}
+                  disabled={incident.isPending}
+                >
+                  {incident.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <AlertTriangle className="size-4" />
+                  )}
+                  {t('assessments.reportButton')}
+                </Button>
+              </>
+            ) : (
               <Button
                 variant="outline"
-                className="gap-2"
-                onClick={handleReportIncident}
-                disabled={incident.isPending || session.status !== 'in_progress'}
-              >
-                {incident.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <AlertTriangle className="size-4" />
-                )}
-                {t('assessments.reportButton')}
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2"
+                className="gap-2 self-start"
                 onClick={handleViewFeedback}
                 disabled={feedback.isPending}
               >
@@ -284,7 +292,7 @@ export default function AssessmentsPage() {
                 )}
                 {t('assessments.viewFeedback')}
               </Button>
-            </div>
+            )}
 
             {feedbackData && (
               <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">

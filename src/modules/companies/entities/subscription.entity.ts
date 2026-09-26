@@ -21,6 +21,12 @@ export enum SubscriptionStatus {
   TRIAL = 'trial',
   ACTIVE = 'active',
   PAST_DUE = 'past_due',
+  // Admin-initiated hold — typically applied to a PAST_DUE (unpaid) company.
+  // A SUSPENDED subscription is not "within access" (SubscriptionGuardService's
+  // default branch denies it), so the recruiter loses CVthèque access until an
+  // admin reactivates it. Distinct from CANCELLED/EXPIRED, which are terminal:
+  // suspension is reversible (see SubscriptionAdminService.reactivate).
+  SUSPENDED = 'suspended',
   CANCELLED = 'cancelled',
   EXPIRED = 'expired',
 }

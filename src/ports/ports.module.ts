@@ -10,6 +10,8 @@ import { OCR_PROVIDER } from './ocr.port.js';
 import { StubScoringAdapter } from '../adapters/scoring/stub-scoring.adapter.js';
 import { StripePaymentProvider } from '../adapters/payment/stripe-payment.adapter.js';
 import { StubMailAdapter } from '../adapters/mail/stub-mail.adapter.js';
+import { SmtpMailAdapter } from '../adapters/mail/smtp-mail.adapter.js';
+import type { MailProvider } from './mail.port.js';
 import { LoggingMailerAdapter } from '../adapters/mailer/logging-mailer.adapter.js';
 import { StubFileScannerAdapter } from '../adapters/file-scanner/stub-file-scanner.adapter.js';
 import { ClamavFileScannerAdapter } from '../adapters/file-scanner/clamav-file-scanner.adapter.js';
@@ -28,12 +30,27 @@ export function fileScannerFactory(config: ConfigService): FileScanner {
   return new StubFileScannerAdapter();
 }
 
+// EF-CAND-01 / EF-MSG-02 — select the mail provider by MAIL_DRIVER. Default is
+// `log` (StubMailAdapter: no network, logs a dev link); `smtp` delivers real
+// mail via Nodemailer (local catcher like Mailpit in dev, a relay elsewhere).
+export function mailProviderFactory(config: ConfigService): MailProvider {
+  const driver = config.get<string>('notifications.mailDriver', 'log');
+  if (driver === 'smtp') {
+    return new SmtpMailAdapter();
+  }
+  return new StubMailAdapter();
+}
+
 @Global()
 @Module({
   providers: [
     { provide: SCORING_PROVIDER, useClass: StubScoringAdapter },
     { provide: PAYMENT_PROVIDER, useClass: StripePaymentProvider },
-    { provide: MAIL_PROVIDER, useClass: StubMailAdapter },
+    {
+      provide: MAIL_PROVIDER,
+      useFactory: mailProviderFactory,
+      inject: [ConfigService],
+    },
     { provide: MAILER, useClass: LoggingMailerAdapter },
     {
       provide: FILE_SCANNER,

@@ -23,6 +23,7 @@ export interface CandidateProfileData {
     indexedInCvtheque?: boolean;
     // EF-CAND-05 — availability / mobility / salary expectation (MAD, maskable).
     availability?: string | null;
+    contractType?: 'CDI' | 'CDD' | 'PFE' | 'Freelance' | null;
     mobility?: string | null;
     salaryMin?: number | null;
     salaryMax?: number | null;

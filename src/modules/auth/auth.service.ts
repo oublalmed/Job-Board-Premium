@@ -84,11 +84,10 @@ export class AuthService {
     const verificationExpires = new Date();
     verificationExpires.setHours(verificationExpires.getHours() + 24);
 
-    const allowedRoles = dto.roles?.filter(
-      (r) => r === Role.CANDIDATE || r === Role.RECRUITER,
-    );
-    const roles =
-      allowedRoles && allowedRoles.length > 0 ? allowedRoles : [Role.CANDIDATE];
+    // Self-registration is candidate-only. Recruiter accounts are provisioned
+    // by an admin (RecruiterAdminService) — a recruiter cannot self-register —
+    // so any elevated role requested here is ignored.
+    const roles = [Role.CANDIDATE];
 
     const user = await this.usersService.create({
       email: dto.email.toLowerCase(),

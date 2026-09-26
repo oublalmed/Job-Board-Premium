@@ -30,7 +30,6 @@ export default function RegisterPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'candidate' | 'recruiter'>('candidate');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -69,10 +68,12 @@ export default function RegisterPage() {
       // sending fields the stale client type doesn't know about. Read from
       // the URL at submit time (no state) to keep the page prerenderable.
       const referralCode = new URLSearchParams(window.location.search).get('ref');
+      // Self-registration is candidate-only — recruiter accounts are created by
+      // an administrator (the backend enforces this too).
       const body: Record<string, unknown> = {
         email,
         password,
-        roles: [role],
+        roles: ['candidate'],
         consentAccepted: consent,
       };
       if (referralCode) body.referralCode = referralCode;
@@ -137,33 +138,9 @@ export default function RegisterPage() {
               className="flex flex-col gap-5"
               noValidate
             >
-              <div className="flex flex-col gap-2">
-                <Label>{t('auth.register.roleLabel')}</Label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setRole('candidate')}
-                    className={`flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
-                      role === 'candidate'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border text-muted-foreground hover:border-primary/50'
-                    }`}
-                  >
-                    {t('auth.register.roleCandidate')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('recruiter')}
-                    className={`flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
-                      role === 'recruiter'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border text-muted-foreground hover:border-primary/50'
-                    }`}
-                  >
-                    {t('auth.register.roleRecruiter')}
-                  </button>
-                </div>
-              </div>
+              <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
+                {t('auth.register.recruiterNote')}
+              </p>
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="register-email">{t('auth.emailLabel')}</Label>

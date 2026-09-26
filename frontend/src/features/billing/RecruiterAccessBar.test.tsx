@@ -77,9 +77,12 @@ describe('RecruiterAccessBar', () => {
       screen.getByText('billing.restrictedDescription'),
     ).toBeInTheDocument();
 
-    // CTA links to the billing/subscription page.
-    const cta = screen.getByRole('link', { name: 'billing.restrictedCta' });
-    expect(cta).toHaveAttribute('href', '/subscription');
+    // Recruiters no longer self-serve a plan — the bar points them to their
+    // administrator instead of linking to a checkout page.
+    expect(
+      screen.getByText('billing.restrictedAdminHint'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('surfaces the remaining contact quota when active', () => {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import {
@@ -7,6 +7,20 @@ import {
 } from '../candidates/entities/candidate-profile.entity.js';
 import { ProfileSkill } from '../candidates/entities/profile-skill.entity.js';
 import { Skill } from '../candidates/entities/skill.entity.js';
+import {
+  Experience,
+  ExperienceType,
+} from '../candidates/entities/experience.entity.js';
+import { Project } from '../candidates/entities/project.entity.js';
+import { Certification } from '../candidates/entities/certification.entity.js';
+import { ProfileLink } from '../candidates/entities/profile-link.entity.js';
+import {
+  Document,
+  DocumentType,
+  ScanStatus,
+} from '../candidates/entities/document.entity.js';
+import type { ObjectStorage } from '../../ports/object-storage.port.js';
+import { OBJECT_STORAGE } from '../../ports/object-storage.port.js';
 import {
   Score,
   PlagiarismVerdict,
@@ -57,6 +71,7 @@ function decodeCursor(cursor: string): CursorPayload | null {
 interface RawScoreRow {
   bestScoreValue: string | null;
   bestScorePercentile: string | null;
+  assessmentCount: string | null;
 }
 
 // EF-SRCH-05 — reduce a last name to an initial for the anonymised search
@@ -79,6 +94,18 @@ export class SearchService {
     private readonly profileSkillRepo: Repository<ProfileSkill>,
     @InjectRepository(Conversation)
     private readonly conversationRepo: Repository<Conversation>,
+    @InjectRepository(Experience)
+    private readonly experienceRepo: Repository<Experience>,
+    @InjectRepository(Project)
+    private readonly projectRepo: Repository<Project>,
+    @InjectRepository(Certification)
+    private readonly certificationRepo: Repository<Certification>,
+    @InjectRepository(ProfileLink)
+    private readonly profileLinkRepo: Repository<ProfileLink>,
+    @InjectRepository(Document)
+    private readonly documentRepo: Repository<Document>,
+    @Inject(OBJECT_STORAGE)
+    private readonly objectStorage: ObjectStorage,
   ) {}
 
   async searchCandidates(
@@ -125,6 +152,9 @@ export class SearchService {
           ? Number(rawPage[i].bestScorePercentile)
           : null,
       featured: profile.featured,
+      school: profile.school,
+      schoolVerified: profile.schoolVerified,
+      assessmentCount: Number(rawPage[i]?.assessmentCount ?? 0),
       anonymized: true,
     }));
 
@@ -156,8 +186,14 @@ export class SearchService {
         'best_score',
         'best_score.candidate_id = profile.userId',
       )
+      .leftJoin(
+        (sub) => this.assessmentCountSubQuery(sub),
+        'assess_count',
+        'assess_count.candidate_id = profile.userId',
+      )
       .addSelect('best_score.best_value', 'bestScoreValue')
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
+      .addSelect('COALESCE(assess_count.assessment_count, 0)', 'assessmentCount')
       .where('profile.id = :id', { id })
       .andWhere('profile.indexedInCvtheque = true')
       // EF-ADM-01 — an admin-suspended profile is never reachable, whatever the
@@ -185,7 +221,34 @@ export class SearchService {
     const identityRevealed =
       viewer.isAdmin === true ||
       (viewer.companyId !== undefined &&
-        (await this.hasContact(viewer.companyId, profile.userId)));
+        (await this.hasContact(viewer.companyId, profile.id)));
+
+    // EF-CAND-07 — the "proof of work" sections a recruiter evaluates: work &
+    // education history, projects delivered and certifications earned. These
+    // carry no direct contact PII, so they are shown even in the anonymized
+    // preview (like skills and score) — they are the differentiators the user
+    // asked to surface on the profile.
+    const [experiences, projects, certifications] = await Promise.all([
+      this.experienceRepo.find({
+        where: { profileId: profile.id },
+        order: { startDate: 'DESC' },
+      }),
+      this.projectRepo.find({
+        where: { profileId: profile.id },
+        order: { startDate: 'DESC', createdAt: 'DESC' },
+      }),
+      this.certificationRepo.find({
+        where: { profileId: profile.id },
+        order: { issueDate: 'DESC' },
+      }),
+    ]);
+
+    // Personal links and the downloadable CV both expose identifying details,
+    // so they are gated behind the identity reveal.
+    const cv = identityRevealed ? await this.loadCvDownload(profile.userId) : null;
+    const links = identityRevealed
+      ? await this.profileLinkRepo.find({ where: { profileId: profile.id } })
+      : [];
 
     return {
       id: profile.id,
@@ -204,6 +267,9 @@ export class SearchService {
           ? Number(raw[0].bestScorePercentile)
           : null,
       featured: profile.featured,
+      school: profile.school,
+      schoolVerified: profile.schoolVerified,
+      assessmentCount: Number(raw[0]?.assessmentCount ?? 0),
       // EF-CAND-05 — availability/mobility always shown; the salary range is
       // withheld (masked) unless the candidate chose to expose it.
       availability: profile.availability,
@@ -211,18 +277,74 @@ export class SearchService {
       salaryMin: profile.salaryVisible ? profile.salaryMin : null,
       salaryMax: profile.salaryVisible ? profile.salaryMax : null,
       salaryCurrency: profile.salaryVisible ? profile.salaryCurrency : null,
+      bio: profile.bio,
+      experiences: experiences.map((e) => ({
+        type: e.type === ExperienceType.EDUCATION ? 'education' : 'work',
+        title: e.title,
+        organization: e.organization,
+        startDate: e.startDate,
+        endDate: e.endDate,
+        description: e.description,
+      })),
+      projects: projects.map((p) => ({
+        title: p.title,
+        description: p.description,
+        url: p.url,
+        role: p.role,
+        startDate: p.startDate,
+        endDate: p.endDate,
+      })),
+      certifications: certifications.map((c) => ({
+        name: c.name,
+        issuer: c.issuer,
+        issueDate: c.issueDate,
+        expiryDate: c.expiryDate,
+        credentialUrl: c.credentialUrl,
+      })),
+      links: links.map((l) => ({ type: l.type, url: l.url, label: l.label })),
+      cv,
+    };
+  }
+
+  // The candidate's uploaded CV, as a short-lived signed download URL. Only a
+  // clean-scanned CV is ever handed to a recruiter — a pending/infected file is
+  // treated as absent. Returns null when there is no downloadable CV.
+  private async loadCvDownload(
+    candidateUserId: string,
+  ): Promise<{
+    originalName: string;
+    mimeType: string;
+    size: number;
+    downloadUrl: string;
+  } | null> {
+    const doc = await this.documentRepo.findOne({
+      where: { ownerId: candidateUserId, type: DocumentType.CV },
+    });
+    if (!doc || doc.scanStatus !== ScanStatus.CLEAN) {
+      return null;
+    }
+    const downloadUrl = await this.objectStorage.getSignedUrl(doc.storageKey, 600);
+    return {
+      originalName: doc.originalName,
+      mimeType: doc.mimeType,
+      size: doc.size,
+      downloadUrl,
     };
   }
 
   // EF-SRCH-05 — a company has "contacted" a candidate once a conversation
   // exists between them (the same unique (candidate, company) pair that
   // consuming a contact opens). Owner-scoped to the viewer's company.
+  // Conversation.candidateId is the candidate *profile* id (FK to
+  // CandidateProfile), so this must be matched against profile.id — matching
+  // against the user id would never find the thread and the CV/identity would
+  // stay locked even after contact.
   private async hasContact(
     companyId: string,
-    candidateUserId: string,
+    candidateProfileId: string,
   ): Promise<boolean> {
     const count = await this.conversationRepo.count({
-      where: { companyId, candidateId: candidateUserId },
+      where: { companyId, candidateId: candidateProfileId },
     });
     return count > 0;
   }
@@ -255,9 +377,15 @@ export class SearchService {
         'best_score',
         'best_score.candidate_id = profile.userId',
       )
+      .leftJoin(
+        (sub) => this.assessmentCountSubQuery(sub),
+        'assess_count',
+        'assess_count.candidate_id = profile.userId',
+      )
       .addSelect('best_score.best_value', 'bestScoreValue')
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
       .addSelect('COALESCE(best_score.best_value, 0)', 'sortScore')
+      .addSelect('COALESCE(assess_count.assessment_count, 0)', 'assessmentCount')
       .where('profile.indexedInCvtheque = true')
       // EF-ADM-01 — admin-suspended profiles never appear in the CVthèque.
       .andWhere('profile.moderationStatus = :modActive', { modActive: 'active' })
@@ -327,6 +455,20 @@ export class SearchService {
     }
 
     return qb;
+  }
+
+  // Count of completed evaluations per candidate — a "how proven is this
+  // candidate" signal surfaced in the CVthèque alongside the best score.
+  private assessmentCountSubQuery(qb: SelectQueryBuilder<any>) {
+    return qb
+      .subQuery()
+      .select('assessment.candidateId', 'candidate_id')
+      .addSelect('COUNT(*)', 'assessment_count')
+      .from(Assessment, 'assessment')
+      .where('assessment.status = :acCompleted', {
+        acCompleted: AssessmentStatus.COMPLETED,
+      })
+      .groupBy('assessment.candidateId');
   }
 
   private bestScoreSubQuery(qb: SelectQueryBuilder<any>) {

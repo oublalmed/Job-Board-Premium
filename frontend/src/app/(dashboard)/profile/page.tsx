@@ -41,7 +41,9 @@ import {
 import {
   profileSchema,
   EMPTY_PROFILE_FORM,
-  SALARY_CURRENCY,
+  LOCATION_OPTIONS,
+  AVAILABILITY_OPTIONS,
+  CONTRACT_OPTIONS,
   type ProfileFormValues,
 } from '@/features/profile/schema';
 import {
@@ -208,10 +210,8 @@ function CandidateProfile() {
       school: p.school ?? '',
       visibility: p.visibility ?? 'hidden',
       availability: p.availability ?? '',
+      contractType: p.contractType ?? '',
       mobility: p.mobility ?? '',
-      salaryMin: p.salaryMin != null ? String(p.salaryMin) : '',
-      salaryMax: p.salaryMax != null ? String(p.salaryMax) : '',
-      salaryVisible: p.salaryVisible ?? true,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileQuery.data]);
@@ -221,19 +221,31 @@ function CandidateProfile() {
   // EF-CAND-06 — a profile can only be made visible once it has been scored and
   // indexed. Mirror the backend guard in the UI so the candidate sees why the
   // public options are unavailable instead of hitting a 403 on save.
-  const canBeVisible = profileQuery.data?.profile.indexedInCvtheque ?? false;
+  // A diploma/attestation must have been uploaded for the school-verification
+  // requirement (any status counts as "submitted").
+  const hasSchoolDocument = (verificationQuery.data ?? null) !== null;
+  // EF-CAND-06 + school requirement: a profile can only be made visible once it
+  // is indexed AND a school justificatif has been uploaded. Mirror the backend
+  // guard so the candidate sees why the public options are unavailable.
+  const canBeVisible =
+    (profileQuery.data?.profile.indexedInCvtheque ?? false) && hasSchoolDocument;
   const cv = cvQuery.data ?? null;
   const verification = verificationQuery.data ?? null;
   // useWatch (a hook) rather than form.watch() (a returned function) so the
   // live preview subscribes React-Compiler-safely to field changes.
   const preview = useWatch({ control: form.control });
 
-  const onSubmit = form.handleSubmit((values) => {
-    updateProfile.mutate(values, {
-      onSuccess: () => toast(t('profile.saved'), 'success'),
-      onError: () => toast(t('profile.saveError'), 'error'),
-    });
-  });
+  const onSubmit = form.handleSubmit(
+    (values) => {
+      updateProfile.mutate(values, {
+        onSuccess: () => toast(t('profile.saved'), 'success'),
+        onError: () => toast(t('profile.saveError'), 'error'),
+      });
+    },
+    // Client-side validation blocked the save — without this the submit fails
+    // silently and the profile looks like it "didn't save". Surface it.
+    () => toast(t('profile.saveInvalid'), 'error'),
+  );
 
   function handleCvSelected(file: File) {
     uploadCv.mutate(file, {
@@ -384,7 +396,14 @@ function CandidateProfile() {
                     <FormItem>
                       <FormLabel>{t('profile.location')}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t('profile.locationPlaceholder')} {...field} />
+                        <Select {...field}>
+                          <option value="">{t('profile.selectPlaceholder')}</option>
+                          {LOCATION_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -444,7 +463,7 @@ function CandidateProfile() {
                     </FormItem>
                   )}
                 />
-                {/* EF-CAND-05 — availability, mobility, salary range (MAD), maskable */}
+                {/* EF-CAND-05 — availability, contract type, mobility */}
                 <FormField
                   control={form.control}
                   name="availability"
@@ -452,10 +471,34 @@ function CandidateProfile() {
                     <FormItem>
                       <FormLabel>{t('profile.availability')}</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder={t('profile.availabilityPlaceholder')}
-                          {...field}
-                        />
+                        <Select {...field}>
+                          <option value="">{t('profile.selectPlaceholder')}</option>
+                          {AVAILABILITY_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="contractType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('profile.contractType')}</FormLabel>
+                      <FormControl>
+                        <Select {...field}>
+                          <option value="">{t('profile.selectPlaceholder')}</option>
+                          {CONTRACT_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -473,56 +516,6 @@ function CandidateProfile() {
                           {...field}
                         />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="salaryMin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t('profile.salaryMin')} ({SALARY_CURRENCY})
-                        </FormLabel>
-                        <FormControl>
-                          <Input inputMode="numeric" placeholder="0" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="salaryMax"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t('profile.salaryMax')} ({SALARY_CURRENCY})
-                        </FormLabel>
-                        <FormControl>
-                          <Input inputMode="numeric" placeholder="0" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="salaryVisible"
-                  render={({ field }) => (
-                    <FormItem>
-                      <label className="flex items-center gap-2 text-sm text-foreground">
-                        <input
-                          type="checkbox"
-                          className="size-4 accent-primary"
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
-                        />
-                        {t('profile.salaryVisible')}
-                      </label>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -602,9 +595,19 @@ function CandidateProfile() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('profile.schoolVerification.title')}</CardTitle>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            {t('profile.schoolVerification.title')}
+            <Badge variant="destructive" className="gap-1">
+              {t('profile.schoolVerification.requiredBadge')}
+            </Badge>
+          </CardTitle>
         </CardHeader>
         <CardContent>
+          {!hasSchoolDocument && (
+            <p className="mb-4 text-sm text-destructive">
+              {t('profile.schoolVerification.requiredHint')}
+            </p>
+          )}
           {verification && (
             <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
               {verification.status === 'verified' && (

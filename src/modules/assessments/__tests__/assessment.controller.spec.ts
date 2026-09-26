@@ -4,6 +4,8 @@ import { AssessmentService } from '../assessment.service.js';
 import { AssessmentHistoryService } from '../assessment-history.service.js';
 import { RemediationService } from '../remediation.service.js';
 import { RemediationProgressService } from '../remediation-progress.service.js';
+import { WebhookService } from '../webhook.service.js';
+import { ExamService } from '../exam.service.js';
 import type { JwtPayload } from '../../../common/interfaces/request-with-user.interface.js';
 import { Role } from '../../../common/enums/role.enum.js';
 import { AssessmentStatus } from '../entities/assessment.entity.js';
@@ -80,6 +82,16 @@ describe('AssessmentController', () => {
     remediationProgressService = {
       setCompleted: jest.fn().mockResolvedValue(undefined),
     };
+    // The in-app exam surface (getExam/submitExam) and the completion webhook
+    // are exercised in their own specs; here they only need to resolve so the
+    // controller can be constructed.
+    const examService = {
+      getExam: jest.fn().mockResolvedValue({ questions: [] }),
+      submitExam: jest.fn().mockResolvedValue({ scoreValue: 0 }),
+    };
+    const webhookService = {
+      simulateCompletion: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AssessmentController],
@@ -91,6 +103,8 @@ describe('AssessmentController', () => {
           provide: RemediationProgressService,
           useValue: remediationProgressService,
         },
+        { provide: WebhookService, useValue: webhookService },
+        { provide: ExamService, useValue: examService },
       ],
     }).compile();
 
