@@ -28,49 +28,6 @@
   "layout": {
     "skipToContent": "Skip to main content"
   },
-  "landing": {
-    "tagline": "Talents · Tech · Morocco",
-    "heroLead": "The premium recruitment platform, built for the",
-    "heroLeadHighlight": "Moroccan market.",
-    "heroSub1": "Modern tools.",
-    "heroSub2": "Exceptional talent.",
-    "companies": {
-      "eyebrow": "For companies",
-      "title": "Hire the best talent,",
-      "titleHighlight": "faster.",
-      "desc": "Cobalt connects you to the most qualified profiles on the Moroccan market, with cutting-edge technology and a tailored approach.",
-      "f1": "AI-powered smart matching",
-      "f2": "Streamlined hiring process",
-      "f3": "Verified, qualified talent",
-      "f4": "Real-time tracking and analytics",
-      "cta": "Recruit with Cobalt",
-      "panelTitle": "Recommended talent",
-      "panelBadge": "Smart matching",
-      "panelStat": "Qualified applications"
-    },
-    "candidates": {
-      "eyebrow": "For candidates",
-      "title": "Find the role",
-      "titleHighlight": "that fits.",
-      "desc": "Access exclusive opportunities in Morocco, apply in a few clicks and move your career forward with Cobalt.",
-      "f1": "Job offers targeted to your profile",
-      "f2": "Fast, simple applications",
-      "f3": "Personalized alerts",
-      "f4": "Career guidance and support",
-      "cta": "Find my next job",
-      "nearYou": "Opportunities near you",
-      "newJobs": "3 new jobs",
-      "jobTitle": "Full Stack Developer",
-      "jobType": "Permanent",
-      "jobLocation": "Casablanca"
-    },
-    "strip": {
-      "ai": "AI & Matching",
-      "security": "Security & Reliability",
-      "ecosystem": "Morocco Ecosystem",
-      "slogan": "The right talent. In the right place. At the right time."
-    }
-  },
   "hero": {
     "badge": "#1 platform in Morocco",
     "title": "Hire the best talent",
