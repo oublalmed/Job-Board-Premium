@@ -22,6 +22,7 @@ import {
   SlidersHorizontal,
   ShieldCheck,
   ShieldAlert,
+  UserPlus,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -96,6 +97,12 @@ export function MobileSidebar() {
       label: t('dataRequests.navLabel'),
       icon: ShieldCheck,
       roles: ['admin'],
+    },
+    {
+      href: '/admin/recruiters',
+      label: t('adminRecruiters.navLabel'),
+      icon: UserPlus,
+      roles: ['admin', 'moderator'],
     },
     {
       href: '/admin/subscriptions',

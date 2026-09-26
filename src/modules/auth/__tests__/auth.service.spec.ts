@@ -162,14 +162,16 @@ describe('AuthService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it('should only allow candidate or recruiter roles on registration', async () => {
+    it('forces candidate-only on self-registration, ignoring any requested elevated role', async () => {
       usersService['findByEmail'].mockResolvedValue(null);
       usersService['create'].mockResolvedValue(mockUser);
 
+      // Recruiters are provisioned by an admin — a self-registrant who asks for
+      // RECRUITER (or ADMIN) is still created as a plain candidate.
       await service.register({
         email: 'new@example.com',
         password: 'StrongP@ss1',
-        roles: [Role.ADMIN, Role.CANDIDATE],
+        roles: [Role.ADMIN, Role.RECRUITER],
         consentAccepted: true,
       });
 

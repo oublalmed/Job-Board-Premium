@@ -137,6 +137,28 @@ export class SmtpMailAdapter implements MailProvider {
   // Reduce a request to presentation-ready content, choosing copy by template.
   private resolveContent(request: SendMailRequest): EmailContent {
     const token = request.variables?.['token'];
+
+    // Recruiter invite (admin-provisioned account): carries the login email and
+    // company alongside a set-password link, so it gets its own multi-paragraph
+    // copy rather than the single-line token template.
+    if (request.templateId === 'recruiter-invite' && token) {
+      const login = request.variables?.['email'] ?? request.to;
+      const companyName = request.variables?.['companyName'];
+      return {
+        heading: `Votre compte recruteur ${APP_NAME}`,
+        paragraphs: [
+          companyName
+            ? `Un compte recruteur a été créé pour vous au sein de « ${companyName} ». Activez-le en définissant votre mot de passe, puis connectez-vous.`
+            : "Un compte recruteur a été créé pour vous. Activez-le en définissant votre mot de passe, puis connectez-vous.",
+          `Votre identifiant de connexion : ${login}`,
+        ],
+        ctaLabel: 'Définir mon mot de passe',
+        ctaUrl: `${WEB_BASE_URL}/reset-password?token=${encodeURIComponent(token)}`,
+        note: "Ce lien d'activation expire dans 7 jours. Connectez-vous ensuite avec l'adresse indiquée ci-dessus.",
+        showLinkFallback: true,
+      };
+    }
+
     const tokenTpl = TOKEN_TEMPLATES[request.templateId];
     if (token && tokenTpl) {
       const url = `${WEB_BASE_URL}${tokenTpl.path}?token=${encodeURIComponent(token)}`;
