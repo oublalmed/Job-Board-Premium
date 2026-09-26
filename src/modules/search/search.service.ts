@@ -221,7 +221,7 @@ export class SearchService {
     const identityRevealed =
       viewer.isAdmin === true ||
       (viewer.companyId !== undefined &&
-        (await this.hasContact(viewer.companyId, profile.userId)));
+        (await this.hasContact(viewer.companyId, profile.id)));
 
     // EF-CAND-07 — the "proof of work" sections a recruiter evaluates: work &
     // education history, projects delivered and certifications earned. These
@@ -335,12 +335,16 @@ export class SearchService {
   // EF-SRCH-05 — a company has "contacted" a candidate once a conversation
   // exists between them (the same unique (candidate, company) pair that
   // consuming a contact opens). Owner-scoped to the viewer's company.
+  // Conversation.candidateId is the candidate *profile* id (FK to
+  // CandidateProfile), so this must be matched against profile.id — matching
+  // against the user id would never find the thread and the CV/identity would
+  // stay locked even after contact.
   private async hasContact(
     companyId: string,
-    candidateUserId: string,
+    candidateProfileId: string,
   ): Promise<boolean> {
     const count = await this.conversationRepo.count({
-      where: { companyId, candidateId: candidateUserId },
+      where: { companyId, candidateId: candidateProfileId },
     });
     return count > 0;
   }
