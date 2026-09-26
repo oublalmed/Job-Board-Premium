@@ -28,6 +28,49 @@
   "layout": {
     "skipToContent": "Aller au contenu principal"
   },
+  "landing": {
+    "tagline": "Talents · Tech · Maroc",
+    "heroLead": "La plateforme de recrutement premium, pensée pour le",
+    "heroLeadHighlight": "marché marocain.",
+    "heroSub1": "Des outils modernes.",
+    "heroSub2": "Des talents d'exception.",
+    "companies": {
+      "eyebrow": "Pour les entreprises",
+      "title": "Recrutez les meilleurs talents,",
+      "titleHighlight": "plus vite.",
+      "desc": "Cobalt vous connecte aux profils les plus qualifiés du marché marocain, grâce à une technologie de pointe et une approche sur-mesure.",
+      "f1": "Matching intelligent par IA",
+      "f2": "Processus de recrutement simplifié",
+      "f3": "Talents vérifiés et qualifiés",
+      "f4": "Suivi et analytics en temps réel",
+      "cta": "Recruter avec Cobalt",
+      "panelTitle": "Talents recommandés",
+      "panelBadge": "Matching intelligent",
+      "panelStat": "Candidatures qualifiées"
+    },
+    "candidates": {
+      "eyebrow": "Pour les candidats",
+      "title": "Trouvez le poste",
+      "titleHighlight": "qui fait sens.",
+      "desc": "Accédez à des opportunités exclusives au Maroc, postulez en quelques clics et avancez dans votre carrière avec Cobalt.",
+      "f1": "Offres d'emploi ciblées selon votre profil",
+      "f2": "Candidature rapide et simple",
+      "f3": "Alertes personnalisées",
+      "f4": "Accompagnement et conseils carrière",
+      "cta": "Trouver mon prochain job",
+      "nearYou": "Opportunités près de chez vous",
+      "newJobs": "3 nouveaux jobs",
+      "jobTitle": "Développeur Full Stack",
+      "jobType": "CDI",
+      "jobLocation": "Casablanca"
+    },
+    "strip": {
+      "ai": "IA & Matching",
+      "security": "Sécurité & Fiabilité",
+      "ecosystem": "Écosystème Maroc",
+      "slogan": "Le bon talent. Au bon endroit. Au bon moment."
+    }
+  },
   "hero": {
     "badge": "Plateforme N°1 au Maroc",
     "title": "Recrutez les meilleurs talents",
