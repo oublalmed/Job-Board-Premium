@@ -1,213 +1,273 @@
-// Local exam content bank. Real evaluations are graded by an external vendor;
-// locally there is none, so this provides genuine questions the candidate can
-// answer, and the answer keys used to grade them server-side. Correct answers
-// live here only — the client-facing exam never includes them.
+// Local exam content bank, derived from the IT question bank (10 profiles x
+// domains x levels x question types). The source questions are open-ended
+// (a rubric of expected elements, not multiple choice), so the bank is
+// regenerated here in clean French from the same templates the bank uses. The
+// expected-answer rubric is server-side only and surfaced as feedback after
+// submission — never as a graded key, since these answers are free text.
+
+export type QuestionType = 'technical' | 'psychotechnical';
 
 export interface ExamQuestion {
   id: string;
-  type: 'technical' | 'psychotechnical';
-  domain: string;
+  profile: string;
+  domain: string; // the evaluated skill
+  type: QuestionType;
+  // The original bank's category (Technique, Debugging, Architecture…), kept
+  // for display; psychotechnical maps to the "Psychotechnique IT" category.
+  category: string;
+  level: string;
+  timeSeconds: number;
   prompt: string;
-  options: string[];
-  correct: number; // index into options
+  expected: string;
 }
 
-// Shared psychotechnical section (logic / numeracy / reasoning), 40% of score.
-const PSYCHOTECHNICAL: ExamQuestion[] = [
+interface Profile {
+  name: string;
+  aliases?: string[];
+  domains: string[];
+}
+
+// The 10 professional profiles and their evaluated skills (from the bank).
+const PROFILES: Profile[] = [
   {
-    id: 'psy-1',
-    type: 'psychotechnical',
-    domain: 'Raisonnement logique',
-    prompt: 'Quel nombre complète la suite : 2, 6, 12, 20, 30, ?',
-    options: ['36', '40', '42', '48'],
-    correct: 2,
+    name: 'Software Engineer',
+    aliases: ['Développement Logiciel'],
+    domains: [
+      'Algorithms & Data Structures', 'OOP & Design', 'Programming Concepts',
+      'System Design', 'Debugging', 'Concurrency', 'Databases',
+      'APIs & Integration', 'Software Engineering',
+    ],
   },
   {
-    id: 'psy-2',
-    type: 'psychotechnical',
-    domain: 'Raisonnement numérique',
-    prompt: 'Un article coûte 240 MAD après une remise de 20 %. Quel était son prix initial ?',
-    options: ['260 MAD', '288 MAD', '300 MAD', '320 MAD'],
-    correct: 2,
+    name: 'Java / Backend',
+    domains: [
+      'Java Core', 'Collections & Streams', 'JVM', 'Spring / Spring Boot',
+      'REST APIs', 'Persistence / JPA', 'SQL', 'Concurrency', 'Messaging',
+      'Backend Architecture',
+    ],
   },
   {
-    id: 'psy-3',
-    type: 'psychotechnical',
-    domain: 'Raisonnement verbal',
-    prompt: '« Livre » est à « Bibliothèque » ce que « Tableau » est à … ?',
-    options: ['Peintre', 'Musée', 'Couleur', 'Mur'],
-    correct: 1,
+    name: 'Frontend',
+    aliases: ['Développement Web Full-Stack'],
+    domains: [
+      'HTML/CSS', 'JavaScript / TypeScript', 'React / Angular', 'Browser',
+      'State Management', 'Web Performance', 'Accessibility', 'Security',
+      'Testing', 'Frontend Architecture',
+    ],
+  },
+  {
+    name: 'Full Stack',
+    domains: [
+      'Frontend', 'Backend', 'APIs', 'Databases', 'Authentication',
+      'Integration', 'Architecture', 'Performance', 'Testing', 'Deployment',
+    ],
+  },
+  {
+    name: 'Data Engineer',
+    aliases: ['Data Engineering'],
+    domains: [
+      'SQL', 'Python', 'ETL/ELT', 'Data Modeling', 'Spark', 'Kafka',
+      'Data Warehousing', 'Cloud Data', 'Data Quality', 'Pipelines',
+    ],
+  },
+  {
+    name: 'DevOps / Cloud',
+    aliases: ['DevOps & Cloud'],
+    domains: [
+      'Linux', 'Networking', 'Docker', 'Kubernetes', 'CI/CD', 'AWS/Azure/GCP',
+      'IaC', 'Observability', 'Security', 'SRE',
+    ],
+  },
+  {
+    name: 'Cybersecurity',
+    aliases: ['Cybersécurité'],
+    domains: [
+      'Network Security', 'Application Security', 'IAM', 'Cryptography',
+      'SOC / SIEM', 'Incident Response', 'Cloud Security',
+      'Vulnerability Management', 'Threat Modeling', 'Security Governance',
+    ],
+  },
+  {
+    name: 'QA / Test',
+    domains: [
+      'Testing Fundamentals', 'Test Design', 'Automation', 'API Testing',
+      'UI Testing', 'Performance', 'Security Testing', 'CI/CD Testing',
+      'Defect Management', 'Quality Strategy',
+    ],
+  },
+  {
+    name: 'Business Analyst IT',
+    domains: [
+      'Requirements', 'Business Analysis', 'Functional Specifications', 'BPMN',
+      'UML', 'SQL/Data', 'API Understanding', 'Agile', 'UAT/Recette',
+      'Stakeholder Management',
+    ],
+  },
+  {
+    name: 'IT Project Manager',
+    domains: [
+      'Project Planning', 'Agile / Scrum', 'Waterfall', 'Estimation',
+      'Risk Management', 'Budget', 'Stakeholders', 'Delivery', 'Governance',
+      'Leadership',
+    ],
   },
 ];
 
-// Technical section per specialty (60% of score). Falls back to DEFAULT for a
-// specialty with no dedicated set.
-const TECHNICAL: Record<string, ExamQuestion[]> = {
-  'Développement Logiciel': [
-    {
-      id: 'dl-1', type: 'technical', domain: 'Algorithmes',
-      prompt: 'Quelle est la complexité temporelle moyenne d’une recherche dans une table de hachage ?',
-      options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'], correct: 0,
-    },
-    {
-      id: 'dl-2', type: 'technical', domain: 'Structures de données',
-      prompt: 'Quelle structure suit le principe LIFO (dernier entré, premier sorti) ?',
-      options: ['File (queue)', 'Pile (stack)', 'Arbre', 'Graphe'], correct: 1,
-    },
-    {
-      id: 'dl-3', type: 'technical', domain: 'Programmation',
-      prompt: 'En POO, quel principe consiste à masquer les détails internes d’un objet ?',
-      options: ['Héritage', 'Polymorphisme', 'Encapsulation', 'Abstraction'], correct: 2,
-    },
-    {
-      id: 'dl-4', type: 'technical', domain: 'Bases de données',
-      prompt: 'Quelle clause SQL filtre les lignes APRÈS une agrégation GROUP BY ?',
-      options: ['WHERE', 'HAVING', 'FILTER', 'ORDER BY'], correct: 1,
-    },
-  ],
-  'Développement Web Full-Stack': [
-    {
-      id: 'web-1', type: 'technical', domain: 'Front-end',
-      prompt: 'Quel hook React sert à mémoriser une valeur calculée coûteuse ?',
-      options: ['useEffect', 'useMemo', 'useRef', 'useState'], correct: 1,
-    },
-    {
-      id: 'web-2', type: 'technical', domain: 'HTTP',
-      prompt: 'Quel code HTTP indique une ressource créée avec succès ?',
-      options: ['200', '201', '204', '302'], correct: 1,
-    },
-    {
-      id: 'web-3', type: 'technical', domain: 'Back-end',
-      prompt: 'Quelle méthode HTTP est idempotente et remplace entièrement une ressource ?',
-      options: ['POST', 'PATCH', 'PUT', 'CONNECT'], correct: 2,
-    },
-    {
-      id: 'web-4', type: 'technical', domain: 'Bases de données',
-      prompt: 'Dans une base relationnelle, une clé étrangère sert à …',
-      options: [
-        'accélérer les lectures', 'référencer la clé d’une autre table',
-        'chiffrer une colonne', 'stocker du JSON',
-      ], correct: 1,
-    },
-  ],
-  'Data Engineering': [
-    {
-      id: 'de-1', type: 'technical', domain: 'SQL',
-      prompt: 'Quelle jointure conserve toutes les lignes de la table de gauche ?',
-      options: ['INNER JOIN', 'LEFT JOIN', 'CROSS JOIN', 'SELF JOIN'], correct: 1,
-    },
-    {
-      id: 'de-2', type: 'technical', domain: 'Traitement distribué',
-      prompt: 'Dans Spark, une transformation « lazy » est exécutée …',
-      options: [
-        'immédiatement', 'au moment d’une action (ex. count)',
-        'à la fermeture de la session', 'jamais',
-      ], correct: 1,
-    },
-    {
-      id: 'de-3', type: 'technical', domain: 'Modélisation',
-      prompt: 'Dans un schéma en étoile, la table centrale est …',
-      options: ['une dimension', 'la table de faits', 'une vue', 'un index'], correct: 1,
-    },
-    {
-      id: 'de-4', type: 'technical', domain: 'Pipelines',
-      prompt: 'Que signifie le « T » dans un pipeline ETL ?',
-      options: ['Transfer', 'Transform', 'Trigger', 'Table'], correct: 1,
-    },
-  ],
-  'DevOps & Cloud': [
-    {
-      id: 'do-1', type: 'technical', domain: 'Conteneurs',
-      prompt: 'Quelle commande construit une image à partir d’un Dockerfile ?',
-      options: ['docker run', 'docker build', 'docker pull', 'docker exec'], correct: 1,
-    },
-    {
-      id: 'do-2', type: 'technical', domain: 'Orchestration',
-      prompt: 'Dans Kubernetes, quelle est la plus petite unité déployable ?',
-      options: ['Node', 'Pod', 'Service', 'Deployment'], correct: 1,
-    },
-    {
-      id: 'do-3', type: 'technical', domain: 'CI/CD',
-      prompt: 'Que vise l’intégration continue (CI) ?',
-      options: [
-        'déployer en production automatiquement',
-        'fusionner et tester fréquemment les changements',
-        'chiffrer les secrets', 'gérer les tickets',
-      ], correct: 1,
-    },
-    {
-      id: 'do-4', type: 'technical', domain: 'IaC',
-      prompt: 'Terraform est un outil d’…',
-      options: [
-        'infrastructure as code', 'analyse de logs',
-        'orchestration de conteneurs', 'monitoring',
-      ], correct: 0,
-    },
-  ],
-  'Product Design (UX/UI)': [
-    {
-      id: 'ux-1', type: 'technical', domain: 'UX Research',
-      prompt: 'Quel livrable synthétise un utilisateur type d’un produit ?',
-      options: ['Persona', 'Sitemap', 'Wireframe', 'Changelog'], correct: 0,
-    },
-    {
-      id: 'ux-2', type: 'technical', domain: 'Design',
-      prompt: 'Un « wireframe » sert principalement à …',
-      options: [
-        'définir les couleurs finales', 'structurer la mise en page à basse fidélité',
-        'coder l’interface', 'tester la sécurité',
-      ], correct: 1,
-    },
-    {
-      id: 'ux-3', type: 'technical', domain: 'Accessibilité',
-      prompt: 'Quel critère WCAG concerne le contraste texte/fond ?',
-      options: ['Perceptible', 'Robuste', 'Compréhensible', 'Sécurisé'], correct: 0,
-    },
-    {
-      id: 'ux-4', type: 'technical', domain: 'Design System',
-      prompt: 'Un design system garantit surtout …',
-      options: [
-        'la cohérence et la réutilisabilité', 'un meilleur référencement',
-        'une base de données rapide', 'moins de tests',
-      ], correct: 0,
-    },
-  ],
-  'Cybersécurité': [
-    {
-      id: 'cy-1', type: 'technical', domain: 'Web Security',
-      prompt: 'Quelle attaque injecte du script dans une page vue par d’autres utilisateurs ?',
-      options: ['SQL Injection', 'XSS', 'CSRF', 'DDoS'], correct: 1,
-    },
-    {
-      id: 'cy-2', type: 'technical', domain: 'Cryptographie',
-      prompt: 'Quel algorithme est un chiffrement symétrique ?',
-      options: ['RSA', 'AES', 'ECDSA', 'Diffie-Hellman'], correct: 1,
-    },
-    {
-      id: 'cy-3', type: 'technical', domain: 'Authentification',
-      prompt: 'Que renforce l’authentification à deux facteurs (2FA) ?',
-      options: [
-        'la vitesse de connexion', 'la sécurité via un second facteur',
-        'la taille des mots de passe', 'le chiffrement du disque',
-      ], correct: 1,
-    },
-    {
-      id: 'cy-4', type: 'technical', domain: 'Bonnes pratiques',
-      prompt: 'Comment stocker un mot de passe côté serveur ?',
-      options: [
-        'en clair', 'chiffré réversible', 'haché avec un sel (ex. argon2/bcrypt)',
-        'en base64',
-      ], correct: 2,
-    },
-  ],
-};
+// Question categories from the bank. Each has two phrasings (`{s}` = skill) and
+// a rubric of expected elements. "Psychotechnique IT" is the psychotechnical
+// section; the rest are technical.
+interface Category {
+  key: string;
+  label: string;
+  type: QuestionType;
+  templates: [string, string];
+  expected: string;
+}
 
-const DEFAULT_TECHNICAL: ExamQuestion[] = TECHNICAL['Développement Logiciel'];
+const CATEGORIES: Category[] = [
+  {
+    key: 'technique', label: 'Technique', type: 'technical',
+    templates: [
+      'Définissez {s} et expliquez son intérêt dans un projet informatique.',
+      'Quels sont les avantages, limites et principaux cas d’utilisation de {s} ?',
+    ],
+    expected: 'Définition précise, comparaison pertinente, cas d’usage, avantages/limites et exemple.',
+  },
+  {
+    key: 'code', label: 'Code / Pseudo-code', type: 'technical',
+    templates: [
+      'Proposez un pseudo-code utilisant {s} et indiquez sa complexité temporelle.',
+      'Comment optimiseriez-vous une implémentation de {s} lorsque le volume de données augmente fortement ?',
+    ],
+    expected: 'Raisonnement étape par étape, résultat/comportement, complexité et correction éventuelle.',
+  },
+  {
+    key: 'debugging', label: 'Debugging', type: 'technical',
+    templates: [
+      'Comment distingueriez-vous une erreur de configuration, de code et d’infrastructure autour de {s} ?',
+      'Une application utilisant {s} présente des erreurs intermittentes. Quelle démarche de diagnostic suivez-vous ?',
+    ],
+    expected: 'Reproduction, logs/métriques, hypothèses, isolation de cause, correction, validation et prévention.',
+  },
+  {
+    key: 'architecture', label: 'Architecture', type: 'technical',
+    templates: [
+      'Quels composants ajouteriez-vous autour de {s} pour améliorer résilience et observabilité ?',
+      'Quels compromis architecture/performance/coût implique l’utilisation de {s} ?',
+    ],
+    expected: 'Composants, flux, scalabilité, sécurité, résilience, observabilité, compromis coût/performance.',
+  },
+  {
+    key: 'scenario', label: 'Scénario IT', type: 'technical',
+    templates: [
+      'Vous rejoignez une équipe qui utilise {s}. Quelle serait votre première analyse avant de modifier la solution ?',
+      'Une mise en production provoque une régression liée à {s}. Quelles actions prenez-vous immédiatement puis à moyen terme ?',
+    ],
+    expected: 'Clarification du problème, priorisation, analyse factuelle, communication, solution et suivi.',
+  },
+  {
+    key: 'psycho', label: 'Psychotechnique IT', type: 'psychotechnical',
+    templates: [
+      'Vous disposez de plusieurs contraintes autour de {s}. Quelle information devez-vous isoler en premier pour réduire l’espace des solutions ?',
+      'Pour {s}, comment détermineriez-vous rapidement si une solution est faisable avant de l’implémenter ?',
+    ],
+    expected: 'Raisonnement explicite, identification des contraintes, élimination des options et conclusion logique.',
+  },
+];
 
-// The full question set for a specialty (technical + shared psychotechnical),
-// with the answer keys — server-side use only.
-export function examForSpecialty(specialtyName: string | null): ExamQuestion[] {
-  const technical =
-    (specialtyName && TECHNICAL[specialtyName]) || DEFAULT_TECHNICAL;
-  return [...technical, ...PSYCHOTECHNICAL];
+const LEVELS = [
+  { name: 'L1 - Stage', time: 60 },
+  { name: 'L2 - Junior', time: 75 },
+  { name: 'L3 - Confirmé', time: 90 },
+  { name: 'L4 - Senior', time: 120 },
+  { name: 'L5 - Expert', time: 150 },
+];
+
+function slug(v: string): string {
+  return v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+// Build every (skill x category) question for a profile — the bank's unique
+// content (levels only changed the time; phrasings repeat), regenerated cleanly.
+function buildProfileBank(profile: Profile): ExamQuestion[] {
+  const out: ExamQuestion[] = [];
+  profile.domains.forEach((domain, di) => {
+    CATEGORIES.forEach((cat, ci) => {
+      const variant = (di + ci) % 2;
+      const level = LEVELS[(di + ci) % LEVELS.length];
+      out.push({
+        id: `${slug(profile.name)}__${slug(domain)}__${cat.key}`,
+        profile: profile.name,
+        domain,
+        type: cat.type,
+        category: cat.label,
+        level: level.name,
+        timeSeconds: level.time,
+        prompt: cat.templates[variant].replace(/\{s\}/g, domain),
+        expected: cat.expected,
+      });
+    });
+  });
+  return out;
+}
+
+const BANK: Record<string, ExamQuestion[]> = Object.fromEntries(
+  PROFILES.map((p) => [p.name, buildProfileBank(p)]),
+);
+
+// Resolve a catalog specialty name to a profile (supports the French aliases of
+// the older catalog), falling back to Software Engineer.
+function resolveProfile(specialtyName: string | null): Profile {
+  if (specialtyName) {
+    const match = PROFILES.find(
+      (p) =>
+        p.name.toLowerCase() === specialtyName.toLowerCase() ||
+        p.aliases?.some((a) => a.toLowerCase() === specialtyName.toLowerCase()),
+    );
+    if (match) return match;
+  }
+  return PROFILES[0];
+}
+
+// The names shown in the assessment catalog (one specialty per profile).
+export const PROFILE_NAMES = PROFILES.map((p) => p.name);
+
+// Small deterministic PRNG so getExam and submitExam pick the SAME questions
+// for a given attempt (seeded by the assessment id), while different attempts
+// get different sets.
+function seededPick<T>(items: T[], n: number, seed: string): T[] {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const rand = () => {
+    h += 0x6d2b79f5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, n);
+}
+
+// An exam for a specialty: 5 technical + 2 psychotechnical questions, drawn from
+// the profile's bank, deterministic per attempt seed.
+export function examForSpecialty(
+  specialtyName: string | null,
+  seed = 'default',
+): ExamQuestion[] {
+  const profile = resolveProfile(specialtyName);
+  const pool = BANK[profile.name] ?? [];
+  const technical = pool.filter((q) => q.type === 'technical');
+  const psycho = pool.filter((q) => q.type === 'psychotechnical');
+  return [
+    ...seededPick(technical, 5, seed + ':t'),
+    ...seededPick(psycho, 2, seed + ':p'),
+  ];
 }

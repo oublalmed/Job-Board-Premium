@@ -1,9 +1,9 @@
 import { IsObject } from 'class-validator';
 
-// Candidate's exam answers: a map of questionId -> chosen option index. The
-// values are validated (and coerced) during grading; unknown/missing entries
-// are simply treated as wrong.
+// Candidate's exam answers: a map of questionId -> free-text answer. Values are
+// graded server-side (open-ended questions); unknown/missing entries count as
+// unanswered.
 export class SubmitExamDto {
   @IsObject()
-  answers!: Record<string, number>;
+  answers!: Record<string, string>;
 }

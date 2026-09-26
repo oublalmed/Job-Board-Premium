@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, ClipboardCheck, Check } from 'lucide-react';
+import { Loader2, ClipboardCheck, Clock } from 'lucide-react';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { useAssessmentExam, useSubmitExam } from './queries';
 
-// The actual exam: renders the fetched questions with selectable options and
-// submits the answers for real grading. Shown while an attempt is in progress.
+// A substantive answer mirrors the backend's grading threshold (>= 40 chars and
+// >= 8 words), so the progress counter reflects what will actually be scored.
+function isSubstantive(v: string): boolean {
+  const a = v.trim();
+  return a.length >= 40 && a.split(/\s+/).filter(Boolean).length >= 8;
+}
+
+// The actual exam: renders the open-ended questions with a text answer each and
+// submits them for grading. Shown while an attempt is in progress.
 export function ExamRunner({
   assessmentId,
   onCompleted,
@@ -22,13 +29,13 @@ export function ExamRunner({
   const { toast } = useToast();
   const { data, isLoading, isError } = useAssessmentExam(assessmentId, true);
   const submit = useSubmitExam();
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3">
-        <Skeleton className="h-24" />
-        <Skeleton className="h-24" />
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
       </div>
     );
   }
@@ -41,14 +48,11 @@ export function ExamRunner({
   }
 
   const total = data.questions.length;
-  const answered = Object.keys(answers).length;
-  const allAnswered = answered === total;
+  const answered = data.questions.filter((q) =>
+    isSubstantive(answers[q.id] ?? ''),
+  ).length;
 
   function onSubmit() {
-    if (!allAnswered) {
-      toast(t('assessments.exam.incomplete'), 'error');
-      return;
-    }
     submit.mutate(
       { assessmentId, answers },
       {
@@ -75,6 +79,9 @@ export function ExamRunner({
           })}
         </span>
       </div>
+      <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+        {t('assessments.exam.openHint')}
+      </p>
 
       <ol className="flex flex-col gap-4">
         {data.questions.map((q, i) => (
@@ -82,49 +89,33 @@ export function ExamRunner({
             key={q.id}
             className="rounded-xl border border-border bg-card p-4"
           >
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground">
                 {t('assessments.exam.questionLabel', { n: String(i + 1) })}
               </span>
               <Badge variant={q.type === 'technical' ? 'default' : 'secondary'}>
-                {q.type === 'technical'
-                  ? t('assessments.exam.technical')
-                  : t('assessments.exam.psychotechnical')}
+                {q.category}
               </Badge>
+              <Badge variant="outline">{q.domain}</Badge>
+              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Clock className="size-3" />
+                {t('assessments.exam.suggestedTime', {
+                  seconds: String(q.timeSeconds),
+                })}
+              </span>
             </div>
             <p className="mb-3 text-sm font-medium text-foreground">
               {q.prompt}
             </p>
-            <div className="flex flex-col gap-2">
-              {q.options.map((opt, idx) => {
-                const selected = answers[q.id] === idx;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() =>
-                      setAnswers((a) => ({ ...a, [q.id]: idx }))
-                    }
-                    className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-start text-sm transition-colors ${
-                      selected
-                        ? 'border-primary bg-primary/10 text-foreground'
-                        : 'border-border text-muted-foreground hover:border-primary/40 hover:bg-accent'
-                    }`}
-                  >
-                    <span
-                      className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${
-                        selected
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-muted-foreground/40'
-                      }`}
-                    >
-                      {selected && <Check className="size-3" />}
-                    </span>
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
+            <textarea
+              rows={4}
+              className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder={t('assessments.exam.answerPlaceholder')}
+              value={answers[q.id] ?? ''}
+              onChange={(e) =>
+                setAnswers((a) => ({ ...a, [q.id]: e.target.value }))
+              }
+            />
           </li>
         ))}
       </ol>
@@ -132,7 +123,7 @@ export function ExamRunner({
       <Button
         className="gap-2 self-start"
         onClick={onSubmit}
-        disabled={!allAnswered || submit.isPending}
+        disabled={submit.isPending}
       >
         {submit.isPending ? (
           <Loader2 className="size-4 animate-spin" />

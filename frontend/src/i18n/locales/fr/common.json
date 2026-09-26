@@ -624,7 +624,10 @@
       "submit": "Soumettre l'évaluation",
       "incomplete": "Veuillez répondre à toutes les questions.",
       "submitted": "Évaluation soumise — votre score est disponible.",
-      "loadError": "Impossible de charger les questions."
+      "loadError": "Impossible de charger les questions.",
+      "openHint": "Questions ouvertes : rédigez une réponse argumentée (définition, exemple, démarche). Une réponse développée compte comme traitée.",
+      "answerPlaceholder": "Rédigez votre réponse…",
+      "suggestedTime": "≈ {{seconds}} s"
     },
     "resume": "Reprendre une évaluation",
     "assessmentId": "Identifiant de l'évaluation",

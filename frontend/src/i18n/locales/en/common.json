@@ -624,7 +624,10 @@
       "submit": "Submit assessment",
       "incomplete": "Please answer every question.",
       "submitted": "Assessment submitted — your score is available.",
-      "loadError": "Could not load the questions."
+      "loadError": "Could not load the questions.",
+      "openHint": "Open-ended questions: write a reasoned answer (definition, example, approach). A developed answer counts as completed.",
+      "answerPlaceholder": "Write your answer…",
+      "suggestedTime": "≈ {{seconds}}s"
     },
     "resume": "Resume an assessment",
     "assessmentId": "Assessment ID",
