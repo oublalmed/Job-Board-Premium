@@ -67,6 +67,12 @@ export function DashboardSidebar() {
       roles: ['admin', 'moderator'],
     },
     {
+      href: '/admin/integrity',
+      label: t('adminIntegrity.navLabel'),
+      icon: ShieldAlert,
+      roles: ['admin', 'moderator'],
+    },
+    {
       href: '/admin/profiles',
       label: t('adminProfiles.navLabel'),
       icon: ShieldAlert,

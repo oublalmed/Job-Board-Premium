@@ -622,12 +622,10 @@
       "technical": "Technique",
       "psychotechnical": "Psychotechnique",
       "submit": "Soumettre l'évaluation",
-      "incomplete": "Veuillez répondre à toutes les questions.",
       "submitted": "Évaluation soumise — votre score est disponible.",
       "loadError": "Impossible de charger les questions.",
-      "openHint": "Questions ouvertes : rédigez une réponse argumentée (définition, exemple, démarche). Une réponse développée compte comme traitée.",
-      "answerPlaceholder": "Rédigez votre réponse…",
-      "suggestedTime": "≈ {{seconds}} s"
+      "qcmHint": "QCM : sélectionnez la bonne réponse pour chaque question. Toute question sans réponse est comptée comme fausse.",
+      "unanswered": "{{count}} question(s) sans réponse"
     },
     "resume": "Reprendre une évaluation",
     "assessmentId": "Identifiant de l'évaluation",
@@ -749,6 +747,24 @@
     "reinstate": "Réactiver",
     "suspended": "Profil suspendu.",
     "reinstated": "Profil réactivé."
+  },
+  "adminIntegrity": {
+    "navLabel": "Anti-triche",
+    "title": "Intégrité des évaluations",
+    "subtitle": "Détection des comportements suspects pendant les évaluations (changements d'onglet, multi-comptes, similarités).",
+    "flagged": "Signalés",
+    "proctoring": "Surveillance",
+    "multiAccount": "Multi-comptes",
+    "plagiarism": "Similarité",
+    "filterFlagged": "Signalés",
+    "filterAll": "Tous",
+    "empty": "Aucun comportement suspect détecté.",
+    "completedAt": "{{date}}",
+    "tagProctoring": "Sorties d'onglet",
+    "tagMultiAccount": "Même appareil",
+    "verdict_suspected": "Similarité suspectée",
+    "verdict_confirmed": "Similarité confirmée",
+    "leaves": "{{count}} sortie(s)"
   },
   "adminRecruiters": {
     "navLabel": "Recruteurs",

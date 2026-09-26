@@ -17,16 +17,13 @@ import type {
   DomainFeedbackLevel,
 } from '../../ports/scoring.port.js';
 
-// Client-facing question (answer rubric stripped). These are open-ended: the
-// candidate writes a free-text answer.
+// Client-facing question (answer key stripped): a QCM with selectable options.
 export interface ExamQuestionPublic {
   id: string;
   type: 'technical' | 'psychotechnical';
-  category: string;
   domain: string;
-  level: string;
-  timeSeconds: number;
   prompt: string;
+  options: string[];
 }
 
 export interface ExamPayload {
@@ -35,19 +32,6 @@ export interface ExamPayload {
   technicalCount: number;
   psychotechnicalCount: number;
   questions: ExamQuestionPublic[];
-}
-
-// A substantive open-ended answer: enough characters and words to be a genuine
-// attempt (not blank or a token). This is the auto-grade signal for free text —
-// it measures whether the candidate engaged with the question. Deep correctness
-// grading would need an AI/human reviewer.
-const MIN_CHARS = 40;
-const MIN_WORDS = 8;
-
-function isSubstantive(answer: string | undefined): boolean {
-  const a = (answer ?? '').trim();
-  if (a.length < MIN_CHARS) return false;
-  return a.split(/\s+/).filter(Boolean).length >= MIN_WORDS;
 }
 
 @Injectable()
@@ -74,14 +58,13 @@ export class ExamService {
       psychotechnicalCount: questions.filter(
         (q) => q.type === 'psychotechnical',
       ).length,
+      // Strip the answer key before it ever leaves the server.
       questions: questions.map((q) => ({
         id: q.id,
         type: q.type,
-        category: q.category,
         domain: q.domain,
-        level: q.level,
-        timeSeconds: q.timeSeconds,
         prompt: q.prompt,
+        options: q.options,
       })),
     };
   }
@@ -89,7 +72,7 @@ export class ExamService {
   async submitExam(
     candidateId: string,
     assessmentId: string,
-    answers: Record<string, string>,
+    answers: Record<string, number>,
   ): Promise<{ scoreValue: number; technicalScore: number; psychotechnicalScore: number }> {
     const { assessment, questions } = await this.loadContext(
       candidateId,
@@ -105,12 +88,7 @@ export class ExamService {
       maxScore: 100,
       percentile: Math.round(graded.composite),
       plagiarismVerdict: 'clean',
-      details: {
-        local: true,
-        answered: graded.answered,
-        total: graded.total,
-        openEnded: true,
-      },
+      details: { local: true, correct: graded.correct, total: graded.total },
       domainFeedback: graded.domainFeedback,
       technicalScore: graded.technicalScore,
       psychotechnicalScore: graded.psychotechnicalScore,
@@ -163,41 +141,42 @@ export class ExamService {
 
   private grade(
     questions: ExamQuestion[],
-    answers: Record<string, string>,
+    answers: Record<string, number>,
   ): {
     composite: number;
     technicalScore: number;
     psychotechnicalScore: number;
-    answered: number;
+    correct: number;
     total: number;
     domainFeedback: DomainFeedbackEntry[];
   } {
     const tech = questions.filter((q) => q.type === 'technical');
     const psy = questions.filter((q) => q.type === 'psychotechnical');
 
-    const score = (set: ExamQuestion[]): number =>
+    const pct = (set: ExamQuestion[]): number =>
       set.length === 0
         ? 0
         : Math.round(
-            (set.filter((q) => isSubstantive(answers[q.id])).length /
+            (set.filter((q) => answers[q.id] === q.correct).length /
               set.length) *
               100,
           );
 
-    const technicalScore = score(tech);
-    const psychotechnicalScore = score(psy);
+    const technicalScore = pct(tech);
+    const psychotechnicalScore = pct(psy);
     const composite = Math.round(
       technicalScore * 0.6 + psychotechnicalScore * 0.4,
     );
-    const answered = questions.filter((q) =>
-      isSubstantive(answers[q.id]),
+    const correct = questions.filter(
+      (q) => answers[q.id] === q.correct,
     ).length;
 
+    // Per-domain strengths/weaknesses for the remediation feedback.
     const byDomain = new Map<string, { ok: number; total: number }>();
     for (const q of questions) {
       const entry = byDomain.get(q.domain) ?? { ok: 0, total: 0 };
       entry.total += 1;
-      if (isSubstantive(answers[q.id])) entry.ok += 1;
+      if (answers[q.id] === q.correct) entry.ok += 1;
       byDomain.set(q.domain, entry);
     }
     const level = (ratio: number): DomainFeedbackLevel =>
@@ -210,7 +189,7 @@ export class ExamService {
       composite,
       technicalScore,
       psychotechnicalScore,
-      answered,
+      correct,
       total: questions.length,
       domainFeedback,
     };

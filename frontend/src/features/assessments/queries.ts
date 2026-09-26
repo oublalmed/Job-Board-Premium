@@ -139,11 +139,9 @@ export function useResumeAssessment() {
 export interface ExamQuestion {
   id: string;
   type: 'technical' | 'psychotechnical';
-  category: string;
   domain: string;
-  level: string;
-  timeSeconds: number;
   prompt: string;
+  options: string[];
 }
 
 export interface ExamPayload {
@@ -179,7 +177,7 @@ export function useSubmitExam() {
   return useMutation({
     mutationFn: async (input: {
       assessmentId: string;
-      answers: Record<string, string>;
+      answers: Record<string, number>;
     }) => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/assessments/${input.assessmentId}/submit`,
