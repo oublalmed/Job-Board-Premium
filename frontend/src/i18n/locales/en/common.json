@@ -615,6 +615,17 @@
     "started": "Assessment started successfully.",
     "simulateButton": "Finish assessment (simulation)",
     "simulateDone": "Assessment completed — your score is available.",
+    "exam": {
+      "title": "Take your assessment",
+      "progress": "{{done}}/{{total}} answered",
+      "questionLabel": "Question {{n}}",
+      "technical": "Technical",
+      "psychotechnical": "Psychometric",
+      "submit": "Submit assessment",
+      "incomplete": "Please answer every question.",
+      "submitted": "Assessment submitted — your score is available.",
+      "loadError": "Could not load the questions."
+    },
     "resume": "Resume an assessment",
     "assessmentId": "Assessment ID",
     "assessmentIdPlaceholder": "Enter the assessment ID",

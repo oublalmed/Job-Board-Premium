@@ -615,6 +615,17 @@
     "started": "تمّ بدء التقييم بنجاح.",
     "simulateButton": "إنهاء التقييم (محاكاة)",
     "simulateDone": "اكتمل التقييم — نتيجتك متاحة.",
+    "exam": {
+      "title": "اجتَز تقييمك",
+      "progress": "{{done}}/{{total}} تمّت الإجابة",
+      "questionLabel": "السؤال {{n}}",
+      "technical": "تقني",
+      "psychotechnical": "نفسي-تقني",
+      "submit": "إرسال التقييم",
+      "incomplete": "يرجى الإجابة عن جميع الأسئلة.",
+      "submitted": "تمّ إرسال التقييم — نتيجتك متاحة.",
+      "loadError": "تعذّر تحميل الأسئلة."
+    },
     "resume": "استئناف تقييم",
     "assessmentId": "معرّف التقييم",
     "assessmentIdPlaceholder": "أدخل معرّف التقييم",

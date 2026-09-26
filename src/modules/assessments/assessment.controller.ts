@@ -19,6 +19,8 @@ import { AssessmentHistoryService } from './assessment-history.service.js';
 import { RemediationService } from './remediation.service.js';
 import { RemediationProgressService } from './remediation-progress.service.js';
 import { WebhookService } from './webhook.service.js';
+import { ExamService } from './exam.service.js';
+import { SubmitExamDto } from './dto/submit-exam.dto.js';
 import { StartAssessmentDto } from './dto/start-assessment.dto.js';
 import { ResumeAssessmentDto } from './dto/resume-assessment.dto.js';
 import { StartAssessmentResponseDto } from './dto/start-assessment-response.dto.js';
@@ -41,6 +43,7 @@ export class AssessmentController {
     private readonly remediationService: RemediationService,
     private readonly remediationProgressService: RemediationProgressService,
     private readonly webhookService: WebhookService,
+    private readonly examService: ExamService,
   ) {}
 
   @Get('mine')
@@ -110,6 +113,29 @@ export class AssessmentController {
       windowBlurCount: saved.windowBlurCount,
       proctoringFlagged: saved.proctoringFlagged,
     };
+  }
+
+  // The in-app exam: fetch the questions for an in-progress attempt (answer
+  // keys stripped server-side).
+  @Get(':id/exam')
+  @Roles(Role.CANDIDATE)
+  async getExam(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) assessmentId: string,
+  ) {
+    return this.examService.getExam(user.sub, assessmentId);
+  }
+
+  // Submit the exam answers — graded locally, then the attempt is completed and
+  // scored through the same path a provider webhook would use.
+  @Post(':id/submit')
+  @Roles(Role.CANDIDATE)
+  async submitExam(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) assessmentId: string,
+    @Body() dto: SubmitExamDto,
+  ) {
+    return this.examService.submitExam(user.sub, assessmentId, dto.answers);
   }
 
   // Local/dev only — complete an in-progress attempt without a real scoring

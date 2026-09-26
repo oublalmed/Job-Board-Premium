@@ -12,6 +12,7 @@ import { AssessmentController } from './assessment.controller.js';
 import { CatalogService } from './catalog.service.js';
 import { CatalogController } from './catalog.controller.js';
 import { WebhookService } from './webhook.service.js';
+import { ExamService } from './exam.service.js';
 import { WebhookController } from './webhook.controller.js';
 import { IndexationService } from './indexation.service.js';
 import { RemediationService } from './remediation.service.js';
@@ -48,6 +49,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     AssessmentService,
     AssessmentHistoryService,
     WebhookService,
+    ExamService,
     IndexationService,
     RemediationService,
     RemediationProgressService,

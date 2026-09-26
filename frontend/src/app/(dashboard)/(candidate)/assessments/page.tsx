@@ -6,11 +6,9 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  ExternalLink,
   Loader2,
   MessageCircle,
   Play,
-  FlaskConical,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -43,10 +41,10 @@ import {
   useAssessmentHistory,
   useReportIncident,
   useResumeAssessment,
-  useSimulateCompletion,
   useStartAssessment,
   type AssessmentHistoryItem,
 } from '@/features/assessments/queries';
+import { ExamRunner } from '@/features/assessments/ExamRunner';
 import { ScoreMeter, PercentileBar } from '@/features/assessments/ScoreMeter';
 import {
   useAssessmentSession,
@@ -65,11 +63,6 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
 };
-
-// Local/dev builds expose a "simulate completion" action: there is no external
-// scoring vendor wired up, so this is how an attempt reaches a score locally.
-// Never shown in a production build.
-const DEV_MODE = process.env.NODE_ENV !== 'production';
 
 // The backend's error bodies are English and untranslated — best-effort
 // map the two known conflict shapes (cooldown, already-in-progress) to
@@ -143,7 +136,6 @@ export default function AssessmentsPage() {
   const start = useStartAssessment();
   const resume = useResumeAssessment();
   const incident = useReportIncident();
-  const simulate = useSimulateCompletion();
   const feedback = useAssessmentFeedback();
 
   const [showManual, setShowManual] = useState(false);
@@ -202,17 +194,10 @@ export default function AssessmentsPage() {
     });
   });
 
-  function handleSimulateComplete() {
-    if (!session) return;
-    simulate.mutate(session.assessmentId, {
-      onSuccess: () => {
-        updateStatus('completed');
-        toast(t('assessments.simulateDone'), 'success');
-        // Surface the freshly computed score + remediation right away.
-        handleViewFeedback();
-      },
-      onError: () => toast(t('common.error'), 'error'),
-    });
+  function handleExamCompleted() {
+    updateStatus('completed');
+    // Surface the freshly computed score + remediation right away.
+    handleViewFeedback();
   }
 
   function handleReportIncident() {
@@ -272,48 +257,31 @@ export default function AssessmentsPage() {
                 )?.name ?? session.testId}
               </span>
             </p>
-            <div className="flex flex-wrap gap-2">
-              {/* In a real deployment the exam is hosted by the scoring vendor
-                  at assessmentUrl. Locally there is no such vendor, so the dead
-                  link is hidden and a simulation button takes its place. */}
-              {!DEV_MODE && (
-                <Button asChild className="gap-2">
-                  <a href={session.assessmentUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink className="size-4" />
-                    {t('assessments.session.continueButton')}
-                  </a>
-                </Button>
-              )}
-              {DEV_MODE && session.status === 'in_progress' && (
+            {session.status === 'in_progress' ? (
+              <>
+                {/* The actual exam — questions to answer, then real grading. */}
+                <ExamRunner
+                  assessmentId={session.assessmentId}
+                  onCompleted={handleExamCompleted}
+                />
                 <Button
-                  className="gap-2"
-                  onClick={handleSimulateComplete}
-                  disabled={simulate.isPending}
+                  variant="outline"
+                  className="gap-2 self-start"
+                  onClick={handleReportIncident}
+                  disabled={incident.isPending}
                 >
-                  {simulate.isPending ? (
+                  {incident.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    <FlaskConical className="size-4" />
+                    <AlertTriangle className="size-4" />
                   )}
-                  {t('assessments.simulateButton')}
+                  {t('assessments.reportButton')}
                 </Button>
-              )}
+              </>
+            ) : (
               <Button
                 variant="outline"
-                className="gap-2"
-                onClick={handleReportIncident}
-                disabled={incident.isPending || session.status !== 'in_progress'}
-              >
-                {incident.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <AlertTriangle className="size-4" />
-                )}
-                {t('assessments.reportButton')}
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2"
+                className="gap-2 self-start"
                 onClick={handleViewFeedback}
                 disabled={feedback.isPending}
               >
@@ -324,7 +292,7 @@ export default function AssessmentsPage() {
                 )}
                 {t('assessments.viewFeedback')}
               </Button>
-            </div>
+            )}
 
             {feedbackData && (
               <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">

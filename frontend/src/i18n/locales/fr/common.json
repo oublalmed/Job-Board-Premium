@@ -615,6 +615,17 @@
     "started": "Évaluation démarrée avec succès.",
     "simulateButton": "Terminer l'évaluation (simulation)",
     "simulateDone": "Évaluation terminée — votre score est disponible.",
+    "exam": {
+      "title": "Passez votre évaluation",
+      "progress": "{{done}}/{{total}} répondu",
+      "questionLabel": "Question {{n}}",
+      "technical": "Technique",
+      "psychotechnical": "Psychotechnique",
+      "submit": "Soumettre l'évaluation",
+      "incomplete": "Veuillez répondre à toutes les questions.",
+      "submitted": "Évaluation soumise — votre score est disponible.",
+      "loadError": "Impossible de charger les questions."
+    },
     "resume": "Reprendre une évaluation",
     "assessmentId": "Identifiant de l'évaluation",
     "assessmentIdPlaceholder": "Entrez l'identifiant de l'évaluation",

@@ -119,15 +119,18 @@ export class WebhookService {
     return this.finalizeAssessment(assessment);
   }
 
-  // Shared tail of both the real webhook and the local simulation: fetch the
-  // provider result for an assessment, persist its Score, mark it COMPLETED and
-  // re-apply the CVthèque indexation thresholds. Idempotent — a second call for
-  // an already-scored assessment is a no-op.
-  private async finalizeAssessment(
+  // Shared tail of the real webhook, the local exam and the dev simulation:
+  // persist a result's Score, mark the attempt COMPLETED and re-apply the
+  // CVthèque indexation thresholds. Idempotent — a second call for an
+  // already-scored assessment is a no-op. When `providedResult` is given (the
+  // in-app exam grades locally) it is used as-is; otherwise the result is
+  // fetched from the scoring provider.
+  async finalizeAssessment(
     assessment: Assessment,
+    providedResult?: AssessmentResult,
   ): Promise<{ alreadyProcessed: boolean; scoreId: string }> {
     const externalId = assessment.externalAssessmentId;
-    if (!externalId) {
+    if (!externalId && !providedResult) {
       throw new BadRequestException(
         'Assessment has no external provider reference',
       );
@@ -144,7 +147,9 @@ export class WebhookService {
       return { alreadyProcessed: true, scoreId: existingScore.id };
     }
 
-    const result = await this.scoringProvider.getResult(externalId);
+    const result =
+      providedResult ??
+      (externalId ? await this.scoringProvider.getResult(externalId) : null);
     if (!result) {
       throw new BadRequestException(
         `No result available from provider for ${externalId}`,
