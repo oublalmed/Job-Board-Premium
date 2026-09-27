@@ -80,24 +80,48 @@ indexed. Still needed: a load test to *measure* p95 (e.g. k6 against
 non-blocking nightly job. Add indexes reactively for any query the load test
 shows scanning.
 
-## ENF-03 / ENF-13 — Horizontal scale, IaC ⬜
+## ENF-03 / ENF-13 — Horizontal scale, IaC 🟡
 
 The app is stateless (JWT, no server session; shared Redis for BullMQ), so it
-scales horizontally behind a load balancer. Example Kubernetes manifest lives
-in `deploy/k8s/` as a starting point (Deployment + Service + Ingress with TLS).
-Promote to Terraform/Helm for real environments.
+scales horizontally behind a load balancer. The raw example manifests in
+`deploy/k8s/` (Deployment + Service + TLS Ingress) are now packaged for real
+environments:
 
-## ENF-12 — Consent capture at registration ⬜
+- **`deploy/helm/cobalt`** — a cloud-agnostic Helm chart templating all of the
+  manifests with a `values.yaml`. Verified: `helm lint` (0 failures) and
+  `helm template` render cleanly, including the toggles and secret-manager
+  provider swap (aws/gcpsm/vault/azurekv).
+- **`deploy/terraform`** — a Terraform module that installs the chart via
+  `helm_release` for stateful, reproducible promotion from CI. Verified:
+  `terraform fmt -check` and `terraform validate` pass.
 
-Data access/erasure are implemented and audited. Still missing: explicit
-CNDP/RGPD consent capture at sign-up and a per-data-type retention policy.
-Small, well-scoped follow-up:
+Remaining is operational: a live `apply` against the target cluster, and a
+500-VU load run on the multi-replica Deployment to evidence ENF-03 on
+prod-type infra.
 
-- Add a required `consentAccepted: boolean` (must be `true`) to `RegisterDto`
-  and persist a `consentAt` timestamp on `User`.
-- Add a consent checkbox with a privacy-policy link to the register page.
-- Document retention windows per data category (profiles, CVs, audit logs,
-  invoices — invoices already have a legal 10-year retention, see ADR-0003).
+## ENF-12 — Consent capture + data retention 🟡
+
+Data access/erasure are implemented and audited, CNDP/RGPD consent is captured
+at sign-up (`RegisterDto.consentAccepted` + `users.consent_at`, `/privacy`
+page), and a daily retention sweep (`DataRetentionService`, BullMQ repeatable
+at `DATA_RETENTION_CRON`) purges transient records past their window. Records
+with a legal or product retention obligation are deliberately never touched.
+
+Retention matrix (windows configurable via env — see `business.config.ts`):
+
+| Data category | Table | Policy | Window (default) |
+| --- | --- | --- | --- |
+| Read notifications | `notifications` | purge read rows past the window (unread never purged) | `NOTIFICATION_RETENTION_DAYS` (90d) |
+| Dead refresh tokens | `refresh_tokens` | purge revoked/expired past the window; live sessions kept regardless of age | `REFRESH_TOKEN_RETENTION_DAYS` (30d) |
+| Profile-view cooldowns | `profile_view_cooldowns` | purge stale anti-spam rows (the 24h claim window is long gone; removal is inert) | `PROFILE_VIEW_COOLDOWN_RETENTION_DAYS` (30d) |
+| Webhook idempotency markers | `processed_webhook_events` | purge past the payment provider's redelivery horizon | `WEBHOOK_EVENT_RETENTION_DAYS` (90d) |
+| Profile-view audit trail | `candidate_profile_views` | **kept** — EF-GROW-04 audit trail, never deleted by design | — |
+| Audit log | `audit_logs` | **kept** — security/compliance | — |
+| Invoices | `invoices` | **kept** — legal 10-year retention (ADR-0003) | — |
+| Data requests | `data_requests` | **kept** — RGPD proof-of-processing | — |
+
+Remaining is operational/DPO: ratify the window durations for the full data
+catalogue and sign off the matrix.
 
 ## EF-CAND-03 — Antivirus scanning of uploads 🟡
 
