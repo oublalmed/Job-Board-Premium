@@ -60,6 +60,15 @@ export const configValidationSchema = Joi.object({
   PASSWORD_MIN_LENGTH: Joi.number().min(8).default(10),
   MAX_CV_SIZE_BYTES: Joi.number().default(5242880),
 
+  // Data retention (ENF-12) — the daily purge sweep and its per-type windows.
+  // Only transient records are purged; legally-retained data (audit log,
+  // invoices, data-requests) has no window here and is never touched.
+  DATA_RETENTION_CRON: Joi.string().default('0 4 * * *'),
+  NOTIFICATION_RETENTION_DAYS: Joi.number().min(1).default(90),
+  REFRESH_TOKEN_RETENTION_DAYS: Joi.number().min(1).default(30),
+  PROFILE_VIEW_COOLDOWN_RETENTION_DAYS: Joi.number().min(1).default(30),
+  WEBHOOK_EVENT_RETENTION_DAYS: Joi.number().min(1).default(90),
+
   // Pricing
   PLAN_STARTER_PRICE: Joi.number().default(990),
   PLAN_STARTER_CONTACTS: Joi.number().default(15),
