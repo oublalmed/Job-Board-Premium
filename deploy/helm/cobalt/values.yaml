@@ -1,0 +1,127 @@
+# Default values for the Cobalt API chart. These mirror deploy/k8s/*.yaml so the
+# Helm release is a faithful, parameterised promotion of those manifests
+# (ENF-13). Everything cloud-specific (secret-manager provider, backup bucket)
+# lives here — the templates stay portable.
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: cobalt-api
+  tag: latest # override per environment (e.g. a Git SHA)
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# Stateless (JWT auth, shared Redis for BullMQ) → safe to scale horizontally.
+replicaCount: 3
+
+# Secret the app reads via envFrom; produced by External Secrets below (or
+# provisioned out-of-band). Shared by the API and the backup CronJob.
+secretName: cobalt-secrets
+
+# Non-secret environment (Joi-validated at boot). Secret values arrive through
+# envFrom(secretName), never here.
+env:
+  NODE_ENV: production
+  DB_SSL: "true"
+  MFA_ENFORCE_STAFF: "true"
+# Extra plain env vars (map name: value), merged after `env`.
+extraEnv: {}
+
+containerPort: 3000
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+# Split probes: readiness pulls a pod from the LB when it cannot serve
+# (DB + heap), liveness is process-only so a transient DB blip never restarts.
+readinessProbe:
+  path: /api/v1/health/ready
+  initialDelaySeconds: 10
+  periodSeconds: 10
+livenessProbe:
+  path: /api/v1/health/live
+  initialDelaySeconds: 20
+  periodSeconds: 20
+
+serviceAccount:
+  # Created so IRSA / workload-identity can back the External Secrets auth.
+  create: true
+  name: cobalt-api
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: ""
+  host: api.cobalt.example
+  annotations:
+    # TLS in transit (ENF-05); adapt to your ingress controller / issuer.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    enabled: true
+    secretName: cobalt-api-tls
+
+# ENF-07 — External Secrets Operator materialises `secretName` from a cloud
+# secret manager, so no secret value is ever committed. Set enabled=false if
+# you provision the Secret another way. `secretStore.provider` is passed
+# through to spec.provider verbatim, so aws / gcpsm / vault / azurekv all work
+# with no template change. NOTE: Helm deep-merges values, so to switch AWAY
+# from the AWS default in an overriding values file, null the aws key, e.g.:
+#   externalSecrets: { secretStore: { provider: { aws: null,
+#     gcpsm: { projectID: my-project } } } }
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  secretStore:
+    name: cobalt-secret-store
+    provider:
+      aws:
+        service: SecretsManager
+        region: eu-west-3
+        auth:
+          # Prefer IRSA over static keys.
+          jwt:
+            serviceAccountRef:
+              name: cobalt-api
+  # Map each Secret key to its key in the remote secret manager.
+  data:
+    - secretKey: database-url
+      remoteKey: cobalt/prod/database-url
+    - secretKey: JWT_ACCESS_SECRET
+      remoteKey: cobalt/prod/jwt-access-secret
+    - secretKey: JWT_REFRESH_SECRET
+      remoteKey: cobalt/prod/jwt-refresh-secret
+    - secretKey: SCORING_WEBHOOK_SECRET
+      remoteKey: cobalt/prod/scoring-webhook-secret
+    - secretKey: STRIPE_SECRET_KEY
+      remoteKey: cobalt/prod/stripe-secret-key
+    - secretKey: STRIPE_WEBHOOK_SECRET
+      remoteKey: cobalt/prod/stripe-webhook-secret
+    - secretKey: MFA_ENCRYPTION_KEY
+      remoteKey: cobalt/prod/mfa-encryption-key
+
+# ENF-08 — nightly pg_dump → object storage. A managed Postgres with PITR is
+# still recommended over this; disable when the managed service backs up.
+backup:
+  enabled: true
+  schedule: "15 2 * * *" # 02:15 UTC, offset from the app's 02:30 recalc job
+  image: postgres:15-alpine # pin to your Postgres major version
+  bucket: cobalt-backups
+  region: eu-west-3
+  databaseUrlKey: database-url # key in `secretName` holding the DSN
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

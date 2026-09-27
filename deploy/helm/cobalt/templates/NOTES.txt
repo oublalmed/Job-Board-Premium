@@ -1,0 +1,22 @@
+Cobalt API ({{ .Chart.Name }}-{{ .Chart.Version }}) deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Replicas:        {{ .Values.replicaCount }}
+Image:           {{ .Values.image.repository }}:{{ .Values.image.tag }}
+Secret:          {{ .Values.secretName }}{{ if .Values.externalSecrets.enabled }} (from External Secrets: {{ .Values.externalSecrets.secretStore.name }}){{ else }} (provisioned out-of-band){{ end }}
+Backup CronJob:  {{ if .Values.backup.enabled }}enabled ({{ .Values.backup.schedule }} → s3://{{ .Values.backup.bucket }}){{ else }}disabled{{ end }}
+{{- if .Values.ingress.enabled }}
+
+API URL: {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}
+{{- else }}
+
+No Ingress. Reach the API via the Service {{ include "cobalt.fullname" . }}:{{ .Values.service.port }} (type {{ .Values.service.type }}).
+{{- end }}
+
+Check rollout:
+  kubectl rollout status deploy/{{ include "cobalt.fullname" . }} -n {{ .Release.Namespace }}
+
+{{- if .Values.externalSecrets.enabled }}
+
+Prerequisite: the External Secrets Operator must be installed in the cluster,
+and the referenced remote keys must exist in your secret manager.
+{{- end }}

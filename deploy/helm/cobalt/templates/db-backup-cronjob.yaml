@@ -1,0 +1,51 @@
+{{- if .Values.backup.enabled }}
+# ENF-08 — nightly logical backup. Does NOT provide PITR on its own (WAL
+# archiving is a managed-service / pgBackRest concern); prefer managed Postgres.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cobalt.fullname" . }}-db-backup
+  labels:
+    {{- include "cobalt.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pg-backup
+              image: {{ .Values.backup.image }}
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  apk add --no-cache aws-cli >/dev/null
+                  KEY="$(date -u +%Y/%m/%d)/cobalt-$(date -u +%FT%H%M%SZ).sql.gz"
+                  echo "Backing up to s3://$BACKUP_BUCKET/$KEY"
+                  pg_dump --no-owner --no-privileges "$DATABASE_URL" \
+                    | gzip -9 \
+                    | aws s3 cp - "s3://$BACKUP_BUCKET/$KEY" \
+                        --sse aws:kms --only-show-errors
+                  echo "Backup complete"
+              env:
+                # Reuse the app's secret; never inline the DSN here.
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.secretName }}
+                      key: {{ .Values.backup.databaseUrlKey }}
+                - name: BACKUP_BUCKET
+                  value: {{ .Values.backup.bucket | quote }}
+                - name: AWS_REGION
+                  value: {{ .Values.backup.region | quote }}
+              resources:
+                {{- toYaml .Values.backup.resources | nindent 16 }}
+{{- end }}

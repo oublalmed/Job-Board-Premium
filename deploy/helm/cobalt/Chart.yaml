@@ -1,0 +1,16 @@
+apiVersion: v2
+name: cobalt
+description: >-
+  Cobalt recruitment platform API — Helm packaging of the deploy/k8s manifests
+  (ENF-13). Deployment + Service + TLS Ingress, an External Secrets
+  SecretStore/ExternalSecret (ENF-07), and the nightly pg_dump backup CronJob
+  (ENF-08). Cloud-agnostic: the secret-manager provider and backup target are
+  values, never hard-coded in the templates.
+type: application
+# Chart version — bump on chart changes (SemVer).
+version: 0.1.0
+# Tracks the app image this chart defaults to.
+appVersion: "0.0.1"
+kubeVersion: ">=1.25.0-0"
+maintainers:
+  - name: Cobalt Platform
