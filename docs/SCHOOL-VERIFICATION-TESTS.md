@@ -31,14 +31,33 @@ couvrant submit / OCR+match / approve / reject / re-soumission / concurrence.
    contrôle la garde de publication EF-CAND-06 (un profil ne peut devenir
    visible sans justificatif approuvé).
 
-### ⚠️ Caveat honnête — l'OCR est un *stub*
+### ✅ OCR réel (mise à jour)
 
-Aucun fournisseur OCR réel n'est branché (`StubOcrAdapter`). Le texte « extrait »
-est **déterministe à partir du hash du fichier**, pas lu du contenu réel du
-document. Donc l'**école auto-suggérée** est un placeholder, pas une lecture du
-diplôme. **L'admin reste le décideur réel** : il voit le vrai document et
-tranche. Brancher Textract/Google Vision/Mindee (port `OcrProvider`) rendrait la
-suggestion réelle sans changer le workflow.
+L'OCR n'est **plus** un stub : `OCR_DRIVER=real` branche un extracteur réel
+(`RealOcrAdapter`) qui lit le **contenu réel** du document —
+
+- **PDF** (CV/diplôme exporté en PDF) → couche texte via **pdf-parse** ;
+- **Image** (PNG/JPEG scanné) → OCR via **tesseract.js** (fra+eng).
+
+Le texte extrait est comparé au **référentiel des 11 écoles** : **ENSIAS, EMI,
+INPT, ENIM, EHTP, INSEA, UM6P, UIR, ENSEM, ESITH, EMSI** (`grande-ecoles.constant.ts`).
+Le matcher matche chaque alias **en mot entier** (pas en sous-chaîne), donc
+« ensemble » ne matche pas ENSEM ni « académique » EMI.
+
+Prouvé en réel (PDF généré, section *Formation*) :
+
+| Document (PDF) | École reconnue |
+| --- | --- |
+| CV « … Formation : ENSIAS … » | **ENSIAS** |
+| Diplôme EHTP | **EHTP** |
+| CV INSEA | **INSEA** |
+| CV UIR | **UIR** |
+| CV EMSI | **EMSI** |
+| École hors référentiel | **aucune (null)** |
+
+Et de bout en bout via l'endpoint (`POST /candidates/school-verification`, PDF) :
+`matchedSchool = "ENSIAS — …"`. `OCR_DRIVER=stub` (défaut) reste utilisé en CI
+pour garder les tests hermétiques.
 
 ---
 

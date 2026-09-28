@@ -16,7 +16,7 @@ import { LoggingMailerAdapter } from '../adapters/mailer/logging-mailer.adapter.
 import { StubFileScannerAdapter } from '../adapters/file-scanner/stub-file-scanner.adapter.js';
 import { ClamavFileScannerAdapter } from '../adapters/file-scanner/clamav-file-scanner.adapter.js';
 import { StubObjectStorageAdapter } from '../adapters/object-storage/stub-object-storage.adapter.js';
-import { StubOcrAdapter } from '../adapters/ocr/stub-ocr.adapter.js';
+import { ocrProviderFactory } from '../adapters/ocr/ocr.factory.js';
 
 // EF-CAND-03 — select the antivirus adapter by ANTIVIRUS_DRIVER. Default is
 // `stub` (always clean) so CI/local/dev behavior is unchanged; `clamav`
@@ -58,7 +58,11 @@ export function mailProviderFactory(config: ConfigService): MailProvider {
       inject: [ConfigService],
     },
     { provide: OBJECT_STORAGE, useClass: StubObjectStorageAdapter },
-    { provide: OCR_PROVIDER, useClass: StubOcrAdapter },
+    {
+      provide: OCR_PROVIDER,
+      useFactory: ocrProviderFactory,
+      inject: [ConfigService],
+    },
   ],
   exports: [
     SCORING_PROVIDER,

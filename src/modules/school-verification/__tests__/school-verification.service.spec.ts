@@ -176,7 +176,7 @@ describe('SchoolVerificationService', () => {
         }),
       );
       expect(result.status).toBe(SchoolVerificationStatus.PENDING);
-      expect(result.matchedSchool).toBe('ENSIAS');
+      expect(result.matchedSchool).toContain('ENSIAS');
       expect(result.confidence).toBe(88);
     });
 

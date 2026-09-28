@@ -114,4 +114,8 @@ export const configValidationSchema = Joi.object({
   ANTIVIRUS_DRIVER: Joi.string().valid('stub', 'clamav').default('stub'),
   CLAMAV_HOST: Joi.string().default('localhost'),
   CLAMAV_PORT: Joi.number().default(3310),
+  // OCR (school verification) — `stub` keeps CI/dev hermetic (deterministic
+  // fake text); `real` extracts genuine text: pdf-parse for PDFs, tesseract.js
+  // for images.
+  OCR_DRIVER: Joi.string().valid('stub', 'real').default('stub'),
 });
