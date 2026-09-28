@@ -805,6 +805,26 @@
     "successBody": "تمّ إنشاء حساب {{email}} ({{company}}).",
     "successMail": "أُرسل بريد يحتوي بيانات الدخول ورابطًا لتعيين كلمة المرور."
   },
+  "adminPacks": {
+    "title": "إدارة الباقات",
+    "subtitle": "الباقة والميزات والحدود والتجاوزات لكل شركة",
+    "selectCompany": "الشركة",
+    "selectPlaceholder": "اختر شركة…",
+    "plan": "الباقة",
+    "status": "الحالة",
+    "statusActive": "نشِط",
+    "statusInactive": "غير نشِط",
+    "users": "المستخدمون",
+    "features": "الميزات",
+    "enabled": "مُفعَّلة",
+    "disabled": "مُعطَّلة",
+    "sourcePackage": "من الباقة",
+    "sourceOverride": "تجاوز المشرف",
+    "forceEnable": "تفعيل إجباري",
+    "forceDisable": "تعطيل إجباري",
+    "resetToPlan": "إعادة إلى الباقة",
+    "saved": "تم حفظ التغيير"
+  },
   "adminSubscriptions": {
     "navLabel": "الاشتراكات",
     "title": "إدارة الاشتراكات",

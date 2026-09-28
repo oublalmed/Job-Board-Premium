@@ -805,6 +805,26 @@
     "successBody": "Le compte de {{email}} ({{company}}) a été créé.",
     "successMail": "Un email contenant ses accès et un lien pour définir son mot de passe lui a été envoyé."
   },
+  "adminPacks": {
+    "title": "Gestion des packs",
+    "subtitle": "Pack, fonctionnalités, limites et overrides par entreprise",
+    "selectCompany": "Entreprise",
+    "selectPlaceholder": "Sélectionner une entreprise…",
+    "plan": "Pack",
+    "status": "Statut",
+    "statusActive": "Actif",
+    "statusInactive": "Inactif",
+    "users": "Utilisateurs",
+    "features": "Fonctionnalités",
+    "enabled": "Activée",
+    "disabled": "Désactivée",
+    "sourcePackage": "via le pack",
+    "sourceOverride": "override admin",
+    "forceEnable": "Forcer l'activation",
+    "forceDisable": "Forcer la désactivation",
+    "resetToPlan": "Réinitialiser au pack",
+    "saved": "Modification enregistrée"
+  },
   "adminSubscriptions": {
     "navLabel": "Abonnements",
     "title": "Gestion des abonnements",

@@ -805,6 +805,26 @@
     "successBody": "The account for {{email}} ({{company}}) has been created.",
     "successMail": "An email with their credentials and a link to set their password has been sent."
   },
+  "adminPacks": {
+    "title": "Pack management",
+    "subtitle": "Pack, features, limits and overrides per company",
+    "selectCompany": "Company",
+    "selectPlaceholder": "Select a company…",
+    "plan": "Pack",
+    "status": "Status",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "users": "Users",
+    "features": "Features",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "sourcePackage": "from pack",
+    "sourceOverride": "admin override",
+    "forceEnable": "Force enable",
+    "forceDisable": "Force disable",
+    "resetToPlan": "Reset to pack",
+    "saved": "Change saved"
+  },
   "adminSubscriptions": {
     "navLabel": "Subscriptions",
     "title": "Subscription management",

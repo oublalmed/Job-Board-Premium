@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   UserPlus,
+  Package,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -100,6 +101,12 @@ export function DashboardSidebar() {
       href: '/admin/subscriptions',
       label: t('adminSubscriptions.navLabel'),
       icon: CreditCard,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/packs',
+      label: t('adminPacks.title'),
+      icon: Package,
       roles: ['admin', 'moderator'],
     },
     {
