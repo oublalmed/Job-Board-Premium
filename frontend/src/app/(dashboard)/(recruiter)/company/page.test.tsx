@@ -111,7 +111,7 @@ describe('CompanyPage — EF-RECR-02 (multi-user)', () => {
   it('lists recruiters and shows the add form to a company admin', () => {
     useCompany.mockReturnValue(companyData);
     useRecruiters.mockReturnValue({
-      data: [{ id: 'r1', userId: 'u1', position: 'Lead', user: { email: 'lead@acme.com' } }],
+      data: [{ id: 'r1', userId: 'u1', position: 'Lead', email: 'lead@acme.com' }],
     });
 
     render(<CompanyPage />);
@@ -123,7 +123,7 @@ describe('CompanyPage — EF-RECR-02 (multi-user)', () => {
   it('removing a recruiter calls the mutation with the recruiter id', () => {
     useCompany.mockReturnValue(companyData);
     useRecruiters.mockReturnValue({
-      data: [{ id: 'r1', userId: 'u1', user: { email: 'lead@acme.com' } }],
+      data: [{ id: 'r1', userId: 'u1', email: 'lead@acme.com', position: null }],
     });
 
     render(<CompanyPage />);
@@ -136,7 +136,7 @@ describe('CompanyPage — EF-RECR-02 (multi-user)', () => {
     roles.current = ['recruiter'];
     useCompany.mockReturnValue(companyData);
     useRecruiters.mockReturnValue({
-      data: [{ id: 'r1', userId: 'u1', user: { email: 'lead@acme.com' } }],
+      data: [{ id: 'r1', userId: 'u1', email: 'lead@acme.com', position: null }],
     });
 
     render(<CompanyPage />);

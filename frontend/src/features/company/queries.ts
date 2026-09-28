@@ -14,6 +14,18 @@ import {
 export type Company = components['schemas']['Company'];
 export type Recruiter = components['schemas']['Recruiter'];
 
+// The /companies/recruiters endpoint returns a flat summary (id, userId,
+// email, position) — NOT the full Recruiter entity the OpenAPI schema labels
+// it with (which nests user). Type it to the real response so the UI can show
+// the recruiter's email instead of falling back to the raw user id.
+export interface CompanyRecruiter {
+  id: string;
+  userId: string;
+  email: string;
+  position: string | null;
+  createdAt?: string;
+}
+
 export const companyKeys = {
   all: ['company'] as const,
   me: () => [...companyKeys.all, 'me'] as const,
@@ -40,7 +52,7 @@ export function useRecruiters(enabled: boolean) {
     enabled,
     queryFn: async () => {
       const { data } = await apiClient.GET('/api/v1/companies/recruiters');
-      return (data ?? []) as unknown as Recruiter[];
+      return (data ?? []) as unknown as CompanyRecruiter[];
     },
   });
 }

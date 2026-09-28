@@ -228,7 +228,7 @@ export default function CompanyPage() {
                 <Mail className="size-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    {r.user?.email ?? r.userId}
+                    {r.email}
                   </p>
                   {r.position && <p className="text-xs text-muted-foreground">{r.position}</p>}
                 </div>
