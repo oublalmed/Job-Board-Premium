@@ -119,6 +119,9 @@ export interface CandidateDetail {
 }
 
 /** Raw filter inputs as typed by the recruiter (skills is a comma string). */
+// §7 — CVthèque sort options (mirrors the backend SEARCH_SORTS).
+export type SearchSort = 'score_desc' | 'score_asc' | 'recent' | 'active';
+
 export interface CandidateFilters {
   q: string;
   skills: string;
@@ -126,6 +129,10 @@ export interface CandidateFilters {
   // EF-SRCH-02 — availability substring + salary budget (MAD, as text input).
   availability: string;
   salaryMax: string;
+  // §8 — selected schools (acronyms), combinable with the other filters.
+  schools: string[];
+  // §7 — result ordering; default score_desc (highest score first).
+  sort: SearchSort;
 }
 
 export const EMPTY_FILTERS: CandidateFilters = {
@@ -134,10 +141,13 @@ export const EMPTY_FILTERS: CandidateFilters = {
   location: '',
   availability: '',
   salaryMax: '',
+  schools: [],
+  sort: 'score_desc',
 };
 
 export function activeFilterCount(f: CandidateFilters): number {
-  return [f.skills, f.location, f.availability, f.salaryMax].filter((v) =>
-    v.trim(),
+  const textFilters = [f.skills, f.location, f.availability, f.salaryMax].filter(
+    (v) => v.trim(),
   ).length;
+  return textFilters + (f.schools.length > 0 ? 1 : 0);
 }

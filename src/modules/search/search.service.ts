@@ -45,8 +45,10 @@ export interface CandidateDetailViewer {
   companyId?: string;
 }
 
+// The keyset cursor: the sort key (as a string, so it works for a numeric
+// score or an ISO date) plus the tie-break id.
 interface CursorPayload {
-  score: number;
+  key: string;
   id: string;
 }
 
@@ -59,12 +61,55 @@ function decodeCursor(cursor: string): CursorPayload | null {
     const decoded = JSON.parse(
       Buffer.from(cursor, 'base64url').toString('utf8'),
     ) as CursorPayload;
-    if (typeof decoded.score !== 'number' || typeof decoded.id !== 'string') {
+    if (typeof decoded.key !== 'string' || typeof decoded.id !== 'string') {
       return null;
     }
     return decoded;
   } catch {
     return null;
+  }
+}
+
+// §7 — maps a sort option to its SQL sort key, direction and the keyset
+// comparator (DESC → '<', ASC → '>') so ORDER BY and the cursor stay in sync.
+interface SortConfig {
+  keyExpr: string;
+  direction: 'ASC' | 'DESC';
+  cmp: '<' | '>';
+  parseKey: (raw: string) => number | Date;
+}
+
+function resolveSort(sort?: string): SortConfig {
+  switch (sort) {
+    case 'score_asc':
+      return {
+        keyExpr: 'COALESCE(best_score.best_value, 0)',
+        direction: 'ASC',
+        cmp: '>',
+        parseKey: (s) => Number(s),
+      };
+    case 'recent':
+      return {
+        keyExpr: 'profile.created_at',
+        direction: 'DESC',
+        cmp: '<',
+        parseKey: (s) => new Date(s),
+      };
+    case 'active':
+      return {
+        keyExpr: 'profile.updated_at',
+        direction: 'DESC',
+        cmp: '<',
+        parseKey: (s) => new Date(s),
+      };
+    case 'score_desc':
+    default:
+      return {
+        keyExpr: 'COALESCE(best_score.best_value, 0)',
+        direction: 'DESC',
+        cmp: '<',
+        parseKey: (s) => Number(s),
+      };
   }
 }
 
@@ -112,12 +157,18 @@ export class SearchService {
     filters: SearchCandidatesDto,
   ): Promise<SearchCandidatesResult> {
     const limit = filters.limit ?? 20;
+    const sort = resolveSort(filters.sort);
     const qb = this.buildQuery(filters);
 
     // TypeORM's ORDER BY + getRawAndEntities() combination chokes on a raw
     // function-call expression here ("COALESCE(best_score" alias was not
-    // found) — ordering by the already-selected plain alias avoids it.
-    qb.orderBy('"sortScore"', 'DESC').addOrderBy('profile.id', 'DESC');
+    // found) — ordering by the already-selected plain alias avoids it. The
+    // id tie-break follows the same direction as the sort key so the keyset
+    // cursor (buildQuery) stays consistent.
+    qb.orderBy('"sortKey"', sort.direction).addOrderBy(
+      'profile.id',
+      sort.direction,
+    );
     // .take() wraps the query in a "DISTINCT ... FROM (...)" subquery to
     // stay correct under one-to-many joins — our best_score join is 1:1
     // (GROUP BY candidate_id), so that wrapping isn't needed, and it
@@ -161,10 +212,12 @@ export class SearchService {
     let nextCursor: string | null = null;
     if (hasMore) {
       const lastIndex = page.length - 1;
-      nextCursor = encodeCursor({
-        score: Number(rawPage[lastIndex]?.bestScoreValue ?? 0),
-        id: page[lastIndex].id,
-      });
+      const rawKey = (rawPage[lastIndex] as { sortKey?: unknown })?.sortKey;
+      let key = '';
+      if (rawKey instanceof Date) key = rawKey.toISOString();
+      else if (typeof rawKey === 'number' || typeof rawKey === 'string')
+        key = String(rawKey);
+      nextCursor = encodeCursor({ key, id: page[lastIndex].id });
     }
 
     return { items, nextCursor };
@@ -193,12 +246,17 @@ export class SearchService {
       )
       .addSelect('best_score.best_value', 'bestScoreValue')
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
-      .addSelect('COALESCE(assess_count.assessment_count, 0)', 'assessmentCount')
+      .addSelect(
+        'COALESCE(assess_count.assessment_count, 0)',
+        'assessmentCount',
+      )
       .where('profile.id = :id', { id })
       .andWhere('profile.indexedInCvtheque = true')
       // EF-ADM-01 — an admin-suspended profile is never reachable, whatever the
       // candidate's own visibility says.
-      .andWhere('profile.moderationStatus = :modActive', { modActive: 'active' })
+      .andWhere('profile.moderationStatus = :modActive', {
+        modActive: 'active',
+      })
       .andWhere('profile.visibility IN (:...visibilities)', {
         visibilities: [
           ProfileVisibility.PUBLIC,
@@ -245,7 +303,9 @@ export class SearchService {
 
     // Personal links and the downloadable CV both expose identifying details,
     // so they are gated behind the identity reveal.
-    const cv = identityRevealed ? await this.loadCvDownload(profile.userId) : null;
+    const cv = identityRevealed
+      ? await this.loadCvDownload(profile.userId)
+      : null;
     const links = identityRevealed
       ? await this.profileLinkRepo.find({ where: { profileId: profile.id } })
       : [];
@@ -309,9 +369,7 @@ export class SearchService {
   // The candidate's uploaded CV, as a short-lived signed download URL. Only a
   // clean-scanned CV is ever handed to a recruiter — a pending/infected file is
   // treated as absent. Returns null when there is no downloadable CV.
-  private async loadCvDownload(
-    candidateUserId: string,
-  ): Promise<{
+  private async loadCvDownload(candidateUserId: string): Promise<{
     originalName: string;
     mimeType: string;
     size: number;
@@ -323,7 +381,10 @@ export class SearchService {
     if (!doc || doc.scanStatus !== ScanStatus.CLEAN) {
       return null;
     }
-    const downloadUrl = await this.objectStorage.getSignedUrl(doc.storageKey, 600);
+    const downloadUrl = await this.objectStorage.getSignedUrl(
+      doc.storageKey,
+      600,
+    );
     return {
       originalName: doc.originalName,
       mimeType: doc.mimeType,
@@ -370,6 +431,7 @@ export class SearchService {
   private buildQuery(
     filters: SearchCandidatesDto,
   ): SelectQueryBuilder<CandidateProfile> {
+    const sort = resolveSort(filters.sort);
     const qb = this.profileRepo
       .createQueryBuilder('profile')
       .leftJoin(
@@ -385,10 +447,17 @@ export class SearchService {
       .addSelect('best_score.best_value', 'bestScoreValue')
       .addSelect('best_score.best_percentile', 'bestScorePercentile')
       .addSelect('COALESCE(best_score.best_value, 0)', 'sortScore')
-      .addSelect('COALESCE(assess_count.assessment_count, 0)', 'assessmentCount')
+      // §7 — the active sort key, exposed for ORDER BY (via alias) + the cursor.
+      .addSelect(sort.keyExpr, 'sortKey')
+      .addSelect(
+        'COALESCE(assess_count.assessment_count, 0)',
+        'assessmentCount',
+      )
       .where('profile.indexedInCvtheque = true')
       // EF-ADM-01 — admin-suspended profiles never appear in the CVthèque.
-      .andWhere('profile.moderationStatus = :modActive', { modActive: 'active' })
+      .andWhere('profile.moderationStatus = :modActive', {
+        modActive: 'active',
+      })
       .andWhere('profile.visibility IN (:...visibilities)', {
         visibilities: [
           ProfileVisibility.PUBLIC,
@@ -444,12 +513,25 @@ export class SearchService {
       );
     }
 
+    // §8 — school filter (combinable). Matches the candidate's canonicalized
+    // school name against any of the selected schools (acronym or full name).
+    if (filters.schools && filters.schools.length > 0) {
+      const params: Record<string, string> = {};
+      const clauses = filters.schools.map((school, i) => {
+        params[`school${i}`] = `%${school}%`;
+        return `profile.school ILIKE :school${i}`;
+      });
+      qb.andWhere(`(${clauses.join(' OR ')})`, params);
+    }
+
+    // §7 — keyset pagination consistent with the active sort (key + id, same
+    // direction), so "next page" is correct under any sort.
     if (filters.cursor) {
       const decoded = decodeCursor(filters.cursor);
       if (decoded) {
         qb.andWhere(
-          '(COALESCE(best_score.best_value, 0) < :cursorScore) OR (COALESCE(best_score.best_value, 0) = :cursorScore AND profile.id < :cursorId)',
-          { cursorScore: decoded.score, cursorId: decoded.id },
+          `(${sort.keyExpr} ${sort.cmp} :cursorKey) OR (${sort.keyExpr} = :cursorKey AND profile.id ${sort.cmp} :cursorId)`,
+          { cursorKey: sort.parseKey(decoded.key), cursorId: decoded.id },
         );
       }
     }

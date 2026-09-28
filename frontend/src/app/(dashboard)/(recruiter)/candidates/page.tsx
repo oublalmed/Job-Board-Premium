@@ -48,6 +48,7 @@ import {
   isAnonymized,
   type CandidateFilters,
   type CandidateResult,
+  type SearchSort,
 } from '@/features/candidates/types';
 
 const fadeUp = {
@@ -55,6 +56,21 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
 };
+
+// §8 — the grande-école reference (matches the backend list). Combinable filter.
+const REFERENCE_SCHOOLS = [
+  'ENSIAS',
+  'EMI',
+  'INPT',
+  'ENIM',
+  'EHTP',
+  'INSEA',
+  'UM6P',
+  'UIR',
+  'ENSEM',
+  'ESITH',
+  'EMSI',
+] as const;
 
 function CandidateAvatar({ candidate }: { candidate: CandidateResult }) {
   return (
@@ -109,6 +125,22 @@ export default function CandidatesPage() {
   function runSearch() {
     setPageIndex(0);
     apply(draft);
+  }
+
+  // §7 — changing the sort re-runs on the last-applied criteria immediately.
+  function changeSort(sort: SearchSort) {
+    setDraft((d) => ({ ...d, sort }));
+    setPageIndex(0);
+    apply({ ...filters, sort });
+  }
+
+  function toggleSchool(school: string) {
+    setDraft((d) => ({
+      ...d,
+      schools: d.schools.includes(school)
+        ? d.schools.filter((s) => s !== school)
+        : [...d.schools, school],
+    }));
   }
 
   // Re-apply a saved search: hydrate the visible filter inputs and run it.
@@ -389,6 +421,31 @@ export default function CandidatesPage() {
                   />
                 </div>
               </div>
+
+              {/* §8 — school filter (combinable, multi-select). */}
+              <div className="mt-4">
+                <Label className="text-xs">{t('search.schools')}</Label>
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  {REFERENCE_SCHOOLS.map((s) => {
+                    const active = draft.schools.includes(s);
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => toggleSchool(s)}
+                        className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                          active
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border text-muted-foreground hover:border-primary/40'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -399,15 +456,23 @@ export default function CandidatesPage() {
         />
       </div>
 
-      {/* EF-RECR-04 — the ranking basis, made explicit on screen: the result
-          set is ordered by evaluation score, highest first. */}
+      {/* §7 / EF-RECR-04 — sort control. Default is score desc (highest score
+          first); the recruiter can re-order the result set. */}
       {!search.isError && !search.isLoading && candidates.length > 0 && (
-        <div
-          className="flex items-center gap-1.5 text-xs text-muted-foreground"
-          role="status"
-        >
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <ArrowDownWideNarrow className="size-3.5 shrink-0" aria-hidden="true" />
-          <span>{t('search.sortedByScore')}</span>
+          <label htmlFor="candidate-sort">{t('search.sortBy')}</label>
+          <select
+            id="candidate-sort"
+            value={draft.sort}
+            onChange={(e) => changeSort(e.target.value as SearchSort)}
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <option value="score_desc">{t('search.sortScoreDesc')}</option>
+            <option value="score_asc">{t('search.sortScoreAsc')}</option>
+            <option value="recent">{t('search.sortRecent')}</option>
+            <option value="active">{t('search.sortActive')}</option>
+          </select>
         </div>
       )}
 

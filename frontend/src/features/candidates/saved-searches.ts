@@ -33,6 +33,7 @@ export interface SavedSearchCriteria {
   location?: string;
   availability?: string;
   salaryMax?: number;
+  schools?: string[];
 }
 
 export interface SavedSearch {
@@ -65,6 +66,7 @@ export function filtersToCriteria(f: CandidateFilters): SavedSearchCriteria {
   const salaryMax = Number(f.salaryMax);
   if (f.salaryMax.trim() && Number.isFinite(salaryMax) && salaryMax >= 0)
     criteria.salaryMax = salaryMax;
+  if (f.schools.length) criteria.schools = f.schools;
   return criteria;
 }
 
@@ -77,6 +79,8 @@ export function criteriaToFilters(c: SavedSearchCriteria): CandidateFilters {
     location: c.location ?? '',
     availability: c.availability ?? '',
     salaryMax: c.salaryMax != null ? String(c.salaryMax) : '',
+    schools: c.schools ?? [],
+    sort: 'score_desc',
   };
 }
 
