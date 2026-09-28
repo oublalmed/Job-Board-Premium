@@ -14,6 +14,25 @@ import { AddShortlistEntryDto } from './dto/add-shortlist-entry.dto.js';
 import { SubscriptionGuardService } from './subscription-guard.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuditAction } from '../../common/enums/audit-action.enum.js';
+import { anonymizeLastName } from '../search/search.service.js';
+
+// What the shortlist list returns per entry. The candidate summary is a lean,
+// privacy-consistent subset (never the full profile entity): first name +
+// anonymized last initial + headline, matching the CVthèque preview so the
+// shortlist can't reveal more identity than the recruiter already saw.
+export interface ShortlistEntryView {
+  id: string;
+  companyId: string;
+  candidateProfileId: string;
+  note: string | null;
+  createdAt: Date;
+  candidateProfile: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    headline: string | null;
+  } | null;
+}
 
 @Injectable()
 export class ShortlistService {
@@ -73,12 +92,30 @@ export class ShortlistService {
     return entry;
   }
 
-  async listEntries(callerId: string): Promise<ShortlistEntry[]> {
+  async listEntries(callerId: string): Promise<ShortlistEntryView[]> {
     const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
-    return this.shortlistRepo.find({
+    const entries = await this.shortlistRepo.find({
       where: { companyId },
+      // EF-RECR-06 — load the candidate so the list shows who was shortlisted
+      // (the previous query returned only ids, so the UI rendered blanks).
+      relations: { candidateProfile: true },
       order: { createdAt: 'DESC' },
     });
+    return entries.map((e) => ({
+      id: e.id,
+      companyId: e.companyId,
+      candidateProfileId: e.candidateProfileId,
+      note: e.note,
+      createdAt: e.createdAt,
+      candidateProfile: e.candidateProfile
+        ? {
+            id: e.candidateProfile.id,
+            firstName: e.candidateProfile.firstName,
+            lastName: anonymizeLastName(e.candidateProfile.lastName),
+            headline: e.candidateProfile.headline,
+          }
+        : null,
+    }));
   }
 
   async removeEntry(callerId: string, entryId: string): Promise<void> {
