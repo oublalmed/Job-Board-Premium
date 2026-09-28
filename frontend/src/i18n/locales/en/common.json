@@ -805,6 +805,21 @@
     "successBody": "The account for {{email}} ({{company}}) has been created.",
     "successMail": "An email with their credentials and a link to set their password has been sent."
   },
+  "antiCheat": {
+    "title": "Assessment integrity",
+    "level_low": "Low suspicion",
+    "level_medium": "Medium suspicion",
+    "level_high": "High suspicion",
+    "disabled": "Anti-cheat off",
+    "disabledHint": "The anti-cheat option is turned off for your company.",
+    "events": "Suspicious events",
+    "tabSwitch": "Tab switches",
+    "windowBlur": "Focus losses",
+    "multiAccount": "Multi-account",
+    "settingTitle": "Anti-cheat",
+    "settingHint": "Monitors tab switches and focus losses during assessments.",
+    "settingSaved": "Setting saved"
+  },
   "adminPacks": {
     "title": "Pack management",
     "subtitle": "Pack, features, limits and overrides per company",

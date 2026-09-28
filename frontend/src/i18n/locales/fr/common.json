@@ -805,6 +805,21 @@
     "successBody": "Le compte de {{email}} ({{company}}) a été créé.",
     "successMail": "Un email contenant ses accès et un lien pour définir son mot de passe lui a été envoyé."
   },
+  "antiCheat": {
+    "title": "Intégrité de l'évaluation",
+    "level_low": "Suspicion faible",
+    "level_medium": "Suspicion moyenne",
+    "level_high": "Suspicion élevée",
+    "disabled": "Anti-triche désactivé",
+    "disabledHint": "L'option anti-triche est désactivée pour votre entreprise.",
+    "events": "Événements suspects",
+    "tabSwitch": "Changements d'onglet",
+    "windowBlur": "Pertes de focus",
+    "multiAccount": "Multi-comptes",
+    "settingTitle": "Anti-triche",
+    "settingHint": "Surveille les changements d'onglet et pertes de focus pendant les évaluations.",
+    "settingSaved": "Réglage enregistré"
+  },
   "adminPacks": {
     "title": "Gestion des packs",
     "subtitle": "Pack, fonctionnalités, limites et overrides par entreprise",
