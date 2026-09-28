@@ -97,6 +97,10 @@ export function ExamRunner({
                   <button
                     key={idx}
                     type="button"
+                    // ENF-11 — single-choice option: expose the selected state
+                    // to assistive tech (these are styled buttons, not native
+                    // radios, so aria-pressed carries the toggle semantics).
+                    aria-pressed={selected}
                     onClick={() => setAnswers((a) => ({ ...a, [q.id]: idx }))}
                     className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-start text-sm transition-colors ${
                       selected
