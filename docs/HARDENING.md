@@ -56,29 +56,36 @@ gzipped `pg_dump` to KMS-encrypted object storage; retention via a bucket
 lifecycle rule, documented inline).
 
 PITR itself (WAL archiving) is a managed-service feature; the logical dump is a
-floor, not a substitute for it. Remaining, host-side: enable PITR/WAL archiving
-and run a periodic restore drill.
+floor, not a substitute for it. A turnkey restore procedure — enabling PITR per
+provider, plus a logical/PITR restore drill and a sign-off log — is in
+[`docs/DB-RESTORE-RUNBOOK.md`](DB-RESTORE-RUNBOOK.md). Remaining, host-side:
+enable PITR/WAL archiving and run (and record) a restore drill.
 
-## ENF-09 — Observability ⬜
+## ENF-09 — Observability 🟡
 
-Present: structured business audit trail (now also readable via
-`/admin/audit-logs`) and a `/health` endpoint (`@nestjs/terminus`). Missing:
-ops metrics/tracing. Recommended, in order of value:
+Delivered: structured business audit trail (readable via `/admin/audit-logs`),
+liveness/readiness probes (`/health/live`, `/health/ready`), Prometheus
+`/metrics` (`prom-client`: process + `http_request_duration_seconds`),
+per-request correlation id, and distributed tracing (OpenTelemetry SDK + OTLP
+exporter, `src/observability/tracing.ts`, flag `OTEL_ENABLED`). The Helm chart
+(`deploy/helm/cobalt`) now also **deploys an OpenTelemetry Collector** and wires
+`OTEL_ENABLED` / `OTEL_SERVICE_NAME` / `OTEL_EXPORTER_OTLP_ENDPOINT` on the app
+when `observability.enabled=true`.
 
-1. **Metrics:** add `prom-client`, expose `/metrics`, scrape with Prometheus.
-   Track request latency histograms (feeds the p95 target, ENF-01), queue
-   depth for the BullMQ jobs, and DB pool saturation.
-2. **Logs:** ship stdout (already structured by Nest's logger) to a central
-   store (Loki / CloudWatch / Datadog).
-3. **Tracing:** OpenTelemetry SDK + OTLP exporter for cross-service spans.
+Remaining (hosting): point the collector's exporter at a managed backend
+(Tempo / Jaeger / Grafana Cloud / Datadog) and add centralized alerting rules,
+and ship stdout logs to a central store (Loki / CloudWatch / Datadog).
 
 ## ENF-01 — Performance (p95 < 400 ms) 🟡
 
-The hottest read path (CVthèque `indexed_in_cvtheque + visibility` gate) is now
-indexed. Still needed: a load test to *measure* p95 (e.g. k6 against
-`/search/candidates` with a seeded dataset) and wire it into CI as a
-non-blocking nightly job. Add indexes reactively for any query the load test
-shows scanning.
+The hottest read path (CVthèque `indexed_in_cvtheque + visibility` gate) is
+indexed, and the k6 harness is delivered (`test/load/k6-search.js`,
+`npm run load:k6`) with the CDC target encoded as a `p(95)<400` threshold. A
+**local baseline** (20 VUs / 20 s, health + authenticated search) measured
+p95 ≈ 110 ms with 0 % errors — a single-instance dev baseline, **not** a
+production proof. Remaining: run the profile on prod-type infra (and wire it
+into CI as a non-blocking nightly job). Add indexes reactively for any query the
+run shows scanning.
 
 ## ENF-03 / ENF-13 — Horizontal scale, IaC 🟡
 
