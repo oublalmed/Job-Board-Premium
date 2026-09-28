@@ -4,6 +4,7 @@ Replicas:        {{ .Values.replicaCount }}
 Image:           {{ .Values.image.repository }}:{{ .Values.image.tag }}
 Secret:          {{ .Values.secretName }}{{ if .Values.externalSecrets.enabled }} (from External Secrets: {{ .Values.externalSecrets.secretStore.name }}){{ else }} (provisioned out-of-band){{ end }}
 Backup CronJob:  {{ if .Values.backup.enabled }}enabled ({{ .Values.backup.schedule }} → s3://{{ .Values.backup.bucket }}){{ else }}disabled{{ end }}
+Observability:   {{ if .Values.observability.enabled }}OTEL enabled → {{ if .Values.observability.collector.enabled }}in-cluster collector{{ else }}{{ .Values.observability.otlpEndpoint }}{{ end }}{{ else }}disabled (tracing no-op){{ end }}
 {{- if .Values.ingress.enabled }}
 
 API URL: {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}

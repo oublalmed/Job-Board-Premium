@@ -109,6 +109,50 @@ externalSecrets:
     - secretKey: MFA_ENCRYPTION_KEY
       remoteKey: cobalt/prod/mfa-encryption-key
 
+# ENF-09 — observability. When enabled, the app is wired with OTEL_* env and an
+# OpenTelemetry Collector is deployed in-cluster; the app exports OTLP/HTTP to
+# it. Point the collector's exporter at your managed backend (Tempo / Jaeger /
+# Grafana Cloud / Datadog) — the default config just logs spans (debug). The
+# app tracing itself is a no-op unless observability.enabled is true.
+observability:
+  enabled: false
+  serviceName: cobalt-api
+  # OTLP/HTTP endpoint the app exports to. Left empty, it defaults to the
+  # in-cluster collector Service below; override to target a managed backend.
+  otlpEndpoint: ""
+  collector:
+    enabled: true
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    # Replace this pipeline's exporter with your backend's. The default
+    # `debug` exporter only logs received spans, so nothing leaves the cluster
+    # until you wire a real exporter (and add alerting rules on that backend).
+    config: |
+      receivers:
+        otlp:
+          protocols:
+            http:
+              endpoint: 0.0.0.0:4318
+            grpc:
+              endpoint: 0.0.0.0:4317
+      processors:
+        batch: {}
+      exporters:
+        debug:
+          verbosity: normal
+      service:
+        pipelines:
+          traces:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [debug]
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+
 # ENF-08 — nightly pg_dump → object storage. A managed Postgres with PITR is
 # still recommended over this; disable when the managed service backs up.
 backup:
