@@ -10,6 +10,10 @@
     "en": "EN",
     "ar": "AR"
   },
+  "entitlements": {
+    "noAccessTitle": "Fonctionnalité non incluse",
+    "noAccessBody": "Cette fonctionnalité n'est pas incluse dans votre abonnement. Passez à un pack supérieur pour l'activer."
+  },
   "nav": {
     "label": "Navigation principale",
     "home": "Accueil",

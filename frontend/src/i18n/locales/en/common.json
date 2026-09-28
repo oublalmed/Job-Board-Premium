@@ -10,6 +10,10 @@
     "en": "EN",
     "ar": "AR"
   },
+  "entitlements": {
+    "noAccessTitle": "Feature not included",
+    "noAccessBody": "This feature isn't included in your plan. Upgrade to a higher pack to unlock it."
+  },
   "nav": {
     "label": "Main navigation",
     "home": "Home",
