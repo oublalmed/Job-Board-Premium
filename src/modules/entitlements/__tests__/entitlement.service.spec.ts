@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { EntitlementService } from '../entitlement.service.js';
@@ -9,7 +10,7 @@ import {
   SubscriptionStatus,
 } from '../../companies/entities/subscription.entity.js';
 import { FeatureOverride } from '../entities/feature-override.entity.js';
-import { Feature } from '../feature.enum.js';
+import { Feature, LimitKey } from '../feature.enum.js';
 import { FeatureSource } from '../entities/feature-override.entity.js';
 
 describe('EntitlementService (§13)', () => {
@@ -143,6 +144,58 @@ describe('EntitlementService (§13)', () => {
         enabled: true,
         actorId: 'admin-1',
       }),
+    );
+  });
+
+  it('resolves the caller company and answers hasFeatureForUser', async () => {
+    expect(await service.hasFeatureForUser('u1', Feature.ANTI_CHEAT)).toBe(
+      true,
+    );
+    expect(recruiterRepo.findOne).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+    });
+  });
+
+  it('getLimit reads the plan matrix', () => {
+    expect(service.getLimit(SubscriptionPlan.SCALE, LimitKey.MAX_USERS)).toBe(
+      10,
+    );
+    expect(
+      service.getLimit(SubscriptionPlan.SCALE, LimitKey.MAX_EVALUATIONS_MONTH),
+    ).toBeNull();
+  });
+
+  it('countUsers returns the recruiter count', async () => {
+    expect(await service.countUsers(companyId)).toBe(2);
+  });
+
+  it('listOverrides returns the company overrides', async () => {
+    overrideRepo.find.mockResolvedValue([{ id: 'o1', feature: Feature.JOBS }]);
+    const rows = await service.listOverrides(companyId);
+    expect(rows).toHaveLength(1);
+  });
+
+  it('clearOverride removes an existing override, else throws', async () => {
+    overrideRepo.findOne.mockResolvedValue({ id: 'o1' });
+    await service.clearOverride(companyId, Feature.JOBS);
+    expect(overrideRepo.remove).toHaveBeenCalled();
+
+    overrideRepo.findOne.mockResolvedValue(null);
+    await expect(
+      service.clearOverride(companyId, Feature.JOBS),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('setOverride updates an existing override in place', async () => {
+    overrideRepo.findOne.mockResolvedValue({
+      id: 'o1',
+      companyId,
+      feature: Feature.JOBS,
+      enabled: false,
+    });
+    await service.setOverride(companyId, Feature.JOBS, true, 'admin-2');
+    expect(overrideRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'o1', enabled: true, actorId: 'admin-2' }),
     );
   });
 });
