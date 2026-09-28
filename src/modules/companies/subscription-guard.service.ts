@@ -7,11 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { Recruiter } from './entities/recruiter.entity.js';
-import {
-  Subscription,
-  SubscriptionStatus,
-} from './entities/subscription.entity.js';
-import { addDays } from '../../common/date-utils.js';
+import { Subscription } from './entities/subscription.entity.js';
+import { isSubscriptionWithinAccess } from './subscription-access.js';
 
 @Injectable()
 export class SubscriptionGuardService {
@@ -68,31 +65,13 @@ export class SubscriptionGuardService {
   }
 
   private isWithinAccess(subscription: Subscription): boolean {
-    const now = new Date();
-
-    switch (subscription.status) {
-      case SubscriptionStatus.ACTIVE:
-        return true;
-      case SubscriptionStatus.TRIAL:
-        return !subscription.endsAt || subscription.endsAt > now;
-      case SubscriptionStatus.PAST_DUE: {
-        // pastDueSince is always set by markSubscriptionPastDue on the
-        // ACTIVE -> PAST_DUE transition — null here would be a data
-        // anomaly, not an expected state. Fail open (treat as just gone
-        // past due) rather than lock out a paying company over a data
-        // inconsistency that isn't theirs.
-        if (!subscription.pastDueSince) {
-          return true;
-        }
-        const gracePeriodDays = this.configService.get<number>(
-          'business.subscriptionGracePeriodDays',
-          7,
-        );
-        return addDays(subscription.pastDueSince, gracePeriodDays) > now;
-      }
-      default:
-        return false;
-    }
+    // Per-status access rules (Lot 6D) live in the shared pure helper so
+    // EntitlementService applies the exact same definition.
+    const gracePeriodDays = this.configService.get<number>(
+      'business.subscriptionGracePeriodDays',
+      7,
+    );
+    return isSubscriptionWithinAccess(subscription, gracePeriodDays);
   }
 
   // Company resolution only, no subscription check — used by mutations that
