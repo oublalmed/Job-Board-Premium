@@ -8,6 +8,8 @@ import {
   UserPlus,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Eye,
   SlidersHorizontal,
@@ -78,19 +80,40 @@ export default function CandidatesPage() {
   const search = useCandidateSearch(filters, hasSearched);
   const addToShortlist = useAddToShortlist();
 
+  // Page-based pagination over the cursor-paginated results: show one page
+  // (20 results) at a time. `fetchNextPage` loads the next cursor page lazily,
+  // so "Next" fetches only when the recruiter actually advances.
+  // Reset to the first page whenever a new search is run (see runSearch /
+  // applySavedSearch), so results never open on a stale page number.
+  const [pageIndex, setPageIndex] = useState(0);
+
+  const loadedPages = search.data?.pages.length ?? 0;
   const candidates = useMemo(
-    () => search.data?.pages.flatMap((p) => p.items ?? []) ?? [],
-    [search.data],
+    () => search.data?.pages[pageIndex]?.items ?? [],
+    [search.data, pageIndex],
   );
+  const canPrev = pageIndex > 0;
+  const canNext = pageIndex + 1 < loadedPages || search.hasNextPage;
+
+  async function goToNextPage() {
+    if (pageIndex + 1 < loadedPages) {
+      setPageIndex((p) => p + 1);
+    } else if (search.hasNextPage) {
+      await search.fetchNextPage();
+      setPageIndex((p) => p + 1);
+    }
+  }
 
   const addingId = addToShortlist.isPending ? addToShortlist.variables : null;
 
   function runSearch() {
+    setPageIndex(0);
     apply(draft);
   }
 
   // Re-apply a saved search: hydrate the visible filter inputs and run it.
   function applySavedSearch(next: CandidateFilters) {
+    setPageIndex(0);
     setDraft(next);
     apply(next);
   }
@@ -522,15 +545,31 @@ export default function CandidatesPage() {
         />
       )}
 
-      {search.hasNextPage && (
-        <div className="flex justify-center pt-2">
+      {hasSearched && !search.isLoading && candidates.length > 0 && (
+        <div className="flex items-center justify-center gap-3 pt-2">
           <Button
             variant="outline"
-            onClick={() => void search.fetchNextPage()}
-            disabled={search.isFetchingNextPage}
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+            disabled={!canPrev}
+          >
+            <ChevronLeft className="size-4" />
+            {t('search.previous')}
+          </Button>
+          <span className="text-sm font-medium tabular-nums text-muted-foreground">
+            {t('search.page', { n: String(pageIndex + 1) })}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => void goToNextPage()}
+            disabled={!canNext || search.isFetchingNextPage}
           >
             {search.isFetchingNextPage && <Loader2 className="size-4 animate-spin" />}
-            {t('search.loadMore')}
+            {t('search.next')}
+            <ChevronRight className="size-4" />
           </Button>
         </div>
       )}
