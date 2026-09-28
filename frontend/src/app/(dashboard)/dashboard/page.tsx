@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNotifications } from '@/features/notifications/queries';
-import { useCompleteness } from '@/features/profile/queries';
+import { useCompleteness, useCandidateProfile } from '@/features/profile/queries';
 
 // Recharts is heavy and client-only — code-split it out of the initial
 // dashboard bundle and skip SSR (it measures the DOM to size itself).
@@ -56,6 +56,10 @@ export default function DashboardPage() {
 
   const notificationsQuery = useNotifications();
   const completenessQuery = useCompleteness(isCandidate);
+  // A candidate's real name lives on their profile (not on the auth token), so
+  // greet them by name instead of the email prefix. Falls back to the email
+  // local-part for recruiters/admins or before the profile loads.
+  const profileQuery = useCandidateProfile(isCandidate);
 
   if (!user) return null;
 
@@ -64,11 +68,18 @@ export default function DashboardPage() {
   const loading = notificationsQuery.isLoading;
   const completeness = completenessQuery.data ?? null;
 
+  const profile = profileQuery.data?.profile;
+  const fullName = [profile?.firstName, profile?.lastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  const displayName = fullName || user.email.split('@')[0];
+
   return (
     <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <div>
         <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-          {t('dashboard.welcome')}, {user.email.split('@')[0]}
+          {t('dashboard.welcome')}, {displayName}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {t('dashboard.roles', { roles: user.roles.join(', ') })}

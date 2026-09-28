@@ -134,9 +134,10 @@ async function fetchWithAuth(
   });
 }
 
-export function useCandidateProfile() {
+export function useCandidateProfile(enabled = true) {
   return useQuery({
     queryKey: profileKeys.me(),
+    enabled,
     queryFn: async () =>
       unwrap(
         await apiClient.GET('/api/v1/candidates/profile'),
