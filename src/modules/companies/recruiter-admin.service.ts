@@ -12,8 +12,6 @@ import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { Recruiter } from './entities/recruiter.entity.js';
 import { Company } from './entities/company.entity.js';
-import { SubscriptionPlan } from './entities/subscription.entity.js';
-import { SubscriptionAdminService } from './subscription-admin.service.js';
 import { CreateRecruiterDto } from './dto/create-recruiter.dto.js';
 import { UsersService } from '../users/users.service.js';
 import { UserStatus } from '../users/entities/user.entity.js';
@@ -35,13 +33,14 @@ export interface CreatedRecruiter {
   email: string;
   companyId: string;
   companyName: string;
-  plan: SubscriptionPlan | null;
 }
 
 // Admin-side provisioning of recruiter accounts. Recruiters no longer self-
-// register: an admin creates the account here, attaches it to a company,
-// optionally assigns a pack, and the recruiter receives an email with their
-// login and a link to set their own password.
+// register: an admin creates the account here and attaches it to a company,
+// and the recruiter receives an email with their login and a link to set their
+// own password. Subscription packs are assigned to the *company* (not the
+// recruiter) separately, via SubscriptionAdminService / the admin
+// subscriptions screen.
 @Injectable()
 export class RecruiterAdminService {
   private readonly logger = new Logger(RecruiterAdminService.name);
@@ -52,7 +51,6 @@ export class RecruiterAdminService {
     @InjectRepository(Company)
     private readonly companyRepo: Repository<Company>,
     private readonly usersService: UsersService,
-    private readonly subscriptionAdmin: SubscriptionAdminService,
     private readonly auditService: AuditService,
     @Inject(MAIL_PROVIDER)
     private readonly mailProvider: MailProvider,
@@ -104,17 +102,6 @@ export class RecruiterAdminService {
       }),
     );
 
-    // Optional pack assignment, per the recruiter's contract.
-    let assignedPlan: SubscriptionPlan | null = null;
-    if (dto.plan) {
-      const sub = await this.subscriptionAdmin.assignPlan(
-        company.id,
-        dto.plan,
-        dto.contactQuota,
-      );
-      assignedPlan = sub.plan;
-    }
-
     await this.auditService.log({
       actorId: adminId,
       action: AuditAction.RECRUITER_ADDED,
@@ -124,7 +111,6 @@ export class RecruiterAdminService {
         companyId: company.id,
         addedUserId: user.id,
         provisionedByAdmin: true,
-        plan: assignedPlan,
       },
     });
 
@@ -153,7 +139,6 @@ export class RecruiterAdminService {
       email,
       companyId: company.id,
       companyName: company.name,
-      plan: assignedPlan,
     };
   }
 
