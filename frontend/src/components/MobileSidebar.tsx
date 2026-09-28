@@ -60,7 +60,7 @@ export function MobileSidebar() {
     // a staff (admin/moderator) console, so it is role-scoped to end users.
     { href: '/profile', label: t('nav.profile'), icon: User, roles: ['candidate', 'recruiter', 'company_admin'] },
     { href: '/candidates', label: t('nav.candidates'), icon: Search, roles: ['recruiter', 'company_admin', 'admin'] },
-    { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin', 'admin'] },
+    { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin'] },
     { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin'] },
     { href: '/assessments', label: t('assessments.title'), icon: ClipboardList, roles: ['candidate'] },
     {
