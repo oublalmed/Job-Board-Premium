@@ -27,6 +27,7 @@ import {
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { cn } from '@/lib/utils';
+import { Logo } from './Logo';
 import { MessagesNavBadge } from '@/features/messages/MessagesNavBadge';
 
 interface SidebarLink {
@@ -152,7 +153,7 @@ export function MobileSidebar() {
           />
           <aside className="fixed inset-y-0 start-0 z-50 flex w-72 flex-col bg-background shadow-xl lg:hidden">
             <div className="flex items-center justify-between border-b border-border p-4">
-              <span className="text-sm font-bold text-foreground">{t('app.name')}</span>
+              <Logo className="h-7 w-auto" />
               <button
                 type="button"
                 onClick={close}

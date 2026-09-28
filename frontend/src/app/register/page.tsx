@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { Logo } from '@/components/Logo';
 
 export default function RegisterPage() {
   const { t } = useLocale();
@@ -107,11 +108,12 @@ export default function RegisterPage() {
 
       <div className="flex flex-1 flex-col">
         <div className="flex items-center justify-between p-6">
-          <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-foreground lg:hidden">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
-              T
-            </div>
-            {t('app.name')}
+          <Link
+            href="/"
+            className="flex items-center lg:hidden"
+            aria-label={t('app.name')}
+          >
+            <Logo className="h-7 w-auto" />
           </Link>
           <div className="ms-auto">
             <LanguageSwitcher />
