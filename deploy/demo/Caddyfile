@@ -1,0 +1,19 @@
+# Single public origin for the demo. Everything under /api/* goes to the API
+# container (which serves the /api/v1 prefix); everything else is the Next.js
+# frontend. Because the browser calls the API on the same origin, there is no
+# CORS to configure and no public API URL to bake into the frontend build.
+#
+# TLS is terminated by the tunnel (Cloudflare/ngrok) in front of Caddy, so Caddy
+# only needs to listen on plain HTTP :80 here.
+:80 {
+	encode gzip
+
+	@api path /api/*
+	handle @api {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}
