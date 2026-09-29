@@ -15,6 +15,7 @@ import { User } from '../users/entities/user.entity.js';
 import { CandidateProfileService } from './candidate-profile.service.js';
 import { CandidateProfileController } from './candidate-profile.controller.js';
 import { CandidateDocumentService } from './candidate-document.service.js';
+import { CandidateCvImportService } from './candidate-cv-import.service.js';
 import { CandidateDocumentController } from './candidate-document.controller.js';
 import { CandidateDataService } from './candidate-data.service.js';
 import { CandidateDataController } from './candidate-data.controller.js';
@@ -75,6 +76,7 @@ import { StubLinkProberAdapter } from '../../adapters/link-prober/stub-link-prob
     CandidateProfileService,
     ProfileModerationService,
     CandidateDocumentService,
+    CandidateCvImportService,
     CandidateDataService,
     DataRequestService,
     SkillCatalogService,

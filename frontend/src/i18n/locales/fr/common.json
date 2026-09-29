@@ -1177,5 +1177,29 @@
     "completedAssessments": "{{count}} terminée(s)",
     "subscriptionsByPlan": "Abonnements par pack",
     "applications": "Candidatures"
+  },
+  "cvImport": {
+    "title": "Importer un CV (préremplissage)",
+    "subtitle": "Importez votre CV : les informations détectées (expériences, projets, certifications, liens) préremplissent votre profil. Vérifiez et complétez avant d’enregistrer.",
+    "selectCv": "Choisir un CV (PDF, JPG, PNG)",
+    "experiences": "Expériences",
+    "projects": "Projets",
+    "certifications": "Certifications",
+    "links": "Liens",
+    "expTitle": "Intitulé / poste",
+    "expOrg": "Organisation",
+    "startDate": "Date de début",
+    "endDate": "Date de fin (optionnel)",
+    "projTitle": "Titre du projet",
+    "certName": "Nom de la certification",
+    "certIssuer": "Organisme émetteur",
+    "issueDate": "Date d’obtention",
+    "save": "Enregistrer sur mon profil",
+    "fillRequired": "{{count}} champ(s) obligatoire(s) à compléter",
+    "parsed": "{{count}} élément(s) détecté(s) — vérifiez avant d’enregistrer.",
+    "nothingFound": "Aucune information exploitable détectée dans ce CV.",
+    "parseError": "Impossible d’analyser ce CV.",
+    "saved": "{{count}} élément(s) ajouté(s) à votre profil.",
+    "saveError": "Échec de l’enregistrement."
   }
 }

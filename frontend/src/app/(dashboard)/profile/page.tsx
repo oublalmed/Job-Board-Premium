@@ -62,6 +62,7 @@ import { ProfileLinksCard } from '@/features/profile/ProfileLinksCard';
 import { CvScanBadge } from '@/features/profile/CvScanBadge';
 import { CertificationsCard } from '@/features/profile/CertificationsCard';
 import { ProjectsCard } from '@/features/profile/ProjectsCard';
+import { CvImport } from '@/features/profile/CvImport';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -592,6 +593,10 @@ function CandidateProfile() {
           )}
         </CardContent>
       </Card>
+
+      {/* §1 — import a CV to pre-fill experiences / projects / certifications /
+          links, reviewed before saving. */}
+      <CvImport />
 
       <Card>
         <CardHeader>

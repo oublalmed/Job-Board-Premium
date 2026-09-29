@@ -1177,5 +1177,29 @@
     "completedAssessments": "{{count}} completed",
     "subscriptionsByPlan": "Subscriptions by plan",
     "applications": "Applications"
+  },
+  "cvImport": {
+    "title": "Import a CV (pre-fill)",
+    "subtitle": "Import your CV: the detected information (experiences, projects, certifications, links) pre-fills your profile. Review and complete before saving.",
+    "selectCv": "Choose a CV (PDF, JPG, PNG)",
+    "experiences": "Experiences",
+    "projects": "Projects",
+    "certifications": "Certifications",
+    "links": "Links",
+    "expTitle": "Title / role",
+    "expOrg": "Organisation",
+    "startDate": "Start date",
+    "endDate": "End date (optional)",
+    "projTitle": "Project title",
+    "certName": "Certification name",
+    "certIssuer": "Issuer",
+    "issueDate": "Issue date",
+    "save": "Save to my profile",
+    "fillRequired": "{{count}} required field(s) to complete",
+    "parsed": "{{count}} item(s) detected — review before saving.",
+    "nothingFound": "No usable information detected in this CV.",
+    "parseError": "Could not analyse this CV.",
+    "saved": "{{count}} item(s) added to your profile.",
+    "saveError": "Save failed."
   }
 }

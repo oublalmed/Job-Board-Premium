@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Delete,
+  Body,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -17,6 +18,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { Role } from '../../common/enums/role.enum.js';
 import type { JwtPayload } from '../../common/interfaces/request-with-user.interface.js';
 import { CandidateDocumentService } from './candidate-document.service.js';
+import { CandidateCvImportService } from './candidate-cv-import.service.js';
+import { ApplyCvImportDto } from './dto/apply-cv-import.dto.js';
 import { UploadCvResponseDto, GetCvResponseDto } from './dto/cv-summary.dto.js';
 import { MessageResponseDto } from '../auth/dto/message-response.dto.js';
 
@@ -24,7 +27,41 @@ import { MessageResponseDto } from '../auth/dto/message-response.dto.js';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.CANDIDATE)
 export class CandidateDocumentController {
-  constructor(private readonly documentService: CandidateDocumentService) {}
+  constructor(
+    private readonly documentService: CandidateDocumentService,
+    private readonly cvImportService: CandidateCvImportService,
+  ) {}
+
+  // §1 — parse an uploaded CV into profile suggestions (nothing is saved).
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  async importCV(@UploadedFile() file: Express.Multer.File | undefined) {
+    if (!file) {
+      throw new BadRequestException('Aucun fichier fourni');
+    }
+    return this.cvImportService.parse({
+      buffer: file.buffer,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+  }
+
+  // §1 — save the candidate-reviewed subset of the suggestions.
+  @Post('import/apply')
+  async applyImport(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ApplyCvImportDto,
+  ) {
+    return this.cvImportService.apply(user.sub, dto);
+  }
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
