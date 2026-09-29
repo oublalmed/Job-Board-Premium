@@ -50,6 +50,7 @@ export function DashboardSidebar() {
     { href: '/jobs', label: t('nav.jobsRecruiter'), icon: Briefcase, roles: ['recruiter', 'company_admin'] },
     { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin'] },
     { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin'] },
+    { href: '/analytics', label: t('nav.analytics'), icon: BarChart3, roles: ['recruiter', 'company_admin'] },
     { href: '/opportunities', label: t('nav.jobsCandidate'), icon: Briefcase, roles: ['candidate'] },
     { href: '/assessments', label: t('assessments.title'), icon: ClipboardList, roles: ['candidate'] },
     {

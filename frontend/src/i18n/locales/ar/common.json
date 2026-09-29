@@ -29,7 +29,8 @@
     "company": "شركتي",
     "subscription": "الاشتراك",
     "jobsRecruiter": "عروض العمل",
-    "jobsCandidate": "عروض العمل"
+    "jobsCandidate": "عروض العمل",
+    "analytics": "الإحصائيات"
   },
   "layout": {
     "skipToContent": "الانتقال إلى المحتوى الرئيسي"
@@ -1140,5 +1141,35 @@
       "deadline": "آخر أجل: {{date}}",
       "appliedOn": "تم التقديم في {{date}}"
     }
+  },
+  "recruiterAnalytics": {
+    "title": "الإحصائيات",
+    "subtitle": "عروضك وطلباتك وجهات اتصالك في لمحة.",
+    "rangeDays": "{{days}} ي",
+    "publishedJobs": "العروض المنشورة",
+    "totalJobs": "{{count}} إجمالاً",
+    "applications": "الطلبات",
+    "shortlist": "القائمة المختصرة",
+    "conversations": "المحادثات",
+    "contactsUsed": "جهات الاتصال المستخدمة",
+    "unlimited": "غير محدود",
+    "byStatus": "الطلبات حسب الحالة",
+    "trend": "الطلبات عبر الزمن",
+    "topOffers": "العروض الأكثر طلبًا",
+    "applicationsCount": "{{count}} طلب",
+    "noOffers": "لا توجد عروض بعد.",
+    "empty": "لا توجد بيانات بعد."
+  },
+  "adminAnalytics": {
+    "users": "المستخدمون",
+    "usersBreakdown": "{{candidates}} مترشح · {{recruiters}} مشغّل",
+    "companies": "الشركات",
+    "activeSubscriptions": "{{count}} اشتراك نشط",
+    "jobs": "العروض",
+    "publishedJobs": "{{count}} منشورة",
+    "assessments": "التقييمات",
+    "completedAssessments": "{{count}} مكتملة",
+    "subscriptionsByPlan": "الاشتراكات حسب الباقة",
+    "applications": "الطلبات"
   }
 }

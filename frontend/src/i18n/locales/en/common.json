@@ -29,7 +29,8 @@
     "company": "My company",
     "subscription": "Subscription",
     "jobsRecruiter": "Job offers",
-    "jobsCandidate": "Job offers"
+    "jobsCandidate": "Job offers",
+    "analytics": "Analytics"
   },
   "layout": {
     "skipToContent": "Skip to main content"
@@ -1140,5 +1141,35 @@
       "deadline": "Deadline: {{date}}",
       "appliedOn": "Applied on {{date}}"
     }
+  },
+  "recruiterAnalytics": {
+    "title": "Analytics",
+    "subtitle": "Your offers, applications and contacts at a glance.",
+    "rangeDays": "{{days}}d",
+    "publishedJobs": "Published offers",
+    "totalJobs": "{{count}} total",
+    "applications": "Applications",
+    "shortlist": "Shortlist",
+    "conversations": "Conversations",
+    "contactsUsed": "Contacts used",
+    "unlimited": "Unlimited",
+    "byStatus": "Applications by status",
+    "trend": "Applications over time",
+    "topOffers": "Most-applied offers",
+    "applicationsCount": "{{count}} application(s)",
+    "noOffers": "No offers yet.",
+    "empty": "No data yet."
+  },
+  "adminAnalytics": {
+    "users": "Users",
+    "usersBreakdown": "{{candidates}} candidates · {{recruiters}} recruiters",
+    "companies": "Companies",
+    "activeSubscriptions": "{{count}} active subscription(s)",
+    "jobs": "Offers",
+    "publishedJobs": "{{count}} published",
+    "assessments": "Assessments",
+    "completedAssessments": "{{count}} completed",
+    "subscriptionsByPlan": "Subscriptions by plan",
+    "applications": "Applications"
   }
 }

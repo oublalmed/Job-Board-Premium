@@ -10,13 +10,22 @@ import {
   MessageSquare,
   CreditCard,
   AlertCircle,
+  Users,
+  Building2,
+  Briefcase,
+  ClipboardCheck,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocale } from '@/i18n/locale-context';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFunnel, type FunnelStepType } from '@/features/analytics/queries';
+import {
+  useFunnel,
+  useAdminOverview,
+  type FunnelStepType,
+  type PlanKey,
+} from '@/features/analytics/queries';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -38,6 +47,13 @@ const RANGES: { label: string; days?: number }[] = [
   { label: 'd30', days: 30 },
   { label: 'all', days: undefined },
 ];
+
+const PLAN_LABEL: Record<PlanKey, string> = {
+  starter: 'Starter',
+  growth: 'Pro',
+  scale: 'Premium',
+  enterprise: 'Enterprise',
+};
 
 export default function AdminAnalyticsPage() {
   const { t } = useLocale();
@@ -77,6 +93,9 @@ export default function AdminAnalyticsPage() {
           ))}
         </div>
       </div>
+
+      {/* §5 — real platform KPIs, above the acquisition funnel. */}
+      <PlatformOverview />
 
       {isError ? (
         <Card className="border-destructive/30">
@@ -139,5 +158,140 @@ export default function AdminAnalyticsPage() {
         </Card>
       )}
     </motion.div>
+  );
+}
+
+// §5 — platform KPI cards (users, companies, subscriptions, jobs, apps, evals),
+// all from real counts. Rendered above the funnel; loads independently so a
+// funnel error never hides the overview.
+function PlatformOverview() {
+  const { t } = useLocale();
+  const { data, isLoading, isError, refetch } = useAdminOverview();
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <Card className="border-destructive/30">
+        <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
+          <AlertCircle className="size-5 text-destructive" />
+          <p className="text-sm text-muted-foreground">{t('common.error')}</p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            {t('common.retry')}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const plans = Object.entries(data.subscriptions.byPlan) as [
+    PlanKey,
+    number,
+  ][];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <OverviewCard
+          icon={Users}
+          label={t('adminAnalytics.users')}
+          value={data.users.total}
+          hint={t('adminAnalytics.usersBreakdown', {
+            candidates: String(data.users.candidates),
+            recruiters: String(data.users.recruiters),
+          })}
+        />
+        <OverviewCard
+          icon={Building2}
+          label={t('adminAnalytics.companies')}
+          value={data.companies.total}
+          hint={t('adminAnalytics.activeSubscriptions', {
+            count: String(data.subscriptions.active),
+          })}
+        />
+        <OverviewCard
+          icon={Briefcase}
+          label={t('adminAnalytics.jobs')}
+          value={data.jobs.total}
+          hint={t('adminAnalytics.publishedJobs', {
+            count: String(data.jobs.published),
+          })}
+        />
+        <OverviewCard
+          icon={ClipboardCheck}
+          label={t('adminAnalytics.assessments')}
+          value={data.assessments.total}
+          hint={t('adminAnalytics.completedAssessments', {
+            count: String(data.assessments.completed),
+          })}
+        />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            {t('adminAnalytics.subscriptionsByPlan')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4">
+          {plans.map(([plan, count]) => (
+            <div
+              key={plan}
+              className="flex min-w-24 flex-col rounded-lg border border-border/60 px-4 py-3"
+            >
+              <span className="text-xs text-muted-foreground">
+                {PLAN_LABEL[plan]}
+              </span>
+              <span className="text-xl font-bold tabular-nums text-foreground">
+                {count}
+              </span>
+            </div>
+          ))}
+          <div className="flex min-w-24 flex-col rounded-lg border border-border/60 px-4 py-3">
+            <span className="text-xs text-muted-foreground">
+              {t('adminAnalytics.applications')}
+            </span>
+            <span className="text-xl font-bold tabular-nums text-foreground">
+              {data.applications.total}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function OverviewCard({
+  icon: Icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  hint?: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-1.5 p-5">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Icon className="size-4" />
+          <span className="text-xs font-medium">{label}</span>
+        </div>
+        <span className="text-2xl font-bold tabular-nums text-foreground">
+          {value}
+        </span>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      </CardContent>
+    </Card>
   );
 }

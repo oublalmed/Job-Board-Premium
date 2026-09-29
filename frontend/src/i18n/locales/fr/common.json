@@ -29,7 +29,8 @@
     "company": "Mon entreprise",
     "subscription": "Abonnement",
     "jobsRecruiter": "Offres d'emploi",
-    "jobsCandidate": "Offres d'emploi"
+    "jobsCandidate": "Offres d'emploi",
+    "analytics": "Statistiques"
   },
   "layout": {
     "skipToContent": "Aller au contenu principal"
@@ -1140,5 +1141,35 @@
       "deadline": "Limite : {{date}}",
       "appliedOn": "Postulé le {{date}}"
     }
+  },
+  "recruiterAnalytics": {
+    "title": "Statistiques",
+    "subtitle": "Vos offres, candidatures et contacts en un coup d'œil.",
+    "rangeDays": "{{days}} j",
+    "publishedJobs": "Offres publiées",
+    "totalJobs": "{{count}} au total",
+    "applications": "Candidatures",
+    "shortlist": "Présélection",
+    "conversations": "Conversations",
+    "contactsUsed": "Contacts utilisés",
+    "unlimited": "Illimité",
+    "byStatus": "Candidatures par statut",
+    "trend": "Candidatures dans le temps",
+    "topOffers": "Offres les plus demandées",
+    "applicationsCount": "{{count}} candidature(s)",
+    "noOffers": "Aucune offre pour le moment.",
+    "empty": "Pas encore de données."
+  },
+  "adminAnalytics": {
+    "users": "Utilisateurs",
+    "usersBreakdown": "{{candidates}} candidats · {{recruiters}} recruteurs",
+    "companies": "Entreprises",
+    "activeSubscriptions": "{{count}} abonnement(s) actif(s)",
+    "jobs": "Offres",
+    "publishedJobs": "{{count}} publiée(s)",
+    "assessments": "Évaluations",
+    "completedAssessments": "{{count}} terminée(s)",
+    "subscriptionsByPlan": "Abonnements par pack",
+    "applications": "Candidatures"
   }
 }

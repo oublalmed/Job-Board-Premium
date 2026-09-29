@@ -5,15 +5,20 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { Role } from '../../common/enums/role.enum.js';
 import { AnalyticsService } from './analytics.service.js';
+import { AdminAnalyticsService } from './admin-analytics.service.js';
 import { FunnelDto } from './dto/funnel.dto.js';
 
 // EF-ADM-05 (Lot 8) — the internal amorçage KPI dashboard. Same admin/
-// moderator split used by school-verification moderation.
+// moderator split used by school-verification moderation. §5 adds a
+// platform-wide overview alongside the acquisition funnel.
 @Controller('admin/analytics')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.MODERATOR)
 export class AnalyticsAdminController {
-  constructor(private readonly service: AnalyticsService) {}
+  constructor(
+    private readonly service: AnalyticsService,
+    private readonly adminAnalytics: AdminAnalyticsService,
+  ) {}
 
   @Get('funnel')
   @ApiResponse({ status: 200, type: FunnelDto })
@@ -22,5 +27,11 @@ export class AnalyticsAdminController {
     return this.service.funnel(
       parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined,
     );
+  }
+
+  // §5 — real platform KPIs (users, companies, subscriptions, jobs, apps, evals).
+  @Get('overview')
+  overview() {
+    return this.adminAnalytics.overview();
   }
 }

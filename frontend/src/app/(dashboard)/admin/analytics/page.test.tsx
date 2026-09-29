@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { Funnel } from '@/features/analytics/queries';
+import type { AdminOverview, Funnel } from '@/features/analytics/queries';
 
 vi.mock('@/i18n/locale-context', () => ({
   useLocale: () => ({ locale: 'fr', setLocale: vi.fn(), t: (k: string) => k, ta: () => [] }),
@@ -10,11 +10,40 @@ vi.mock('framer-motion', () => ({
 }));
 
 const useFunnel = vi.fn();
-vi.mock('@/features/analytics/queries', () => ({ useFunnel: () => useFunnel() }));
+const useAdminOverview = vi.fn();
+vi.mock('@/features/analytics/queries', () => ({
+  useFunnel: () => useFunnel(),
+  useAdminOverview: () => useAdminOverview(),
+}));
 
 import AdminAnalyticsPage from './page';
 
-afterEach(() => useFunnel.mockReset());
+const overview: AdminOverview = {
+  users: { total: 100, candidates: 70, recruiters: 25 },
+  companies: { total: 20 },
+  subscriptions: {
+    active: 12,
+    byPlan: { starter: 5, growth: 3, scale: 2, enterprise: 2 },
+  },
+  jobs: { total: 30, published: 18 },
+  applications: { total: 210 },
+  assessments: { total: 80, completed: 55 },
+};
+
+// The §5 platform overview loads independently; give it a stable loaded state
+// so these funnel-focused tests aren't affected by it.
+beforeEach(() =>
+  useAdminOverview.mockReturnValue({
+    data: overview,
+    isLoading: false,
+    isError: false,
+  }),
+);
+
+afterEach(() => {
+  useFunnel.mockReset();
+  useAdminOverview.mockReset();
+});
 
 const funnel: Funnel = {
   rangeDays: 30,
