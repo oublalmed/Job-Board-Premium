@@ -9,7 +9,7 @@ describe('JobsPublicController (§3.2)', () => {
   let controller: JobsPublicController;
   let jobs: jest.Mocked<Pick<JobsService, 'searchPublished' | 'getPublished'>>;
   let applications: jest.Mocked<
-    Pick<ApplicationsService, 'listMine' | 'apply'>
+    Pick<ApplicationsService, 'listMine' | 'apply' | 'getEligibility'>
   >;
 
   beforeEach(() => {
@@ -22,6 +22,7 @@ describe('JobsPublicController (§3.2)', () => {
     applications = {
       listMine: jest.fn().mockResolvedValue([{ id: 'a1' }]),
       apply: jest.fn().mockResolvedValue({ id: 'a1', status: 'applied' }),
+      getEligibility: jest.fn().mockResolvedValue({ eligible: true }),
     };
     controller = new JobsPublicController(
       jobs as unknown as JobsService,
@@ -37,6 +38,12 @@ describe('JobsPublicController (§3.2)', () => {
       limit: 20,
     });
     expect(res.total).toBe(0);
+  });
+
+  it('eligibility() delegates to the service', async () => {
+    const res = await controller.eligibility(user);
+    expect(applications.getEligibility).toHaveBeenCalledWith('cand-1');
+    expect(res).toEqual({ eligible: true });
   });
 
   it('mine() lists the caller applications', async () => {

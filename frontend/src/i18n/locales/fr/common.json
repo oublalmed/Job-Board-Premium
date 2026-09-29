@@ -1135,7 +1135,13 @@
       "coverLetterPlaceholder": "Lettre de motivation (facultatif)…",
       "alreadyApplied": "Vous avez déjà postulé à cette offre.",
       "alreadyAppliedTitle": "Vous avez déjà postulé",
-      "completeProfile": "Complétez votre profil avant de postuler."
+      "completeProfile": "Complétez votre profil avant de postuler.",
+      "notEligible": "Vous ne remplissez pas encore les conditions pour postuler.",
+      "eligibilityTitle": "Conditions pour postuler",
+      "needProfile": "Complétez votre profil : {{completeness}} % / {{threshold}} % requis",
+      "completeProfileCta": "Compléter mon profil",
+      "needExam": "Passez au moins une évaluation",
+      "takeExamCta": "Passer une évaluation"
     },
     "detail": {
       "deadline": "Limite : {{date}}",

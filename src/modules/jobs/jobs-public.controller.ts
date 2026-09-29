@@ -41,6 +41,13 @@ export class JobsPublicController {
     return this.applications.listMine(user.sub);
   }
 
+  // §3 — can this candidate apply? (profile >= 70% + >= 1 completed assessment).
+  // Declared before ':id' so it isn't parsed as a UUID.
+  @Get('mine/eligibility')
+  async eligibility(@CurrentUser() user: JwtPayload) {
+    return this.applications.getEligibility(user.sub);
+  }
+
   @Get(':id')
   async detail(@Param('id', ParseUUIDPipe) id: string) {
     return this.jobs.getPublished(id);

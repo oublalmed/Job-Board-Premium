@@ -1135,7 +1135,13 @@
       "coverLetterPlaceholder": "Cover letter (optional)…",
       "alreadyApplied": "You have already applied to this offer.",
       "alreadyAppliedTitle": "You have already applied",
-      "completeProfile": "Complete your profile before applying."
+      "completeProfile": "Complete your profile before applying.",
+      "notEligible": "You don't meet the requirements to apply yet.",
+      "eligibilityTitle": "Requirements to apply",
+      "needProfile": "Complete your profile: {{completeness}}% / {{threshold}}% required",
+      "completeProfileCta": "Complete my profile",
+      "needExam": "Take at least one assessment",
+      "takeExamCta": "Take an assessment"
     },
     "detail": {
       "deadline": "Deadline: {{date}}",

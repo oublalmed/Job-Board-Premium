@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-  BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -12,6 +12,7 @@ import {
   ApplicationStatus,
 } from '../entities/job-application.entity.js';
 import { CandidateProfile } from '../../candidates/entities/candidate-profile.entity.js';
+import { Assessment } from '../../assessments/entities/assessment.entity.js';
 
 const companyId = 'comp-1';
 
@@ -20,6 +21,7 @@ describe('ApplicationsService (§3)', () => {
   let appRepo: Record<string, jest.Mock>;
   let offerRepo: Record<string, jest.Mock>;
   let profileRepo: Record<string, jest.Mock>;
+  let assessmentRepo: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     appRepo = {
@@ -35,9 +37,13 @@ describe('ApplicationsService (§3)', () => {
         companyId,
       }),
     };
+    // Eligible by default: 90% complete + 1 finished assessment.
     profileRepo = {
-      findOne: jest.fn().mockResolvedValue({ id: 'p1', userId: 'cand-1' }),
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: 'p1', userId: 'cand-1', completeness: 90 }),
     };
+    assessmentRepo = { count: jest.fn().mockResolvedValue(1) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -48,6 +54,7 @@ describe('ApplicationsService (§3)', () => {
           provide: getRepositoryToken(CandidateProfile),
           useValue: profileRepo,
         },
+        { provide: getRepositoryToken(Assessment), useValue: assessmentRepo },
       ],
     }).compile();
 
@@ -55,7 +62,7 @@ describe('ApplicationsService (§3)', () => {
   });
 
   describe('apply', () => {
-    it('creates an APPLIED application for a published offer', async () => {
+    it('creates an APPLIED application for an eligible candidate', async () => {
       const a = await service.apply('cand-1', 'o1', { coverLetter: 'hi' });
       expect(appRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -78,10 +85,21 @@ describe('ApplicationsService (§3)', () => {
       );
     });
 
-    it('400 when the candidate has no profile', async () => {
-      profileRepo.findOne.mockResolvedValue(null);
+    it('403 when the profile is below 70% complete', async () => {
+      profileRepo.findOne.mockResolvedValue({
+        id: 'p1',
+        userId: 'cand-1',
+        completeness: 65,
+      });
       await expect(service.apply('cand-1', 'o1', {})).rejects.toThrow(
-        BadRequestException,
+        ForbiddenException,
+      );
+    });
+
+    it('403 when the candidate has no completed assessment', async () => {
+      assessmentRepo.count.mockResolvedValue(0);
+      await expect(service.apply('cand-1', 'o1', {})).rejects.toThrow(
+        ForbiddenException,
       );
     });
 
@@ -90,6 +108,30 @@ describe('ApplicationsService (§3)', () => {
       await expect(service.apply('cand-1', 'o1', {})).rejects.toThrow(
         ConflictException,
       );
+    });
+  });
+
+  describe('getEligibility', () => {
+    it('is eligible with a complete profile + a finished assessment', async () => {
+      const e = await service.getEligibility('cand-1');
+      expect(e).toEqual({
+        eligible: true,
+        completeness: 90,
+        threshold: 70,
+        completedAssessments: 1,
+        reasons: [],
+      });
+    });
+
+    it('lists both reasons when nothing is met', async () => {
+      profileRepo.findOne.mockResolvedValue(null);
+      assessmentRepo.count.mockResolvedValue(0);
+      const e = await service.getEligibility('cand-1');
+      expect(e.eligible).toBe(false);
+      expect(e.reasons).toEqual([
+        'PROFILE_INCOMPLETE',
+        'NO_COMPLETED_ASSESSMENT',
+      ]);
     });
   });
 

@@ -322,6 +322,28 @@ export function useMyApplications(enabled = true) {
   });
 }
 
+// §3 — eligibility to apply (profile >= 70% + >= 1 completed assessment).
+export type EligibilityReason =
+  | 'PROFILE_INCOMPLETE'
+  | 'NO_COMPLETED_ASSESSMENT';
+
+export interface ApplyEligibility {
+  eligible: boolean;
+  completeness: number;
+  threshold: number;
+  completedAssessments: number;
+  reasons: EligibilityReason[];
+}
+
+export function useApplyEligibility(enabled = true) {
+  return useQuery({
+    queryKey: [...jobKeys.all, 'eligibility'] as const,
+    enabled,
+    queryFn: () =>
+      authed<ApplyEligibility>('/api/v1/jobs/mine/eligibility'),
+  });
+}
+
 export function useApplyToJob(id: string) {
   const qc = useQueryClient();
   return useMutation({

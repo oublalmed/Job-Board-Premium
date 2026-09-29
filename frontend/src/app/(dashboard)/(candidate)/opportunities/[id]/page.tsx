@@ -15,6 +15,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Lock,
+  UserCog,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
@@ -29,6 +32,8 @@ import {
   useJobDetail,
   useApplyToJob,
   useMyApplications,
+  useApplyEligibility,
+  type ApplyEligibility,
 } from '@/features/jobs/queries';
 import {
   APPLICATION_STATUS_BADGE,
@@ -50,10 +55,12 @@ export default function OpportunityDetailPage() {
 
   const { data: offer, isLoading, isError, refetch } = useJobDetail(id);
   const myApps = useMyApplications();
+  const eligibility = useApplyEligibility();
   const apply = useApplyToJob(id);
   const [coverLetter, setCoverLetter] = useState('');
 
   const existing = myApps.data?.find((a) => a.offer.id === id) ?? null;
+  const elig = eligibility.data;
 
   function handleApply(e: React.FormEvent) {
     e.preventDefault();
@@ -68,6 +75,10 @@ export default function OpportunityDetailPage() {
         if (status === 409) {
           toast(t('jobs.candidate.alreadyApplied'), 'error');
           void myApps.refetch();
+        } else if (status === 403) {
+          // §3 — not eligible; refresh the requirements shown below the form.
+          toast(t('jobs.candidate.notEligible'), 'error');
+          void eligibility.refetch();
         } else if (status === 400) {
           toast(t('jobs.candidate.completeProfile'), 'error');
         } else {
@@ -185,6 +196,8 @@ export default function OpportunityDetailPage() {
                     {t(APPLICATION_STATUS_BADGE[existing.status].key)}
                   </Badge>
                 </div>
+              ) : elig && !elig.eligible ? (
+                <EligibilityRequirements eligibility={elig} />
               ) : (
                 <form onSubmit={handleApply} className="flex flex-col gap-3">
                   <Textarea
@@ -197,7 +210,7 @@ export default function OpportunityDetailPage() {
                   <Button
                     type="submit"
                     className="w-fit gap-2"
-                    disabled={apply.isPending}
+                    disabled={apply.isPending || eligibility.isLoading}
                   >
                     {apply.isPending ? (
                       <Loader2 className="size-4 animate-spin" />
@@ -213,5 +226,61 @@ export default function OpportunityDetailPage() {
         </>
       )}
     </motion.div>
+  );
+}
+
+// §3 — shown in place of the apply form when the candidate isn't yet eligible:
+// what's left to unlock applications (profile completeness, an assessment).
+function EligibilityRequirements({
+  eligibility,
+}: {
+  eligibility: ApplyEligibility;
+}) {
+  const { t } = useLocale();
+  const needsProfile = eligibility.reasons.includes('PROFILE_INCOMPLETE');
+  const needsExam = eligibility.reasons.includes('NO_COMPLETED_ASSESSMENT');
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4">
+      <div className="flex items-center gap-2">
+        <Lock className="size-5 text-warning" />
+        <span className="text-sm font-medium text-foreground">
+          {t('jobs.candidate.eligibilityTitle')}
+        </span>
+      </div>
+      <ul className="flex flex-col gap-2">
+        {needsProfile && (
+          <li className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-card px-3 py-2">
+            <span className="flex items-center gap-2 text-sm text-foreground">
+              <UserCog className="size-4 text-muted-foreground" />
+              {t('jobs.candidate.needProfile', {
+                completeness: String(Math.round(eligibility.completeness)),
+                threshold: String(eligibility.threshold),
+              })}
+            </span>
+            <Link
+              href="/profile"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              {t('jobs.candidate.completeProfileCta')}
+            </Link>
+          </li>
+        )}
+        {needsExam && (
+          <li className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-card px-3 py-2">
+            <span className="flex items-center gap-2 text-sm text-foreground">
+              <ClipboardCheck className="size-4 text-muted-foreground" />
+              {t('jobs.candidate.needExam')}
+            </span>
+            <Link
+              href="/assessments"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              {t('jobs.candidate.takeExamCta')}
+            </Link>
+          </li>
+        )}
+      </ul>
+    </div>
   );
 }

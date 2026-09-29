@@ -1135,7 +1135,13 @@
       "coverLetterPlaceholder": "رسالة الدافع (اختياري)…",
       "alreadyApplied": "لقد قدّمت على هذا العرض من قبل.",
       "alreadyAppliedTitle": "لقد قدّمت بالفعل",
-      "completeProfile": "أكمل ملفك الشخصي قبل التقديم."
+      "completeProfile": "أكمل ملفك الشخصي قبل التقديم.",
+      "notEligible": "لا تستوفي بعد شروط التقديم.",
+      "eligibilityTitle": "شروط التقديم",
+      "needProfile": "أكمل ملفك: {{completeness}}٪ / {{threshold}}٪ مطلوبة",
+      "completeProfileCta": "إكمال ملفي",
+      "needExam": "اجتَز تقييمًا واحدًا على الأقل",
+      "takeExamCta": "اجتياز تقييم"
     },
     "detail": {
       "deadline": "آخر أجل: {{date}}",
