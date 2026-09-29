@@ -42,6 +42,14 @@ import {
 } from '../modules/candidates/entities/candidate-profile.entity.js';
 import { Skill } from '../modules/candidates/entities/skill.entity.js';
 import { ProfileSkill } from '../modules/candidates/entities/profile-skill.entity.js';
+import {
+  Experience,
+  ExperienceType,
+} from '../modules/candidates/entities/experience.entity.js';
+import {
+  ProfileLink,
+  LinkType,
+} from '../modules/candidates/entities/profile-link.entity.js';
 import { Specialty } from '../modules/assessments/entities/specialty.entity.js';
 import { Test } from '../modules/assessments/entities/test.entity.js';
 import {
@@ -113,6 +121,8 @@ async function seed(ds: DataSource): Promise<void> {
   const profiles = ds.getRepository(CandidateProfile);
   const skillsRepo = ds.getRepository(Skill);
   const profileSkills = ds.getRepository(ProfileSkill);
+  const experiencesRepo = ds.getRepository(Experience);
+  const linksRepo = ds.getRepository(ProfileLink);
   const specialties = ds.getRepository(Specialty);
   const tests = ds.getRepository(Test);
   const assessments = ds.getRepository(Assessment);
@@ -283,7 +293,14 @@ async function seed(ds: DataSource): Promise<void> {
       headline: 'Ingénieure Backend Node.js',
       location: 'Casablanca',
       school: 'ENSIAS',
-      skills: ['Node.js', 'PostgreSQL', 'Docker'],
+      skills: [
+        'Node.js',
+        'PostgreSQL',
+        'Docker',
+        'NestJS',
+        'TypeScript',
+        'Redis',
+      ],
       score: [88, 82],
       tabSwitchCount: 0,
     },
@@ -295,7 +312,7 @@ async function seed(ds: DataSource): Promise<void> {
       headline: 'Développeur Full-Stack',
       location: 'Rabat',
       school: 'EMI',
-      skills: ['React', 'TypeScript', 'Node.js'],
+      skills: ['React', 'TypeScript', 'Node.js', 'Next.js', 'Tailwind', 'Git'],
       score: [74, 69],
       // Crosses the tab-switch threshold → "medium" suspicion for the Premium
       // recruiter's anti-cheat card.
@@ -309,7 +326,7 @@ async function seed(ds: DataSource): Promise<void> {
       headline: 'Data Engineer',
       location: 'Marrakech',
       school: 'INPT',
-      skills: ['Python', 'SQL', 'Spark'],
+      skills: ['Python', 'SQL', 'Spark', 'Airflow', 'Pandas', 'ETL'],
       score: [80, 77],
       tabSwitchCount: 0,
     },
@@ -341,18 +358,57 @@ async function seed(ds: DataSource): Promise<void> {
         school: c.school,
         schoolVerified: true,
         visibility: ProfileVisibility.PUBLIC,
-        completeness: 90,
+        // Genuinely publishable: identity 15 + skills(>=5) 20 + experience 20 +
+        // link 15 + school 15 = 85 (>= the 70 threshold), so the profile stays
+        // indexed even after the app recomputes completeness. See
+        // CandidateProfileService.calculateCompleteness.
+        completeness: 85,
         indexedInCvtheque: true,
       }),
     );
     profileByKey.set(c.key, profile);
 
+    // >= 5 skills (the completeness rule requires it).
     for (const name of c.skills) {
       const s = await skill(name);
       await profileSkills.save(
         profileSkills.create({ profileId: profile.id, skillId: s.id }),
       );
     }
+
+    // >= 1 experience + >= 1 external link — the other completeness blocks.
+    await experiencesRepo.save(
+      experiencesRepo.create({
+        profileId: profile.id,
+        type: ExperienceType.EDUCATION,
+        title: `Ingénierie informatique — ${c.school}`,
+        organization: c.school,
+        startDate: '2019-09-01',
+        endDate: '2022-06-30',
+        description: `Diplôme d'ingénieur, ${c.school}.`,
+      }),
+    );
+    await experiencesRepo.save(
+      experiencesRepo.create({
+        profileId: profile.id,
+        type: ExperienceType.WORK,
+        title: c.headline,
+        organization: 'Expérience de stage / projet',
+        startDate: '2022-07-01',
+        endDate: null,
+        description: `${c.headline} — projets et stages.`,
+      }),
+    );
+    await linksRepo.save(
+      linksRepo.create({
+        profileId: profile.id,
+        type: LinkType.GITHUB,
+        url: `https://github.com/${c.firstName.toLowerCase()}-${c.lastName
+          .toLowerCase()
+          .replace(/\s+/g, '')}`,
+        label: 'GitHub',
+      }),
+    );
 
     // One completed assessment + score (real grading pipeline shape).
     const completedAt = daysAgo(10);
