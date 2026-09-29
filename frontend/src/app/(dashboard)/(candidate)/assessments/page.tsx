@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  AlertTriangle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -228,6 +227,21 @@ export default function AssessmentsPage() {
 
   const feedbackData = feedback.data;
 
+  // §1 — while an attempt is in progress, the exam takes over the whole screen:
+  // only the questions are shown (no dashboard chrome), one at a time, each
+  // timed. Rendered before the rest of the page so nothing else is visible.
+  if (session?.status === 'in_progress') {
+    return (
+      <ExamRunner
+        assessmentId={session.assessmentId}
+        onCompleted={handleExamCompleted}
+        secureExam={secureExam}
+        onReportIncident={handleReportIncident}
+        reportPending={incident.isPending}
+      />
+    );
+  }
+
   return (
     <motion.div className="flex flex-col gap-8" {...fadeUp}>
       <div>
@@ -257,42 +271,22 @@ export default function AssessmentsPage() {
                 )?.name ?? session.testId}
               </span>
             </p>
-            {session.status === 'in_progress' ? (
-              <>
-                {/* The actual exam — questions to answer, then real grading. */}
-                <ExamRunner
-                  assessmentId={session.assessmentId}
-                  onCompleted={handleExamCompleted}
-                />
-                <Button
-                  variant="outline"
-                  className="gap-2 self-start"
-                  onClick={handleReportIncident}
-                  disabled={incident.isPending}
-                >
-                  {incident.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <AlertTriangle className="size-4" />
-                  )}
-                  {t('assessments.reportButton')}
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="outline"
-                className="gap-2 self-start"
-                onClick={handleViewFeedback}
-                disabled={feedback.isPending}
-              >
-                {feedback.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <MessageCircle className="size-4" />
-                )}
-                {t('assessments.viewFeedback')}
-              </Button>
-            )}
+            {/* An in-progress attempt is handled by the fullscreen exam (early
+                return above); here the session is completed/cancelled, so we
+                surface the feedback. */}
+            <Button
+              variant="outline"
+              className="gap-2 self-start"
+              onClick={handleViewFeedback}
+              disabled={feedback.isPending}
+            >
+              {feedback.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <MessageCircle className="size-4" />
+              )}
+              {t('assessments.viewFeedback')}
+            </Button>
 
             {feedbackData && (
               <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">

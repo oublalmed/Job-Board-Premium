@@ -646,7 +646,8 @@
       "timeLeft": "Time left",
       "next": "Next question",
       "finish": "Finish assessment",
-      "forwardOnly": "You cannot go back to a previous question."
+      "forwardOnly": "You cannot go back to a previous question.",
+      "fullscreenPrompt": "Return to fullscreen"
     },
     "resume": "Resume an assessment",
     "assessmentId": "Assessment ID",

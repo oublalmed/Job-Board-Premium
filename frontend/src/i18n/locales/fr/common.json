@@ -646,7 +646,8 @@
       "timeLeft": "Temps restant",
       "next": "Question suivante",
       "finish": "Terminer l'évaluation",
-      "forwardOnly": "Vous ne pourrez pas revenir à une question précédente."
+      "forwardOnly": "Vous ne pourrez pas revenir à une question précédente.",
+      "fullscreenPrompt": "Revenir en plein écran"
     },
     "resume": "Reprendre une évaluation",
     "assessmentId": "Identifiant de l'évaluation",
