@@ -27,7 +27,9 @@
     "login": "Log in",
     "register": "Create an account",
     "company": "My company",
-    "subscription": "Subscription"
+    "subscription": "Subscription",
+    "jobsRecruiter": "Job offers",
+    "jobsCandidate": "Job offers"
   },
   "layout": {
     "skipToContent": "Skip to main content"
@@ -1035,6 +1037,101 @@
         "verified": "Verified",
         "rejected": "Rejected"
       }
+    }
+  },
+  "jobs": {
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "closed": "Closed"
+    },
+    "appStatus": {
+      "applied": "Applied",
+      "under_review": "Under review",
+      "shortlisted": "Shortlisted",
+      "interview": "Interview",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "contract": {
+      "CDI": "Permanent (CDI)",
+      "CDD": "Fixed-term (CDD)",
+      "PFE": "Final project (PFE)",
+      "Freelance": "Freelance",
+      "Internship": "Internship"
+    },
+    "experience": {
+      "junior": "Junior",
+      "mid": "Mid-level",
+      "senior": "Senior",
+      "lead": "Lead"
+    },
+    "form": {
+      "title": "Job title",
+      "titlePlaceholder": "e.g. Backend Node.js Engineer",
+      "titleError": "The title must be at least 2 characters.",
+      "description": "Description",
+      "descriptionPlaceholder": "Responsibilities, ideal profile, benefits…",
+      "location": "Location",
+      "locationPlaceholder": "e.g. Casablanca",
+      "deadline": "Deadline",
+      "contractType": "Contract type",
+      "experience": "Experience level",
+      "skills": "Required skills",
+      "skillsPlaceholder": "e.g. Node.js, PostgreSQL, Docker",
+      "skillsHint": "Separate skills with commas.",
+      "any": "Any"
+    },
+    "recruiter": {
+      "title": "Job offers",
+      "subtitle": "Create and manage your offers, and track the applications you receive.",
+      "create": "New offer",
+      "created": "Offer created.",
+      "updated": "Offer updated.",
+      "published": "Offer published.",
+      "closed": "Offer closed.",
+      "edit": "Edit",
+      "editTitle": "Edit offer",
+      "backToList": "Back to offers",
+      "notFound": "Offer not found.",
+      "publish": "Publish",
+      "close": "Close",
+      "emptyTitle": "No offers yet",
+      "emptyBody": "Create your first offer to start receiving applications.",
+      "applicationsCount": "{{count}} application(s)",
+      "applicationsTitle": "Applications",
+      "noApplications": "No applications for this offer yet.",
+      "anonymousCandidate": "Candidate",
+      "changeStatus": "Status:",
+      "statusUpdated": "Status updated."
+    },
+    "candidate": {
+      "title": "Job offers",
+      "subtitle": "Browse published offers and apply in one click.",
+      "browseTab": "Offers",
+      "myApplicationsTab": "My applications",
+      "searchLabel": "Keyword",
+      "searchPlaceholder": "Title, technology…",
+      "searchButton": "Search",
+      "resultCount": "{{count}} offer(s) found",
+      "loadMore": "Load more",
+      "noResultsTitle": "No offers found",
+      "noResultsBody": "Adjust your search criteria to see more results.",
+      "noApplicationsTitle": "No applications",
+      "noApplicationsBody": "You haven't applied to any offer yet.",
+      "backToList": "Back to offers",
+      "notFound": "Offer not found or unavailable.",
+      "applyTitle": "Apply to this offer",
+      "applyButton": "Send my application",
+      "applySuccess": "Application sent successfully.",
+      "coverLetterPlaceholder": "Cover letter (optional)…",
+      "alreadyApplied": "You have already applied to this offer.",
+      "alreadyAppliedTitle": "You have already applied",
+      "completeProfile": "Complete your profile before applying."
+    },
+    "detail": {
+      "deadline": "Deadline: {{date}}",
+      "appliedOn": "Applied on {{date}}"
     }
   }
 }

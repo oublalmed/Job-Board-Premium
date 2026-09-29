@@ -27,7 +27,9 @@
     "login": "تسجيل الدخول",
     "register": "إنشاء حساب",
     "company": "شركتي",
-    "subscription": "الاشتراك"
+    "subscription": "الاشتراك",
+    "jobsRecruiter": "عروض العمل",
+    "jobsCandidate": "عروض العمل"
   },
   "layout": {
     "skipToContent": "الانتقال إلى المحتوى الرئيسي"
@@ -1035,6 +1037,101 @@
         "verified": "مُعتمَدة",
         "rejected": "مرفوضة"
       }
+    }
+  },
+  "jobs": {
+    "status": {
+      "draft": "مسودة",
+      "published": "منشورة",
+      "closed": "مغلقة"
+    },
+    "appStatus": {
+      "applied": "تم التقديم",
+      "under_review": "قيد المراجعة",
+      "shortlisted": "في القائمة المختصرة",
+      "interview": "مقابلة",
+      "accepted": "مقبول",
+      "rejected": "مرفوض"
+    },
+    "contract": {
+      "CDI": "عقد دائم",
+      "CDD": "عقد محدد المدة",
+      "PFE": "مشروع نهاية الدراسة",
+      "Freelance": "عمل حر",
+      "Internship": "تدريب"
+    },
+    "experience": {
+      "junior": "مبتدئ",
+      "mid": "متوسط",
+      "senior": "خبير",
+      "lead": "قائد فريق"
+    },
+    "form": {
+      "title": "المسمى الوظيفي",
+      "titlePlaceholder": "مثال: مهندس Backend Node.js",
+      "titleError": "يجب أن يتكون العنوان من حرفين على الأقل.",
+      "description": "الوصف",
+      "descriptionPlaceholder": "المهام، الملف المطلوب، المزايا…",
+      "location": "الموقع",
+      "locationPlaceholder": "مثال: الدار البيضاء",
+      "deadline": "آخر أجل",
+      "contractType": "نوع العقد",
+      "experience": "مستوى الخبرة",
+      "skills": "المهارات المطلوبة",
+      "skillsPlaceholder": "مثال: Node.js، PostgreSQL، Docker",
+      "skillsHint": "افصل بين المهارات بفواصل.",
+      "any": "الكل"
+    },
+    "recruiter": {
+      "title": "عروض العمل",
+      "subtitle": "أنشئ عروضك وأدرها، وتابع الطلبات الواردة.",
+      "create": "عرض جديد",
+      "created": "تم إنشاء العرض.",
+      "updated": "تم تحديث العرض.",
+      "published": "تم نشر العرض.",
+      "closed": "تم إغلاق العرض.",
+      "edit": "تعديل",
+      "editTitle": "تعديل العرض",
+      "backToList": "العودة إلى العروض",
+      "notFound": "العرض غير موجود.",
+      "publish": "نشر",
+      "close": "إغلاق",
+      "emptyTitle": "لا توجد عروض بعد",
+      "emptyBody": "أنشئ أول عرض لك لبدء استقبال الطلبات.",
+      "applicationsCount": "{{count}} طلب",
+      "applicationsTitle": "الطلبات",
+      "noApplications": "لا توجد طلبات لهذا العرض بعد.",
+      "anonymousCandidate": "مترشح",
+      "changeStatus": "الحالة:",
+      "statusUpdated": "تم تحديث الحالة."
+    },
+    "candidate": {
+      "title": "عروض العمل",
+      "subtitle": "تصفح العروض المنشورة وقدّم بنقرة واحدة.",
+      "browseTab": "العروض",
+      "myApplicationsTab": "طلباتي",
+      "searchLabel": "كلمة مفتاحية",
+      "searchPlaceholder": "المسمى، التقنية…",
+      "searchButton": "بحث",
+      "resultCount": "تم العثور على {{count}} عرض",
+      "loadMore": "عرض المزيد",
+      "noResultsTitle": "لم يتم العثور على عروض",
+      "noResultsBody": "عدّل معايير البحث لعرض المزيد من النتائج.",
+      "noApplicationsTitle": "لا توجد طلبات",
+      "noApplicationsBody": "لم تقدّم على أي عرض بعد.",
+      "backToList": "العودة إلى العروض",
+      "notFound": "العرض غير موجود أو غير متاح.",
+      "applyTitle": "التقديم على هذا العرض",
+      "applyButton": "إرسال طلبي",
+      "applySuccess": "تم إرسال الطلب بنجاح.",
+      "coverLetterPlaceholder": "رسالة الدافع (اختياري)…",
+      "alreadyApplied": "لقد قدّمت على هذا العرض من قبل.",
+      "alreadyAppliedTitle": "لقد قدّمت بالفعل",
+      "completeProfile": "أكمل ملفك الشخصي قبل التقديم."
+    },
+    "detail": {
+      "deadline": "آخر أجل: {{date}}",
+      "appliedOn": "تم التقديم في {{date}}"
     }
   }
 }

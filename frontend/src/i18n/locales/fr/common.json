@@ -27,7 +27,9 @@
     "login": "Connexion",
     "register": "Créer un compte",
     "company": "Mon entreprise",
-    "subscription": "Abonnement"
+    "subscription": "Abonnement",
+    "jobsRecruiter": "Offres d'emploi",
+    "jobsCandidate": "Offres d'emploi"
   },
   "layout": {
     "skipToContent": "Aller au contenu principal"
@@ -1035,6 +1037,101 @@
         "verified": "Validée",
         "rejected": "Refusée"
       }
+    }
+  },
+  "jobs": {
+    "status": {
+      "draft": "Brouillon",
+      "published": "Publiée",
+      "closed": "Clôturée"
+    },
+    "appStatus": {
+      "applied": "Candidature envoyée",
+      "under_review": "En cours d'examen",
+      "shortlisted": "Présélectionné",
+      "interview": "Entretien",
+      "accepted": "Accepté",
+      "rejected": "Refusé"
+    },
+    "contract": {
+      "CDI": "CDI",
+      "CDD": "CDD",
+      "PFE": "PFE",
+      "Freelance": "Freelance",
+      "Internship": "Stage"
+    },
+    "experience": {
+      "junior": "Junior",
+      "mid": "Confirmé",
+      "senior": "Senior",
+      "lead": "Lead"
+    },
+    "form": {
+      "title": "Intitulé du poste",
+      "titlePlaceholder": "ex. Ingénieur Backend Node.js",
+      "titleError": "L'intitulé doit comporter au moins 2 caractères.",
+      "description": "Description",
+      "descriptionPlaceholder": "Missions, profil recherché, avantages…",
+      "location": "Localisation",
+      "locationPlaceholder": "ex. Casablanca",
+      "deadline": "Date limite",
+      "contractType": "Type de contrat",
+      "experience": "Niveau d'expérience",
+      "skills": "Compétences requises",
+      "skillsPlaceholder": "ex. Node.js, PostgreSQL, Docker",
+      "skillsHint": "Séparez les compétences par des virgules.",
+      "any": "Indifférent"
+    },
+    "recruiter": {
+      "title": "Offres d'emploi",
+      "subtitle": "Créez et gérez vos offres, et suivez les candidatures reçues.",
+      "create": "Nouvelle offre",
+      "created": "Offre créée.",
+      "updated": "Offre mise à jour.",
+      "published": "Offre publiée.",
+      "closed": "Offre clôturée.",
+      "edit": "Modifier",
+      "editTitle": "Modifier l'offre",
+      "backToList": "Retour aux offres",
+      "notFound": "Offre introuvable.",
+      "publish": "Publier",
+      "close": "Clôturer",
+      "emptyTitle": "Aucune offre pour le moment",
+      "emptyBody": "Créez votre première offre pour commencer à recevoir des candidatures.",
+      "applicationsCount": "{{count}} candidature(s)",
+      "applicationsTitle": "Candidatures",
+      "noApplications": "Aucune candidature pour cette offre pour le moment.",
+      "anonymousCandidate": "Candidat",
+      "changeStatus": "Statut :",
+      "statusUpdated": "Statut mis à jour."
+    },
+    "candidate": {
+      "title": "Offres d'emploi",
+      "subtitle": "Parcourez les offres publiées et postulez en un clic.",
+      "browseTab": "Offres",
+      "myApplicationsTab": "Mes candidatures",
+      "searchLabel": "Mot-clé",
+      "searchPlaceholder": "Intitulé, technologie…",
+      "searchButton": "Rechercher",
+      "resultCount": "{{count}} offre(s) trouvée(s)",
+      "loadMore": "Voir plus",
+      "noResultsTitle": "Aucune offre trouvée",
+      "noResultsBody": "Modifiez vos critères de recherche pour voir plus de résultats.",
+      "noApplicationsTitle": "Aucune candidature",
+      "noApplicationsBody": "Vous n'avez pas encore postulé à une offre.",
+      "backToList": "Retour aux offres",
+      "notFound": "Offre introuvable ou non disponible.",
+      "applyTitle": "Postuler à cette offre",
+      "applyButton": "Envoyer ma candidature",
+      "applySuccess": "Candidature envoyée avec succès.",
+      "coverLetterPlaceholder": "Lettre de motivation (facultatif)…",
+      "alreadyApplied": "Vous avez déjà postulé à cette offre.",
+      "alreadyAppliedTitle": "Vous avez déjà postulé",
+      "completeProfile": "Complétez votre profil avant de postuler."
+    },
+    "detail": {
+      "deadline": "Limite : {{date}}",
+      "appliedOn": "Postulé le {{date}}"
     }
   }
 }
