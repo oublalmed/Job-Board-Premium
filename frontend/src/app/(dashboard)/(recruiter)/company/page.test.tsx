@@ -23,6 +23,18 @@ vi.mock('@/auth/auth-context', () => ({
 const toast = vi.fn();
 vi.mock('@/components/ui/toast', () => ({ useToast: () => ({ toast }) }));
 
+// The company page renders <AntiCheatToggle>, which reads entitlements +
+// settings via TanStack Query hooks (called before its early return). These
+// tests cover KYB + multi-user, not anti-cheat, so stub those hooks out — no
+// QueryClientProvider is then needed.
+vi.mock('@/features/entitlements/queries', () => ({
+  useFeature: () => false,
+}));
+vi.mock('@/features/anti-cheat/queries', () => ({
+  useAntiCheatSetting: () => ({ data: undefined }),
+  useSetAntiCheatSetting: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock('framer-motion', () => ({
   motion: new Proxy(
     {},
