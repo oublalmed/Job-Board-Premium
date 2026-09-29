@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { CandidateDocumentController } from '../candidate-document.controller.js';
 import { CandidateDocumentService } from '../candidate-document.service.js';
-import { CandidateCvImportService } from '../candidate-cv-import.service.js';
 import type { JwtPayload } from '../../../common/interfaces/request-with-user.interface.js';
 import { Role } from '../../../common/enums/role.enum.js';
 import { DocumentType, ScanStatus } from '../entities/document.entity.js';
@@ -10,7 +9,6 @@ import { DocumentType, ScanStatus } from '../entities/document.entity.js';
 describe('CandidateDocumentController', () => {
   let controller: CandidateDocumentController;
   let service: Record<string, jest.Mock>;
-  let cvImport: Record<string, jest.Mock>;
 
   const authenticatedUser: JwtPayload = {
     sub: 'user-self',
@@ -35,21 +33,10 @@ describe('CandidateDocumentController', () => {
       getCV: jest.fn().mockResolvedValue(mockDocument),
       deleteCV: jest.fn().mockResolvedValue(undefined),
     };
-    cvImport = {
-      parse: jest
-        .fn()
-        .mockResolvedValue({ suggestions: { links: [], experiences: [] } }),
-      apply: jest
-        .fn()
-        .mockResolvedValue({ created: { experiences: 1, links: 0 } }),
-    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CandidateDocumentController],
-      providers: [
-        { provide: CandidateDocumentService, useValue: service },
-        { provide: CandidateCvImportService, useValue: cvImport },
-      ],
+      providers: [{ provide: CandidateDocumentService, useValue: service }],
     }).compile();
 
     controller = module.get(CandidateDocumentController);
@@ -130,37 +117,6 @@ describe('CandidateDocumentController', () => {
 
       expect(service.deleteCV).not.toHaveBeenCalledWith(otherUserId);
       expect(service.deleteCV.mock.calls[0][0]).toBe(authenticatedUser.sub);
-    });
-  });
-
-  describe('CV import (§1)', () => {
-    const mockFile = {
-      buffer: Buffer.alloc(1024),
-      originalname: 'cv.pdf',
-      mimetype: 'application/pdf',
-      size: 1024,
-    } as Express.Multer.File;
-
-    it('importCV parses the uploaded file into suggestions', async () => {
-      const res = await controller.importCV(mockFile);
-      expect(cvImport.parse).toHaveBeenCalledWith(
-        expect.objectContaining({ mimetype: 'application/pdf' }),
-      );
-      expect(res).toHaveProperty('suggestions');
-    });
-
-    it('importCV rejects a missing file', async () => {
-      await expect(controller.importCV(undefined)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('applyImport saves the reviewed subset for the caller', async () => {
-      const res = await controller.applyImport(authenticatedUser, {
-        links: [],
-      });
-      expect(cvImport.apply).toHaveBeenCalledWith('user-self', { links: [] });
-      expect(res).toHaveProperty('created');
     });
   });
 });
