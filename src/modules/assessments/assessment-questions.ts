@@ -4,6 +4,18 @@
 
 export type QuestionType = 'technical' | 'psychotechnical';
 
+// §1 — per-question time budget (seconds). Server-authoritative: the client
+// counts down from these values and auto-advances when a question's time runs
+// out. Technical questions get a little more time than psychotechnical ones.
+export const QUESTION_TIME_LIMIT_SECONDS: Record<QuestionType, number> = {
+  technical: 90,
+  psychotechnical: 60,
+};
+
+export function timeLimitForType(type: QuestionType): number {
+  return QUESTION_TIME_LIMIT_SECONDS[type];
+}
+
 export interface ExamQuestion {
   id: string;
   type: QuestionType;

@@ -10,20 +10,26 @@ import { Assessment, AssessmentStatus } from './entities/assessment.entity.js';
 import { Test as TestEntity } from './entities/test.entity.js';
 import { Specialty } from './entities/specialty.entity.js';
 import { WebhookService } from './webhook.service.js';
-import { examForSpecialty, type ExamQuestion } from './assessment-questions.js';
+import {
+  examForSpecialty,
+  timeLimitForType,
+  type ExamQuestion,
+} from './assessment-questions.js';
 import type {
   AssessmentResult,
   DomainFeedbackEntry,
   DomainFeedbackLevel,
 } from '../../ports/scoring.port.js';
 
-// Client-facing question (answer key stripped): a QCM with selectable options.
+// Client-facing question (answer key stripped): a QCM with selectable options
+// and a per-question time budget (§1).
 export interface ExamQuestionPublic {
   id: string;
   type: 'technical' | 'psychotechnical';
   domain: string;
   prompt: string;
   options: string[];
+  timeLimitSeconds: number;
 }
 
 export interface ExamPayload {
@@ -31,6 +37,8 @@ export interface ExamPayload {
   specialtyName: string | null;
   technicalCount: number;
   psychotechnicalCount: number;
+  // Sum of the per-question limits — the total time budget for the attempt.
+  totalTimeSeconds: number;
   questions: ExamQuestionPublic[];
 }
 
@@ -51,6 +59,16 @@ export class ExamService {
       candidateId,
       assessmentId,
     );
+    const publicQuestions: ExamQuestionPublic[] = questions.map((q) => ({
+      // Strip the answer key before it ever leaves the server.
+      id: q.id,
+      type: q.type,
+      domain: q.domain,
+      prompt: q.prompt,
+      options: q.options,
+      timeLimitSeconds: timeLimitForType(q.type),
+    }));
+
     return {
       assessmentId,
       specialtyName,
@@ -58,14 +76,11 @@ export class ExamService {
       psychotechnicalCount: questions.filter(
         (q) => q.type === 'psychotechnical',
       ).length,
-      // Strip the answer key before it ever leaves the server.
-      questions: questions.map((q) => ({
-        id: q.id,
-        type: q.type,
-        domain: q.domain,
-        prompt: q.prompt,
-        options: q.options,
-      })),
+      totalTimeSeconds: publicQuestions.reduce(
+        (sum, q) => sum + q.timeLimitSeconds,
+        0,
+      ),
+      questions: publicQuestions,
     };
   }
 

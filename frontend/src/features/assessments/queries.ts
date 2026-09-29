@@ -142,6 +142,8 @@ export interface ExamQuestion {
   domain: string;
   prompt: string;
   options: string[];
+  // §1 — per-question time budget (seconds), set by the server.
+  timeLimitSeconds: number;
 }
 
 export interface ExamPayload {
@@ -149,6 +151,7 @@ export interface ExamPayload {
   specialtyName: string | null;
   technicalCount: number;
   psychotechnicalCount: number;
+  totalTimeSeconds: number;
   questions: ExamQuestion[];
 }
 

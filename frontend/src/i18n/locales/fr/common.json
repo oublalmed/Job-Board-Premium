@@ -640,7 +640,13 @@
       "submitted": "Évaluation soumise — votre score est disponible.",
       "loadError": "Impossible de charger les questions.",
       "qcmHint": "QCM : sélectionnez la bonne réponse pour chaque question. Toute question sans réponse est comptée comme fausse.",
-      "unanswered": "{{count}} question(s) sans réponse"
+      "unanswered": "{{count}} question(s) sans réponse",
+      "counter": "Question {{n}} / {{total}}",
+      "timerHint": "Chaque question est chronométrée. À la fin du temps imparti, on passe automatiquement à la question suivante.",
+      "timeLeft": "Temps restant",
+      "next": "Question suivante",
+      "finish": "Terminer l'évaluation",
+      "forwardOnly": "Vous ne pourrez pas revenir à une question précédente."
     },
     "resume": "Reprendre une évaluation",
     "assessmentId": "Identifiant de l'évaluation",

@@ -70,6 +70,16 @@ describe('ExamService', () => {
       }
     });
 
+    it('exposes a per-question time limit and a total budget (§1)', async () => {
+      const exam = await service.getExam('cand-1', 'assessment-1');
+      for (const q of exam.questions) {
+        expect(q.timeLimitSeconds).toBeGreaterThan(0);
+        expect(q.timeLimitSeconds).toBe(q.type === 'technical' ? 90 : 60);
+      }
+      // 20 technical × 90 + 10 psychotechnical × 60 = 2400s.
+      expect(exam.totalTimeSeconds).toBe(20 * 90 + 10 * 60);
+    });
+
     it('tolerates a missing test/specialty (specialtyName null)', async () => {
       testRepo.findOne.mockResolvedValue(null);
       const exam = await service.getExam('cand-1', 'assessment-1');

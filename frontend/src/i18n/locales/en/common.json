@@ -640,7 +640,13 @@
       "submitted": "Assessment submitted — your score is available.",
       "loadError": "Could not load the questions.",
       "qcmHint": "Multiple choice: pick the correct answer for each question. Any unanswered question counts as wrong.",
-      "unanswered": "{{count}} unanswered question(s)"
+      "unanswered": "{{count}} unanswered question(s)",
+      "counter": "Question {{n}} / {{total}}",
+      "timerHint": "Each question is timed. When the time runs out, the exam moves on to the next question automatically.",
+      "timeLeft": "Time left",
+      "next": "Next question",
+      "finish": "Finish assessment",
+      "forwardOnly": "You cannot go back to a previous question."
     },
     "resume": "Resume an assessment",
     "assessmentId": "Assessment ID",
