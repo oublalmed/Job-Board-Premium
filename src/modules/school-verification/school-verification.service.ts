@@ -9,9 +9,16 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { SchoolVerification, SchoolVerificationStatus } from './entities/school-verification.entity.js';
+import {
+  SchoolVerification,
+  SchoolVerificationStatus,
+} from './entities/school-verification.entity.js';
 import { CandidateProfile } from '../candidates/entities/candidate-profile.entity.js';
-import { Document, DocumentType, ScanStatus } from '../candidates/entities/document.entity.js';
+import {
+  Document,
+  DocumentType,
+  ScanStatus,
+} from '../candidates/entities/document.entity.js';
 import type { FileScanner } from '../../ports/file-scanner.port.js';
 import { FILE_SCANNER } from '../../ports/file-scanner.port.js';
 import type { ObjectStorage } from '../../ports/object-storage.port.js';
@@ -30,6 +37,10 @@ interface UploadedFile {
 
 const DEFAULT_MAX_SIZE = 8 * 1024 * 1024;
 const DEFAULT_ALLOWED_TYPES = 'application/pdf,image/jpeg,image/png';
+// §2 — OCR confidence (0-100) at/above which a matched school is auto-approved,
+// skipping manual review. Overridable via the `school_verification_auto_approve
+// _min_confidence` setting.
+const DEFAULT_AUTO_APPROVE_MIN_CONFIDENCE = 92;
 
 @Injectable()
 export class SchoolVerificationService {
@@ -139,19 +150,48 @@ export class SchoolVerificationService {
     );
     const match = matchGrandeEcole(ocrResult.text);
 
+    // §2 — auto-approve when the OCR is confident enough AND a reference school
+    // was matched. Below the threshold (or no match) → the manual review flow.
+    const autoApproveMin =
+      (await this.settingsService.getNumber(
+        'school_verification_auto_approve_min_confidence',
+      )) ?? DEFAULT_AUTO_APPROVE_MIN_CONFIDENCE;
+    const autoApprove =
+      match !== null && ocrResult.confidence >= autoApproveMin;
+
     const verification = await this.verificationRepo.save(
       this.verificationRepo.create({
         candidateProfileId: profile.id,
         documentId: document.id,
-        status: SchoolVerificationStatus.PENDING,
+        status: autoApprove
+          ? SchoolVerificationStatus.VERIFIED
+          : SchoolVerificationStatus.PENDING,
         ocrExtractedText: ocrResult.text,
         matchedSchool: match?.school ?? null,
         confidence: ocrResult.confidence,
+        // The decision is recorded on the row itself (status + reviewedAt +
+        // note), so the auto-approval keeps a trace. reviewedBy stays null =
+        // system-decided (no human reviewer).
+        reviewedAt: autoApprove ? new Date() : null,
+        reviewNote: autoApprove
+          ? `Auto-approuvé : OCR ${Math.round(ocrResult.confidence)}% ≥ ${autoApproveMin}% (${match.school})`
+          : null,
       }),
     );
 
+    // Mirror the manual-approval side effect: mark the profile verified and
+    // canonicalize the school name to the matched reference.
+    if (autoApprove) {
+      await this.profileRepo
+        .createQueryBuilder()
+        .update(CandidateProfile)
+        .set({ schoolVerified: true, school: match.school })
+        .where('id = :id', { id: profile.id })
+        .execute();
+    }
+
     this.logger.log(
-      `School verification submitted for user ${userId}, matched=${match?.school ?? 'none'}`,
+      `School verification submitted for user ${userId}, matched=${match?.school ?? 'none'}, autoApproved=${autoApprove}`,
     );
 
     return verification;
@@ -195,7 +235,12 @@ export class SchoolVerificationService {
     adminUserId: string,
     note: string | undefined,
   ): Promise<SchoolVerification> {
-    const verification = await this.claimPendingDecision(id, adminUserId, note, SchoolVerificationStatus.VERIFIED);
+    const verification = await this.claimPendingDecision(
+      id,
+      adminUserId,
+      note,
+      SchoolVerificationStatus.VERIFIED,
+    );
 
     // Canonicalizes the candidate's free-text school entry to the matched
     // reference name on approval — otherwise a verified badge could sit
@@ -224,7 +269,12 @@ export class SchoolVerificationService {
     adminUserId: string,
     note: string | undefined,
   ): Promise<SchoolVerification> {
-    return this.claimPendingDecision(id, adminUserId, note, SchoolVerificationStatus.REJECTED);
+    return this.claimPendingDecision(
+      id,
+      adminUserId,
+      note,
+      SchoolVerificationStatus.REJECTED,
+    );
   }
 
   // Atomic claim, same shape as ContactQuotaService.consumeOneContact: a
@@ -259,9 +309,7 @@ export class SchoolVerificationService {
       if (!existing) {
         throw new NotFoundException('School verification not found');
       }
-      throw new ConflictException(
-        'This submission has already been reviewed',
-      );
+      throw new ConflictException('This submission has already been reviewed');
     }
 
     return this.verificationRepo.findOneOrFail({ where: { id } });
