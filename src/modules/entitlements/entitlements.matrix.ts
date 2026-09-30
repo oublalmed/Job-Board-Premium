@@ -72,7 +72,8 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionPlan, PlanEntitlements> = {
       Feature.SHORTLIST,
       Feature.EXPORT_CANDIDATES,
       Feature.PRIORITY_SUPPORT,
-      Feature.ANTI_CHEAT,
+      // Feature.ANTI_CHEAT — disabled for recruiters (product decision). The
+      // feature and its enum stay in place; re-add here to re-enable per pack.
       Feature.ADVANCED_ANALYTICS,
     ],
     limits: {
@@ -92,7 +93,8 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionPlan, PlanEntitlements> = {
       Feature.SHORTLIST,
       Feature.EXPORT_CANDIDATES,
       Feature.PRIORITY_SUPPORT,
-      Feature.ANTI_CHEAT,
+      // Feature.ANTI_CHEAT — disabled for recruiters (product decision). The
+      // feature and its enum stay in place; re-add here to re-enable per pack.
       Feature.ADVANCED_ANALYTICS,
       Feature.API_ACCESS,
     ],

@@ -67,9 +67,9 @@ describe('EntitlementService (§13)', () => {
     service = module.get(EntitlementService);
   });
 
-  it('grants a Premium (scale) company Anti-cheat', async () => {
+  it('grants a Premium (scale) company advanced analytics, not Enterprise API', async () => {
     expect(
-      await service.hasFeatureForCompany(companyId, Feature.ANTI_CHEAT),
+      await service.hasFeatureForCompany(companyId, Feature.ADVANCED_ANALYTICS),
     ).toBe(true);
     expect(
       await service.hasFeatureForCompany(companyId, Feature.API_ACCESS),
@@ -122,11 +122,11 @@ describe('EntitlementService (§13)', () => {
 
   it('an admin override can revoke a plan feature', async () => {
     overrideRepo.find.mockResolvedValue([
-      { feature: Feature.ANTI_CHEAT, enabled: false },
+      { feature: Feature.JOBS, enabled: false },
     ]);
-    expect(
-      await service.hasFeatureForCompany(companyId, Feature.ANTI_CHEAT),
-    ).toBe(false);
+    expect(await service.hasFeatureForCompany(companyId, Feature.JOBS)).toBe(
+      false,
+    );
   });
 
   it('setOverride upserts', async () => {
@@ -148,9 +148,9 @@ describe('EntitlementService (§13)', () => {
   });
 
   it('resolves the caller company and answers hasFeatureForUser', async () => {
-    expect(await service.hasFeatureForUser('u1', Feature.ANTI_CHEAT)).toBe(
-      true,
-    );
+    expect(
+      await service.hasFeatureForUser('u1', Feature.ADVANCED_ANALYTICS),
+    ).toBe(true);
     expect(recruiterRepo.findOne).toHaveBeenCalledWith({
       where: { userId: 'u1' },
     });

@@ -32,16 +32,17 @@ describe('entitlements matrix (§9)', () => {
     expect(f).not.toContain(Feature.API_ACCESS);
   });
 
-  it('Premium (scale): adds Anti-cheat + advanced analytics', () => {
+  it('Premium (scale): adds advanced analytics, no Anti-cheat (disabled)', () => {
     const f = entitlementsForPlan(SubscriptionPlan.SCALE).features;
-    expect(f).toContain(Feature.ANTI_CHEAT);
     expect(f).toContain(Feature.ADVANCED_ANALYTICS);
+    expect(f).not.toContain(Feature.ANTI_CHEAT);
     expect(f).not.toContain(Feature.API_ACCESS);
   });
 
-  it('Enterprise: adds API access', () => {
+  it('Enterprise: adds API access, no Anti-cheat (disabled)', () => {
     const f = entitlementsForPlan(SubscriptionPlan.ENTERPRISE).features;
     expect(f).toContain(Feature.API_ACCESS);
+    expect(f).not.toContain(Feature.ANTI_CHEAT);
   });
 
   it('limits: evaluations/month 3 → 20 → ∞ → ∞', () => {
