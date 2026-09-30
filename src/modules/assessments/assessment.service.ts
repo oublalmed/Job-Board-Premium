@@ -36,6 +36,15 @@ const PROCTORING_LEAVE_FLAG_THRESHOLD_KEY =
   'anti_cheat_proctoring_leave_threshold';
 const DEFAULT_PROCTORING_LEAVE_FLAG_THRESHOLD = 5;
 
+// §5.3 hard limit — total leave events at or above which the attempt is not
+// merely flagged but VOIDED (status INCIDENT): the candidate left the secure
+// environment so often the attempt can't be trusted. Higher than the soft flag
+// so a couple of accidental blurs never invalidate an honest attempt.
+// Overridable via the settings store.
+const PROCTORING_LEAVE_HARD_THRESHOLD_KEY =
+  'anti_cheat_proctoring_leave_hard_threshold';
+const DEFAULT_PROCTORING_LEAVE_HARD_THRESHOLD = 10;
+
 /** Request-scoped signals used by the anti-cheat multi-account layer. */
 export interface AssessmentStartContext {
   ipAddress?: string | null;
@@ -266,15 +275,23 @@ export class AssessmentService {
       events.windowBlurs,
     );
 
-    const threshold =
-      (await this.settingsService.getNumber(
-        PROCTORING_LEAVE_FLAG_THRESHOLD_KEY,
-      )) ?? DEFAULT_PROCTORING_LEAVE_FLAG_THRESHOLD;
-    const totalLeaves =
-      assessment.tabSwitchCount + assessment.windowBlurCount;
+    const [threshold, hardThreshold] = await Promise.all([
+      this.settingsService
+        .getNumber(PROCTORING_LEAVE_FLAG_THRESHOLD_KEY)
+        .then((v) => v ?? DEFAULT_PROCTORING_LEAVE_FLAG_THRESHOLD),
+      this.settingsService
+        .getNumber(PROCTORING_LEAVE_HARD_THRESHOLD_KEY)
+        .then((v) => v ?? DEFAULT_PROCTORING_LEAVE_HARD_THRESHOLD),
+    ]);
+    const totalLeaves = assessment.tabSwitchCount + assessment.windowBlurCount;
     const wasFlagged = assessment.proctoringFlagged;
     if (totalLeaves >= threshold) {
       assessment.proctoringFlagged = true;
+    }
+    // Hard limit crossed → void the attempt (not just flag it).
+    const invalidated = totalLeaves >= hardThreshold;
+    if (invalidated) {
+      assessment.status = AssessmentStatus.INCIDENT;
     }
 
     const saved = await this.assessmentRepo.save(assessment);
@@ -290,6 +307,20 @@ export class AssessmentService {
           tabSwitchCount: saved.tabSwitchCount,
           windowBlurCount: saved.windowBlurCount,
           threshold,
+        },
+      });
+    }
+    // Audit the auto-invalidation.
+    if (invalidated) {
+      await this.auditService.log({
+        actorId: candidateId,
+        action: AuditAction.ASSESSMENT_INCIDENT,
+        entityType: 'assessment',
+        entityId: saved.id,
+        metadata: {
+          reason: 'proctoring_hard_limit',
+          totalLeaves,
+          hardThreshold,
         },
       });
     }

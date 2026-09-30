@@ -50,6 +50,18 @@ const PSYCHO: ExamQuestion[] = [
   q('psy-12', 'psychotechnical', 'Logique', 'Quel nombre complète : 100, 50, 25, 12,5, ?', ['5', '6', '6,25', '10'], 2),
   q('psy-13', 'psychotechnical', 'Verbal', '« Médecin » est à « Hôpital » ce que « Professeur » est à … ?', ['Élève', 'École', 'Livre', 'Cours'], 1),
   q('psy-14', 'psychotechnical', 'Probabilités', 'Avec un dé à 6 faces, quelle est la probabilité d’obtenir un nombre pair ?', ['1/6', '1/3', '1/2', '2/3'], 2),
+  q('psy-15', 'psychotechnical', 'Logique', 'Quel nombre complète la suite : 1, 2, 4, 8, 16, ?', ['24', '30', '32', '64'], 2),
+  q('psy-16', 'psychotechnical', 'Numérique', 'Combien font 25 % de 200 ?', ['40', '50', '60', '75'], 1),
+  q('psy-17', 'psychotechnical', 'Verbal', '« Chaud » est à « Froid » ce que « Haut » est à … ?', ['Grand', 'Bas', 'Loin', 'Vide'], 1),
+  q('psy-18', 'psychotechnical', 'Logique', 'Quel est l’intrus : 2, 4, 6, 7, 8 ?', ['2', '6', '7', '8'], 2),
+  q('psy-19', 'psychotechnical', 'Numérique', 'Combien font les 3/4 de 60 ?', ['40', '45', '48', '50'], 1),
+  q('psy-20', 'psychotechnical', 'Raisonnement', 'Tous les A sont des B. X est un A. Donc X est …', ['non-B', 'un B', 'parfois un B', 'indéterminé'], 1),
+  q('psy-21', 'psychotechnical', 'Logique', 'Quel nombre complète la suite : 2, 3, 5, 8, 12, ?', ['15', '16', '17', '18'], 2),
+  q('psy-22', 'psychotechnical', 'Numérique', 'Un prix passe de 50 à 60 MAD. Quelle est la hausse ?', ['10 %', '16 %', '20 %', '25 %'], 2),
+  q('psy-23', 'psychotechnical', 'Verbal', 'Quelle lettre complète : A, B, D, G, K, ?', ['N', 'O', 'P', 'Q'], 2),
+  q('psy-24', 'psychotechnical', 'Logique', 'Si 5 machines font 5 pièces en 5 minutes, combien de temps pour que 100 machines fassent 100 pièces ?', ['5 min', '20 min', '100 min', '1 min'], 0),
+  q('psy-25', 'psychotechnical', 'Probabilités', 'On lance 2 pièces. Quelle est la probabilité d’obtenir deux faces ?', ['1/2', '1/3', '1/4', '2/3'], 2),
+  q('psy-26', 'psychotechnical', 'Numérique', 'Quelle est la moyenne de 10, 20, 30 et 40 ?', ['20', '25', '30', '35'], 1),
 ];
 
 // ---- Shared technical (applicable to any IT profile) ----
@@ -86,6 +98,18 @@ const SHARED_TECH: ExamQuestion[] = [
   q('sh-30', 'technical', 'Concurrence', 'À quoi sert un mutex ?', ['Accélérer le CPU', 'Protéger une section critique', 'Compresser la mémoire', 'Créer des threads'], 1),
   q('sh-31', 'technical', 'API', 'Une API REST est généralement …', ['avec état', 'sans état (stateless)', 'monolithique', 'chiffrée par défaut'], 1),
   q('sh-32', 'technical', 'Données', 'Le format JSON représente …', ['du binaire', 'des paires clé/valeur textuelles', 'des images', 'du SQL'], 1),
+  q('sh-33', 'technical', 'Algorithmes', 'Complexité moyenne du tri fusion (merge sort) ?', ['O(n)', 'O(n log n)', 'O(n²)', 'O(log n)'], 1),
+  q('sh-34', 'technical', 'Structures de données', 'Quelle structure implémente efficacement une file de priorité ?', ['Pile', 'File', 'Tas (heap)', 'Liste chaînée'], 2),
+  q('sh-35', 'technical', 'HTTP', 'Que signifie le code HTTP 500 ?', ['Succès', 'Erreur client', 'Redirection', 'Erreur serveur'], 3),
+  q('sh-36', 'technical', 'SQL', 'Quelle commande vide une table en gardant sa structure ?', ['DROP', 'DELETE *', 'TRUNCATE', 'REMOVE'], 2),
+  q('sh-37', 'technical', 'Réseaux', 'Quel port TCP est utilisé par défaut pour HTTPS ?', ['80', '443', '22', '8080'], 1),
+  q('sh-38', 'technical', 'Sécurité', 'Comment se protège-t-on d’une attaque CSRF ?', ['CORS', 'Un jeton anti-CSRF', 'Le base64', 'La compression'], 1),
+  q('sh-39', 'technical', 'POO', 'Une relation « est-un » entre classes correspond à …', ['la composition', 'l’héritage', 'l’agrégation', 'l’association'], 1),
+  q('sh-40', 'technical', 'Git', 'Quelle commande annule un commit en créant un commit inverse ?', ['git reset', 'git revert', 'git checkout', 'git stash'], 1),
+  q('sh-41', 'technical', 'Bases de données', 'Dans ACID, quelle propriété garantit le « tout ou rien » ?', ['Cohérence', 'Atomicité', 'Isolation', 'Durabilité'], 1),
+  q('sh-42', 'technical', 'Concurrence', 'Un interblocage (deadlock) suppose notamment …', ['un seul thread', 'une attente circulaire', 'du code sans verrou', 'un cache CPU'], 1),
+  q('sh-43', 'technical', 'Algorithmes', 'Complexité d’une recherche linéaire dans un tableau ?', ['O(1)', 'O(log n)', 'O(n)', 'O(n²)'], 2),
+  q('sh-44', 'technical', 'API', 'Comment versionne-t-on couramment une API REST ?', ['Via le cookie', 'Via le chemin (/v1)', 'Via le user-agent', 'Via le port'], 1),
 ];
 
 // ---- Profile-specific technical ----

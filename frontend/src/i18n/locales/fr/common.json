@@ -719,6 +719,10 @@
       "nextEligible": "Prochaine tentative possible à partir du {{date}}.",
       "cooldownInfo": "Une évaluation peut être repassée tous les {{days}} jours.",
       "scoreExpires": "Ce score est valable jusqu'au {{date}}."
+    },
+    "invalidated": {
+      "time": "Temps imparti dépassé — votre tentative a été invalidée.",
+      "proctoring": "Sorties répétées de l’environnement sécurisé — votre tentative a été invalidée."
     }
   },
   "secureExam": {

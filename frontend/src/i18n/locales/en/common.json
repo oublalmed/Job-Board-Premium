@@ -719,6 +719,10 @@
       "nextEligible": "Next attempt available from {{date}}.",
       "cooldownInfo": "An assessment can be retaken every {{days}} days.",
       "scoreExpires": "This score is valid until {{date}}."
+    },
+    "invalidated": {
+      "time": "Time limit exceeded — your attempt was voided.",
+      "proctoring": "Too many exits from the secure environment — your attempt was voided."
     }
   },
   "secureExam": {

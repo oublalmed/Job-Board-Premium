@@ -563,6 +563,24 @@ describe('AssessmentService', () => {
       );
     });
 
+    it('voids the attempt (INCIDENT) when leaves cross the hard limit (default 10)', async () => {
+      assessmentRepo.findOne.mockResolvedValue(inProgress());
+
+      const result = await service.recordProctoringEvents(
+        candidateId,
+        'assessment-1',
+        { tabSwitches: 6, windowBlurs: 6 },
+      );
+
+      expect(result.status).toBe(AssessmentStatus.INCIDENT);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: AuditAction.ASSESSMENT_INCIDENT,
+          metadata: expect.objectContaining({ reason: 'proctoring_hard_limit' }),
+        }),
+      );
+    });
+
     it('does not re-audit an already-flagged attempt', async () => {
       assessmentRepo.findOne.mockResolvedValue(
         inProgress({ tabSwitchCount: 5, proctoringFlagged: true }),

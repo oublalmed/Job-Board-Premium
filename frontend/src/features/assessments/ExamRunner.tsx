@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { ApiError } from '@/lib/api';
 import { useAssessmentExam, useSubmitExam, type ExamQuestion } from './queries';
 import type { SecureExam } from './use-secure-exam';
 
@@ -81,12 +82,15 @@ function QuestionTimer({
 export function ExamRunner({
   assessmentId,
   onCompleted,
+  onInvalidated,
   secureExam,
   onReportIncident,
   reportPending = false,
 }: {
   assessmentId: string;
   onCompleted: () => void;
+  // Called when the server voids the attempt (e.g. 403 TIME_EXCEEDED on submit).
+  onInvalidated?: (reason: 'time') => void;
   secureExam?: SecureExam;
   onReportIncident?: () => void;
   reportPending?: boolean;
@@ -112,9 +116,15 @@ export function ExamRunner({
           toast(t('assessments.exam.submitted'), 'success');
           onCompleted();
         },
-        onError: () => {
+        onError: (err) => {
           doneRef.current = false;
-          toast(t('common.error'), 'error');
+          // Server voided the attempt (time budget exceeded) → let the parent
+          // close the exam and show the invalidation notice.
+          if (err instanceof ApiError && err.status === 403) {
+            onInvalidated?.('time');
+          } else {
+            toast(t('common.error'), 'error');
+          }
         },
       },
     );

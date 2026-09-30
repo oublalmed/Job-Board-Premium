@@ -14,7 +14,7 @@ import { examForSpecialty } from '../assessment-questions.js';
 
 describe('ExamService', () => {
   let service: ExamService;
-  let assessmentRepo: { findOne: jest.Mock };
+  let assessmentRepo: { findOne: jest.Mock; save: jest.Mock };
   let testRepo: { findOne: jest.Mock };
   let specialtyRepo: { findOne: jest.Mock };
   let webhookService: { finalizeAssessment: jest.Mock };
@@ -30,6 +30,7 @@ describe('ExamService', () => {
   beforeEach(async () => {
     assessmentRepo = {
       findOne: jest.fn().mockResolvedValue({ ...baseAssessment }),
+      save: jest.fn((a: unknown) => Promise.resolve(a)),
     };
     testRepo = {
       findOne: jest
@@ -126,6 +127,31 @@ describe('ExamService', () => {
     it('handles an empty answer map without throwing', async () => {
       const result = await service.submitExam('cand-1', 'assessment-1', {});
       expect(result.scoreValue).toBe(0);
+    });
+
+    it('voids the attempt (INCIDENT) when submitted past the time budget', async () => {
+      // Budget = 20×90 + 10×60 = 2400s (+120 grace). Started 4000s ago → over.
+      assessmentRepo.findOne.mockResolvedValue({
+        ...baseAssessment,
+        startedAt: new Date(Date.now() - 4000 * 1000),
+      });
+      await expect(
+        service.submitExam('cand-1', 'assessment-1', {}),
+      ).rejects.toThrow(ForbiddenException);
+      expect(assessmentRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: AssessmentStatus.INCIDENT }),
+      );
+      expect(webhookService.finalizeAssessment).not.toHaveBeenCalled();
+    });
+
+    it('grades normally when submitted within the budget (recent start)', async () => {
+      assessmentRepo.findOne.mockResolvedValue({
+        ...baseAssessment,
+        startedAt: new Date(Date.now() - 60 * 1000),
+      });
+      const result = await service.submitExam('cand-1', 'assessment-1', {});
+      expect(result.scoreValue).toBe(0);
+      expect(webhookService.finalizeAssessment).toHaveBeenCalledTimes(1);
     });
   });
 
