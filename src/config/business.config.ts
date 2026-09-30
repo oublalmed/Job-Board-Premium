@@ -54,6 +54,28 @@ export const businessConfig = registerAs('business', () => ({
     process.env['NOTIFICATION_RETENTION_DAYS'] ?? '90',
     10,
   ),
+  // ENF-12 — retention windows for the *other* transient record types the
+  // daily sweep purges. None carry a legal-retention obligation (unlike the
+  // audit log, invoices or data-requests, which are never touched):
+  //  • dead refresh tokens (revoked or expired) — session hygiene; live
+  //    sessions are kept regardless of age;
+  //  • stale profile-view anti-spam cooldown rows — the 24h claim window has
+  //    long passed, so purging them is behaviourally inert (a later view just
+  //    re-creates the row via UPSERT);
+  //  • processed-webhook idempotency markers — safe well beyond the payment
+  //    provider's ~72h redelivery horizon (Layer 2 business guards still hold).
+  refreshTokenRetentionDays: parseInt(
+    process.env['REFRESH_TOKEN_RETENTION_DAYS'] ?? '30',
+    10,
+  ),
+  profileViewCooldownRetentionDays: parseInt(
+    process.env['PROFILE_VIEW_COOLDOWN_RETENTION_DAYS'] ?? '30',
+    10,
+  ),
+  webhookEventRetentionDays: parseInt(
+    process.env['WEBHOOK_EVENT_RETENTION_DAYS'] ?? '90',
+    10,
+  ),
   // EF-CAND-04 — external profile-link accessibility verification. Driver
   // selects the outbound prober: 'http' (default) performs a real SSRF-guarded
   // request; 'stub' keeps CI/dev hermetic (no network). Timeout bounds each

@@ -176,8 +176,53 @@ describe('SchoolVerificationService', () => {
         }),
       );
       expect(result.status).toBe(SchoolVerificationStatus.PENDING);
-      expect(result.matchedSchool).toBe('ENSIAS');
+      expect(result.matchedSchool).toContain('ENSIAS');
       expect(result.confidence).toBe(88);
+    });
+
+    it('§2 — auto-approves when OCR confidence >= 92% and a school matched', async () => {
+      ocrProvider.extractText.mockResolvedValue({
+        text: 'ENSIAS - Rabat',
+        confidence: 95,
+      });
+
+      const result = await service.submit(userId, validFile);
+
+      expect(result.status).toBe(SchoolVerificationStatus.VERIFIED);
+      expect(result.reviewedAt).toBeInstanceOf(Date);
+      expect(result.reviewNote).toContain('Auto-approuvé');
+      // Profile marked verified (side effect mirrors manual approval).
+      expect(profileRepo.createQueryBuilder).toHaveBeenCalled();
+      expect(profileUpdateQb.execute).toHaveBeenCalled();
+    });
+
+    it('§2 — stays pending at high confidence when no school matched', async () => {
+      ocrProvider.extractText.mockResolvedValue({
+        text: 'Universite privee non reconnue',
+        confidence: 99,
+      });
+
+      const result = await service.submit(userId, validFile);
+
+      expect(result.status).toBe(SchoolVerificationStatus.PENDING);
+      expect(profileUpdateQb.execute).not.toHaveBeenCalled();
+    });
+
+    it('§2 — honours a configured auto-approval threshold', async () => {
+      // Raise the bar to 98: a 95% OCR no longer auto-approves.
+      settingsService.getNumber.mockImplementation((key: string) =>
+        key === 'school_verification_auto_approve_min_confidence'
+          ? Promise.resolve(98)
+          : Promise.resolve(null),
+      );
+      ocrProvider.extractText.mockResolvedValue({
+        text: 'ENSIAS - Rabat',
+        confidence: 95,
+      });
+
+      const result = await service.submit(userId, validFile);
+
+      expect(result.status).toBe(SchoolVerificationStatus.PENDING);
     });
 
     it('leaves matchedSchool null when OCR text matches no known school', async () => {

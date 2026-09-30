@@ -37,6 +37,11 @@ export class Company {
   @Column({ default: false })
   verified!: boolean;
 
+  // §2 — anti-cheat option toggle (only effective when the company's pack
+  // includes the ANTI_CHEAT feature). Defaults on.
+  @Column({ name: 'anti_cheat_enabled', default: true })
+  antiCheatEnabled!: boolean;
+
   // Public-facing company profile fields ("Mon Entreprise"), also reused by
   // the landing "Ils nous ont fait confiance" section. All nullable: a
   // company can exist (created at recruiter signup) before it fills these in.

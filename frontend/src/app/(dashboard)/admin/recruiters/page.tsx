@@ -7,10 +7,7 @@ import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  useAssignableCompanies,
-  type SubscriptionPlan,
-} from '@/features/admin/subscriptions';
+import { useAssignableCompanies } from '@/features/admin/subscriptions';
 import {
   useCreateRecruiter,
   type CreatedRecruiter,
@@ -21,8 +18,6 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
 };
-
-const PLANS: SubscriptionPlan[] = ['starter', 'growth', 'scale', 'enterprise'];
 
 const fieldClass =
   'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
@@ -38,35 +33,16 @@ export default function AdminRecruitersPage() {
   const [companyMode, setCompanyMode] = useState<'new' | 'existing'>('new');
   const [companyName, setCompanyName] = useState('');
   const [companyId, setCompanyId] = useState('');
-  const [assignPack, setAssignPack] = useState(false);
-  const [plan, setPlan] = useState<SubscriptionPlan>('starter');
-  const [quota, setQuota] = useState('');
   const [created, setCreated] = useState<CreatedRecruiter | null>(null);
-
-  const isEnterprise = plan === 'enterprise';
-  const quotaRequired = assignPack && isEnterprise;
 
   const companyValid =
     companyMode === 'new' ? companyName.trim().length >= 2 : !!companyId;
   const canSubmit =
-    /\S+@\S+\.\S+/.test(email) &&
-    companyValid &&
-    (!quotaRequired || quota.trim() !== '') &&
-    !create.isPending;
+    /\S+@\S+\.\S+/.test(email) && companyValid && !create.isPending;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
-
-    let contactQuota: number | undefined;
-    if (assignPack && quota.trim() !== '') {
-      const n = Number(quota);
-      if (!Number.isFinite(n) || n < 0) {
-        toast(t('common.error'), 'error');
-        return;
-      }
-      contactQuota = Math.floor(n);
-    }
 
     create.mutate(
       {
@@ -74,8 +50,6 @@ export default function AdminRecruitersPage() {
         position: position.trim() || undefined,
         companyId: companyMode === 'existing' ? companyId : undefined,
         companyName: companyMode === 'new' ? companyName.trim() : undefined,
-        plan: assignPack ? plan : undefined,
-        contactQuota: assignPack ? contactQuota : undefined,
       },
       {
         onSuccess: (res) => {
@@ -86,8 +60,6 @@ export default function AdminRecruitersPage() {
           setPosition('');
           setCompanyName('');
           setCompanyId('');
-          setQuota('');
-          setAssignPack(false);
         },
         onError: (err) =>
           toast(
@@ -216,56 +188,11 @@ export default function AdminRecruitersPage() {
               )}
             </div>
 
-            {/* Optional pack assignment */}
-            <label className="flex items-center gap-2 text-sm text-foreground">
-              <input
-                type="checkbox"
-                className="size-4 accent-primary"
-                checked={assignPack}
-                onChange={(e) => setAssignPack(e.target.checked)}
-              />
-              {t('adminRecruiters.assignPack')}
-            </label>
-
-            {assignPack && (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t('adminRecruiters.plan')}
-                  </span>
-                  <select
-                    className={fieldClass}
-                    value={plan}
-                    onChange={(e) => setPlan(e.target.value as SubscriptionPlan)}
-                  >
-                    {PLANS.map((p) => (
-                      <option key={p} value={p}>
-                        {t(`adminSubscriptions.plan_${p}`)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t('adminRecruiters.quota')}
-                    {quotaRequired ? ' *' : ''}
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    className={fieldClass}
-                    value={quota}
-                    onChange={(e) => setQuota(e.target.value)}
-                    placeholder={
-                      quotaRequired
-                        ? t('adminRecruiters.quotaRequiredPlaceholder')
-                        : t('adminRecruiters.quotaDefault')
-                    }
-                  />
-                </label>
-              </div>
-            )}
+            {/* Packs are assigned to the company, not the recruiter — the
+                admin does that on the Subscriptions screen. */}
+            <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              {t('adminRecruiters.packHint')}
+            </p>
 
             <div>
               <Button type="submit" className="gap-2" disabled={!canSubmit}>

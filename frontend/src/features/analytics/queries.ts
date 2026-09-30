@@ -25,16 +25,75 @@ export interface Funnel {
 // it uses fetch + bearer. Regenerate with `npm run generate:api` to type it.
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+async function authedGet<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { Authorization: `Bearer ${getAccessToken()}` },
+  });
+  if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  return (await res.json()) as T;
+}
+
 export function useFunnel(days?: number) {
   return useQuery({
     queryKey: ['analytics', 'funnel', days ?? 'all'],
-    queryFn: async (): Promise<Funnel> => {
-      const query = days ? `?days=${days}` : '';
-      const res = await fetch(`${BASE}/api/v1/admin/analytics/funnel${query}`, {
-        headers: { Authorization: `Bearer ${getAccessToken()}` },
-      });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      return (await res.json()) as Funnel;
-    },
+    queryFn: () =>
+      authedGet<Funnel>(
+        `/api/v1/admin/analytics/funnel${days ? `?days=${days}` : ''}`,
+      ),
+  });
+}
+
+// ---- §4 recruiter analytics ----
+
+export type ApplicationStatusKey =
+  | 'applied'
+  | 'under_review'
+  | 'shortlisted'
+  | 'interview'
+  | 'rejected'
+  | 'accepted';
+
+export interface RecruiterAnalytics {
+  rangeDays: number;
+  jobs: { total: number; published: number; draft: number; closed: number };
+  applications: {
+    total: number;
+    byStatus: Record<ApplicationStatusKey, number>;
+  };
+  shortlist: { total: number };
+  conversations: { total: number };
+  contacts: { used: number; quota: number | null };
+  applicationsTrend: { date: string; count: number }[];
+  topOffers: { id: string; title: string; applications: number }[];
+}
+
+export function useRecruiterAnalytics(days = 30, enabled = true) {
+  return useQuery({
+    queryKey: ['analytics', 'recruiter', days],
+    enabled,
+    queryFn: () =>
+      authedGet<RecruiterAnalytics>(
+        `/api/v1/recruiter/analytics/overview?days=${days}`,
+      ),
+  });
+}
+
+// ---- §5 admin platform overview ----
+
+export type PlanKey = 'starter' | 'growth' | 'scale' | 'enterprise';
+
+export interface AdminOverview {
+  users: { total: number; candidates: number; recruiters: number };
+  companies: { total: number };
+  subscriptions: { active: number; byPlan: Record<PlanKey, number> };
+  jobs: { total: number; published: number };
+  applications: { total: number };
+  assessments: { total: number; completed: number };
+}
+
+export function useAdminOverview() {
+  return useQuery({
+    queryKey: ['analytics', 'admin', 'overview'],
+    queryFn: () => authedGet<AdminOverview>('/api/v1/admin/analytics/overview'),
   });
 }

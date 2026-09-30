@@ -38,9 +38,40 @@ vi.mock('@/features/billing/queries', () => ({
   useContactQuota: () => ({ data: quota, isLoading: false }),
 }));
 
+// ENF-11 — a small, fixed exam so the interactive QCM (radio-like buttons) can
+// be checked by axe without a network/query client.
+const examPayload = {
+  assessmentId: 'a1',
+  specialtyName: 'Software Engineer',
+  technicalCount: 1,
+  psychotechnicalCount: 1,
+  questions: [
+    {
+      id: 'q1',
+      type: 'technical' as const,
+      domain: 'HTTP',
+      prompt: 'Que signifie le code HTTP 404 ?',
+      options: ['Succès', 'Ressource introuvable'],
+    },
+    {
+      id: 'q2',
+      type: 'psychotechnical' as const,
+      domain: 'Logique',
+      prompt: 'Suite : 2, 6, 12, 20, ?',
+      options: ['30', '28'],
+    },
+  ],
+};
+vi.mock('@/features/assessments/queries', () => ({
+  useAssessmentExam: () => ({ data: examPayload, isLoading: false, isError: false }),
+  useSubmitExam: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+vi.mock('@/components/ui/toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
+
 import { CandidateScoreBadge } from '@/features/candidates/CandidateScoreBadge';
 import { AnonymizedHint } from '@/features/candidates/AnonymizedHint';
 import { SubscriptionStatusCard } from '@/features/billing/SubscriptionStatusCard';
+import { ExamRunner } from '@/features/assessments/ExamRunner';
 
 async function expectNoViolations(ui: React.ReactElement) {
   const { container } = render(ui);
@@ -61,5 +92,11 @@ describe('a11y (ENF-11) — axe has no violations', () => {
 
   it('SubscriptionStatusCard (active)', async () => {
     await expectNoViolations(<SubscriptionStatusCard />);
+  });
+
+  it('ExamRunner (interactive QCM)', async () => {
+    await expectNoViolations(
+      <ExamRunner assessmentId="a1" onCompleted={() => {}} />,
+    );
   });
 });

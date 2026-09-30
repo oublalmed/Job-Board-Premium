@@ -35,6 +35,7 @@ import {
 } from '@/features/candidates/queries';
 import { CandidateScoreBadge } from '@/features/candidates/CandidateScoreBadge';
 import { MessagePopup } from '@/features/messages/MessagePopup';
+import { AntiCheatCard } from '@/features/anti-cheat/AntiCheatCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -280,6 +281,9 @@ export default function CandidateDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* §2 — anti-cheat indicators (only shown with the ANTI_CHEAT feature). */}
+      <AntiCheatCard candidateProfileId={candidate.id} />
 
       {candidate.skills.length > 0 && (
         <Card>

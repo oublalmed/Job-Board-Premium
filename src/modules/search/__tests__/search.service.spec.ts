@@ -235,8 +235,8 @@ describe('SearchService', () => {
           makeProfileEntity({ id: 'p2' }),
         ],
         raw: [
-          { bestScoreValue: '90', bestScorePercentile: '95' },
-          { bestScoreValue: '80', bestScorePercentile: '85' },
+          { bestScoreValue: '90', bestScorePercentile: '95', sortKey: '90' },
+          { bestScoreValue: '80', bestScorePercentile: '85', sortKey: '80' },
         ],
       });
 
@@ -249,19 +249,20 @@ describe('SearchService', () => {
       const decoded = JSON.parse(
         Buffer.from(result.nextCursor as string, 'base64url').toString('utf8'),
       );
-      expect(decoded).toEqual({ score: 90, id: 'p1' });
+      // §7 — cursor now carries the sort key (as a string) + id.
+      expect(decoded).toEqual({ key: '90', id: 'p1' });
     });
 
     it('applies a keyset condition when a valid cursor is provided', async () => {
       const cursor = Buffer.from(
-        JSON.stringify({ score: 42, id: 'profile-9' }),
+        JSON.stringify({ key: '42', id: 'profile-9' }),
       ).toString('base64url');
 
       await service.searchCandidates({ cursor });
 
       expect(mainQb.andWhere).toHaveBeenCalledWith(
         expect.stringContaining('best_score.best_value'),
-        { cursorScore: 42, cursorId: 'profile-9' },
+        { cursorKey: 42, cursorId: 'profile-9' },
       );
     });
 
@@ -269,6 +270,36 @@ describe('SearchService', () => {
       await expect(
         service.searchCandidates({ cursor: 'not-valid-base64-json' }),
       ).resolves.toBeDefined();
+    });
+  });
+
+  describe('§7 tri + §8 filtre école', () => {
+    it('defaults to score_desc (ORDER BY sortKey DESC)', async () => {
+      await service.searchCandidates({});
+      expect(mainQb.orderBy).toHaveBeenCalledWith('"sortKey"', 'DESC');
+    });
+
+    it('score_asc flips the sort direction', async () => {
+      await service.searchCandidates({ sort: 'score_asc' });
+      expect(mainQb.orderBy).toHaveBeenCalledWith('"sortKey"', 'ASC');
+    });
+
+    it('recent sorts by registration date', async () => {
+      await service.searchCandidates({ sort: 'recent' });
+      expect(mainQb.addSelect).toHaveBeenCalledWith(
+        'profile.created_at',
+        'sortKey',
+      );
+      expect(mainQb.orderBy).toHaveBeenCalledWith('"sortKey"', 'DESC');
+    });
+
+    it('filters by one or more schools (ILIKE OR, combinable)', async () => {
+      await service.searchCandidates({ schools: ['ENSIAS', 'EHTP'] });
+      const call = mainQb.andWhere.mock.calls.find((c) =>
+        String(c[0]).includes('profile.school ILIKE'),
+      );
+      expect(call).toBeDefined();
+      expect(call?.[1]).toEqual({ school0: '%ENSIAS%', school1: '%EHTP%' });
     });
   });
 

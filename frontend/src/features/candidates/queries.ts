@@ -38,6 +38,10 @@ function buildQuery(
   const salaryMax = Number(filters.salaryMax);
   if (filters.salaryMax.trim() && Number.isFinite(salaryMax) && salaryMax >= 0)
     params.salaryMax = salaryMax;
+  // §8 — school filter (combinable).
+  if (filters.schools.length > 0) params.schools = filters.schools;
+  // §7 — sort; omit the default so the URL stays clean.
+  if (filters.sort && filters.sort !== 'score_desc') params.sort = filters.sort;
   if (cursor) params.cursor = cursor;
   return params;
 }

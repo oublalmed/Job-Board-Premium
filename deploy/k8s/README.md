@@ -16,4 +16,15 @@ IaC, ENF-05 TLS in transit).
 Secrets (`cobalt-secrets`) are provisioned by `external-secrets.yaml` (or any
 equivalent) — never committed here.
 
-Promote to Helm/Terraform for real environments.
+## Promotion (ENF-13)
+
+For real environments, use the packaged, parameterised promotion of these
+manifests instead of hand-editing the raw YAML:
+
+- **`../helm/cobalt`** — a Helm chart templating all of the above with a
+  `values.yaml` (cloud-agnostic; `helm lint` + `helm template` clean).
+- **`../terraform`** — a Terraform module that installs the chart via
+  `helm_release`, for stateful, reproducible promotion from CI
+  (`terraform fmt`/`validate` clean).
+
+These raw manifests remain as the readable reference the chart mirrors.

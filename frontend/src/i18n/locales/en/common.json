@@ -10,6 +10,10 @@
     "en": "EN",
     "ar": "AR"
   },
+  "entitlements": {
+    "noAccessTitle": "Feature not included",
+    "noAccessBody": "This feature isn't included in your plan. Upgrade to a higher pack to unlock it."
+  },
   "nav": {
     "label": "Main navigation",
     "home": "Home",
@@ -23,7 +27,10 @@
     "login": "Log in",
     "register": "Create an account",
     "company": "My company",
-    "subscription": "Subscription"
+    "subscription": "Subscription",
+    "jobsRecruiter": "Job offers",
+    "jobsCandidate": "Job offers",
+    "analytics": "Analytics"
   },
   "layout": {
     "skipToContent": "Skip to main content"
@@ -229,6 +236,15 @@
     "contact": "Contact",
     "viewProfile": "View profile",
     "loadMore": "Load more",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{n}}",
+    "sortBy": "Sort by",
+    "sortScoreDesc": "Score (high → low)",
+    "sortScoreAsc": "Score (low → high)",
+    "sortRecent": "Registration date",
+    "sortActive": "Last activity",
+    "schools": "Schools",
     "results": "{{count}} results",
     "rankHeader": "Ranking",
     "school": "School",
@@ -625,7 +641,14 @@
       "submitted": "Assessment submitted — your score is available.",
       "loadError": "Could not load the questions.",
       "qcmHint": "Multiple choice: pick the correct answer for each question. Any unanswered question counts as wrong.",
-      "unanswered": "{{count}} unanswered question(s)"
+      "unanswered": "{{count}} unanswered question(s)",
+      "counter": "Question {{n}} / {{total}}",
+      "timerHint": "Each question is timed. When the time runs out, the exam moves on to the next question automatically.",
+      "timeLeft": "Time left",
+      "next": "Next question",
+      "finish": "Finish assessment",
+      "forwardOnly": "You cannot go back to a previous question.",
+      "fullscreenPrompt": "Return to fullscreen"
     },
     "resume": "Resume an assessment",
     "assessmentId": "Assessment ID",
@@ -780,6 +803,7 @@
     "companyNamePlaceholder": "Company name",
     "companySelect": "Select a company",
     "assignPack": "Assign a pack now",
+    "packHint": "Subscription packs are assigned to the company, from the Subscriptions screen — not to the recruiter.",
     "plan": "Pack",
     "quota": "Contact quota",
     "quotaDefault": "Pack default",
@@ -790,6 +814,41 @@
     "successTitle": "Recruiter created",
     "successBody": "The account for {{email}} ({{company}}) has been created.",
     "successMail": "An email with their credentials and a link to set their password has been sent."
+  },
+  "antiCheat": {
+    "title": "Assessment integrity",
+    "level_low": "Low suspicion",
+    "level_medium": "Medium suspicion",
+    "level_high": "High suspicion",
+    "disabled": "Anti-cheat off",
+    "disabledHint": "The anti-cheat option is turned off for your company.",
+    "events": "Suspicious events",
+    "tabSwitch": "Tab switches",
+    "windowBlur": "Focus losses",
+    "multiAccount": "Multi-account",
+    "settingTitle": "Anti-cheat",
+    "settingHint": "Monitors tab switches and focus losses during assessments.",
+    "settingSaved": "Setting saved"
+  },
+  "adminPacks": {
+    "title": "Pack management",
+    "subtitle": "Pack, features, limits and overrides per company",
+    "selectCompany": "Company",
+    "selectPlaceholder": "Select a company…",
+    "plan": "Pack",
+    "status": "Status",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "users": "Users",
+    "features": "Features",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "sourcePackage": "from pack",
+    "sourceOverride": "admin override",
+    "forceEnable": "Force enable",
+    "forceDisable": "Force disable",
+    "resetToPlan": "Reset to pack",
+    "saved": "Change saved"
   },
   "adminSubscriptions": {
     "navLabel": "Subscriptions",
@@ -987,5 +1046,136 @@
         "rejected": "Rejected"
       }
     }
+  },
+  "jobs": {
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "closed": "Closed"
+    },
+    "appStatus": {
+      "applied": "Applied",
+      "under_review": "Under review",
+      "shortlisted": "Shortlisted",
+      "interview": "Interview",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "contract": {
+      "CDI": "Permanent (CDI)",
+      "CDD": "Fixed-term (CDD)",
+      "PFE": "Final project (PFE)",
+      "Freelance": "Freelance",
+      "Internship": "Internship"
+    },
+    "experience": {
+      "junior": "Junior",
+      "mid": "Mid-level",
+      "senior": "Senior",
+      "lead": "Lead"
+    },
+    "form": {
+      "title": "Job title",
+      "titlePlaceholder": "e.g. Backend Node.js Engineer",
+      "titleError": "The title must be at least 2 characters.",
+      "description": "Description",
+      "descriptionPlaceholder": "Responsibilities, ideal profile, benefits…",
+      "location": "Location",
+      "locationPlaceholder": "e.g. Casablanca",
+      "deadline": "Deadline",
+      "contractType": "Contract type",
+      "experience": "Experience level",
+      "skills": "Required skills",
+      "skillsPlaceholder": "e.g. Node.js, PostgreSQL, Docker",
+      "skillsHint": "Separate skills with commas.",
+      "any": "Any"
+    },
+    "recruiter": {
+      "title": "Job offers",
+      "subtitle": "Create and manage your offers, and track the applications you receive.",
+      "create": "New offer",
+      "created": "Offer created.",
+      "updated": "Offer updated.",
+      "published": "Offer published.",
+      "closed": "Offer closed.",
+      "edit": "Edit",
+      "editTitle": "Edit offer",
+      "backToList": "Back to offers",
+      "notFound": "Offer not found.",
+      "publish": "Publish",
+      "close": "Close",
+      "emptyTitle": "No offers yet",
+      "emptyBody": "Create your first offer to start receiving applications.",
+      "applicationsCount": "{{count}} application(s)",
+      "applicationsTitle": "Applications",
+      "noApplications": "No applications for this offer yet.",
+      "anonymousCandidate": "Candidate",
+      "changeStatus": "Status:",
+      "statusUpdated": "Status updated."
+    },
+    "candidate": {
+      "title": "Job offers",
+      "subtitle": "Browse published offers and apply in one click.",
+      "browseTab": "Offers",
+      "myApplicationsTab": "My applications",
+      "searchLabel": "Keyword",
+      "searchPlaceholder": "Title, technology…",
+      "searchButton": "Search",
+      "resultCount": "{{count}} offer(s) found",
+      "loadMore": "Load more",
+      "noResultsTitle": "No offers found",
+      "noResultsBody": "Adjust your search criteria to see more results.",
+      "noApplicationsTitle": "No applications",
+      "noApplicationsBody": "You haven't applied to any offer yet.",
+      "backToList": "Back to offers",
+      "notFound": "Offer not found or unavailable.",
+      "applyTitle": "Apply to this offer",
+      "applyButton": "Send my application",
+      "applySuccess": "Application sent successfully.",
+      "coverLetterPlaceholder": "Cover letter (optional)…",
+      "alreadyApplied": "You have already applied to this offer.",
+      "alreadyAppliedTitle": "You have already applied",
+      "completeProfile": "Complete your profile before applying.",
+      "notEligible": "You don't meet the requirements to apply yet.",
+      "eligibilityTitle": "Requirements to apply",
+      "needProfile": "Complete your profile: {{completeness}}% / {{threshold}}% required",
+      "completeProfileCta": "Complete my profile",
+      "needExam": "Take at least one assessment",
+      "takeExamCta": "Take an assessment"
+    },
+    "detail": {
+      "deadline": "Deadline: {{date}}",
+      "appliedOn": "Applied on {{date}}"
+    }
+  },
+  "recruiterAnalytics": {
+    "title": "Analytics",
+    "subtitle": "Your offers, applications and contacts at a glance.",
+    "rangeDays": "{{days}}d",
+    "publishedJobs": "Published offers",
+    "totalJobs": "{{count}} total",
+    "applications": "Applications",
+    "shortlist": "Shortlist",
+    "conversations": "Conversations",
+    "contactsUsed": "Contacts used",
+    "unlimited": "Unlimited",
+    "byStatus": "Applications by status",
+    "trend": "Applications over time",
+    "topOffers": "Most-applied offers",
+    "applicationsCount": "{{count}} application(s)",
+    "noOffers": "No offers yet.",
+    "empty": "No data yet."
+  },
+  "adminAnalytics": {
+    "users": "Users",
+    "usersBreakdown": "{{candidates}} candidates · {{recruiters}} recruiters",
+    "companies": "Companies",
+    "activeSubscriptions": "{{count}} active subscription(s)",
+    "jobs": "Offers",
+    "publishedJobs": "{{count}} published",
+    "assessments": "Assessments",
+    "completedAssessments": "{{count}} completed",
+    "subscriptionsByPlan": "Subscriptions by plan",
+    "applications": "Applications"
   }
 }

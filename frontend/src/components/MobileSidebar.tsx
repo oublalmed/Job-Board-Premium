@@ -23,10 +23,13 @@ import {
   ShieldCheck,
   ShieldAlert,
   UserPlus,
+  Package,
+  Briefcase,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { cn } from '@/lib/utils';
+import { Logo } from './Logo';
 import { MessagesNavBadge } from '@/features/messages/MessagesNavBadge';
 
 interface SidebarLink {
@@ -59,8 +62,11 @@ export function MobileSidebar() {
     // a staff (admin/moderator) console, so it is role-scoped to end users.
     { href: '/profile', label: t('nav.profile'), icon: User, roles: ['candidate', 'recruiter', 'company_admin'] },
     { href: '/candidates', label: t('nav.candidates'), icon: Search, roles: ['recruiter', 'company_admin', 'admin'] },
-    { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin', 'admin'] },
+    { href: '/jobs', label: t('nav.jobsRecruiter'), icon: Briefcase, roles: ['recruiter', 'company_admin'] },
+    { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin'] },
     { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin'] },
+    { href: '/analytics', label: t('nav.analytics'), icon: BarChart3, roles: ['recruiter', 'company_admin'] },
+    { href: '/opportunities', label: t('nav.jobsCandidate'), icon: Briefcase, roles: ['candidate'] },
     { href: '/assessments', label: t('assessments.title'), icon: ClipboardList, roles: ['candidate'] },
     {
       href: '/admin/school-verifications',
@@ -117,6 +123,12 @@ export function MobileSidebar() {
       roles: ['admin', 'moderator'],
     },
     {
+      href: '/admin/packs',
+      label: t('adminPacks.title'),
+      icon: Package,
+      roles: ['admin', 'moderator'],
+    },
+    {
       href: '/admin/settings',
       label: t('adminSettings.navLabel'),
       icon: SlidersHorizontal,
@@ -152,7 +164,7 @@ export function MobileSidebar() {
           />
           <aside className="fixed inset-y-0 start-0 z-50 flex w-72 flex-col bg-background shadow-xl lg:hidden">
             <div className="flex items-center justify-between border-b border-border p-4">
-              <span className="text-sm font-bold text-foreground">{t('app.name')}</span>
+              <Logo className="h-9 w-auto" />
               <button
                 type="button"
                 onClick={close}

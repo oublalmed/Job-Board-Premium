@@ -163,6 +163,43 @@ describe('ShortlistService', () => {
       );
     });
 
+    it('loads the candidate and returns a lean, anonymized summary', async () => {
+      shortlistRepo.find.mockResolvedValue([
+        {
+          id: 'entry-1',
+          companyId,
+          candidateProfileId,
+          note: 'strong profile',
+          createdAt: new Date(),
+          candidateProfile: {
+            id: candidateProfileId,
+            firstName: 'Imane',
+            lastName: 'Karimi',
+            headline: 'Backend dev',
+            // fields that must NOT leak into the response:
+            salaryMin: 300000,
+            bio: 'secret',
+          },
+        },
+      ]);
+
+      const result = await service.listEntries(callerId);
+
+      // The relation is loaded so the UI has a name to show.
+      expect(shortlistRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ relations: { candidateProfile: true } }),
+      );
+      expect(result[0].candidateProfile).toEqual({
+        id: candidateProfileId,
+        firstName: 'Imane',
+        lastName: 'K.', // anonymized like the CVthèque preview
+        headline: 'Backend dev',
+      });
+      // No PII beyond the lean summary.
+      expect(result[0].candidateProfile).not.toHaveProperty('salaryMin');
+      expect(result[0].candidateProfile).not.toHaveProperty('bio');
+    });
+
     it('removes an entry belonging to the caller company', async () => {
       shortlistRepo.findOne.mockResolvedValue({ id: 'entry-1', companyId });
 

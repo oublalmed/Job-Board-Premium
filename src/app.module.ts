@@ -34,6 +34,9 @@ import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { SchoolVerificationModule } from './modules/school-verification/school-verification.module.js';
 import { GrowthModule } from './modules/growth/growth.module.js';
+import { EntitlementsModule } from './modules/entitlements/entitlements.module.js';
+import { AntiCheatModule } from './modules/anti-cheat/anti-cheat.module.js';
+import { JobsModule } from './modules/jobs/jobs.module.js';
 import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 import { PortsModule } from './ports/ports.module.js';
 
@@ -120,6 +123,9 @@ import { PortsModule } from './ports/ports.module.js';
     NotificationsModule,
     SchoolVerificationModule,
     GrowthModule,
+    EntitlementsModule,
+    AntiCheatModule,
+    JobsModule,
   ],
 })
 export class AppModule {}

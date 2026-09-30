@@ -8,6 +8,7 @@ import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AntiCheatToggle } from '@/features/anti-cheat/AntiCheatToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -213,6 +214,9 @@ export default function CompanyPage() {
         </CardContent>
       </Card>
 
+      {/* §2 — anti-cheat toggle (only shown with the ANTI_CHEAT feature). */}
+      <AntiCheatToggle />
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{t('company.recruiters')}</CardTitle>
@@ -228,7 +232,7 @@ export default function CompanyPage() {
                 <Mail className="size-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    {r.user?.email ?? r.userId}
+                    {r.email}
                   </p>
                   {r.position && <p className="text-xs text-muted-foreground">{r.position}</p>}
                 </div>

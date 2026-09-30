@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { Logo } from './Logo';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
@@ -32,12 +33,10 @@ export function Navbar() {
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link
           href={user ? '/dashboard' : '/'}
-          className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground"
+          className="flex items-center"
+          aria-label={t('app.name')}
         >
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
-            T
-          </div>
-          <span className="hidden sm:inline">{t('app.name')}</span>
+          <Logo className="h-10 w-auto sm:h-11" priority />
         </Link>
 
         {!isDashboard && (

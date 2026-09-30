@@ -35,4 +35,5 @@ export enum AuditAction {
   DATA_REQUEST_RESOLVED = 'data_request.resolved',
   ASSESSMENT_MULTI_ACCOUNT_FLAGGED = 'assessment.multi_account_flagged',
   ASSESSMENT_PROCTORING_FLAGGED = 'assessment.proctoring_flagged',
+  FEATURE_OVERRIDE_CHANGED = 'feature_override.changed',
 }

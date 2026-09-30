@@ -1,10 +1,9 @@
-// Reference list for the OCR grande-école matcher. A static table,
-// deliberately — same doctrine as assessments/remediation-resources.ts:
-// an admin-managed referential is a later-phase concern, not this one.
-// Each entry's aliases are the strings actually likely to appear on a
-// scanned diploma (full name, common acronym, campus variants) — the
-// matcher below does substring matching against normalized OCR text, so
-// aliases matter more than the canonical name picked for display.
+// Reference list for the OCR grande-école matcher. A static table — an
+// admin-managed referential is a later-phase concern. Each entry's aliases are
+// the strings likely to appear on a diploma or in a CV's "Formation" section
+// (acronym + full name). The matcher below matches each alias as a WHOLE WORD
+// against normalized text, so a short acronym like "emi" or "ensem" won't
+// false-match inside ordinary French words ("académique", "ensemble").
 export interface GrandeEcole {
   name: string;
   aliases: string[];
@@ -12,41 +11,69 @@ export interface GrandeEcole {
 
 export const GRANDES_ECOLES: GrandeEcole[] = [
   {
-    name: 'ENSIAS',
-    aliases: ['ensias', "ecole nationale superieure d'informatique"],
+    name: "ENSIAS — École Nationale Supérieure d'Informatique et d'Analyse des Systèmes",
+    aliases: [
+      'ensias',
+      'ecole nationale superieure d informatique et d analyse des systemes',
+    ],
   },
   {
-    name: 'EMI — École Mohammadia d\'Ingénieurs',
-    aliases: ['emi', "ecole mohammadia d'ingenieurs"],
-  },
-  {
-    name: 'EHTP — École Hassania des Travaux Publics',
-    aliases: ['ehtp', 'ecole hassania des travaux publics'],
+    name: "EMI — École Mohammadia d'Ingénieurs",
+    aliases: ['emi', 'ecole mohammadia d ingenieurs', 'mohammadia ingenieurs'],
   },
   {
     name: 'INPT — Institut National des Postes et Télécommunications',
     aliases: ['inpt', 'institut national des postes et telecommunications'],
   },
-  { name: 'ENSA', aliases: ['ensa', 'ecole nationale des sciences appliquees'] },
   {
-    name: 'ENSAM',
-    aliases: ['ensam', "ecole nationale superieure d'arts et metiers"],
-  },
-  { name: 'ISCAE', aliases: ['iscae'] },
-  { name: 'HEM Business School', aliases: ['hem', 'hem business school'] },
-  {
-    name: 'École Centrale Casablanca',
-    aliases: ['centrale casablanca', 'ecole centrale casablanca'],
+    name: "ENIM — École Nationale de l'Industrie Minérale",
+    aliases: [
+      'enim',
+      'ecole nationale de l industrie minerale',
+      'industrie minerale',
+    ],
   },
   {
-    name: 'Université Al Akhawayn',
-    aliases: ['al akhawayn', 'akhawayn university'],
+    name: 'EHTP — École Hassania des Travaux Publics',
+    aliases: ['ehtp', 'ecole hassania des travaux publics', 'hassania'],
+  },
+  {
+    name: "INSEA — Institut National de Statistique et d'Économie Appliquée",
+    aliases: [
+      'insea',
+      'institut national de statistique et d economie appliquee',
+    ],
   },
   {
     name: 'UM6P — Université Mohammed VI Polytechnique',
-    aliases: ['um6p', 'universite mohammed vi polytechnique'],
+    aliases: [
+      'um6p',
+      'universite mohammed vi polytechnique',
+      'mohammed vi polytechnique',
+    ],
   },
-  { name: 'ENCG', aliases: ['encg', 'ecole nationale de commerce et de gestion'] },
+  {
+    name: 'UIR — Université Internationale de Rabat',
+    aliases: ['uir', 'universite internationale de rabat'],
+  },
+  {
+    name: "ENSEM — École Nationale Supérieure d'Électricité et de Mécanique",
+    aliases: [
+      'ensem',
+      'ecole nationale superieure d electricite et de mecanique',
+    ],
+  },
+  {
+    name: "ESITH — École Supérieure des Industries du Textile et de l'Habillement",
+    aliases: [
+      'esith',
+      'ecole superieure des industries du textile et de l habillement',
+    ],
+  },
+  {
+    name: "EMSI — École Marocaine des Sciences de l'Ingénieur",
+    aliases: ['emsi', 'ecole marocaine des sciences de l ingenieur'],
+  },
 ];
 
 function normalize(text: string): string {
@@ -54,7 +81,7 @@ function normalize(text: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '') // strip combining accents
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ') // punctuation/apostrophes → spaces
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -64,11 +91,18 @@ export interface SchoolMatch {
   matchedAlias: string;
 }
 
+// Whole-word match: an alias matches only when it appears as its own token(s),
+// not as a substring inside another word. Aliases are already normalized to
+// [a-z0-9 ], so they carry no regex metacharacters.
 export function matchGrandeEcole(extractedText: string): SchoolMatch | null {
   const normalized = normalize(extractedText);
+  if (!normalized) return null;
   for (const school of GRANDES_ECOLES) {
     for (const alias of school.aliases) {
-      if (normalized.includes(normalize(alias))) {
+      const needle = normalize(alias);
+      if (!needle) continue;
+      const re = new RegExp(`\\b${needle}\\b`);
+      if (re.test(normalized)) {
         return { school: school.name, matchedAlias: alias };
       }
     }

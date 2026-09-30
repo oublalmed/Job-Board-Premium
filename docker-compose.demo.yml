@@ -1,0 +1,181 @@
+# Demo stack — everything a colleague needs to run a client demo on one VM.
+#
+#   cp .env.demo.example .env.demo   # then edit the secrets
+#   docker compose --env-file .env.demo -f docker-compose.demo.yml up -d --build
+#
+# Then expose the single Caddy origin (host port 8080) through a tunnel:
+#   docker compose --env-file .env.demo -f docker-compose.demo.yml --profile tunnel up -d
+#   docker compose -f docker-compose.demo.yml logs -f cloudflared   # copy the *.trycloudflare.com URL
+#
+# See docs/DEMO-DEPLOY.md for the full runbook.
+
+# Shared app environment for the API and the one-shot init (migrations + seed).
+x-app-env: &app-env
+  NODE_ENV: production
+  TZ: Africa/Casablanca
+  DB_HOST: postgres
+  DB_PORT: '5432'
+  DB_USERNAME: ${DB_USERNAME:-jobboard}
+  DB_PASSWORD: ${DB_PASSWORD:-jobboard_demo_password}
+  DB_DATABASE: ${DB_DATABASE:-jobboard_demo}
+  DB_SYNCHRONIZE: 'false'
+  DB_LOGGING: 'false'
+  REDIS_HOST: redis
+  REDIS_PORT: '6379'
+  REDIS_PASSWORD: ''
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-demo-access-secret-change-me-16+}
+  JWT_ACCESS_EXPIRATION: 15m
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-demo-refresh-secret-change-me-16+}
+  JWT_REFRESH_EXPIRATION: 7d
+  SCORING_WEBHOOK_SECRET: ${SCORING_WEBHOOK_SECRET:-demo-scoring-webhook-secret-change}
+  STORAGE_ENDPOINT: http://minio:9000
+  STORAGE_ACCESS_KEY: ${MINIO_USER:-minioadmin}
+  STORAGE_SECRET_KEY: ${MINIO_PASSWORD:-minioadmin}
+  STORAGE_BUCKET: jobboard
+  STORAGE_REGION: us-east-1
+  STORAGE_FORCE_PATH_STYLE: 'true'
+  MAIL_DRIVER: smtp
+  SMTP_HOST: mailpit
+  SMTP_PORT: '1025'
+  MAIL_FROM: Cobalt Demo <demo@cobalt.local>
+  CORS_ORIGIN: '*'
+  OCR_DRIVER: real
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-jobboard}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-jobboard_demo_password}
+      POSTGRES_DB: ${DB_DATABASE:-jobboard_demo}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-jobboard} -d ${DB_DATABASE:-jobboard_demo}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-minioadmin}
+    volumes:
+      - miniodata:/data
+    restart: unless-stopped
+
+  # Create the storage bucket the API expects, then exit.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      sh -c "
+      until mc alias set demo http://minio:9000 ${MINIO_USER:-minioadmin} ${MINIO_PASSWORD:-minioadmin}; do sleep 2; done &&
+      mc mb --ignore-existing demo/jobboard &&
+      echo 'bucket ready'"
+    restart: 'no'
+
+  # One-shot: run migrations, then load the 3-case demo fixtures. Uses the API
+  # builder stage (dev deps + ts-node + src). SEED_FORCE lets the seed run under
+  # NODE_ENV=production. The API waits for this to finish successfully.
+  init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    environment:
+      <<: *app-env
+      SEED_FORCE: '1'
+    command: sh -c "npm run migration:run && npm run seed:testcases"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      <<: *app-env
+      PORT: '3000'
+      API_PREFIX: api/v1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/v1/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Empty = same-origin relative calls, routed by Caddy to the API.
+        NEXT_PUBLIC_API_BASE_URL: ''
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  # Single public origin: / -> frontend, /api/* -> api.
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - api
+      - frontend
+    ports:
+      - '${DEMO_HTTP_PORT:-8080}:80'
+    volumes:
+      - ./deploy/demo/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+    restart: unless-stopped
+
+  # Local mailbox so signup / verification emails are viewable (UI on :8025).
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - '${MAILPIT_UI_PORT:-8025}:8025'
+    restart: unless-stopped
+
+  # Optional: zero-account public HTTPS URL. Enable with `--profile tunnel`.
+  # Read the printed https://*.trycloudflare.com URL from this service's logs.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://caddy:80
+    depends_on:
+      - caddy
+    profiles: ['tunnel']
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  caddydata:

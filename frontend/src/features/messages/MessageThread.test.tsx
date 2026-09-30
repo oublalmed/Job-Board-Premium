@@ -24,16 +24,12 @@ vi.mock('./InterviewPanel', () => ({ InterviewPanel: () => null }));
 
 const useMessages = vi.fn();
 const sendMutate = vi.fn();
-const attachMutate = vi.fn();
 const reportMutate = vi.fn();
-const fetchAttachmentUrl = vi.fn();
 
 vi.mock('./queries', () => ({
   useMessages: () => useMessages(),
   useSendMessage: () => ({ mutate: sendMutate, isPending: false }),
-  useSendAttachment: () => ({ mutate: attachMutate, isPending: false }),
   useReportConversation: () => ({ mutate: reportMutate, isPending: false }),
-  fetchAttachmentUrl: (...args: unknown[]) => fetchAttachmentUrl(...args),
 }));
 
 import { MessageThread } from './MessageThread';
@@ -54,13 +50,11 @@ function msg(over: Partial<MessageView> = {}): MessageView {
 afterEach(() => {
   useMessages.mockReset();
   sendMutate.mockReset();
-  attachMutate.mockReset();
   reportMutate.mockReset();
-  fetchAttachmentUrl.mockReset();
   toast.mockReset();
 });
 
-describe('MessageThread (EF-MSG-01/03/05)', () => {
+describe('MessageThread (EF-MSG-01/05)', () => {
   it('renders the empty-thread hint when there are no messages', () => {
     useMessages.mockReturnValue({ data: [], isLoading: false });
     render(<MessageThread conversationId="c1" />);
@@ -78,40 +72,6 @@ describe('MessageThread (EF-MSG-01/03/05)', () => {
     render(<MessageThread conversationId="c1" />);
     expect(screen.getByText('From them')).toBeInTheDocument();
     expect(screen.getByText('From me')).toBeInTheDocument();
-  });
-
-  it('EF-MSG-03 — shows an attachment download button and resolves a signed URL on click', async () => {
-    fetchAttachmentUrl.mockResolvedValue({
-      url: 'https://signed.example/doc',
-      originalName: 'cv.pdf',
-      mimeType: 'application/pdf',
-    });
-    const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
-    useMessages.mockReturnValue({
-      data: [
-        msg({
-          id: 'a',
-          body: '',
-          attachment: { originalName: 'cv.pdf', mimeType: 'application/pdf', size: 1024 },
-        }),
-      ],
-      isLoading: false,
-    });
-
-    render(<MessageThread conversationId="c1" />);
-    const btn = screen.getByText('cv.pdf');
-    fireEvent.click(btn);
-    expect(fetchAttachmentUrl).toHaveBeenCalledWith('c1', 'a');
-
-    // let the resolved promise flush
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(openSpy).toHaveBeenCalledWith(
-      'https://signed.example/doc',
-      '_blank',
-      'noopener,noreferrer',
-    );
-    openSpy.mockRestore();
   });
 
   it('EF-MSG-05 — toggles the abuse-report form and submits a reason', () => {

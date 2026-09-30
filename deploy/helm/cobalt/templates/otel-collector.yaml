@@ -1,0 +1,69 @@
+{{- if and .Values.observability.enabled .Values.observability.collector.enabled }}
+# ENF-09 — in-cluster OpenTelemetry Collector. The app exports OTLP/HTTP here;
+# swap the pipeline's exporter (values: observability.collector.config) to ship
+# spans to your managed backend, then add alerting rules on that backend.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cobalt.fullname" . }}-otel-collector
+  labels:
+    {{- include "cobalt.labels" . | nindent 4 }}
+data:
+  collector.yaml: |
+{{ .Values.observability.collector.config | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cobalt.fullname" . }}-otel-collector
+  labels:
+    {{- include "cobalt.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "cobalt.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: otel-collector
+  template:
+    metadata:
+      labels:
+        {{- include "cobalt.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          image: {{ .Values.observability.collector.image }}
+          args: ["--config=/etc/otel/collector.yaml"]
+          ports:
+            - containerPort: 4318 # OTLP/HTTP
+            - containerPort: 4317 # OTLP/gRPC
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+          resources:
+            {{- toYaml .Values.observability.collector.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "cobalt.fullname" . }}-otel-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cobalt.fullname" . }}-otel-collector
+  labels:
+    {{- include "cobalt.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+spec:
+  selector:
+    {{- include "cobalt.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+{{- end }}

@@ -23,6 +23,18 @@ vi.mock('@/auth/auth-context', () => ({
 const toast = vi.fn();
 vi.mock('@/components/ui/toast', () => ({ useToast: () => ({ toast }) }));
 
+// The company page renders <AntiCheatToggle>, which reads entitlements +
+// settings via TanStack Query hooks (called before its early return). These
+// tests cover KYB + multi-user, not anti-cheat, so stub those hooks out — no
+// QueryClientProvider is then needed.
+vi.mock('@/features/entitlements/queries', () => ({
+  useFeature: () => false,
+}));
+vi.mock('@/features/anti-cheat/queries', () => ({
+  useAntiCheatSetting: () => ({ data: undefined }),
+  useSetAntiCheatSetting: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock('framer-motion', () => ({
   motion: new Proxy(
     {},
@@ -111,7 +123,7 @@ describe('CompanyPage — EF-RECR-02 (multi-user)', () => {
   it('lists recruiters and shows the add form to a company admin', () => {
     useCompany.mockReturnValue(companyData);
     useRecruiters.mockReturnValue({
-      data: [{ id: 'r1', userId: 'u1', position: 'Lead', user: { email: 'lead@acme.com' } }],
+      data: [{ id: 'r1', userId: 'u1', position: 'Lead', email: 'lead@acme.com' }],
     });
 
     render(<CompanyPage />);
@@ -123,7 +135,7 @@ describe('CompanyPage — EF-RECR-02 (multi-user)', () => {
   it('removing a recruiter calls the mutation with the recruiter id', () => {
     useCompany.mockReturnValue(companyData);
     useRecruiters.mockReturnValue({
-      data: [{ id: 'r1', userId: 'u1', user: { email: 'lead@acme.com' } }],
+      data: [{ id: 'r1', userId: 'u1', email: 'lead@acme.com', position: null }],
     });
 
     render(<CompanyPage />);
@@ -136,7 +148,7 @@ describe('CompanyPage — EF-RECR-02 (multi-user)', () => {
     roles.current = ['recruiter'];
     useCompany.mockReturnValue(companyData);
     useRecruiters.mockReturnValue({
-      data: [{ id: 'r1', userId: 'u1', user: { email: 'lead@acme.com' } }],
+      data: [{ id: 'r1', userId: 'u1', email: 'lead@acme.com', position: null }],
     });
 
     render(<CompanyPage />);

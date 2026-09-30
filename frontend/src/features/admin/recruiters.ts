@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAccessToken } from '@/auth/token-store';
-import { subscriptionAdminKeys, type SubscriptionPlan } from './subscriptions';
+import { subscriptionAdminKeys } from './subscriptions';
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -11,8 +11,6 @@ export interface CreateRecruiterInput {
   position?: string;
   companyId?: string;
   companyName?: string;
-  plan?: SubscriptionPlan;
-  contactQuota?: number;
 }
 
 export interface CreatedRecruiter {
@@ -21,11 +19,11 @@ export interface CreatedRecruiter {
   email: string;
   companyId: string;
   companyName: string;
-  plan: SubscriptionPlan | null;
 }
 
 // Admin provisions a recruiter account. On success we refresh the admin
-// subscriptions caches (a new company/plan may now exist). Uses fetch + bearer:
+// subscriptions caches (a new company may now exist to assign a pack to).
+// Packs are assigned to the company separately. Uses fetch + bearer:
 // the endpoint post-dates the generated OpenAPI client, and surfaces the
 // backend's error message so the form can show a real reason (e.g. email taken).
 export function useCreateRecruiter() {

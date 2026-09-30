@@ -21,6 +21,8 @@ import {
   ShieldCheck,
   ShieldAlert,
   UserPlus,
+  Package,
+  Briefcase,
 } from 'lucide-react';
 import { useAuth, type Role } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
@@ -45,8 +47,11 @@ export function DashboardSidebar() {
     // a staff (admin/moderator) console, so it is role-scoped to end users.
     { href: '/profile', label: t('nav.profile'), icon: User, roles: ['candidate', 'recruiter', 'company_admin'] },
     { href: '/candidates', label: t('nav.candidates'), icon: Search, roles: ['recruiter', 'company_admin', 'admin'] },
-    { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin', 'admin'] },
+    { href: '/jobs', label: t('nav.jobsRecruiter'), icon: Briefcase, roles: ['recruiter', 'company_admin'] },
+    { href: '/shortlist', label: t('nav.shortlist'), icon: Heart, roles: ['recruiter', 'company_admin'] },
     { href: '/company', label: t('nav.company'), icon: Building2, roles: ['recruiter', 'company_admin'] },
+    { href: '/analytics', label: t('nav.analytics'), icon: BarChart3, roles: ['recruiter', 'company_admin'] },
+    { href: '/opportunities', label: t('nav.jobsCandidate'), icon: Briefcase, roles: ['candidate'] },
     { href: '/assessments', label: t('assessments.title'), icon: ClipboardList, roles: ['candidate'] },
     {
       href: '/admin/school-verifications',
@@ -100,6 +105,12 @@ export function DashboardSidebar() {
       href: '/admin/subscriptions',
       label: t('adminSubscriptions.navLabel'),
       icon: CreditCard,
+      roles: ['admin', 'moderator'],
+    },
+    {
+      href: '/admin/packs',
+      label: t('adminPacks.title'),
+      icon: Package,
       roles: ['admin', 'moderator'],
     },
     {

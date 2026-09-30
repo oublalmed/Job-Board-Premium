@@ -10,6 +10,10 @@
     "en": "EN",
     "ar": "AR"
   },
+  "entitlements": {
+    "noAccessTitle": "الميزة غير متضمَّنة",
+    "noAccessBody": "هذه الميزة غير متضمَّنة في اشتراكك. قم بالترقية إلى باقة أعلى لتفعيلها."
+  },
   "nav": {
     "label": "التنقّل الرئيسي",
     "home": "الرئيسية",
@@ -23,7 +27,10 @@
     "login": "تسجيل الدخول",
     "register": "إنشاء حساب",
     "company": "شركتي",
-    "subscription": "الاشتراك"
+    "subscription": "الاشتراك",
+    "jobsRecruiter": "عروض العمل",
+    "jobsCandidate": "عروض العمل",
+    "analytics": "الإحصائيات"
   },
   "layout": {
     "skipToContent": "الانتقال إلى المحتوى الرئيسي"
@@ -229,6 +236,15 @@
     "contact": "تواصل",
     "viewProfile": "عرض الملف الشخصي",
     "loadMore": "تحميل المزيد",
+    "previous": "السابق",
+    "next": "التالي",
+    "page": "الصفحة {{n}}",
+    "sortBy": "ترتيب حسب",
+    "sortScoreDesc": "النقاط تنازليًا",
+    "sortScoreAsc": "النقاط تصاعديًا",
+    "sortRecent": "تاريخ التسجيل",
+    "sortActive": "آخر نشاط",
+    "schools": "المدارس",
     "results": "{{count}} نتيجة",
     "rankHeader": "الترتيب",
     "school": "المدرسة",
@@ -625,7 +641,14 @@
       "submitted": "تمّ إرسال التقييم — نتيجتك متاحة.",
       "loadError": "تعذّر تحميل الأسئلة.",
       "qcmHint": "أسئلة متعدّدة الخيارات: اختر الإجابة الصحيحة لكل سؤال. أي سؤال بدون إجابة يُحتسب خطأً.",
-      "unanswered": "{{count}} سؤال/أسئلة بدون إجابة"
+      "unanswered": "{{count}} سؤال/أسئلة بدون إجابة",
+      "counter": "السؤال {{n}} / {{total}}",
+      "timerHint": "كل سؤال محدَّد بوقت. عند انتهاء الوقت، ينتقل الاختبار تلقائيًا إلى السؤال التالي.",
+      "timeLeft": "الوقت المتبقي",
+      "next": "السؤال التالي",
+      "finish": "إنهاء التقييم",
+      "forwardOnly": "لا يمكنك العودة إلى سؤال سابق.",
+      "fullscreenPrompt": "العودة إلى وضع ملء الشاشة"
     },
     "resume": "استئناف تقييم",
     "assessmentId": "معرّف التقييم",
@@ -780,6 +803,7 @@
     "companyNamePlaceholder": "اسم الشركة",
     "companySelect": "اختر شركة",
     "assignPack": "تخصيص باقة الآن",
+    "packHint": "تُخصَّص باقات الاشتراك للشركة من شاشة الاشتراكات، لا للمُوظِّف.",
     "plan": "الباقة",
     "quota": "حصة جهات الاتصال",
     "quotaDefault": "القيمة الافتراضية للباقة",
@@ -790,6 +814,41 @@
     "successTitle": "تمّ إنشاء المُوظِّف",
     "successBody": "تمّ إنشاء حساب {{email}} ({{company}}).",
     "successMail": "أُرسل بريد يحتوي بيانات الدخول ورابطًا لتعيين كلمة المرور."
+  },
+  "antiCheat": {
+    "title": "نزاهة التقييم",
+    "level_low": "اشتباه منخفض",
+    "level_medium": "اشتباه متوسط",
+    "level_high": "اشتباه مرتفع",
+    "disabled": "مكافحة الغش معطّلة",
+    "disabledHint": "خيار مكافحة الغش معطّل لشركتك.",
+    "events": "أحداث مشبوهة",
+    "tabSwitch": "تبديل التبويبات",
+    "windowBlur": "فقدان التركيز",
+    "multiAccount": "حسابات متعدّدة",
+    "settingTitle": "مكافحة الغش",
+    "settingHint": "يراقب تبديل التبويبات وفقدان التركيز أثناء التقييمات.",
+    "settingSaved": "تم حفظ الإعداد"
+  },
+  "adminPacks": {
+    "title": "إدارة الباقات",
+    "subtitle": "الباقة والميزات والحدود والتجاوزات لكل شركة",
+    "selectCompany": "الشركة",
+    "selectPlaceholder": "اختر شركة…",
+    "plan": "الباقة",
+    "status": "الحالة",
+    "statusActive": "نشِط",
+    "statusInactive": "غير نشِط",
+    "users": "المستخدمون",
+    "features": "الميزات",
+    "enabled": "مُفعَّلة",
+    "disabled": "مُعطَّلة",
+    "sourcePackage": "من الباقة",
+    "sourceOverride": "تجاوز المشرف",
+    "forceEnable": "تفعيل إجباري",
+    "forceDisable": "تعطيل إجباري",
+    "resetToPlan": "إعادة إلى الباقة",
+    "saved": "تم حفظ التغيير"
   },
   "adminSubscriptions": {
     "navLabel": "الاشتراكات",
@@ -987,5 +1046,136 @@
         "rejected": "مرفوضة"
       }
     }
+  },
+  "jobs": {
+    "status": {
+      "draft": "مسودة",
+      "published": "منشورة",
+      "closed": "مغلقة"
+    },
+    "appStatus": {
+      "applied": "تم التقديم",
+      "under_review": "قيد المراجعة",
+      "shortlisted": "في القائمة المختصرة",
+      "interview": "مقابلة",
+      "accepted": "مقبول",
+      "rejected": "مرفوض"
+    },
+    "contract": {
+      "CDI": "عقد دائم",
+      "CDD": "عقد محدد المدة",
+      "PFE": "مشروع نهاية الدراسة",
+      "Freelance": "عمل حر",
+      "Internship": "تدريب"
+    },
+    "experience": {
+      "junior": "مبتدئ",
+      "mid": "متوسط",
+      "senior": "خبير",
+      "lead": "قائد فريق"
+    },
+    "form": {
+      "title": "المسمى الوظيفي",
+      "titlePlaceholder": "مثال: مهندس Backend Node.js",
+      "titleError": "يجب أن يتكون العنوان من حرفين على الأقل.",
+      "description": "الوصف",
+      "descriptionPlaceholder": "المهام، الملف المطلوب، المزايا…",
+      "location": "الموقع",
+      "locationPlaceholder": "مثال: الدار البيضاء",
+      "deadline": "آخر أجل",
+      "contractType": "نوع العقد",
+      "experience": "مستوى الخبرة",
+      "skills": "المهارات المطلوبة",
+      "skillsPlaceholder": "مثال: Node.js، PostgreSQL، Docker",
+      "skillsHint": "افصل بين المهارات بفواصل.",
+      "any": "الكل"
+    },
+    "recruiter": {
+      "title": "عروض العمل",
+      "subtitle": "أنشئ عروضك وأدرها، وتابع الطلبات الواردة.",
+      "create": "عرض جديد",
+      "created": "تم إنشاء العرض.",
+      "updated": "تم تحديث العرض.",
+      "published": "تم نشر العرض.",
+      "closed": "تم إغلاق العرض.",
+      "edit": "تعديل",
+      "editTitle": "تعديل العرض",
+      "backToList": "العودة إلى العروض",
+      "notFound": "العرض غير موجود.",
+      "publish": "نشر",
+      "close": "إغلاق",
+      "emptyTitle": "لا توجد عروض بعد",
+      "emptyBody": "أنشئ أول عرض لك لبدء استقبال الطلبات.",
+      "applicationsCount": "{{count}} طلب",
+      "applicationsTitle": "الطلبات",
+      "noApplications": "لا توجد طلبات لهذا العرض بعد.",
+      "anonymousCandidate": "مترشح",
+      "changeStatus": "الحالة:",
+      "statusUpdated": "تم تحديث الحالة."
+    },
+    "candidate": {
+      "title": "عروض العمل",
+      "subtitle": "تصفح العروض المنشورة وقدّم بنقرة واحدة.",
+      "browseTab": "العروض",
+      "myApplicationsTab": "طلباتي",
+      "searchLabel": "كلمة مفتاحية",
+      "searchPlaceholder": "المسمى، التقنية…",
+      "searchButton": "بحث",
+      "resultCount": "تم العثور على {{count}} عرض",
+      "loadMore": "عرض المزيد",
+      "noResultsTitle": "لم يتم العثور على عروض",
+      "noResultsBody": "عدّل معايير البحث لعرض المزيد من النتائج.",
+      "noApplicationsTitle": "لا توجد طلبات",
+      "noApplicationsBody": "لم تقدّم على أي عرض بعد.",
+      "backToList": "العودة إلى العروض",
+      "notFound": "العرض غير موجود أو غير متاح.",
+      "applyTitle": "التقديم على هذا العرض",
+      "applyButton": "إرسال طلبي",
+      "applySuccess": "تم إرسال الطلب بنجاح.",
+      "coverLetterPlaceholder": "رسالة الدافع (اختياري)…",
+      "alreadyApplied": "لقد قدّمت على هذا العرض من قبل.",
+      "alreadyAppliedTitle": "لقد قدّمت بالفعل",
+      "completeProfile": "أكمل ملفك الشخصي قبل التقديم.",
+      "notEligible": "لا تستوفي بعد شروط التقديم.",
+      "eligibilityTitle": "شروط التقديم",
+      "needProfile": "أكمل ملفك: {{completeness}}٪ / {{threshold}}٪ مطلوبة",
+      "completeProfileCta": "إكمال ملفي",
+      "needExam": "اجتَز تقييمًا واحدًا على الأقل",
+      "takeExamCta": "اجتياز تقييم"
+    },
+    "detail": {
+      "deadline": "آخر أجل: {{date}}",
+      "appliedOn": "تم التقديم في {{date}}"
+    }
+  },
+  "recruiterAnalytics": {
+    "title": "الإحصائيات",
+    "subtitle": "عروضك وطلباتك وجهات اتصالك في لمحة.",
+    "rangeDays": "{{days}} ي",
+    "publishedJobs": "العروض المنشورة",
+    "totalJobs": "{{count}} إجمالاً",
+    "applications": "الطلبات",
+    "shortlist": "القائمة المختصرة",
+    "conversations": "المحادثات",
+    "contactsUsed": "جهات الاتصال المستخدمة",
+    "unlimited": "غير محدود",
+    "byStatus": "الطلبات حسب الحالة",
+    "trend": "الطلبات عبر الزمن",
+    "topOffers": "العروض الأكثر طلبًا",
+    "applicationsCount": "{{count}} طلب",
+    "noOffers": "لا توجد عروض بعد.",
+    "empty": "لا توجد بيانات بعد."
+  },
+  "adminAnalytics": {
+    "users": "المستخدمون",
+    "usersBreakdown": "{{candidates}} مترشح · {{recruiters}} مشغّل",
+    "companies": "الشركات",
+    "activeSubscriptions": "{{count}} اشتراك نشط",
+    "jobs": "العروض",
+    "publishedJobs": "{{count}} منشورة",
+    "assessments": "التقييمات",
+    "completedAssessments": "{{count}} مكتملة",
+    "subscriptionsByPlan": "الاشتراكات حسب الباقة",
+    "applications": "الطلبات"
   }
 }

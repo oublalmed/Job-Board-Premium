@@ -1,7 +1,10 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { DataRetentionService } from './data-retention.service.js';
+import {
+  DataRetentionService,
+  RetentionSweepResult,
+} from './data-retention.service.js';
 import { DATA_RETENTION_QUEUE } from './data-retention.constants.js';
 
 // Thin adapter over DataRetentionService (a plain injectable, callable in
@@ -14,12 +17,17 @@ export class DataRetentionProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job): Promise<{ deletedNotifications: number }> {
+  async process(job: Job): Promise<RetentionSweepResult> {
     const result = await this.service.sweep();
+    const total =
+      result.deletedNotifications +
+      result.deletedRefreshTokens +
+      result.deletedProfileViewCooldowns +
+      result.deletedWebhookEvents;
     this.logger.log(
-      `Data-retention sweep (job ${job.id}) purged ${result.deletedNotifications} notification(s)`,
+      `Data-retention sweep (job ${job.id}) purged ${total} transient record(s)`,
     );
-    return { deletedNotifications: result.deletedNotifications };
+    return result;
   }
 
   // Without this listener a transient Redis outage would emit an unhandled

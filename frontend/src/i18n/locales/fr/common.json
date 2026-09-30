@@ -10,6 +10,10 @@
     "en": "EN",
     "ar": "AR"
   },
+  "entitlements": {
+    "noAccessTitle": "Fonctionnalité non incluse",
+    "noAccessBody": "Cette fonctionnalité n'est pas incluse dans votre abonnement. Passez à un pack supérieur pour l'activer."
+  },
   "nav": {
     "label": "Navigation principale",
     "home": "Accueil",
@@ -23,7 +27,10 @@
     "login": "Connexion",
     "register": "Créer un compte",
     "company": "Mon entreprise",
-    "subscription": "Abonnement"
+    "subscription": "Abonnement",
+    "jobsRecruiter": "Offres d'emploi",
+    "jobsCandidate": "Offres d'emploi",
+    "analytics": "Statistiques"
   },
   "layout": {
     "skipToContent": "Aller au contenu principal"
@@ -229,6 +236,15 @@
     "contact": "Contacter",
     "viewProfile": "Voir le profil",
     "loadMore": "Charger plus",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {{n}}",
+    "sortBy": "Trier par",
+    "sortScoreDesc": "Score décroissant",
+    "sortScoreAsc": "Score croissant",
+    "sortRecent": "Date d'inscription",
+    "sortActive": "Dernière activité",
+    "schools": "Écoles",
     "results": "{{count}} résultats",
     "rankHeader": "Classement",
     "school": "École",
@@ -625,7 +641,14 @@
       "submitted": "Évaluation soumise — votre score est disponible.",
       "loadError": "Impossible de charger les questions.",
       "qcmHint": "QCM : sélectionnez la bonne réponse pour chaque question. Toute question sans réponse est comptée comme fausse.",
-      "unanswered": "{{count}} question(s) sans réponse"
+      "unanswered": "{{count}} question(s) sans réponse",
+      "counter": "Question {{n}} / {{total}}",
+      "timerHint": "Chaque question est chronométrée. À la fin du temps imparti, on passe automatiquement à la question suivante.",
+      "timeLeft": "Temps restant",
+      "next": "Question suivante",
+      "finish": "Terminer l'évaluation",
+      "forwardOnly": "Vous ne pourrez pas revenir à une question précédente.",
+      "fullscreenPrompt": "Revenir en plein écran"
     },
     "resume": "Reprendre une évaluation",
     "assessmentId": "Identifiant de l'évaluation",
@@ -780,6 +803,7 @@
     "companyNamePlaceholder": "Nom de l'entreprise",
     "companySelect": "Sélectionnez une entreprise",
     "assignPack": "Attribuer un pack maintenant",
+    "packHint": "Les packs d'abonnement s'attribuent à l'entreprise, depuis l'écran Abonnements — pas au recruteur.",
     "plan": "Pack",
     "quota": "Quota de contacts",
     "quotaDefault": "Par défaut du pack",
@@ -790,6 +814,41 @@
     "successTitle": "Recruteur créé",
     "successBody": "Le compte de {{email}} ({{company}}) a été créé.",
     "successMail": "Un email contenant ses accès et un lien pour définir son mot de passe lui a été envoyé."
+  },
+  "antiCheat": {
+    "title": "Intégrité de l'évaluation",
+    "level_low": "Suspicion faible",
+    "level_medium": "Suspicion moyenne",
+    "level_high": "Suspicion élevée",
+    "disabled": "Anti-triche désactivé",
+    "disabledHint": "L'option anti-triche est désactivée pour votre entreprise.",
+    "events": "Événements suspects",
+    "tabSwitch": "Changements d'onglet",
+    "windowBlur": "Pertes de focus",
+    "multiAccount": "Multi-comptes",
+    "settingTitle": "Anti-triche",
+    "settingHint": "Surveille les changements d'onglet et pertes de focus pendant les évaluations.",
+    "settingSaved": "Réglage enregistré"
+  },
+  "adminPacks": {
+    "title": "Gestion des packs",
+    "subtitle": "Pack, fonctionnalités, limites et overrides par entreprise",
+    "selectCompany": "Entreprise",
+    "selectPlaceholder": "Sélectionner une entreprise…",
+    "plan": "Pack",
+    "status": "Statut",
+    "statusActive": "Actif",
+    "statusInactive": "Inactif",
+    "users": "Utilisateurs",
+    "features": "Fonctionnalités",
+    "enabled": "Activée",
+    "disabled": "Désactivée",
+    "sourcePackage": "via le pack",
+    "sourceOverride": "override admin",
+    "forceEnable": "Forcer l'activation",
+    "forceDisable": "Forcer la désactivation",
+    "resetToPlan": "Réinitialiser au pack",
+    "saved": "Modification enregistrée"
   },
   "adminSubscriptions": {
     "navLabel": "Abonnements",
@@ -987,5 +1046,136 @@
         "rejected": "Refusée"
       }
     }
+  },
+  "jobs": {
+    "status": {
+      "draft": "Brouillon",
+      "published": "Publiée",
+      "closed": "Clôturée"
+    },
+    "appStatus": {
+      "applied": "Candidature envoyée",
+      "under_review": "En cours d'examen",
+      "shortlisted": "Présélectionné",
+      "interview": "Entretien",
+      "accepted": "Accepté",
+      "rejected": "Refusé"
+    },
+    "contract": {
+      "CDI": "CDI",
+      "CDD": "CDD",
+      "PFE": "PFE",
+      "Freelance": "Freelance",
+      "Internship": "Stage"
+    },
+    "experience": {
+      "junior": "Junior",
+      "mid": "Confirmé",
+      "senior": "Senior",
+      "lead": "Lead"
+    },
+    "form": {
+      "title": "Intitulé du poste",
+      "titlePlaceholder": "ex. Ingénieur Backend Node.js",
+      "titleError": "L'intitulé doit comporter au moins 2 caractères.",
+      "description": "Description",
+      "descriptionPlaceholder": "Missions, profil recherché, avantages…",
+      "location": "Localisation",
+      "locationPlaceholder": "ex. Casablanca",
+      "deadline": "Date limite",
+      "contractType": "Type de contrat",
+      "experience": "Niveau d'expérience",
+      "skills": "Compétences requises",
+      "skillsPlaceholder": "ex. Node.js, PostgreSQL, Docker",
+      "skillsHint": "Séparez les compétences par des virgules.",
+      "any": "Indifférent"
+    },
+    "recruiter": {
+      "title": "Offres d'emploi",
+      "subtitle": "Créez et gérez vos offres, et suivez les candidatures reçues.",
+      "create": "Nouvelle offre",
+      "created": "Offre créée.",
+      "updated": "Offre mise à jour.",
+      "published": "Offre publiée.",
+      "closed": "Offre clôturée.",
+      "edit": "Modifier",
+      "editTitle": "Modifier l'offre",
+      "backToList": "Retour aux offres",
+      "notFound": "Offre introuvable.",
+      "publish": "Publier",
+      "close": "Clôturer",
+      "emptyTitle": "Aucune offre pour le moment",
+      "emptyBody": "Créez votre première offre pour commencer à recevoir des candidatures.",
+      "applicationsCount": "{{count}} candidature(s)",
+      "applicationsTitle": "Candidatures",
+      "noApplications": "Aucune candidature pour cette offre pour le moment.",
+      "anonymousCandidate": "Candidat",
+      "changeStatus": "Statut :",
+      "statusUpdated": "Statut mis à jour."
+    },
+    "candidate": {
+      "title": "Offres d'emploi",
+      "subtitle": "Parcourez les offres publiées et postulez en un clic.",
+      "browseTab": "Offres",
+      "myApplicationsTab": "Mes candidatures",
+      "searchLabel": "Mot-clé",
+      "searchPlaceholder": "Intitulé, technologie…",
+      "searchButton": "Rechercher",
+      "resultCount": "{{count}} offre(s) trouvée(s)",
+      "loadMore": "Voir plus",
+      "noResultsTitle": "Aucune offre trouvée",
+      "noResultsBody": "Modifiez vos critères de recherche pour voir plus de résultats.",
+      "noApplicationsTitle": "Aucune candidature",
+      "noApplicationsBody": "Vous n'avez pas encore postulé à une offre.",
+      "backToList": "Retour aux offres",
+      "notFound": "Offre introuvable ou non disponible.",
+      "applyTitle": "Postuler à cette offre",
+      "applyButton": "Envoyer ma candidature",
+      "applySuccess": "Candidature envoyée avec succès.",
+      "coverLetterPlaceholder": "Lettre de motivation (facultatif)…",
+      "alreadyApplied": "Vous avez déjà postulé à cette offre.",
+      "alreadyAppliedTitle": "Vous avez déjà postulé",
+      "completeProfile": "Complétez votre profil avant de postuler.",
+      "notEligible": "Vous ne remplissez pas encore les conditions pour postuler.",
+      "eligibilityTitle": "Conditions pour postuler",
+      "needProfile": "Complétez votre profil : {{completeness}} % / {{threshold}} % requis",
+      "completeProfileCta": "Compléter mon profil",
+      "needExam": "Passez au moins une évaluation",
+      "takeExamCta": "Passer une évaluation"
+    },
+    "detail": {
+      "deadline": "Limite : {{date}}",
+      "appliedOn": "Postulé le {{date}}"
+    }
+  },
+  "recruiterAnalytics": {
+    "title": "Statistiques",
+    "subtitle": "Vos offres, candidatures et contacts en un coup d'œil.",
+    "rangeDays": "{{days}} j",
+    "publishedJobs": "Offres publiées",
+    "totalJobs": "{{count}} au total",
+    "applications": "Candidatures",
+    "shortlist": "Présélection",
+    "conversations": "Conversations",
+    "contactsUsed": "Contacts utilisés",
+    "unlimited": "Illimité",
+    "byStatus": "Candidatures par statut",
+    "trend": "Candidatures dans le temps",
+    "topOffers": "Offres les plus demandées",
+    "applicationsCount": "{{count}} candidature(s)",
+    "noOffers": "Aucune offre pour le moment.",
+    "empty": "Pas encore de données."
+  },
+  "adminAnalytics": {
+    "users": "Utilisateurs",
+    "usersBreakdown": "{{candidates}} candidats · {{recruiters}} recruteurs",
+    "companies": "Entreprises",
+    "activeSubscriptions": "{{count}} abonnement(s) actif(s)",
+    "jobs": "Offres",
+    "publishedJobs": "{{count}} publiée(s)",
+    "assessments": "Évaluations",
+    "completedAssessments": "{{count}} terminée(s)",
+    "subscriptionsByPlan": "Abonnements par pack",
+    "applications": "Candidatures"
   }
 }

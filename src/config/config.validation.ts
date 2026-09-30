@@ -60,6 +60,15 @@ export const configValidationSchema = Joi.object({
   PASSWORD_MIN_LENGTH: Joi.number().min(8).default(10),
   MAX_CV_SIZE_BYTES: Joi.number().default(5242880),
 
+  // Data retention (ENF-12) — the daily purge sweep and its per-type windows.
+  // Only transient records are purged; legally-retained data (audit log,
+  // invoices, data-requests) has no window here and is never touched.
+  DATA_RETENTION_CRON: Joi.string().default('0 4 * * *'),
+  NOTIFICATION_RETENTION_DAYS: Joi.number().min(1).default(90),
+  REFRESH_TOKEN_RETENTION_DAYS: Joi.number().min(1).default(30),
+  PROFILE_VIEW_COOLDOWN_RETENTION_DAYS: Joi.number().min(1).default(30),
+  WEBHOOK_EVENT_RETENTION_DAYS: Joi.number().min(1).default(90),
+
   // Pricing
   PLAN_STARTER_PRICE: Joi.number().default(990),
   PLAN_STARTER_CONTACTS: Joi.number().default(15),
@@ -105,4 +114,8 @@ export const configValidationSchema = Joi.object({
   ANTIVIRUS_DRIVER: Joi.string().valid('stub', 'clamav').default('stub'),
   CLAMAV_HOST: Joi.string().default('localhost'),
   CLAMAV_PORT: Joi.number().default(3310),
+  // OCR (school verification) — `stub` keeps CI/dev hermetic (deterministic
+  // fake text); `real` extracts genuine text: pdf-parse for PDFs, tesseract.js
+  // for images.
+  OCR_DRIVER: Joi.string().valid('stub', 'real').default('stub'),
 });

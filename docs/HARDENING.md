@@ -56,48 +56,79 @@ gzipped `pg_dump` to KMS-encrypted object storage; retention via a bucket
 lifecycle rule, documented inline).
 
 PITR itself (WAL archiving) is a managed-service feature; the logical dump is a
-floor, not a substitute for it. Remaining, host-side: enable PITR/WAL archiving
-and run a periodic restore drill.
+floor, not a substitute for it. A turnkey restore procedure — enabling PITR per
+provider, plus a logical/PITR restore drill and a sign-off log — is in
+[`docs/DB-RESTORE-RUNBOOK.md`](DB-RESTORE-RUNBOOK.md). Remaining, host-side:
+enable PITR/WAL archiving and run (and record) a restore drill.
 
-## ENF-09 — Observability ⬜
+## ENF-09 — Observability 🟡
 
-Present: structured business audit trail (now also readable via
-`/admin/audit-logs`) and a `/health` endpoint (`@nestjs/terminus`). Missing:
-ops metrics/tracing. Recommended, in order of value:
+Delivered: structured business audit trail (readable via `/admin/audit-logs`),
+liveness/readiness probes (`/health/live`, `/health/ready`), Prometheus
+`/metrics` (`prom-client`: process + `http_request_duration_seconds`),
+per-request correlation id, and distributed tracing (OpenTelemetry SDK + OTLP
+exporter, `src/observability/tracing.ts`, flag `OTEL_ENABLED`). The Helm chart
+(`deploy/helm/cobalt`) now also **deploys an OpenTelemetry Collector** and wires
+`OTEL_ENABLED` / `OTEL_SERVICE_NAME` / `OTEL_EXPORTER_OTLP_ENDPOINT` on the app
+when `observability.enabled=true`.
 
-1. **Metrics:** add `prom-client`, expose `/metrics`, scrape with Prometheus.
-   Track request latency histograms (feeds the p95 target, ENF-01), queue
-   depth for the BullMQ jobs, and DB pool saturation.
-2. **Logs:** ship stdout (already structured by Nest's logger) to a central
-   store (Loki / CloudWatch / Datadog).
-3. **Tracing:** OpenTelemetry SDK + OTLP exporter for cross-service spans.
+Remaining (hosting): point the collector's exporter at a managed backend
+(Tempo / Jaeger / Grafana Cloud / Datadog) and add centralized alerting rules,
+and ship stdout logs to a central store (Loki / CloudWatch / Datadog).
 
 ## ENF-01 — Performance (p95 < 400 ms) 🟡
 
-The hottest read path (CVthèque `indexed_in_cvtheque + visibility` gate) is now
-indexed. Still needed: a load test to *measure* p95 (e.g. k6 against
-`/search/candidates` with a seeded dataset) and wire it into CI as a
-non-blocking nightly job. Add indexes reactively for any query the load test
-shows scanning.
+The hottest read path (CVthèque `indexed_in_cvtheque + visibility` gate) is
+indexed, and the k6 harness is delivered (`test/load/k6-search.js`,
+`npm run load:k6`) with the CDC target encoded as a `p(95)<400` threshold. A
+**local baseline** (20 VUs / 20 s, health + authenticated search) measured
+p95 ≈ 110 ms with 0 % errors — a single-instance dev baseline, **not** a
+production proof. Remaining: run the profile on prod-type infra (and wire it
+into CI as a non-blocking nightly job). Add indexes reactively for any query the
+run shows scanning.
 
-## ENF-03 / ENF-13 — Horizontal scale, IaC ⬜
+## ENF-03 / ENF-13 — Horizontal scale, IaC 🟡
 
 The app is stateless (JWT, no server session; shared Redis for BullMQ), so it
-scales horizontally behind a load balancer. Example Kubernetes manifest lives
-in `deploy/k8s/` as a starting point (Deployment + Service + Ingress with TLS).
-Promote to Terraform/Helm for real environments.
+scales horizontally behind a load balancer. The raw example manifests in
+`deploy/k8s/` (Deployment + Service + TLS Ingress) are now packaged for real
+environments:
 
-## ENF-12 — Consent capture at registration ⬜
+- **`deploy/helm/cobalt`** — a cloud-agnostic Helm chart templating all of the
+  manifests with a `values.yaml`. Verified: `helm lint` (0 failures) and
+  `helm template` render cleanly, including the toggles and secret-manager
+  provider swap (aws/gcpsm/vault/azurekv).
+- **`deploy/terraform`** — a Terraform module that installs the chart via
+  `helm_release` for stateful, reproducible promotion from CI. Verified:
+  `terraform fmt -check` and `terraform validate` pass.
 
-Data access/erasure are implemented and audited. Still missing: explicit
-CNDP/RGPD consent capture at sign-up and a per-data-type retention policy.
-Small, well-scoped follow-up:
+Remaining is operational: a live `apply` against the target cluster, and a
+500-VU load run on the multi-replica Deployment to evidence ENF-03 on
+prod-type infra.
 
-- Add a required `consentAccepted: boolean` (must be `true`) to `RegisterDto`
-  and persist a `consentAt` timestamp on `User`.
-- Add a consent checkbox with a privacy-policy link to the register page.
-- Document retention windows per data category (profiles, CVs, audit logs,
-  invoices — invoices already have a legal 10-year retention, see ADR-0003).
+## ENF-12 — Consent capture + data retention 🟡
+
+Data access/erasure are implemented and audited, CNDP/RGPD consent is captured
+at sign-up (`RegisterDto.consentAccepted` + `users.consent_at`, `/privacy`
+page), and a daily retention sweep (`DataRetentionService`, BullMQ repeatable
+at `DATA_RETENTION_CRON`) purges transient records past their window. Records
+with a legal or product retention obligation are deliberately never touched.
+
+Retention matrix (windows configurable via env — see `business.config.ts`):
+
+| Data category | Table | Policy | Window (default) |
+| --- | --- | --- | --- |
+| Read notifications | `notifications` | purge read rows past the window (unread never purged) | `NOTIFICATION_RETENTION_DAYS` (90d) |
+| Dead refresh tokens | `refresh_tokens` | purge revoked/expired past the window; live sessions kept regardless of age | `REFRESH_TOKEN_RETENTION_DAYS` (30d) |
+| Profile-view cooldowns | `profile_view_cooldowns` | purge stale anti-spam rows (the 24h claim window is long gone; removal is inert) | `PROFILE_VIEW_COOLDOWN_RETENTION_DAYS` (30d) |
+| Webhook idempotency markers | `processed_webhook_events` | purge past the payment provider's redelivery horizon | `WEBHOOK_EVENT_RETENTION_DAYS` (90d) |
+| Profile-view audit trail | `candidate_profile_views` | **kept** — EF-GROW-04 audit trail, never deleted by design | — |
+| Audit log | `audit_logs` | **kept** — security/compliance | — |
+| Invoices | `invoices` | **kept** — legal 10-year retention (ADR-0003) | — |
+| Data requests | `data_requests` | **kept** — RGPD proof-of-processing | — |
+
+Remaining is operational/DPO: ratify the window durations for the full data
+catalogue and sign off the matrix.
 
 ## EF-CAND-03 — Antivirus scanning of uploads 🟡
 
