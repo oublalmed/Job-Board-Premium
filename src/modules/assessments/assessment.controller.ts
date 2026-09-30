@@ -109,6 +109,9 @@ export class AssessmentController {
       { tabSwitches: dto.tabSwitches, windowBlurs: dto.windowBlurs },
     );
     return {
+      // `status` becomes 'incident' when the hard anti-cheat limit is crossed
+      // (attempt auto-voided) — the client watches it to close the exam.
+      status: saved.status,
       tabSwitchCount: saved.tabSwitchCount,
       windowBlurCount: saved.windowBlurCount,
       proctoringFlagged: saved.proctoringFlagged,
