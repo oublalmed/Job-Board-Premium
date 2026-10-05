@@ -10,6 +10,13 @@ import { correlationIdMiddleware } from './common/middleware/correlation-id.midd
 import { startTracing } from './observability/tracing.js';
 
 async function bootstrap() {
+  // Written to stdout before any framework code runs so a deploy platform's
+  // log stream proves the process entry point was reached, independent of the
+  // Nest logger being wired up yet — the first signal to look for when a
+  // container starts but the app never reports "running".
+  // eslint-disable-next-line no-console
+  console.log('[bootstrap] process entered, initialising application');
+
   // ENF-09 — start OpenTelemetry first (no-op unless OTEL_ENABLED=true) so
   // HTTP/Express spans capture the whole request lifecycle.
   startTracing();
@@ -79,7 +86,14 @@ async function bootstrap() {
     SwaggerModule.setup(`${apiPrefix}/docs`, app, swaggerDocument);
   }
 
-  await app.listen(port);
+  // Bind on 0.0.0.0 explicitly. Node's default host for `listen(port)` is the
+  // unspecified IPv6 address (`::`), which only also accepts IPv4 when the
+  // kernel has dual-stack enabled — not guaranteed inside every container
+  // runtime. A platform health probe that dials the container over IPv4 then
+  // silently fails to connect, holding the deploy in a "deploying" state until
+  // the health-check window expires. Binding all IPv4 interfaces removes that
+  // ambiguity; container networking reaches the process either way.
+  await app.listen(port, '0.0.0.0');
 
   const logger = new Logger('Bootstrap');
   logger.log(`Application running on port ${port} with prefix /${apiPrefix}`);
