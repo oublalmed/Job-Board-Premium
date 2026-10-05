@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 
@@ -20,8 +21,12 @@ export default new DataSource({
             ).toLowerCase() !== 'false',
         }
       : false,
-  entities: ['src/**/*.entity.ts'],
-  migrations: ['src/database/migrations/*.ts'],
+  // Resolved relative to this file so the globs work both from TypeScript
+  // source (ts-node — dev/CI, __dirname = src/database) and from the compiled
+  // output (production Docker image — __dirname = dist/database). Matching both
+  // extensions keeps a single data source valid in either runtime.
+  entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
+  migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
   synchronize: false,
   logging: false,
 });
