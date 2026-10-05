@@ -19,12 +19,15 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# The runner reinstalls production dependencies, which still include the native
-# `argon2` package, so it needs the same build toolchain to compile it.
+# The runner reinstalls dependencies, which include the native `argon2`
+# package, so it needs the same build toolchain to compile it. We install the
+# full dependency set (not --omit=dev): the startup migration step loads the
+# compiled data source, which pulls in `dotenv` and the TypeORM CLI — both
+# otherwise absent in a production-only install.
 RUN apk add --no-cache python3 make g++
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 COPY --from=builder /app/dist dist/
 
