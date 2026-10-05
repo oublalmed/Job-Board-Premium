@@ -124,13 +124,33 @@ export default function AssessmentsPage() {
   useEffect(() => {
     if (!activeAssessmentId) return;
     if (tabSwitchCount === 0 && windowBlurCount === 0) return;
-    reportProctoring.mutate({
-      assessmentId: activeAssessmentId,
-      tabSwitches: tabSwitchCount,
-      windowBlurs: windowBlurCount,
-    });
+    reportProctoring.mutate(
+      {
+        assessmentId: activeAssessmentId,
+        tabSwitches: tabSwitchCount,
+        windowBlurs: windowBlurCount,
+      },
+      {
+        onSuccess: (data) => {
+          // Hard anti-cheat limit crossed → the server voided the attempt.
+          if (data?.status === 'incident') invalidateAttempt('proctoring');
+        },
+      },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAssessmentId, tabSwitchCount, windowBlurCount]);
+
+  // §5.3 — the attempt was voided (time budget exceeded, or too many exits of
+  // the secure environment). Close the exam and tell the candidate why.
+  function invalidateAttempt(reason: 'time' | 'proctoring') {
+    updateStatus('incident');
+    toast(
+      reason === 'time'
+        ? t('assessments.invalidated.time')
+        : t('assessments.invalidated.proctoring'),
+      'error',
+    );
+  }
 
   const start = useStartAssessment();
   const resume = useResumeAssessment();
@@ -235,6 +255,7 @@ export default function AssessmentsPage() {
       <ExamRunner
         assessmentId={session.assessmentId}
         onCompleted={handleExamCompleted}
+        onInvalidated={(reason) => invalidateAttempt(reason)}
         secureExam={secureExam}
         onReportIncident={handleReportIncident}
         reportPending={incident.isPending}

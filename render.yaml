@@ -1,0 +1,97 @@
+# Cobalt — Render Blueprint (backend NestJS + PostgreSQL + Redis), tout en gratuit.
+# Le frontend Next.js se déploie séparément sur Vercel (voir docs/DEPLOY-VERCEL-RENDER.md).
+#
+# Déploiement : Render Dashboard → New → Blueprint → connecter ce dépôt GitHub.
+# Render lit ce fichier et crée les 3 ressources. Deux variables restent à
+# renseigner à la main une fois l'URL Vercel connue : CORS_ORIGIN et APP_WEB_URL.
+#
+# Note plan gratuit : le service web s'endort après 15 min d'inactivité (réveil
+# ~30-50 s) ; la base PostgreSQL gratuite expire après 30 jours.
+
+databases:
+  - name: cobalt-db
+    plan: free
+    databaseName: cobalt
+    user: cobalt
+
+services:
+  # Redis / Key Value — interne (pas de TLS, pas de mot de passe) : correspond
+  # exactement à la config attendue par l'app (REDIS_HOST/PORT/PASSWORD).
+  - type: redis
+    name: cobalt-redis
+    plan: free
+    ipAllowList: [] # interne uniquement
+    maxmemoryPolicy: noeviction
+
+  # Backend NestJS — environnement Node natif (pas Docker) afin que les
+  # devDependencies (ts-node, typeorm CLI) restent disponibles pour exécuter
+  # les 54 migrations au démarrage.
+  - type: web
+    name: cobalt-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci --include=dev && npm run build
+    # migration:run (idempotent) avant le boot, puis l'API.
+    startCommand: npm run migration:run && node dist/main.js
+    healthCheckPath: /api/v1/health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: API_PREFIX
+        value: api/v1
+
+      # --- PostgreSQL (injecté depuis la base ci-dessus) ---
+      - key: DB_HOST
+        fromDatabase: { name: cobalt-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: cobalt-db, property: port }
+      - key: DB_USERNAME
+        fromDatabase: { name: cobalt-db, property: user }
+      - key: DB_PASSWORD
+        fromDatabase: { name: cobalt-db, property: password }
+      - key: DB_DATABASE
+        fromDatabase: { name: cobalt-db, property: database }
+      - key: DB_SSL
+        value: "true"
+      - key: DB_SSL_REJECT_UNAUTHORIZED
+        value: "false"
+
+      # --- Redis (injecté depuis le service cobalt-redis) ---
+      - key: REDIS_HOST
+        fromService: { type: redis, name: cobalt-redis, property: host }
+      - key: REDIS_PORT
+        fromService: { type: redis, name: cobalt-redis, property: port }
+      - key: REDIS_PASSWORD
+        value: "" # connexion interne Render : pas de mot de passe
+
+      # --- Secrets JWT (générés automatiquement par Render) ---
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+
+      # --- Stockage objet (S3) ---
+      # Obligatoire au démarrage. Valeurs de démo : l'app démarre et tout le
+      # cœur fonctionne (login, CVthèque, offres, évaluations, analytics). Seul
+      # l'upload de fichiers (CV/diplôme) nécessite un vrai bucket S3 — à
+      # remplacer par des identifiants Cloudflare R2 / Backblaze B2 (gratuits)
+      # si la démo doit couvrir l'upload.
+      - key: STORAGE_ENDPOINT
+        value: https://demo-storage.cobalt.local
+      - key: STORAGE_ACCESS_KEY
+        value: demo
+      - key: STORAGE_SECRET_KEY
+        value: demo
+      - key: STORAGE_BUCKET
+        value: cobalt-demo
+
+      # --- Origine frontend (Vercel) — à renseigner après le déploiement Vercel ---
+      # CORS_ORIGIN doit être l'URL EXACTE du front (pas de "*", car l'API
+      # renvoie Allow-Credentials). APP_WEB_URL sert aux liens dans les emails.
+      - key: CORS_ORIGIN
+        sync: false
+      - key: APP_WEB_URL
+        sync: false

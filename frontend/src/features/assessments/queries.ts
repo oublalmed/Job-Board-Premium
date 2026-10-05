@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { getAccessToken } from '@/auth/token-store';
-import { unwrap } from '@/lib/api';
+import { unwrap, ApiError } from '@/lib/api';
 import type { components } from '@/api/schema';
 import type { ManualResumeValues } from './schema';
 
@@ -193,7 +193,16 @@ export function useSubmitExam() {
           body: JSON.stringify({ answers: input.answers }),
         },
       );
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (!res.ok) {
+        let body: unknown;
+        try {
+          body = await res.json();
+        } catch {
+          body = undefined;
+        }
+        // 403 { error: 'TIME_EXCEEDED' } → the attempt was voided server-side.
+        throw new ApiError(`Request failed (${res.status})`, res.status, body);
+      }
       return (await res.json()) as {
         scoreValue: number;
         technicalScore: number;
@@ -299,6 +308,9 @@ export function useReportProctoringEvents() {
         },
       );
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      // The server returns the updated attempt; its status becomes 'incident'
+      // when the hard anti-cheat limit is crossed (attempt auto-voided).
+      return (await res.json()) as { status: string };
     },
   });
 }

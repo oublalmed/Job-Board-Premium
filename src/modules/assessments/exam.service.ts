@@ -21,6 +21,11 @@ import type {
   DomainFeedbackLevel,
 } from '../../ports/scoring.port.js';
 
+// Slack (seconds) beyond the summed per-question budget before a submission is
+// treated as out-of-time — absorbs network latency and clock skew so honest
+// candidates are never voided.
+const EXAM_GRACE_SECONDS = 120;
+
 // Client-facing question (answer key stripped): a QCM with selectable options
 // and a per-question time budget (§1).
 export interface ExamQuestionPublic {
@@ -93,6 +98,29 @@ export class ExamService {
       candidateId,
       assessmentId,
     );
+
+    // §1 / anti-cheat — enforce the time budget server-side. The client counts
+    // down per question, but a tampered client could ignore it; a submission
+    // well past the total budget is not a valid attempt, so it is voided
+    // (marked INCIDENT) rather than scored. A generous grace absorbs network
+    // and clock skew so honest candidates are never caught.
+    const budgetSeconds = questions.reduce(
+      (sum, q) => sum + timeLimitForType(q.type),
+      0,
+    );
+    if (assessment.startedAt) {
+      const deadlineMs =
+        assessment.startedAt.getTime() +
+        (budgetSeconds + EXAM_GRACE_SECONDS) * 1000;
+      if (Date.now() > deadlineMs) {
+        assessment.status = AssessmentStatus.INCIDENT;
+        await this.assessmentRepo.save(assessment);
+        throw new ForbiddenException({
+          error: 'TIME_EXCEEDED',
+          message: 'Le temps imparti pour l’évaluation est dépassé.',
+        });
+      }
+    }
 
     const graded = this.grade(questions, answers ?? {});
     const externalId = assessment.externalAssessmentId ?? assessmentId;
