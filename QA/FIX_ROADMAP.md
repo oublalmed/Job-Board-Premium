@@ -1,7 +1,10 @@
 # SKILLINK — Fix Roadmap (recommended order)
 
-No fix has been applied (Phase 1 = audit only). This is the proposed order;
-awaiting your validation before Phase 2.
+> **Execution status (Phase 2 in progress)**
+> - ✅ **P0 done** — demo DB cleaned (16 real candidates), e2e isolated to `jobboard_e2e`, API runs `NODE_ENV=production` (self-complete endpoint disabled).
+> - ✅ **P1 code done** — 429 label fixed (#5), `/companies/*` recruiter guard added (#6). Real providers (#3/#4) are **env-only for SMTP/OCR/Stripe** but **blocked** pending your credentials; see `L2_INTEGRATION_RUNBOOK.md`.
+> - ⚠️ **Storage gap found** — object storage is hardcoded to the stub; **no S3 adapter exists**. Real CV/diploma persistence needs a small code lot (runbook §4), not just credentials.
+> - ✅ **P2 #7 done** — Playwright browser QA pass added (4 viewports + per-role journeys), 32/32 green. #8 logo decided (stays removed). #9 perf still pending.
 
 ## P0 — Blocker (do before any client demo)
 
