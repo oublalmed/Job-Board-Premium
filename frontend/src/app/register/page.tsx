@@ -24,7 +24,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { Logo } from '@/components/Logo';
 import { AuthBrandPanel } from '@/components/AuthBrandPanel';
 
 export default function RegisterPage() {
@@ -93,24 +92,18 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex h-dvh overflow-hidden">
       <AuthBrandPanel />
 
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-center justify-between p-6">
-          <Link
-            href="/"
-            className="flex items-center lg:hidden"
-            aria-label={t('app.name')}
-          >
-            <Logo className="h-9 w-auto" />
-          </Link>
-          <div className="ms-auto">
-            <LanguageSwitcher />
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex min-h-full flex-col">
+          <div className="flex items-center p-6">
+            <div className="ms-auto">
+              <LanguageSwitcher />
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-1 items-center justify-center px-6 pb-12">
+          <div className="flex flex-1 items-center justify-center px-6 pb-12">
           <div className="w-full max-w-md">
             <div className="mb-8 text-center">
               <h2 className="text-3xl font-bold tracking-tight text-foreground">
@@ -221,6 +214,7 @@ export default function RegisterPage() {
               </Link>
             </p>
           </div>
+        </div>
         </div>
       </div>
     </div>

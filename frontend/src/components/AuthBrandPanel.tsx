@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Quote, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Logo } from './Logo';
 import { useLocale } from '@/i18n/locale-context';
 import type { SupportedLocale } from '@/i18n';
 
@@ -100,12 +99,10 @@ export function AuthBrandPanel() {
       {/* legibility overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/45" />
 
-      <div className="relative flex h-full flex-col justify-between p-10 xl:p-12">
-        <Logo className="h-9 w-auto brightness-0 invert" priority />
-
+      <div className="relative flex h-full flex-col justify-end p-10 xl:p-12">
         <figure className="max-w-lg">
           <Quote className="size-8 text-white/40" aria-hidden="true" />
-          <blockquote className="mt-3 text-xl leading-relaxed text-white">
+          <blockquote className="mt-3 font-serif text-2xl italic leading-relaxed text-white">
             {current.quote}
           </blockquote>
           <figcaption className="mt-5">
