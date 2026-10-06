@@ -1,9 +1,9 @@
 import Image from 'next/image';
 
 // The official Skillink brand lockup (icon + wordmark + tagline). Served from
-// /public/skillink-logo.png (1983×793, white background that blends into the
-// app's near-white surfaces). Height-driven: callers pass `h-* w-auto` and the
-// width follows the intrinsic ratio.
+// /public/skillink-logo.png (790×316, transparent background — sits on any
+// surface). Height-driven: callers pass `h-* w-auto` and the width follows the
+// intrinsic ratio. `quality={100}` keeps the wordmark crisp at small sizes.
 export function Logo({
   className = 'h-9 w-auto',
   priority = false,
@@ -15,8 +15,9 @@ export function Logo({
     <Image
       src="/skillink-logo.png"
       alt="Skillink — Talents, Opportunités, Avenir"
-      width={1983}
-      height={793}
+      width={790}
+      height={316}
+      quality={100}
       className={className}
       priority={priority}
     />

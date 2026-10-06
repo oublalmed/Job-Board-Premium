@@ -97,7 +97,7 @@ export default function CandidatesPage() {
   const addToShortlist = useAddToShortlist();
 
   // Page-based pagination over the cursor-paginated results: show one page
-  // (20 results) at a time. `fetchNextPage` loads the next cursor page lazily,
+  // (12 results) at a time. `fetchNextPage` loads the next cursor page lazily,
   // so "Next" fetches only when the recruiter actually advances.
   // Reset to the first page whenever a new search is run (see runSearch /
   // applySavedSearch), so results never open on a stale page number.
@@ -191,7 +191,7 @@ export default function CandidatesPage() {
                   {c.featured && (
                     <Badge variant="default" className="gap-1">
                       <Star className="size-3" />
-                      Featured
+                      {t('search.featured')}
                     </Badge>
                   )}
                 </div>
@@ -340,7 +340,7 @@ export default function CandidatesPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -351,28 +351,34 @@ export default function CandidatesPage() {
               className="ps-10"
             />
           </div>
-          <Button onClick={runSearch} disabled={search.isFetching && !search.isFetchingNextPage}>
-            {search.isFetching && !search.isFetchingNextPage ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Search className="size-4" />
-            )}
-            {t('search.filters')}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters((p) => !p)}
-            className="gap-1.5"
-            aria-expanded={showFilters}
-          >
-            <SlidersHorizontal className="size-4" />
-            {showFilters ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            {filtersActive > 0 && (
-              <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                {filtersActive}
-              </span>
-            )}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={runSearch}
+              disabled={search.isFetching && !search.isFetchingNextPage}
+              className="flex-1 sm:flex-none"
+            >
+              {search.isFetching && !search.isFetchingNextPage ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Search className="size-4" />
+              )}
+              {t('search.filters')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters((p) => !p)}
+              className="gap-1.5"
+              aria-expanded={showFilters}
+            >
+              <SlidersHorizontal className="size-4" />
+              {showFilters ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+              {filtersActive > 0 && (
+                <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                  {filtersActive}
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
 
         {showFilters && (
@@ -505,7 +511,7 @@ export default function CandidatesPage() {
           {!search.isLoading &&
             candidates.map((candidate, index) => (
               <Card key={candidate.id} className="transition-all duration-200 hover:shadow-md">
-                <CardContent className="flex items-center gap-6 p-5">
+                <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6">
                   <div className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-lg font-semibold text-primary">
                     {(candidate.firstName?.[0] ?? '?').toUpperCase()}
                   </div>
@@ -517,7 +523,7 @@ export default function CandidatesPage() {
                       {candidate.featured && (
                         <Badge variant="default" className="gap-1">
                           <Star className="size-3" />
-                          Featured
+                          {t('search.featured')}
                         </Badge>
                       )}
                       {/* EF-RECR-04 — rank (1-based position in the
