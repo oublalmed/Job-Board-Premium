@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Cobalt",
+    "name": "Skillink",
     "tagline": "The premium recruitment platform in Morocco",
     "description": "Connect top talent with hiring companies. Assessment, scoring and smart matchmaking."
   },
@@ -30,7 +30,9 @@
     "subscription": "Subscription",
     "jobsRecruiter": "Job offers",
     "jobsCandidate": "Job offers",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "how": "How it works",
+    "pricing": "Pricing"
   },
   "layout": {
     "skipToContent": "Skip to main content"
@@ -41,6 +43,7 @@
     "titleHighlight": "in Morocco",
     "subtitle": "Technical assessment, smart scoring and direct matchmaking between qualified candidates and demanding recruiters.",
     "cta": "Get started for free",
+    "ctaSecondary": "See pricing",
     "stat1Label": "Candidates assessed",
     "stat1Value": "12,000+",
     "stat2Label": "Companies",
@@ -49,7 +52,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Why Cobalt?",
+    "title": "Why Skillink?",
     "subtitle": "A platform built for the Moroccan market, with modern recruitment tools.",
     "scoring": {
       "title": "Smart scoring",
@@ -78,6 +81,91 @@
       "industry": "Industry",
       "education": "Education"
     }
+  },
+  "how": {
+    "badge": "How it works",
+    "title": "From profile to hire, in three steps",
+    "subtitle": "A simple, credible journey designed to save time for candidates and recruiters alike.",
+    "step1Title": "Build your profile",
+    "step1Desc": "Skills, experience, school: a complete, verified profile ready to be noticed.",
+    "step2Title": "Take the assessment",
+    "step2Desc": "Timed technical and aptitude tests, fullscreen and anti-cheat. Your score proves your skills.",
+    "step3Title": "Get contacted",
+    "step3Desc": "Recruiters discover qualified profiles in the candidate pool and reach out to you directly."
+  },
+  "audience": {
+    "title": "One platform, two sides",
+    "subtitle": "Candidates and recruiters each get exactly what they need.",
+    "candidate": {
+      "label": "For candidates",
+      "title": "Be judged on your skills, not just your résumé",
+      "b1": "An objective score that proves your level",
+      "b2": "Visibility with companies that are hiring",
+      "b3": "Detailed feedback to keep improving",
+      "cta": "Create my profile for free"
+    },
+    "recruiter": {
+      "label": "For recruiters",
+      "title": "Hire on verified skills, not on promises",
+      "b1": "A pool of complete, assessed profiles",
+      "b2": "Normalized scoring to compare objectively",
+      "b3": "Direct contact, no middleman",
+      "cta": "Request a demo"
+    }
+  },
+  "pricing": {
+    "title": "Plans for every company",
+    "subtitle": "No commitment. Change plans anytime.",
+    "perMonth": "MAD / month",
+    "popular": "Most popular",
+    "cta": "Choose this plan",
+    "note": "Candidates use Skillink for free. Pricing applies to companies.",
+    "starter": {
+      "name": "Starter",
+      "price": "990",
+      "desc": "To launch your first hires.",
+      "f1": "15 candidate contacts / month",
+      "f2": "1 active job posting",
+      "f3": "Access to the assessed pool",
+      "f4": "1 user"
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "2,900",
+      "desc": "For teams that hire regularly.",
+      "f1": "60 candidate contacts / month",
+      "f2": "5 active job postings",
+      "f3": "Recruitment analytics",
+      "f4": "3 users"
+    },
+    "premium": {
+      "name": "Premium",
+      "price": "6,900",
+      "desc": "For hiring at scale.",
+      "f1": "200 candidate contacts / month",
+      "f2": "20 active job postings",
+      "f3": "Reinforced anti-cheat & export",
+      "f4": "10 users"
+    }
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "subtitle": "Everything you need to know before getting started.",
+    "q1": "Is sign-up really free for candidates?",
+    "a1": "Yes. Creating a profile, taking assessments and being visible to recruiters is entirely free for candidates.",
+    "q2": "How is the score calculated?",
+    "a2": "From timed technical and aptitude assessments, graded automatically and normalized so candidates can be compared fairly.",
+    "q3": "How do you prevent cheating on assessments?",
+    "a3": "Assessments run fullscreen, with randomized questions, a strict server-side timer and automatic invalidation when the candidate repeatedly leaves the screen.",
+    "q4": "Is my data protected?",
+    "a4": "Data is hosted in Morocco and you can export or delete it at any time, in line with CNDP and GDPR.",
+    "q5": "Can recruiters change plans?",
+    "a5": "Yes, anytime and with no commitment. The change takes effect immediately."
+  },
+  "finalCta": {
+    "title": "Ready to hire differently?",
+    "subtitle": "Join the companies and talent who trust Skillink.",
+    "cta": "Get started for free"
   },
   "auth": {
     "loading": "Loading…",
@@ -117,7 +205,7 @@
     },
     "register": {
       "title": "Create an account",
-      "subtitle": "Join the Cobalt community",
+      "subtitle": "Join the Skillink community",
       "roleLabel": "I am a",
       "roleCandidate": "Candidate",
       "roleRecruiter": "Recruiter",
@@ -535,7 +623,7 @@
     "addTitle": "Add a project",
     "editTitle": "Edit project",
     "name": "Title",
-    "namePlaceholder": "e.g. Cobalt recruitment platform",
+    "namePlaceholder": "e.g. Skillink recruitment platform",
     "role": "Role (optional)",
     "rolePlaceholder": "e.g. Lead developer",
     "descriptionLabel": "Description",
@@ -984,10 +1072,10 @@
     "anonymous": "Verified candidate",
     "issuedOn": "Issued on",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Verified by Cobalt",
+    "verifiedBy": "Verified by Skillink",
     "notFound": "This badge is unavailable",
     "notFoundHint": "The link may be private or no longer active.",
-    "cta": "Join Cobalt",
+    "cta": "Join Skillink",
     "level": {
       "expert": "Expert",
       "advanced": "Advanced",
@@ -1003,7 +1091,7 @@
     "copied": "Link copied",
     "signups": "Sign-ups",
     "conversions": "Conversions",
-    "invited": "You were invited to Cobalt 🎉"
+    "invited": "You were invited to Skillink 🎉"
   },
   "analytics": {
     "navLabel": "Analytics",

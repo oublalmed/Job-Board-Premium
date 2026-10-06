@@ -20,10 +20,10 @@ export default function ContactPage() {
         <p>
           Écrivez-nous à{' '}
           <a
-            href="mailto:support@cobalt.ma"
+            href="mailto:support@skillink.ma"
             className="text-primary hover:underline underline-offset-4"
           >
-            support@cobalt.ma
+            support@skillink.ma
           </a>{' '}
           — nous répondons sous 48 heures ouvrées.
         </p>
@@ -41,10 +41,10 @@ export default function ContactPage() {
           </Link>{' '}
           ou écrivez à{' '}
           <a
-            href="mailto:privacy@cobalt.ma"
+            href="mailto:privacy@skillink.ma"
             className="text-primary hover:underline underline-offset-4"
           >
-            privacy@cobalt.ma
+            privacy@skillink.ma
           </a>
           .
         </p>

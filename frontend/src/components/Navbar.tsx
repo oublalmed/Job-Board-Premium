@@ -44,8 +44,8 @@ export function Navbar() {
             aria-label={t('nav.label')}
             className="hidden items-center gap-1 md:flex"
           >
-            <NavLink href="/#features" label={t('features.title')} active={false} />
-            <NavLink href="/#trust" label={t('trust.title')} active={false} />
+            <NavLink href="/#how" label={t('nav.how')} active={false} />
+            <NavLink href="/#pricing" label={t('nav.pricing')} active={false} />
           </nav>
         )}
 

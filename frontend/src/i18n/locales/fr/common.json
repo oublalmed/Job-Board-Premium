@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Cobalt",
+    "name": "Skillink",
     "tagline": "La plateforme de recrutement premium au Maroc",
     "description": "Connectez les meilleurs talents avec les entreprises qui recrutent. Évaluation, scoring et mise en relation intelligente."
   },
@@ -30,7 +30,9 @@
     "subscription": "Abonnement",
     "jobsRecruiter": "Offres d'emploi",
     "jobsCandidate": "Offres d'emploi",
-    "analytics": "Statistiques"
+    "analytics": "Statistiques",
+    "how": "Comment ça marche",
+    "pricing": "Tarifs"
   },
   "layout": {
     "skipToContent": "Aller au contenu principal"
@@ -41,6 +43,7 @@
     "titleHighlight": "au Maroc",
     "subtitle": "Évaluation technique, scoring intelligent et mise en relation directe entre candidats qualifiés et recruteurs exigeants.",
     "cta": "Commencer gratuitement",
+    "ctaSecondary": "Voir les tarifs",
     "stat1Label": "Candidats évalués",
     "stat1Value": "12 000+",
     "stat2Label": "Entreprises",
@@ -49,7 +52,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Pourquoi Cobalt ?",
+    "title": "Pourquoi Skillink ?",
     "subtitle": "Une plateforme conçue pour le marché marocain, avec des outils modernes de recrutement.",
     "scoring": {
       "title": "Scoring intelligent",
@@ -78,6 +81,91 @@
       "industry": "Industrie",
       "education": "Éducation"
     }
+  },
+  "how": {
+    "badge": "Comment ça marche",
+    "title": "Du profil à l'embauche, en trois étapes",
+    "subtitle": "Un parcours simple et crédible, pensé pour faire gagner du temps aux candidats comme aux recruteurs.",
+    "step1Title": "Créez votre profil",
+    "step1Desc": "Compétences, expériences, école : un profil complet et vérifié, prêt à être remarqué.",
+    "step2Title": "Passez l'évaluation",
+    "step2Desc": "QCM technique et psychotechnique chronométrés, en plein écran et anti-triche. Votre score atteste vos compétences.",
+    "step3Title": "Soyez contacté",
+    "step3Desc": "Les recruteurs découvrent les profils qualifiés dans la CVthèque et vous contactent directement."
+  },
+  "audience": {
+    "title": "Une plateforme, deux usages",
+    "subtitle": "Candidats et recruteurs y trouvent chacun leur compte.",
+    "candidate": {
+      "label": "Pour les candidats",
+      "title": "Faites valoir vos compétences, pas seulement votre CV",
+      "b1": "Un score objectif qui prouve votre niveau",
+      "b2": "De la visibilité auprès d'entreprises qui recrutent",
+      "b3": "Un retour détaillé pour progresser",
+      "cta": "Créer mon profil gratuitement"
+    },
+    "recruiter": {
+      "label": "Pour les recruteurs",
+      "title": "Recrutez sur des compétences vérifiées, pas sur des promesses",
+      "b1": "Une CVthèque de profils complets et évalués",
+      "b2": "Un scoring normalisé pour comparer objectivement",
+      "b3": "Un contact direct, sans intermédiaire",
+      "cta": "Demander une démo"
+    }
+  },
+  "pricing": {
+    "title": "Des packs adaptés à chaque entreprise",
+    "subtitle": "Sans engagement. Changez de pack à tout moment.",
+    "perMonth": "MAD / mois",
+    "popular": "Le plus choisi",
+    "cta": "Choisir ce pack",
+    "note": "Les candidats utilisent Skillink gratuitement. Les tarifs concernent les entreprises.",
+    "starter": {
+      "name": "Starter",
+      "price": "990",
+      "desc": "Pour lancer vos premiers recrutements.",
+      "f1": "15 contacts candidats / mois",
+      "f2": "1 offre d'emploi active",
+      "f3": "Accès à la CVthèque évaluée",
+      "f4": "1 utilisateur"
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "2 900",
+      "desc": "Pour les équipes qui recrutent régulièrement.",
+      "f1": "60 contacts candidats / mois",
+      "f2": "5 offres d'emploi actives",
+      "f3": "Statistiques de recrutement",
+      "f4": "3 utilisateurs"
+    },
+    "premium": {
+      "name": "Premium",
+      "price": "6 900",
+      "desc": "Pour un recrutement à grande échelle.",
+      "f1": "200 contacts candidats / mois",
+      "f2": "20 offres d'emploi actives",
+      "f3": "Anti-triche renforcé & export",
+      "f4": "10 utilisateurs"
+    }
+  },
+  "faq": {
+    "title": "Questions fréquentes",
+    "subtitle": "Tout ce qu'il faut savoir avant de commencer.",
+    "q1": "L'inscription est-elle vraiment gratuite pour les candidats ?",
+    "a1": "Oui. Créer un profil, passer les évaluations et être visible auprès des recruteurs est entièrement gratuit pour les candidats.",
+    "q2": "Comment le score est-il calculé ?",
+    "a2": "À partir d'évaluations techniques et psychotechniques chronométrées, corrigées automatiquement et normalisées pour être comparables d'un candidat à l'autre.",
+    "q3": "Comment évitez-vous la triche aux évaluations ?",
+    "a3": "Les évaluations se passent en plein écran, avec un tirage aléatoire des questions, un chronomètre strict côté serveur et une invalidation automatique en cas de sorties répétées de l'écran.",
+    "q4": "Mes données sont-elles protégées ?",
+    "a4": "Les données sont hébergées au Maroc et vous pouvez les exporter ou les supprimer à tout moment, conformément à la CNDP et au RGPD.",
+    "q5": "Les recruteurs peuvent-ils changer de pack ?",
+    "a5": "Oui, à tout moment et sans engagement. Le changement prend effet immédiatement."
+  },
+  "finalCta": {
+    "title": "Prêt à recruter autrement ?",
+    "subtitle": "Rejoignez les entreprises et les talents qui font confiance à Skillink.",
+    "cta": "Commencer gratuitement"
   },
   "auth": {
     "loading": "Chargement…",
@@ -117,7 +205,7 @@
     },
     "register": {
       "title": "Créer un compte",
-      "subtitle": "Rejoignez la communauté Cobalt",
+      "subtitle": "Rejoignez la communauté Skillink",
       "roleLabel": "Je suis un(e)",
       "roleCandidate": "Candidat",
       "roleRecruiter": "Recruteur",
@@ -535,7 +623,7 @@
     "addTitle": "Ajouter un projet",
     "editTitle": "Modifier le projet",
     "name": "Titre",
-    "namePlaceholder": "Ex. Plateforme de recrutement Cobalt",
+    "namePlaceholder": "Ex. Plateforme de recrutement Skillink",
     "role": "Rôle (facultatif)",
     "rolePlaceholder": "Ex. Lead développeur",
     "descriptionLabel": "Description",
@@ -984,10 +1072,10 @@
     "anonymous": "Candidat vérifié",
     "issuedOn": "Émis le",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Vérifié par Cobalt",
+    "verifiedBy": "Vérifié par Skillink",
     "notFound": "Ce badge est indisponible",
     "notFoundHint": "Le lien est peut-être privé ou n'est plus actif.",
-    "cta": "Rejoindre Cobalt",
+    "cta": "Rejoindre Skillink",
     "level": {
       "expert": "Expert",
       "advanced": "Avancé",
@@ -1003,7 +1091,7 @@
     "copied": "Lien copié",
     "signups": "Inscriptions",
     "conversions": "Conversions",
-    "invited": "Vous avez été invité sur Cobalt 🎉"
+    "invited": "Vous avez été invité sur Skillink 🎉"
   },
   "analytics": {
     "navLabel": "Analytique",
