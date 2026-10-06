@@ -92,8 +92,22 @@ l'URL Vercel réelle de l'étape 2, puis **Save** (le service redémarre) :
 - ⚠️ **Upload de fichiers** (CV/diplôme) : nécessite un vrai bucket S3. Remplace sur
   Render `STORAGE_ENDPOINT` / `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` par des
   identifiants **Cloudflare R2** ou **Backblaze B2** (gratuits, compatibles S3).
-- ⚠️ **Emails** : en mode `log` par défaut (aucun email réellement envoyé). Pour de
-  vrais envois, mets `MAIL_DRIVER=smtp` + `SMTP_HOST/PORT/USER/PASSWORD/MAIL_FROM`.
+- ⚠️ **Emails** : en mode `log` par défaut (aucun email réellement envoyé — le lien
+  s'affiche dans les logs). Pour de **vrais envois**, sur Render → cobalt-api →
+  Environment, ajoute :
+  | Variable | Valeur |
+  |----------|--------|
+  | `MAIL_DRIVER` | `smtp` |
+  | `NOTIFICATIONS_EMAIL_ENABLED` | `true` |
+  | `SMTP_HOST` | ex. `smtp-relay.brevo.com` |
+  | `SMTP_PORT` | `587` |
+  | `SMTP_USER` | identifiant du relais |
+  | `SMTP_PASSWORD` | clé SMTP du relais |
+  | `MAIL_FROM` | ex. `Skillink <no-reply@tondomaine.ma>` |
+
+  Un fournisseur gratuit (Brevo, ~300 emails/jour) suffit pour une démo. Les deux
+  canaux — transactionnel (vérification, réinitialisation) **et** notifications
+  (profil consulté, cooldown) — passent désormais par ce relais.
 
 ### Redéployer après une mise à jour du code
 Push sur la branche → Render et Vercel redéploient automatiquement (auto-deploy on push).
