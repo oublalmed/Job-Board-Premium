@@ -111,9 +111,9 @@ export default function RegisterPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center px-6 pb-12">
-          <div className="w-full max-w-sm">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground">
+          <div className="w-full max-w-md">
+            <div className="mb-8 text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground">
                 {t('auth.register.title')}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -141,6 +141,7 @@ export default function RegisterPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  className="h-12"
                   placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -155,6 +156,7 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   required
                   minLength={10}
+                  className="h-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   aria-describedby="register-password-hint"
@@ -199,7 +201,12 @@ export default function RegisterPage() {
                 </p>
               )}
 
-              <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                size="lg"
+                className="h-12 w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+              >
                 {isSubmitting ? t('auth.register.submitting') : t('auth.register.submit')}
               </Button>
             </form>

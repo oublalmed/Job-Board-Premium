@@ -56,9 +56,9 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center px-6 pb-12">
-          <div className="w-full max-w-sm">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground">
+          <div className="w-full max-w-md">
+            <div className="mb-8 text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground">
                 {t('auth.login.title')}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -78,6 +78,7 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  className="h-12"
                   placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -85,25 +86,24 @@ export default function LoginPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="login-password">
-                    {t('auth.passwordLabel')}
-                  </Label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs font-medium text-primary hover:underline underline-offset-4"
-                  >
-                    {t('auth.login.forgotLink')}
-                  </Link>
-                </div>
+                <Label htmlFor="login-password">{t('auth.passwordLabel')}</Label>
                 <Input
                   id="login-password"
                   type="password"
                   autoComplete="current-password"
                   required
+                  className="h-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <div className="flex justify-end">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-semibold text-foreground hover:underline underline-offset-4"
+                  >
+                    {t('auth.login.forgotLink')}
+                  </Link>
+                </div>
               </div>
 
               {error && (
@@ -112,7 +112,12 @@ export default function LoginPage() {
                 </p>
               )}
 
-              <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                size="lg"
+                className="h-12 w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+              >
                 {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
               </Button>
             </form>
