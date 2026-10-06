@@ -132,6 +132,11 @@
   },
   "auth": {
     "loading": "Loading…",
+    "benefits": {
+      "b1": "Assessed, verified talent",
+      "b2": "Objective, transparent scoring",
+      "b3": "Direct candidate–recruiter matching"
+    },
     "emailLabel": "Email",
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "Password",

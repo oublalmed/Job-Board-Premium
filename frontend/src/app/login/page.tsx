@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Logo } from '@/components/Logo';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { t } = useLocale();
@@ -37,18 +38,27 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-dvh">
-      {/* Left panel - branding */}
-      <div className="relative hidden w-1/2 bg-primary lg:flex lg:flex-col lg:items-center lg:justify-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/80" />
-        <div className="relative z-10 flex flex-col items-center gap-6 px-12 text-center text-primary-foreground">
-          <div className="rounded-2xl bg-white px-7 py-5 shadow-xl">
-            <Logo className="h-14 w-auto" priority />
-          </div>
-          <p className="max-w-md text-lg text-primary-foreground/80">
+      {/* Left panel - branding (light, so the transparent logo reads cleanly) */}
+      <div className="relative hidden w-1/2 flex-col items-center justify-center overflow-hidden border-e border-border/40 bg-gradient-to-br from-primary/5 via-background to-background lg:flex">
+        {/* soft brand accents echoing the logo's blue→violet */}
+        <div className="pointer-events-none absolute -start-24 -top-24 size-[26rem] rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -end-24 size-[26rem] rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="relative z-10 flex max-w-md flex-col items-center gap-9 px-14 text-center">
+          <Logo className="h-16 w-auto" priority />
+          <p className="text-lg leading-relaxed text-muted-foreground">
             {t('app.tagline')}
           </p>
+          <ul className="flex flex-col gap-3 text-start">
+            {[t('auth.benefits.b1'), t('auth.benefits.b2'), t('auth.benefits.b3')].map(
+              (b) => (
+                <li key={b} className="flex items-center gap-3 text-sm text-foreground/75">
+                  <CheckCircle2 className="size-5 shrink-0 text-primary" />
+                  <span>{b}</span>
+                </li>
+              ),
+            )}
+          </ul>
         </div>
-        <div className="absolute bottom-0 start-0 end-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       </div>
 
       {/* Right panel - form */}

@@ -132,6 +132,11 @@
   },
   "auth": {
     "loading": "Chargement…",
+    "benefits": {
+      "b1": "Des talents évalués et vérifiés",
+      "b2": "Un scoring objectif et transparent",
+      "b3": "Une mise en relation directe"
+    },
     "emailLabel": "Email",
     "emailPlaceholder": "vous@exemple.com",
     "passwordLabel": "Mot de passe",
