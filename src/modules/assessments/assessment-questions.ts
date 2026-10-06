@@ -216,14 +216,25 @@ const PROFILE_TECH: Record<string, ExamQuestion[]> = {
   ],
 };
 
-// French aliases of the older catalog, for backwards compatibility.
+// French aliases mapping catalog display names → the question-pool key they
+// draw from. Covers both the older catalog and the current clean French names,
+// so renaming a specialty for display never changes which questions it serves.
 const ALIASES: Record<string, string> = {
+  // older catalog
   'Développement Logiciel': 'Software Engineer',
   'Développement Web Full-Stack': 'Frontend',
   'Data Engineering': 'Data Engineer',
   'DevOps & Cloud': 'DevOps / Cloud',
   Cybersécurité: 'Cybersecurity',
   'Product Design (UX/UI)': 'Frontend',
+  // current French catalog names
+  'Génie Logiciel': 'Software Engineer',
+  'Développement Back-end (Java)': 'Java / Backend',
+  'Développement Front-end': 'Frontend',
+  'Développement Full-Stack': 'Full Stack',
+  'Ingénierie des Données': 'Data Engineer',
+  'Qualité & Test (QA)': 'QA / Test',
+  'Chef de Projet IT': 'IT Project Manager',
 };
 
 export const PROFILE_NAMES = Object.keys(PROFILE_TECH);

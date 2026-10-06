@@ -65,11 +65,18 @@ export class CatalogService {
       where: { active: true },
       order: { name: 'ASC' },
     });
-    return specialties.map((s) => ({
-      id: s.id,
-      name: s.name,
-      description: s.description,
-    }));
+    return specialties
+      // Safety net against e2e test fixtures leaking into a shared dev/demo
+      // database: their names are auto-generated ("E2E … <timestamp>") and are
+      // never a real assessment a candidate should see, even if the fixture
+      // left the row active. A clean prod DB has none of these, so this filter
+      // is a no-op there.
+      .filter((s) => !/^E2E\b/i.test(s.name))
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+      }));
   }
 
   // provider/externalTestId are internal (vendor) details, deliberately
