@@ -31,8 +31,7 @@
     "jobsRecruiter": "Job offers",
     "jobsCandidate": "Job offers",
     "analytics": "Analytics",
-    "how": "How it works",
-    "pricing": "Pricing"
+    "how": "How it works"
   },
   "layout": {
     "skipToContent": "Skip to main content"
@@ -43,7 +42,6 @@
     "titleHighlight": "in Morocco",
     "subtitle": "Technical assessment, smart scoring and direct matchmaking between qualified candidates and demanding recruiters.",
     "cta": "Get started for free",
-    "ctaSecondary": "See pricing",
     "stat1Label": "Candidates assessed",
     "stat1Value": "12,000+",
     "stat2Label": "Companies",
@@ -111,41 +109,6 @@
       "b2": "Normalized scoring to compare objectively",
       "b3": "Direct contact, no middleman",
       "cta": "Request a demo"
-    }
-  },
-  "pricing": {
-    "title": "Plans for every company",
-    "subtitle": "No commitment. Change plans anytime.",
-    "perMonth": "MAD / month",
-    "popular": "Most popular",
-    "cta": "Choose this plan",
-    "note": "Candidates use Skillink for free. Pricing applies to companies.",
-    "starter": {
-      "name": "Starter",
-      "price": "990",
-      "desc": "To launch your first hires.",
-      "f1": "15 candidate contacts / month",
-      "f2": "1 active job posting",
-      "f3": "Access to the assessed pool",
-      "f4": "1 user"
-    },
-    "pro": {
-      "name": "Pro",
-      "price": "2,900",
-      "desc": "For teams that hire regularly.",
-      "f1": "60 candidate contacts / month",
-      "f2": "5 active job postings",
-      "f3": "Recruitment analytics",
-      "f4": "3 users"
-    },
-    "premium": {
-      "name": "Premium",
-      "price": "6,900",
-      "desc": "For hiring at scale.",
-      "f1": "200 candidate contacts / month",
-      "f2": "20 active job postings",
-      "f3": "Reinforced anti-cheat & export",
-      "f4": "10 users"
     }
   },
   "faq": {
@@ -296,7 +259,7 @@
       "hint": "Upload your diploma or a proof of enrollment to have your school verified by an administrator.",
       "upload": "Upload a document",
       "status": {
-        "pending": "Pending verification",
+        "pending": "Awaiting admin approval",
         "verified": "School verified",
         "rejected": "Verification rejected"
       }
@@ -1118,7 +1081,7 @@
       "navLabel": "School verifications",
       "title": "Pending school verifications",
       "unnamedCandidate": "Unnamed candidate",
-      "noMatch": "No school recognized",
+      "noMatch": "Unreferenced school",
       "confidence": "OCR confidence: {{value}}%",
       "review": "Review",
       "empty": "No pending verifications.",

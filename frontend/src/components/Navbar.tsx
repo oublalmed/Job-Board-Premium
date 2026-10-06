@@ -45,7 +45,7 @@ export function Navbar() {
             className="hidden items-center gap-1 md:flex"
           >
             <NavLink href="/#how" label={t('nav.how')} active={false} />
-            <NavLink href="/#pricing" label={t('nav.pricing')} active={false} />
+            <NavLink href="/#features" label={t('features.title')} active={false} />
           </nav>
         )}
 

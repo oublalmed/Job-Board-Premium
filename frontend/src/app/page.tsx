@@ -13,7 +13,6 @@ import {
   UserPlus,
   FileCheck2,
   Send,
-  Star,
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -69,16 +68,11 @@ export default function HomePage() {
                 {t('hero.subtitle')}
               </p>
 
-              <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div className="mt-10 flex justify-center">
                 <Link href="/register">
                   <Button size="lg" className="gap-2 text-base">
                     {t('hero.cta')}
                     <ArrowRight className="size-4 rtl:rotate-180" />
-                  </Button>
-                </Link>
-                <Link href="#pricing">
-                  <Button size="lg" variant="outline" className="text-base">
-                    {t('hero.ctaSecondary')}
                   </Button>
                 </Link>
               </div>
@@ -207,68 +201,6 @@ export default function HomePage() {
                 description={t('features.compliance.description')}
               />
             </div>
-          </div>
-        </section>
-
-        {/* ─────────────── Pricing ─────────────── */}
-        <section id="pricing" className="border-t border-border/50 bg-muted/30 py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                {t('pricing.title')}
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                {t('pricing.subtitle')}
-              </p>
-            </div>
-
-            <div className="mx-auto mt-16 grid max-w-5xl items-start gap-8 lg:grid-cols-3">
-              <PricingCard
-                name={t('pricing.starter.name')}
-                price={t('pricing.starter.price')}
-                perMonth={t('pricing.perMonth')}
-                desc={t('pricing.starter.desc')}
-                features={[
-                  t('pricing.starter.f1'),
-                  t('pricing.starter.f2'),
-                  t('pricing.starter.f3'),
-                  t('pricing.starter.f4'),
-                ]}
-                ctaLabel={t('pricing.cta')}
-              />
-              <PricingCard
-                name={t('pricing.pro.name')}
-                price={t('pricing.pro.price')}
-                perMonth={t('pricing.perMonth')}
-                desc={t('pricing.pro.desc')}
-                features={[
-                  t('pricing.pro.f1'),
-                  t('pricing.pro.f2'),
-                  t('pricing.pro.f3'),
-                  t('pricing.pro.f4'),
-                ]}
-                ctaLabel={t('pricing.cta')}
-                popular
-                popularLabel={t('pricing.popular')}
-              />
-              <PricingCard
-                name={t('pricing.premium.name')}
-                price={t('pricing.premium.price')}
-                perMonth={t('pricing.perMonth')}
-                desc={t('pricing.premium.desc')}
-                features={[
-                  t('pricing.premium.f1'),
-                  t('pricing.premium.f2'),
-                  t('pricing.premium.f3'),
-                  t('pricing.premium.f4'),
-                ]}
-                ctaLabel={t('pricing.cta')}
-              />
-            </div>
-
-            <p className="mx-auto mt-10 max-w-xl text-center text-sm text-muted-foreground">
-              {t('pricing.note')}
-            </p>
           </div>
         </section>
 
@@ -433,65 +365,6 @@ function AudienceCard({
           <Button variant={highlight ? 'default' : 'outline'} className="w-full gap-2">
             {ctaLabel}
             <ArrowRight className="size-4 rtl:rotate-180" />
-          </Button>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function PricingCard({
-  name,
-  price,
-  perMonth,
-  desc,
-  features,
-  ctaLabel,
-  popular = false,
-  popularLabel,
-}: {
-  name: string;
-  price: string;
-  perMonth: string;
-  desc: string;
-  features: string[];
-  ctaLabel: string;
-  popular?: boolean;
-  popularLabel?: string;
-}) {
-  return (
-    <div
-      className={
-        'relative flex flex-col rounded-2xl border bg-card p-8 ' +
-        (popular
-          ? 'border-primary shadow-xl shadow-primary/10 lg:-mt-4 lg:pb-12'
-          : 'border-border/50')
-      }
-    >
-      {popular && popularLabel && (
-        <span className="absolute -top-3 start-1/2 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-          <Star className="size-3 fill-current" />
-          {popularLabel}
-        </span>
-      )}
-      <h3 className="text-lg font-semibold text-foreground">{name}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
-      <div className="mt-5 flex items-baseline gap-1.5">
-        <span className="text-4xl font-bold tracking-tight text-foreground">{price}</span>
-        <span className="text-sm text-muted-foreground">{perMonth}</span>
-      </div>
-      <ul className="mt-6 flex flex-1 flex-col gap-3">
-        {features.map((f) => (
-          <li key={f} className="flex items-start gap-3 text-sm text-foreground/80">
-            <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-            <span>{f}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-8">
-        <Link href="/contact">
-          <Button variant={popular ? 'default' : 'outline'} className="w-full">
-            {ctaLabel}
           </Button>
         </Link>
       </div>

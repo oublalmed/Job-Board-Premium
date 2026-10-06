@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Briefcase } from 'lucide-react';
 import { useAuth } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { Button } from '@/components/ui/button';
@@ -42,10 +41,9 @@ export default function LoginPage() {
       <div className="relative hidden w-1/2 bg-primary lg:flex lg:flex-col lg:items-center lg:justify-center">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/80" />
         <div className="relative z-10 flex flex-col items-center gap-6 px-12 text-center text-primary-foreground">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
-            <Briefcase className="size-8" />
+          <div className="rounded-2xl bg-white px-7 py-5 shadow-xl">
+            <Logo className="h-14 w-auto" priority />
           </div>
-          <h1 className="text-4xl font-bold">{t('app.name')}</h1>
           <p className="max-w-md text-lg text-primary-foreground/80">
             {t('app.tagline')}
           </p>
@@ -61,7 +59,7 @@ export default function LoginPage() {
             className="flex items-center lg:hidden"
             aria-label={t('app.name')}
           >
-            <Logo className="h-7 w-auto" />
+            <Logo className="h-9 w-auto" />
           </Link>
           <div className="ms-auto">
             <LanguageSwitcher />

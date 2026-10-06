@@ -31,8 +31,7 @@
     "jobsRecruiter": "Offres d'emploi",
     "jobsCandidate": "Offres d'emploi",
     "analytics": "Statistiques",
-    "how": "Comment ça marche",
-    "pricing": "Tarifs"
+    "how": "Comment ça marche"
   },
   "layout": {
     "skipToContent": "Aller au contenu principal"
@@ -43,7 +42,6 @@
     "titleHighlight": "au Maroc",
     "subtitle": "Évaluation technique, scoring intelligent et mise en relation directe entre candidats qualifiés et recruteurs exigeants.",
     "cta": "Commencer gratuitement",
-    "ctaSecondary": "Voir les tarifs",
     "stat1Label": "Candidats évalués",
     "stat1Value": "12 000+",
     "stat2Label": "Entreprises",
@@ -111,41 +109,6 @@
       "b2": "Un scoring normalisé pour comparer objectivement",
       "b3": "Un contact direct, sans intermédiaire",
       "cta": "Demander une démo"
-    }
-  },
-  "pricing": {
-    "title": "Des packs adaptés à chaque entreprise",
-    "subtitle": "Sans engagement. Changez de pack à tout moment.",
-    "perMonth": "MAD / mois",
-    "popular": "Le plus choisi",
-    "cta": "Choisir ce pack",
-    "note": "Les candidats utilisent Skillink gratuitement. Les tarifs concernent les entreprises.",
-    "starter": {
-      "name": "Starter",
-      "price": "990",
-      "desc": "Pour lancer vos premiers recrutements.",
-      "f1": "15 contacts candidats / mois",
-      "f2": "1 offre d'emploi active",
-      "f3": "Accès à la CVthèque évaluée",
-      "f4": "1 utilisateur"
-    },
-    "pro": {
-      "name": "Pro",
-      "price": "2 900",
-      "desc": "Pour les équipes qui recrutent régulièrement.",
-      "f1": "60 contacts candidats / mois",
-      "f2": "5 offres d'emploi actives",
-      "f3": "Statistiques de recrutement",
-      "f4": "3 utilisateurs"
-    },
-    "premium": {
-      "name": "Premium",
-      "price": "6 900",
-      "desc": "Pour un recrutement à grande échelle.",
-      "f1": "200 contacts candidats / mois",
-      "f2": "20 offres d'emploi actives",
-      "f3": "Anti-triche renforcé & export",
-      "f4": "10 utilisateurs"
     }
   },
   "faq": {
@@ -296,7 +259,7 @@
       "hint": "Téléversez votre diplôme ou une attestation pour faire vérifier votre école par un administrateur.",
       "upload": "Téléverser un justificatif",
       "status": {
-        "pending": "En attente de vérification",
+        "pending": "En attente de validation admin",
         "verified": "École vérifiée",
         "rejected": "Vérification refusée"
       }
@@ -1118,7 +1081,7 @@
       "navLabel": "Vérifications école",
       "title": "Vérifications d'école en attente",
       "unnamedCandidate": "Candidat sans nom",
-      "noMatch": "Aucune école reconnue",
+      "noMatch": "École non référencée",
       "confidence": "Confiance OCR : {{value}}%",
       "review": "Examiner",
       "empty": "Aucune vérification en attente.",
