@@ -3,7 +3,7 @@
 import { Suspense, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Gift, CheckCircle2 } from 'lucide-react';
+import { Gift } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 
@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Logo } from '@/components/Logo';
+import { AuthBrandPanel } from '@/components/AuthBrandPanel';
 
 export default function RegisterPage() {
   const { t } = useLocale();
@@ -93,27 +94,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-dvh">
-      {/* Left panel - branding (light, so the transparent logo reads cleanly) */}
-      <div className="relative hidden w-1/2 flex-col items-center justify-center overflow-hidden border-e border-border/40 bg-gradient-to-br from-primary/5 via-background to-background lg:flex">
-        <div className="pointer-events-none absolute -start-24 -top-24 size-[26rem] rounded-full bg-primary/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -end-24 size-[26rem] rounded-full bg-violet-500/10 blur-3xl" />
-        <div className="relative z-10 flex max-w-md flex-col items-center gap-9 px-14 text-center">
-          <Logo className="h-16 w-auto" priority />
-          <p className="text-lg leading-relaxed text-muted-foreground">
-            {t('app.description')}
-          </p>
-          <ul className="flex flex-col gap-3 text-start">
-            {[t('auth.benefits.b1'), t('auth.benefits.b2'), t('auth.benefits.b3')].map(
-              (b) => (
-                <li key={b} className="flex items-center gap-3 text-sm text-foreground/75">
-                  <CheckCircle2 className="size-5 shrink-0 text-primary" />
-                  <span>{b}</span>
-                </li>
-              ),
-            )}
-          </ul>
-        </div>
-      </div>
+      <AuthBrandPanel />
 
       <div className="flex flex-1 flex-col">
         <div className="flex items-center justify-between p-6">
