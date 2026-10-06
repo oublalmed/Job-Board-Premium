@@ -29,6 +29,25 @@ const RESERVED_KEYS = new Set([
   'path',
 ]);
 
+// Standard reason phrase for a status code, used as the `error` label when an
+// exception doesn't carry its own (e.g. ThrottlerException's response is a bare
+// string, which previously left `error` at the generic "Internal Server Error"
+// even on a 429).
+function reasonPhrase(statusCode: number): string {
+  const map: Record<number, string> = {
+    [HttpStatus.BAD_REQUEST]: 'Bad Request',
+    [HttpStatus.UNAUTHORIZED]: 'Unauthorized',
+    [HttpStatus.FORBIDDEN]: 'Forbidden',
+    [HttpStatus.NOT_FOUND]: 'Not Found',
+    [HttpStatus.CONFLICT]: 'Conflict',
+    [HttpStatus.UNPROCESSABLE_ENTITY]: 'Unprocessable Entity',
+    [HttpStatus.TOO_MANY_REQUESTS]: 'Too Many Requests',
+    [HttpStatus.INTERNAL_SERVER_ERROR]: 'Internal Server Error',
+    [HttpStatus.SERVICE_UNAVAILABLE]: 'Service Unavailable',
+  };
+  return map[statusCode] ?? 'Error';
+}
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
@@ -49,7 +68,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const resp = exceptionResponse as Record<string, unknown>;
         message = (resp['message'] as string | string[]) ?? exception.message;
-        error = (resp['error'] as string) ?? 'Error';
+        error = (resp['error'] as string) ?? reasonPhrase(statusCode);
         // Structured, non-secret context an exception deliberately attaches
         // (e.g. ConflictException({ message, reEligibleAt }) for the
         // assessment cooldown) — passed through so the client actually
@@ -60,7 +79,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           }
         }
       } else {
+        // String response (e.g. ThrottlerException) — derive the label from the
+        // status so a 429 reads "Too Many Requests", not "Internal Server Error".
         message = exception.message;
+        error = reasonPhrase(statusCode);
       }
     } else {
       this.logger.error(

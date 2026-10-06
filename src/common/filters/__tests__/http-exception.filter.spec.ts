@@ -53,6 +53,35 @@ describe('GlobalExceptionFilter', () => {
     );
   });
 
+  it('labels a 429 (ThrottlerException-style string response) as "Too Many Requests"', () => {
+    // ThrottlerException sends a bare string response at 429; the label must be
+    // derived from the status, not left at the generic "Internal Server Error".
+    const exception = new HttpException(
+      'ThrottlerException: Too Many Requests',
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(429);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 429, error: 'Too Many Requests' }),
+    );
+  });
+
+  it('derives the error label from the status when the body omits "error"', () => {
+    const exception = new HttpException(
+      { message: 'Cooldown active' },
+      HttpStatus.CONFLICT,
+    );
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 409, error: 'Conflict' }),
+    );
+  });
+
   it('should handle non-HttpException as 500', () => {
     filter.catch(new Error('unexpected'), mockHost);
 
