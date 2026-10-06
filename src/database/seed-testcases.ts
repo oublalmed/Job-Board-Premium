@@ -106,6 +106,19 @@ async function wipe(ds: DataSource): Promise<void> {
   console.log(
     `✓ Wiped ${toTruncate.length} table(s); kept catalogue (${[...KEEP_TABLES].join(', ')}).`,
   );
+
+  // The catalogue is kept across the wipe, but e2e runs can leave auto-generated
+  // "E2E … <timestamp>" specialties/tests in it. Purge them so the demo
+  // catalogue is pristine (a clean DB has none; this is a no-op there).
+  await ds.query(
+    `DELETE FROM tests WHERE specialty_id IN (SELECT id FROM specialties WHERE name LIKE 'E2E %')`,
+  );
+  const purged: { count: string }[] = await ds.query(
+    `WITH d AS (DELETE FROM specialties WHERE name LIKE 'E2E %' RETURNING 1) SELECT count(*) FROM d`,
+  );
+  if (Number(purged[0]?.count ?? 0) > 0) {
+    console.log(`✓ Purged ${purged[0].count} e2e-fixture specialt(ies).`);
+  }
 }
 
 async function seed(ds: DataSource): Promise<void> {
@@ -144,7 +157,7 @@ async function seed(ds: DataSource): Promise<void> {
 
   // --- Ensure an evaluation catalogue exists (kept across the wipe, but
   // recreate the standard one if the DB was empty) ------------------------
-  let test = await tests.findOne({ where: {} });
+  let test = await tests.findOne({ where: { active: true } });
   if (!test) {
     const specialty = await specialties.save(
       specialties.create({
@@ -330,6 +343,21 @@ async function seed(ds: DataSource): Promise<void> {
       score: [80, 77],
       tabSwitchCount: 0,
     },
+    // --- Additional realistic candidates so the CVthèque is a credible pool
+    // (varied schools/specialties/scores). All complete + indexed. ---
+    { key: 'c04', email: 'candidat.khalid@test.cobalt.ma', firstName: 'Khalid', lastName: 'Idrissi', headline: 'Ingénieur DevOps & Cloud', location: 'Casablanca', school: 'EHTP', skills: ['Docker', 'Kubernetes', 'Terraform', 'AWS', 'CI/CD', 'Linux'], score: [84, 79], tabSwitchCount: 0 },
+    { key: 'c05', email: 'candidat.fatimazahra@test.cobalt.ma', firstName: 'Fatima Zahra', lastName: 'Alaoui', headline: 'Développeuse Front-end React', location: 'Rabat', school: 'INSEA', skills: ['React', 'TypeScript', 'Next.js', 'CSS', 'Accessibilité', 'Jest'], score: [78, 85], tabSwitchCount: 0 },
+    { key: 'c06', email: 'candidat.mehdi@test.cobalt.ma', firstName: 'Mehdi', lastName: 'Bennis', headline: 'Ingénieur Cybersécurité', location: 'Casablanca', school: 'ENSIAS', skills: ['Sécurité', 'Cryptographie', 'Réseaux', 'Pentest', 'SOC', 'IAM'], score: [91, 83], tabSwitchCount: 0 },
+    { key: 'c07', email: 'candidat.nizar@test.cobalt.ma', firstName: 'Nizar', lastName: 'Chraibi', headline: 'Ingénieur Back-end Java', location: 'Tanger', school: 'EMI', skills: ['Java', 'Spring', 'PostgreSQL', 'REST', 'JPA', 'Maven'], score: [82, 75], tabSwitchCount: 0 },
+    { key: 'c08', email: 'candidat.salma@test.cobalt.ma', firstName: 'Salma', lastName: 'Fassi', headline: 'Data Engineer', location: 'Rabat', school: 'UM6P', skills: ['Python', 'Spark', 'Kafka', 'SQL', 'Airflow', 'dbt'], score: [86, 80], tabSwitchCount: 2 },
+    { key: 'c09', email: 'candidat.omar@test.cobalt.ma', firstName: 'Omar', lastName: 'Lahlou', headline: 'Ingénieur QA / Test', location: 'Casablanca', school: 'ENSEM', skills: ['Cypress', 'Jest', 'Playwright', 'CI', 'API Testing', 'Selenium'], score: [72, 71], tabSwitchCount: 0 },
+    { key: 'c10', email: 'candidat.yasmine@test.cobalt.ma', firstName: 'Yasmine', lastName: 'Berrada', headline: 'Développeuse Full-Stack', location: 'Marrakech', school: 'UIR', skills: ['Node.js', 'React', 'MongoDB', 'GraphQL', 'TypeScript', 'Docker'], score: [79, 76], tabSwitchCount: 0 },
+    { key: 'c11', email: 'candidat.hamza@test.cobalt.ma', firstName: 'Hamza', lastName: 'Oufkir', headline: 'Ingénieur Génie Logiciel', location: 'Fès', school: 'ENSIAS', skills: ['C++', 'Algorithmes', 'Design Patterns', 'Git', 'POO', 'UML'], score: [88, 84], tabSwitchCount: 0 },
+    { key: 'c12', email: 'candidat.aya@test.cobalt.ma', firstName: 'Aya', lastName: 'Sqalli', headline: 'Business Analyst IT', location: 'Casablanca', school: 'INSEA', skills: ['BPMN', 'UML', 'Agile', 'SQL', 'Spécifications', 'Recette'], score: [70, 74], tabSwitchCount: 0 },
+    { key: 'c13', email: 'candidat.reda@test.cobalt.ma', firstName: 'Reda', lastName: 'Benjelloun', headline: 'Chef de Projet IT', location: 'Rabat', school: 'EMI', skills: ['Scrum', 'Jira', 'Gestion de risques', 'Budget', 'Roadmap', 'KPI'], score: [68, 81], tabSwitchCount: 0 },
+    { key: 'c14', email: 'candidat.nada@test.cobalt.ma', firstName: 'Nada', lastName: 'El Fassi', headline: 'Ingénieure Data / ML', location: 'Casablanca', school: 'UM6P', skills: ['Python', 'TensorFlow', 'Pandas', 'SQL', 'NLP', 'MLOps'], score: [90, 87], tabSwitchCount: 0 },
+    { key: 'c15', email: 'candidat.soufiane@test.cobalt.ma', firstName: 'Soufiane', lastName: 'Amrani', headline: 'Ingénieur Back-end Node.js', location: 'Agadir', school: 'ENIM', skills: ['Node.js', 'NestJS', 'PostgreSQL', 'Redis', 'Docker', 'RabbitMQ'], score: [83, 78], tabSwitchCount: 3 },
+    { key: 'c16', email: 'candidat.lina@test.cobalt.ma', firstName: 'Lina', lastName: 'Tahiri', headline: 'Développeuse Full-Stack', location: 'Rabat', school: 'ESITH', skills: ['Vue.js', 'Node.js', 'MySQL', 'TypeScript', 'Tailwind', 'Git'], score: [76, 73], tabSwitchCount: 0 },
   ];
 
   const profileByKey = new Map<string, CandidateProfile>();
