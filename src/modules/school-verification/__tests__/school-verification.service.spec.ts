@@ -208,6 +208,24 @@ describe('SchoolVerificationService', () => {
       expect(profileUpdateQb.execute).not.toHaveBeenCalled();
     });
 
+    it('§2 — an unreferenced school is never auto-approved and is flagged for admin review', async () => {
+      // Even at a perfect OCR score, a school absent from the reference list
+      // must stay pending for an administrator (product rule) and carry a note
+      // marking it as unreferenced so the review queue can distinguish it.
+      ocrProvider.extractText.mockResolvedValue({
+        text: 'Universite privee non reconnue',
+        confidence: 100,
+      });
+
+      const result = await service.submit(userId, validFile);
+
+      expect(result.status).toBe(SchoolVerificationStatus.PENDING);
+      expect(result.matchedSchool).toBeNull();
+      expect(result.reviewNote).toContain('non référencée');
+      expect(result.reviewedAt).toBeNull();
+      expect(profileUpdateQb.execute).not.toHaveBeenCalled();
+    });
+
     it('§2 — honours a configured auto-approval threshold', async () => {
       // Raise the bar to 98: a 95% OCR no longer auto-approves.
       settingsService.getNumber.mockImplementation((key: string) =>

@@ -150,14 +150,28 @@ export class SchoolVerificationService {
     );
     const match = matchGrandeEcole(ocrResult.text);
 
-    // §2 — auto-approve when the OCR is confident enough AND a reference school
-    // was matched. Below the threshold (or no match) → the manual review flow.
+    // §2 — auto-approve ONLY when a *referenced* grande école was matched AND the
+    // OCR is confident enough. A school that is NOT in the reference list
+    // (match === null) is never auto-approved, whatever the OCR confidence — it
+    // stays pending for an administrator to verify the school manually, then
+    // approve or reject. This gate is the product rule "écoles non référencées =
+    // validation admin obligatoire".
     const autoApproveMin =
       (await this.settingsService.getNumber(
         'school_verification_auto_approve_min_confidence',
       )) ?? DEFAULT_AUTO_APPROVE_MIN_CONFIDENCE;
     const autoApprove =
       match !== null && ocrResult.confidence >= autoApproveMin;
+
+    // When it isn't auto-approved, record *why* it's awaiting an admin, so the
+    // review queue distinguishes an unreferenced school (needs the school itself
+    // vetted) from a referenced one that merely fell short on OCR confidence.
+    const pendingNote =
+      match === null
+        ? 'École non référencée — en attente de validation par un administrateur.'
+        : `En attente de validation par un administrateur (OCR ${Math.round(
+            ocrResult.confidence,
+          )}% < ${autoApproveMin}%).`;
 
     const verification = await this.verificationRepo.save(
       this.verificationRepo.create({
@@ -175,7 +189,7 @@ export class SchoolVerificationService {
         reviewedAt: autoApprove ? new Date() : null,
         reviewNote: autoApprove
           ? `Auto-approuvé : OCR ${Math.round(ocrResult.confidence)}% ≥ ${autoApproveMin}% (${match.school})`
-          : null,
+          : pendingNote,
       }),
     );
 
