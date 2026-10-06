@@ -9,6 +9,8 @@
     "lint": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:report": "playwright show-report e2e/.report",
     "generate:api": "openapi-typescript http://localhost:3000/api/v1/docs-json -o src/api/schema.d.ts"
   },
   "dependencies": {
@@ -31,6 +33,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
