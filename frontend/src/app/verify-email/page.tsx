@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, type FormEvent } from 'react';
+import { Suspense, useState, useEffect, useRef, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, XCircle, Loader2, MailCheck } from 'lucide-react';
@@ -51,18 +51,21 @@ function VerifyEmailContent() {
     setResendStatus('sent');
   }
 
+  // The verification token is single-use: the first POST consumes it. React
+  // StrictMode (and any remount) runs effects twice in dev, which would fire a
+  // second POST against the now-spent token and flip a real success to a false
+  // "failed". This ref makes the request fire exactly once per token.
+  const verifyStarted = useRef(false);
+
   useEffect(() => {
-    if (!token) return;
-    let active = true;
+    if (!token || verifyStarted.current) return;
+    verifyStarted.current = true;
     void (async () => {
       const { error } = await apiClient.POST('/api/v1/auth/verify-email', {
         body: { token },
       });
-      if (active) setStatus(error ? 'error' : 'success');
+      setStatus(error ? 'error' : 'success');
     })();
-    return () => {
-      active = false;
-    };
   }, [token]);
 
   return (
