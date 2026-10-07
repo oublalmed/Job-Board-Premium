@@ -15,6 +15,7 @@ import {
   Clock,
   ShieldX,
   Loader2,
+  Eye,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm, useWatch } from 'react-hook-form';
@@ -231,6 +232,16 @@ function CandidateProfile() {
   // guard so the candidate sees why the public options are unavailable.
   const canBeVisible =
     (profileQuery.data?.profile.indexedInCvtheque ?? false) && hasSchoolDocument;
+  // EF-CAND-06 — the profile meets every requirement to be published but the
+  // candidate hasn't opted in yet (visibility still HIDDEN). Nudge them, since
+  // a hidden profile never surfaces in the recruiter CVthèque.
+  const savedVisibility = profileQuery.data?.profile.visibility ?? 'hidden';
+  const publishableButHidden = canBeVisible && savedVisibility === 'hidden';
+
+  function handleMakeVisible() {
+    form.setValue('visibility', 'recruiters_only', { shouldDirty: true });
+    void onSubmit();
+  }
   const cv = cvQuery.data ?? null;
   const verification = verificationQuery.data ?? null;
   // useWatch (a hook) rather than form.watch() (a returned function) so the
@@ -305,6 +316,36 @@ function CandidateProfile() {
           {updateProfile.isPending ? t('profile.saving') : t('profile.save')}
         </Button>
       </div>
+
+      {publishableButHidden && (
+        <div className="flex flex-col gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Eye className="size-5" />
+            </span>
+            <div>
+              <p className="font-semibold text-foreground">
+                {t('profile.publishNudge.title')}
+              </p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {t('profile.publishNudge.body')}
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleMakeVisible}
+            disabled={updateProfile.isPending}
+            className="shrink-0 gap-2"
+          >
+            {updateProfile.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+            {t('profile.publishNudge.cta')}
+          </Button>
+        </div>
+      )}
 
       <div className="grid items-start gap-6 lg:grid-cols-3">
         {/* Left column — the summary card with CV + school verification

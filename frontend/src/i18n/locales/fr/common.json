@@ -299,6 +299,11 @@
       "description": "Description",
       "descriptionPlaceholder": "Missions, réalisations…",
       "add": "Ajouter l'expérience"
+    },
+    "publishNudge": {
+      "title": "Votre profil est prêt à être publié 🎉",
+      "body": "Vous remplissez toutes les conditions. Rendez votre profil visible pour apparaître dans la CVthèque des recruteurs.",
+      "cta": "Rendre visible aux recruteurs"
     }
   },
   "search": {

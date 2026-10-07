@@ -299,6 +299,11 @@
       "description": "Description",
       "descriptionPlaceholder": "Responsibilities, achievements…",
       "add": "Add experience"
+    },
+    "publishNudge": {
+      "title": "Your profile is ready to publish 🎉",
+      "body": "You meet all the requirements. Make your profile visible to appear in the recruiter CV library.",
+      "cta": "Make visible to recruiters"
     }
   },
   "search": {
