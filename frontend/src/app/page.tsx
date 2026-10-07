@@ -198,7 +198,7 @@ export default function HomePage() {
 
                 <motion.h1
                   variants={fadeUp}
-                  className="mt-6 text-[clamp(2.75rem,6vw,4.75rem)] font-black leading-[0.98] tracking-tight"
+                  className="mt-6 font-display text-[clamp(2.75rem,6vw,4.75rem)] font-extrabold leading-[0.98] tracking-tight"
                 >
                   {t('hero.title')}{' '}
                   <span className="bg-gradient-to-r from-[#35B6FF] via-[#5B6CF6] to-[#A64DFF] bg-clip-text text-transparent">
@@ -244,7 +244,7 @@ export default function HomePage() {
               <Reveal className="max-w-2xl">
                 <motion.h2
                   variants={fadeUp}
-                  className="text-[clamp(2rem,4vw,3rem)] font-black leading-tight tracking-tight"
+                  className="font-display text-[clamp(2rem,4vw,3rem)] font-extrabold leading-tight tracking-tight"
                 >
                   {t('how.title')}
                 </motion.h2>
@@ -267,7 +267,7 @@ export default function HomePage() {
               <Reveal className="max-w-2xl">
                 <motion.h2
                   variants={fadeUp}
-                  className="text-[clamp(2rem,4vw,3rem)] font-black leading-tight tracking-tight"
+                  className="font-display text-[clamp(2rem,4vw,3rem)] font-extrabold leading-tight tracking-tight"
                 >
                   {t('audience.title')}
                 </motion.h2>
@@ -302,7 +302,7 @@ export default function HomePage() {
               <Reveal className="max-w-2xl">
                 <motion.h2
                   variants={fadeUp}
-                  className="text-[clamp(2rem,4vw,3rem)] font-black leading-tight tracking-tight"
+                  className="font-display text-[clamp(2rem,4vw,3rem)] font-extrabold leading-tight tracking-tight"
                 >
                   {t('features.title')}
                 </motion.h2>
@@ -326,7 +326,7 @@ export default function HomePage() {
               <Reveal>
                 <motion.h2
                   variants={fadeUp}
-                  className="text-[clamp(2rem,4vw,3rem)] font-black leading-tight tracking-tight"
+                  className="font-display text-[clamp(2rem,4vw,3rem)] font-extrabold leading-tight tracking-tight"
                 >
                   {t('faq.title')}
                 </motion.h2>
@@ -354,7 +354,7 @@ export default function HomePage() {
                   className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1140] via-[#101230] to-[#0a1a30] px-8 py-16 text-center sm:px-16 sm:py-20"
                 >
                   <div className="pointer-events-none absolute -top-1/3 start-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-[#35B6FF]/30 to-[#A64DFF]/30 blur-3xl" />
-                  <h2 className="text-[clamp(2rem,4vw,3.25rem)] font-black leading-tight tracking-tight">
+                  <h2 className="font-display text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-tight tracking-tight">
                     {t('finalCta.title')}
                   </h2>
                   <p className="mx-auto mt-5 max-w-xl text-lg text-white/70">
@@ -458,7 +458,7 @@ function GlowField() {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-2xl font-black sm:text-3xl">{value}</span>
+      <span className="font-display text-2xl font-bold sm:text-3xl">{value}</span>
       <span className="text-xs text-white/50 sm:text-sm">{label}</span>
     </div>
   );
@@ -564,7 +564,7 @@ function AudienceCard({
       }
     >
       <span className="text-sm font-semibold text-[#8CA2FF]">{label}</span>
-      <h3 className="mt-2 text-2xl font-black tracking-tight">{title}</h3>
+      <h3 className="mt-2 font-display text-2xl font-bold tracking-tight">{title}</h3>
       <ul className="mt-7 flex flex-1 flex-col gap-3.5">
         {bullets.map((b) => (
           <li key={b} className="flex items-start gap-3 text-sm text-white/70">
