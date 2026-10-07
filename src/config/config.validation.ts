@@ -32,7 +32,7 @@ export const configValidationSchema = Joi.object({
   JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
 
   // MFA / TOTP (ENF-06)
-  MFA_ISSUER: Joi.string().default('Skillink'),
+  MFA_ISSUER: Joi.string().default('Vocatic'),
   MFA_ENCRYPTION_KEY: Joi.string().allow('').default(''),
   MFA_ENFORCE_STAFF: Joi.boolean().default(false),
 

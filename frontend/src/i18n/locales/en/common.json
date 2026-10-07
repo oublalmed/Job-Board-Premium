@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Skillink",
+    "name": "Vocatic",
     "tagline": "The premium recruitment platform in Morocco",
     "description": "Connect top talent with hiring companies. Assessment, scoring and smart matchmaking."
   },
@@ -50,7 +50,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Why Skillink?",
+    "title": "Why Vocatic?",
     "subtitle": "A platform built for the Moroccan market, with modern recruitment tools.",
     "scoring": {
       "title": "Smart scoring",
@@ -127,7 +127,7 @@
   },
   "finalCta": {
     "title": "Ready to hire differently?",
-    "subtitle": "Join the companies and talent who trust Skillink.",
+    "subtitle": "Join the companies and talent who trust Vocatic.",
     "cta": "Get started for free"
   },
   "auth": {
@@ -173,7 +173,7 @@
     },
     "register": {
       "title": "Create an account",
-      "subtitle": "Join the Skillink community",
+      "subtitle": "Join the Vocatic community",
       "roleLabel": "I am a",
       "roleCandidate": "Candidate",
       "roleRecruiter": "Recruiter",
@@ -592,7 +592,7 @@
     "addTitle": "Add a project",
     "editTitle": "Edit project",
     "name": "Title",
-    "namePlaceholder": "e.g. Skillink recruitment platform",
+    "namePlaceholder": "e.g. Vocatic recruitment platform",
     "role": "Role (optional)",
     "rolePlaceholder": "e.g. Lead developer",
     "descriptionLabel": "Description",
@@ -1041,10 +1041,10 @@
     "anonymous": "Verified candidate",
     "issuedOn": "Issued on",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Verified by Skillink",
+    "verifiedBy": "Verified by Vocatic",
     "notFound": "This badge is unavailable",
     "notFoundHint": "The link may be private or no longer active.",
-    "cta": "Join Skillink",
+    "cta": "Join Vocatic",
     "level": {
       "expert": "Expert",
       "advanced": "Advanced",
@@ -1060,7 +1060,7 @@
     "copied": "Link copied",
     "signups": "Sign-ups",
     "conversions": "Conversions",
-    "invited": "You were invited to Skillink 🎉"
+    "invited": "You were invited to Vocatic 🎉"
   },
   "analytics": {
     "navLabel": "Analytics",

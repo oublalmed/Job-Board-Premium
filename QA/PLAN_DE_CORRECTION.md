@@ -1,6 +1,6 @@
 # SKILLINK — Plan de correction (Phase 2)
 
-Basé sur l'audit (`QA/SKILLINK_QA_AUDIT.md`). **Rien n'est corrigé tant que tu
+Basé sur l'audit (`QA/VOCATIC_QA_AUDIT.md`). **Rien n'est corrigé tant que tu
 n'as pas validé ce plan.** Chaque lot indique l'effort, les fichiers touchés, le
 risque, les dépendances et le critère d'acceptation (comment on vérifie que
 c'est corrigé).

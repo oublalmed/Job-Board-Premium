@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Skillink",
+    "name": "Vocatic",
     "tagline": "La plateforme de recrutement premium au Maroc",
     "description": "Connectez les meilleurs talents avec les entreprises qui recrutent. Évaluation, scoring et mise en relation intelligente."
   },
@@ -50,7 +50,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Pourquoi Skillink ?",
+    "title": "Pourquoi Vocatic ?",
     "subtitle": "Une plateforme conçue pour le marché marocain, avec des outils modernes de recrutement.",
     "scoring": {
       "title": "Scoring intelligent",
@@ -127,7 +127,7 @@
   },
   "finalCta": {
     "title": "Prêt à recruter autrement ?",
-    "subtitle": "Rejoignez les entreprises et les talents qui font confiance à Skillink.",
+    "subtitle": "Rejoignez les entreprises et les talents qui font confiance à Vocatic.",
     "cta": "Commencer gratuitement"
   },
   "auth": {
@@ -173,7 +173,7 @@
     },
     "register": {
       "title": "Créer un compte",
-      "subtitle": "Rejoignez la communauté Skillink",
+      "subtitle": "Rejoignez la communauté Vocatic",
       "roleLabel": "Je suis un(e)",
       "roleCandidate": "Candidat",
       "roleRecruiter": "Recruteur",
@@ -592,7 +592,7 @@
     "addTitle": "Ajouter un projet",
     "editTitle": "Modifier le projet",
     "name": "Titre",
-    "namePlaceholder": "Ex. Plateforme de recrutement Skillink",
+    "namePlaceholder": "Ex. Plateforme de recrutement Vocatic",
     "role": "Rôle (facultatif)",
     "rolePlaceholder": "Ex. Lead développeur",
     "descriptionLabel": "Description",
@@ -1041,10 +1041,10 @@
     "anonymous": "Candidat vérifié",
     "issuedOn": "Émis le",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Vérifié par Skillink",
+    "verifiedBy": "Vérifié par Vocatic",
     "notFound": "Ce badge est indisponible",
     "notFoundHint": "Le lien est peut-être privé ou n'est plus actif.",
-    "cta": "Rejoindre Skillink",
+    "cta": "Rejoindre Vocatic",
     "level": {
       "expert": "Expert",
       "advanced": "Avancé",
@@ -1060,7 +1060,7 @@
     "copied": "Lien copié",
     "signups": "Inscriptions",
     "conversions": "Conversions",
-    "invited": "Vous avez été invité sur Skillink 🎉"
+    "invited": "Vous avez été invité sur Vocatic 🎉"
   },
   "analytics": {
     "navLabel": "Analytique",

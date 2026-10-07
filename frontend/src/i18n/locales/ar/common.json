@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Skillink",
+    "name": "Vocatic",
     "tagline": "منصة التوظيف المتميّزة في المغرب",
     "description": "نربط أفضل المواهب بالشركات التي توظّف. تقييم وتنقيط ووصل ذكي."
   },
@@ -50,7 +50,7 @@
     "stat3Value": "94٪"
   },
   "features": {
-    "title": "لماذا Skillink؟",
+    "title": "لماذا Vocatic؟",
     "subtitle": "منصة مصمّمة للسوق المغربية، بأدوات توظيف عصرية.",
     "scoring": {
       "title": "تنقيط ذكي",
@@ -127,7 +127,7 @@
   },
   "finalCta": {
     "title": "جاهز للتوظيف بطريقة مختلفة؟",
-    "subtitle": "انضمّ إلى الشركات والمواهب التي تثق بـ Skillink.",
+    "subtitle": "انضمّ إلى الشركات والمواهب التي تثق بـ Vocatic.",
     "cta": "ابدأ مجّانًا"
   },
   "auth": {
@@ -173,7 +173,7 @@
     },
     "register": {
       "title": "إنشاء حساب",
-      "subtitle": "انضمّ إلى مجتمع Skillink",
+      "subtitle": "انضمّ إلى مجتمع Vocatic",
       "roleLabel": "أنا",
       "roleCandidate": "مرشّح",
       "roleRecruiter": "مُوظِّف",
@@ -592,7 +592,7 @@
     "addTitle": "إضافة مشروع",
     "editTitle": "تعديل المشروع",
     "name": "العنوان",
-    "namePlaceholder": "مثال: منصة التوظيف Skillink",
+    "namePlaceholder": "مثال: منصة التوظيف Vocatic",
     "role": "الدور (اختياري)",
     "rolePlaceholder": "مثال: مطوّر رئيسي",
     "descriptionLabel": "الوصف",
@@ -1041,10 +1041,10 @@
     "anonymous": "مرشّح مُوثَّق",
     "issuedOn": "صدرت في",
     "percentile": "المئين {{value}}",
-    "verifiedBy": "مُوثَّق من Skillink",
+    "verifiedBy": "مُوثَّق من Vocatic",
     "notFound": "هذه الشارة غير متاحة",
     "notFoundHint": "قد يكون الرابط خاصًّا أو لم يعُد نشطًا.",
-    "cta": "انضمّ إلى Skillink",
+    "cta": "انضمّ إلى Vocatic",
     "level": {
       "expert": "خبير",
       "advanced": "متقدّم",
@@ -1060,7 +1060,7 @@
     "copied": "تمّ نسخ الرابط",
     "signups": "التسجيلات",
     "conversions": "التحويلات",
-    "invited": "لقد دُعيت إلى Skillink 🎉"
+    "invited": "لقد دُعيت إلى Vocatic 🎉"
   },
   "analytics": {
     "navLabel": "التحليلات",

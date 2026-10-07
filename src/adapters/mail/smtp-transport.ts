@@ -22,5 +22,5 @@ export function createSmtpTransport(): Transporter {
 
 // The From header. A configured MAIL_FROM wins; otherwise a branded default.
 export function mailFrom(): string {
-  return process.env['MAIL_FROM'] ?? `${APP_NAME} <no-reply@skillink.app>`;
+  return process.env['MAIL_FROM'] ?? `${APP_NAME} <no-reply@vocatic.app>`;
 }

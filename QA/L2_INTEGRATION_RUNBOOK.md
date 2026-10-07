@@ -1,4 +1,4 @@
-# Skillink — L2 Integration & Deployment Runbook
+# Vocatic — L2 Integration & Deployment Runbook
 
 **Goal:** go from the current demo (stub drivers, local DB) to a live
 Vercel (frontend) + Render (API + Postgres + Redis) environment with the
@@ -50,7 +50,7 @@ SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_USER=<your-brevo-login>
 SMTP_PASSWORD=<your-brevo-smtp-key>     # the SMTP key, NOT the account password
-MAIL_FROM=Skillink <no-reply@your-domain>
+MAIL_FROM=Vocatic <no-reply@your-domain>
 ```
 
 **Deliverability:** verify a sending domain in Brevo and add its SPF + DKIM DNS
@@ -132,7 +132,7 @@ STORAGE_DRIVER=s3
 STORAGE_ENDPOINT=https://<account>.r2.cloudflarestorage.com
 STORAGE_ACCESS_KEY=<r2-access-key>
 STORAGE_SECRET_KEY=<r2-secret-key>
-STORAGE_BUCKET=skillink
+STORAGE_BUCKET=vocatic
 STORAGE_REGION=auto
 STORAGE_FORCE_PATH_STYLE=true
 ```

@@ -8,7 +8,7 @@ in this phase.
 
 | Location | State |
 |---|---|
-| Header / navbar | Skillink logo (official transparent asset) displayed ✅ |
+| Header / navbar | Vocatic logo (official transparent asset) displayed ✅ |
 | Landing page | redesigned (hero, how-it-works, dual audience, FAQ, CTA) ✅ |
 | Sign-in / Sign-up | redesigned (split: photo + rotating serif testimonial; clean form; dark CTA). Logo **removed here at owner's request** (deliberate deviation vs brief §21) ⚠️ |
 

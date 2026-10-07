@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright config for Skillink's browser QA pass.
+ * Playwright config for Vocatic's browser QA pass.
  *
  * These are *integration* checks against a running stack, kept separate from the
  * Vitest unit suite (`npm run test`). They expect the frontend on :3001 and the
