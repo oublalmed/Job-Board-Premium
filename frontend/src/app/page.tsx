@@ -92,7 +92,7 @@ export default function HomePage() {
           <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
             <Link href="/" aria-label={t('app.name')} className="flex items-center">
               <Image
-                src="/maysync-logo-light.png"
+                src="/maysync-logo-ondark.png"
                 alt={t('app.name')}
                 width={679}
                 height={169}
@@ -379,7 +379,7 @@ export default function HomePage() {
         <footer className="border-t border-white/5 py-12">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 sm:px-6 md:flex-row">
             <Image
-              src="/maysync-logo-light.png"
+              src="/maysync-logo-ondark.png"
               alt={t('app.name')}
               width={679}
               height={169}
