@@ -13,7 +13,9 @@ import { SettingsService } from '../settings/settings.service.js';
 export const INDEXATION_SCORE_MIN_KEY = 'indexation_score_min';
 export const INDEXATION_PERCENTILE_MIN_KEY = 'indexation_percentile_min';
 export const FEATURING_PERCENTILE_MIN_KEY = 'featuring_percentile_min';
-export const DEFAULT_INDEXATION_SCORE_MIN = 40;
+// A candidate's assessment must reach this score to be indexed in the CVthèque
+// (overridable via the `indexation_score_min` setting).
+export const DEFAULT_INDEXATION_SCORE_MIN = 70;
 export const DEFAULT_INDEXATION_PERCENTILE_MIN = 30;
 export const DEFAULT_FEATURING_PERCENTILE_MIN = 75;
 const DEFAULT_COMPLETENESS_THRESHOLD = 70;
