@@ -14,6 +14,7 @@ import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { VerifyEmailDto } from './dto/verify-email.dto.js';
+import { ResendVerificationDto } from './dto/resend-verification.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
@@ -60,6 +61,16 @@ export class AuthController {
   @ApiResponse({ status: 200, type: MessageResponseDto })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     return this.authService.verifyEmail(dto.token);
+  }
+
+  // Re-issue a verification link for a pending account. Strict limit (triggers
+  // an email send) and always 200 with a generic message, like forgot-password.
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, type: MessageResponseDto })
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerification(dto.email);
   }
 
   // EF-CAND-01 — request a reset link. Strict limit: this is an unauthenticated

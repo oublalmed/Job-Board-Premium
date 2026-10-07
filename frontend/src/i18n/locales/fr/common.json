@@ -504,7 +504,11 @@
     "success": "Email vérifié",
     "successDescription": "Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.",
     "error": "Vérification échouée",
-    "errorDescription": "Le lien de vérification est invalide ou a expiré. Veuillez vous réinscrire."
+    "errorDescription": "Le lien de vérification est invalide ou a expiré. Saisissez votre email pour recevoir un nouveau lien.",
+    "emailPlaceholder": "Votre adresse email",
+    "resendCta": "Renvoyer l’email de vérification",
+    "resendSending": "Envoi…",
+    "resendSent": "Si un compte est en attente de vérification, un nouveau lien vient d’être envoyé. Pensez à vérifier vos spams."
   },
   "subscription": {
     "title": "Abonnement",

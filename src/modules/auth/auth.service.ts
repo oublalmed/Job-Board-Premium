@@ -175,6 +175,53 @@ export class AuthService {
   }
 
   /**
+   * Re-issue an email-verification link. Like password reset, this always
+   * resolves with the same generic message regardless of whether the email
+   * maps to a pending account, so it can't be used to enumerate registered
+   * addresses. Only accounts still awaiting verification are acted on; a fresh
+   * token (24h) replaces any previous one, so an expired or lost link is never
+   * a dead end.
+   */
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const genericMessage =
+      'If an account needs verification, a new link has been sent.';
+
+    const user = await this.usersService.findByEmail(email.toLowerCase());
+    if (
+      !user ||
+      user.emailVerified ||
+      user.status !== UserStatus.PENDING_VERIFICATION
+    ) {
+      return { message: genericMessage };
+    }
+
+    const verificationToken = uuidv4();
+    const verificationExpires = new Date();
+    verificationExpires.setHours(verificationExpires.getHours() + 24);
+
+    await this.usersService.update(user.id, {
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
+    });
+
+    // Best-effort delivery — the generic response never reveals a send failure.
+    try {
+      await this.mailProvider.send({
+        to: user.email,
+        subject: `Vérifiez votre adresse email - ${APP_NAME}`,
+        templateId: 'email-verification',
+        variables: { token: verificationToken, email: user.email },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Verification email resend failed for ${user.id}: ${(error as Error).message}`,
+      );
+    }
+
+    return { message: genericMessage };
+  }
+
+  /**
    * EF-CAND-01 — start a password reset. Always resolves with the same
    * outcome whether or not the email maps to an eligible account, so an
    * attacker cannot use this to enumerate registered emails. When it does

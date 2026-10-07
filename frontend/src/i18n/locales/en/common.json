@@ -504,7 +504,11 @@
     "success": "Email verified",
     "successDescription": "Your email address has been verified successfully. You can now log in.",
     "error": "Verification failed",
-    "errorDescription": "The verification link is invalid or has expired. Please register again."
+    "errorDescription": "The verification link is invalid or has expired. Enter your email to get a new one.",
+    "emailPlaceholder": "Your email address",
+    "resendCta": "Resend verification email",
+    "resendSending": "Sending…",
+    "resendSent": "If an account is awaiting verification, a new link has just been sent. Check your spam folder too."
   },
   "subscription": {
     "title": "Subscription",
