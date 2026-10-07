@@ -10,7 +10,7 @@ export const businessConfig = registerAs('business', () => ({
     10,
   ),
   indexationPercentileThreshold: parseInt(
-    process.env['INDEXATION_PERCENTILE_THRESHOLD'] ?? '30',
+    process.env['INDEXATION_PERCENTILE_THRESHOLD'] ?? '85',
     10,
   ),
   highlightPercentileThreshold: parseInt(

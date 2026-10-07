@@ -16,7 +16,11 @@ export const FEATURING_PERCENTILE_MIN_KEY = 'featuring_percentile_min';
 // A candidate's assessment must reach this score to be indexed in the CVthèque
 // (overridable via the `indexation_score_min` setting).
 export const DEFAULT_INDEXATION_SCORE_MIN = 70;
-export const DEFAULT_INDEXATION_PERCENTILE_MIN = 30;
+// High fallback: a candidate who scored below the 70 bar is still indexed only
+// if they ranked in the top 15% (percentile >= 85) — a safety net for genuinely
+// strong candidates on an unusually hard assessment, not a backdoor for average
+// scores.
+export const DEFAULT_INDEXATION_PERCENTILE_MIN = 85;
 export const DEFAULT_FEATURING_PERCENTILE_MIN = 75;
 const DEFAULT_COMPLETENESS_THRESHOLD = 70;
 

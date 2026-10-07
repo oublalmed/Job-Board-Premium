@@ -83,7 +83,7 @@ describe('RemediationService', () => {
       },
     });
     expect(result.scoreValue).toBe(25);
-    expect(result.indexationThresholdMet).toBe(false); // 25 < 40, 10 < 30
+    expect(result.indexationThresholdMet).toBe(false); // 25 < 70, 10 < 85
     expect(result.domainFeedback).toEqual([
       { domain: 'Algorithmes', level: 'weak' },
       { domain: 'Bases de données', level: 'strong' },
@@ -155,7 +155,7 @@ describe('RemediationService', () => {
   });
 
   it('reports indexationThresholdMet=true when the score clears the bar', async () => {
-    scoreRepo.findOne.mockResolvedValue(makeScore({ value: 50, percentile: 60 }));
+    scoreRepo.findOne.mockResolvedValue(makeScore({ value: 75, percentile: 60 }));
 
     const result = await service.getFeedback(candidateId, assessmentId);
 
