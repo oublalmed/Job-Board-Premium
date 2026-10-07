@@ -116,6 +116,9 @@ export const profileKeys = {
   links: () => [...profileKeys.all, 'links'] as const,
   certifications: () => [...profileKeys.all, 'certifications'] as const,
   projects: () => [...profileKeys.all, 'projects'] as const,
+  skills: () => [...profileKeys.all, 'skills'] as const,
+  skillCatalog: () => [...profileKeys.all, 'skill-catalog'] as const,
+  experiences: () => [...profileKeys.all, 'experiences'] as const,
   recruiterSelf: (userId?: string) => ['recruiter', 'self', userId] as const,
 };
 
@@ -384,6 +387,149 @@ export function useDeleteCertification() {
       void queryClient.invalidateQueries({
         queryKey: profileKeys.certifications(),
       });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+// ── Skills (attach from the referential) + Experiences ──────────────────────
+// Both count toward profile completeness (20 pts each: >=5 skills, >=1
+// experience). Raw fetch + bearer, like certifications — the endpoints are not
+// in the generated openapi schema. Every mutation invalidates profileKeys.me()
+// so the completeness ring refreshes immediately.
+
+export interface SkillCatalogItem {
+  id: string;
+  name: string;
+  category: string | null;
+}
+
+export interface ProfileSkill {
+  id: string;
+  skillId: string;
+  name: string;
+  category: string | null;
+  level: string | null;
+}
+
+export type ExperienceType = 'work' | 'education';
+
+export interface Experience {
+  id: string;
+  type: ExperienceType;
+  title: string;
+  organization: string;
+  startDate: string;
+  endDate: string | null;
+  description: string | null;
+}
+
+export interface ExperienceInput {
+  type: ExperienceType;
+  title: string;
+  organization: string;
+  startDate: string;
+  endDate?: string;
+  description?: string;
+}
+
+export function useSkillCatalog() {
+  return useQuery({
+    queryKey: profileKeys.skillCatalog(),
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const res = await fetchWithAuth('/api/v1/skills');
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as SkillCatalogItem[];
+    },
+  });
+}
+
+export function useProfileSkills() {
+  return useQuery({
+    queryKey: profileKeys.skills(),
+    queryFn: async () => {
+      const res = await fetchWithAuth('/api/v1/candidates/skills');
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as ProfileSkill[];
+    },
+  });
+}
+
+export function useAddSkill() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (skillId: string) => {
+      const res = await fetchWithAuth('/api/v1/candidates/skills', {
+        method: 'POST',
+        body: JSON.stringify({ skillId }),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as ProfileSkill;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.skills() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+export function useRemoveSkill() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(`/api/v1/candidates/skills/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.skills() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+export function useExperiences() {
+  return useQuery({
+    queryKey: profileKeys.experiences(),
+    queryFn: async () => {
+      const res = await fetchWithAuth('/api/v1/candidates/experiences');
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Experience[];
+    },
+  });
+}
+
+export function useAddExperience() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ExperienceInput) => {
+      const res = await fetchWithAuth('/api/v1/candidates/experiences', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return (await res.json()) as Experience;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.experiences() });
+      void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    },
+  });
+}
+
+export function useDeleteExperience() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetchWithAuth(`/api/v1/candidates/experiences/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: profileKeys.experiences() });
       void queryClient.invalidateQueries({ queryKey: profileKeys.me() });
     },
   });

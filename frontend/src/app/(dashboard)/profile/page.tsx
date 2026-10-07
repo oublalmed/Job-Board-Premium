@@ -62,6 +62,8 @@ import { ProfileLinksCard } from '@/features/profile/ProfileLinksCard';
 import { CvScanBadge } from '@/features/profile/CvScanBadge';
 import { CertificationsCard } from '@/features/profile/CertificationsCard';
 import { ProjectsCard } from '@/features/profile/ProjectsCard';
+import { SkillsCard } from '@/features/profile/SkillsCard';
+import { ExperienceCard } from '@/features/profile/ExperienceCard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -525,6 +527,13 @@ function CandidateProfile() {
           </Card>
         </form>
       </Form>
+
+      {/* Skills + Experiences — each worth 20 pts of completeness (>=5 skills,
+          >=1 experience). Previously missing from the page, which capped the
+          score at 60%. */}
+      <SkillsCard />
+
+      <ExperienceCard />
 
       <Card>
         <CardHeader>

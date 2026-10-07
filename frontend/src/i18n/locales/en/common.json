@@ -149,10 +149,10 @@
       "noAccount": "Don't have an account?",
       "registerLink": "Create an account",
       "forgotLink": "Forgot password?",
-        "unverified": "Your account isn’t verified yet. Check your inbox to activate it.",
-        "resendCta": "Resend verification email",
-        "resendSending": "Sending…",
-        "resendSent": "Verification email sent. Check your spam folder too."
+      "unverified": "Your account isn’t verified yet. Check your inbox to activate it.",
+      "resendCta": "Resend verification email",
+      "resendSending": "Sending…",
+      "resendSent": "Verification email sent. Check your spam folder too."
     },
     "forgot": {
       "title": "Forgot password",
@@ -245,7 +245,14 @@
     "salaryMin": "Min. salary (gross annual)",
     "salaryMax": "Max. salary (gross annual)",
     "salaryVisible": "Show my salary range to recruiters",
-    "skills": "Skills",
+    "skills": {
+      "title": "Skills",
+      "subtitle": "Add at least 5 skills to earn 20% completeness.",
+      "placeholder": "Search a skill…",
+      "add": "Add",
+      "empty": "No skills added yet.",
+      "count": "{{n}}/{{min}}"
+    },
     "experience": "Experience",
     "cv": "Resume",
     "uploadCv": "Upload a resume",
@@ -272,6 +279,25 @@
         "verified": "School verified",
         "rejected": "Verification rejected"
       }
+    },
+    "experiences": {
+      "title": "Experience & education",
+      "subtitle": "Add at least 1 experience or education entry to earn 20% completeness.",
+      "empty": "No experience added yet.",
+      "count": "{{n}} added",
+      "present": "Present",
+      "typeLabel": "Type",
+      "typeWork": "Work experience",
+      "typeEducation": "Education",
+      "titleField": "Title",
+      "titlePlaceholder": "e.g. Full-Stack Developer",
+      "organization": "Organization",
+      "organizationPlaceholder": "e.g. OCP Group",
+      "startDate": "Start",
+      "endDate": "End",
+      "description": "Description",
+      "descriptionPlaceholder": "Responsibilities, achievements…",
+      "add": "Add experience"
     }
   },
   "search": {
