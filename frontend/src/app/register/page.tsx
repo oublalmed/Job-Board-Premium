@@ -72,7 +72,9 @@ export default function RegisterPage() {
       // Self-registration is candidate-only — recruiter accounts are created by
       // an administrator (the backend enforces this too).
       const body: Record<string, unknown> = {
-        email,
+        // Trim so a stray leading/trailing space doesn't trip the email
+        // validator with a confusing "email must be an email".
+        email: email.trim(),
         password,
         roles: ['candidate'],
         consentAccepted: consent,
@@ -82,7 +84,15 @@ export default function RegisterPage() {
         body: body as never,
       });
       if (apiError) {
-        setError(t('auth.register.error'));
+        // 409 = email already in use. Surface it specifically instead of the
+        // generic error, so the user knows to log in rather than retry.
+        const status = (apiError as { statusCode?: number } | undefined)
+          ?.statusCode;
+        setError(
+          status === 409
+            ? t('auth.register.emailExists')
+            : t('auth.register.error'),
+        );
         return;
       }
       setSuccess(t('auth.register.success'));

@@ -191,7 +191,8 @@
       "error": "Impossible de créer le compte. Vérifiez les informations saisies.",
       "success": "Compte créé — vérifiez votre email pour l'activer.",
       "hasAccount": "Déjà un compte ?",
-      "loginLink": "Se connecter"
+      "loginLink": "Se connecter",
+      "emailExists": "Cet email est déjà utilisé. Connectez-vous ou utilisez une autre adresse."
     },
     "logout": "Déconnexion",
     "guard": {

@@ -191,7 +191,8 @@
       "error": "Unable to create the account. Check the information provided.",
       "success": "Account created — check your email to activate it.",
       "hasAccount": "Already have an account?",
-      "loginLink": "Log in"
+      "loginLink": "Log in",
+      "emailExists": "This email is already in use. Log in or use a different address."
     },
     "logout": "Log out",
     "guard": {
