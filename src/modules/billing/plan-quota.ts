@@ -25,6 +25,35 @@ const PRICE_CONFIG_KEY: Record<
   [SubscriptionPlan.SCALE]: 'business.plans.scale.price',
 };
 
+// Seat (recruiter user) limit per plan. Reads the same
+// business.plans.<plan>.users config that drives provisioning — no duplicated
+// numbers. ENTERPRISE is custom/negotiated, so it is treated as unlimited here
+// rather than blocked.
+const USERS_CONFIG_KEY: Record<
+  Exclude<SubscriptionPlan, SubscriptionPlan.ENTERPRISE>,
+  string
+> = {
+  [SubscriptionPlan.STARTER]: 'business.plans.starter.users',
+  [SubscriptionPlan.GROWTH]: 'business.plans.growth.users',
+  [SubscriptionPlan.SCALE]: 'business.plans.scale.users',
+};
+
+export function resolveUserLimitForPlan(
+  plan: SubscriptionPlan,
+  configService: ConfigService,
+): number {
+  if (plan === SubscriptionPlan.ENTERPRISE) {
+    return Number.MAX_SAFE_INTEGER; // custom contract — not seat-capped here
+  }
+  const users = configService.get<number>(USERS_CONFIG_KEY[plan]);
+  if (users === undefined) {
+    throw new InternalServerErrorException(
+      `No user/seat limit configured for plan ${plan}`,
+    );
+  }
+  return users;
+}
+
 export function resolveContactQuotaForPlan(
   plan: SubscriptionPlan,
   configService: ConfigService,

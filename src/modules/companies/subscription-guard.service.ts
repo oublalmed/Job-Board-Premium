@@ -7,8 +7,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { Recruiter } from './entities/recruiter.entity.js';
-import { Subscription } from './entities/subscription.entity.js';
+import {
+  Subscription,
+  SubscriptionPlan,
+} from './entities/subscription.entity.js';
 import { isSubscriptionWithinAccess } from './subscription-access.js';
+import { resolveUserLimitForPlan } from '../billing/plan-quota.js';
 
 @Injectable()
 export class SubscriptionGuardService {
@@ -85,5 +89,17 @@ export class SubscriptionGuardService {
       throw new NotFoundException('No company associated with this account');
     }
     return recruiter.companyId;
+  }
+
+  // Max number of recruiter seats for a company, from its current plan. Falls
+  // back to STARTER (the trial plan every company is provisioned with) if no
+  // subscription row exists yet.
+  async getSeatLimit(companyId: string): Promise<number> {
+    const subscription = await this.subscriptionRepo.findOne({
+      where: { companyId },
+      order: { createdAt: 'DESC' },
+    });
+    const plan = subscription?.plan ?? SubscriptionPlan.STARTER;
+    return resolveUserLimitForPlan(plan, this.configService);
   }
 }
