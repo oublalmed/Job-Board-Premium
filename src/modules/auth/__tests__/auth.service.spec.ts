@@ -233,6 +233,19 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
+    it('tags the unverified-email error with a stable EMAIL_NOT_VERIFIED code', async () => {
+      usersService['findByEmail'].mockResolvedValue({
+        ...mockUser,
+        emailVerified: false,
+      });
+
+      await expect(
+        service.login({ email: 'test@example.com', password: 'Test1234!@' }),
+      ).rejects.toMatchObject({
+        response: { code: 'EMAIL_NOT_VERIFIED' },
+      });
+    });
+
     it('should throw UnauthorizedException if user not found', async () => {
       usersService['findByEmail'].mockResolvedValue(null);
 

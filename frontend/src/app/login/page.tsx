@@ -3,13 +3,15 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/auth/auth-context';
+import { useAuth, AuthError } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { AuthBrandPanel } from '@/components/AuthBrandPanel';
+
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function LoginPage() {
   const { t } = useLocale();
@@ -20,19 +22,45 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Unverified-account path: login fails with a stable EMAIL_NOT_VERIFIED code;
+  // instead of a dead-end error we invite the user to resend the link.
+  const [unverified, setUnverified] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>(
+    'idle',
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setUnverified(false);
+    setResendState('idle');
     setIsSubmitting(true);
     try {
       await login(email, password);
       router.push('/dashboard');
-    } catch {
-      setError(t('auth.login.error'));
+    } catch (err) {
+      if (err instanceof AuthError && err.code === 'EMAIL_NOT_VERIFIED') {
+        setUnverified(true);
+      } else {
+        setError(t('auth.login.error'));
+      }
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function handleResendVerification() {
+    setResendState('sending');
+    try {
+      await fetch(`${BASE}/api/v1/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } catch {
+      // Swallowed: the confirmation is identical either way.
+    }
+    setResendState('sent');
   }
 
   return (
@@ -98,6 +126,34 @@ export default function LoginPage() {
                   </Link>
                 </div>
               </div>
+
+              {unverified && (
+                <div
+                  role="alert"
+                  className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3"
+                >
+                  <p className="text-sm text-foreground">
+                    {t('auth.login.unverified')}
+                  </p>
+                  {resendState === 'sent' ? (
+                    <p className="text-sm font-medium text-success">
+                      {t('auth.login.resendSent')}
+                    </p>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={resendState === 'sending'}
+                      onClick={() => void handleResendVerification()}
+                    >
+                      {resendState === 'sending'
+                        ? t('auth.login.resendSending')
+                        : t('auth.login.resendCta')}
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {error && (
                 <p role="alert" className="text-sm text-destructive">

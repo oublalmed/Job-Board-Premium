@@ -148,7 +148,11 @@
       "error": "Email ou mot de passe incorrect.",
       "noAccount": "Pas encore de compte ?",
       "registerLink": "Créer un compte",
-      "forgotLink": "Mot de passe oublié ?"
+      "forgotLink": "Mot de passe oublié ?",
+        "unverified": "Votre compte n’est pas encore vérifié. Consultez votre boîte mail pour l’activer.",
+        "resendCta": "Renvoyer l’email de vérification",
+        "resendSending": "Envoi…",
+        "resendSent": "Email de vérification renvoyé. Pensez à vérifier vos spams."
     },
     "forgot": {
       "title": "Mot de passe oublié",

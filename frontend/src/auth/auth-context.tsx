@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: { email, password },
       });
       if (error || !data) {
-        throw new AuthError();
+        throw new AuthError((error as { code?: string } | undefined)?.code);
       }
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
@@ -94,4 +94,12 @@ export function useAuth(): AuthContextValue {
   return context;
 }
 
-export class AuthError extends Error {}
+export class AuthError extends Error {
+  // Stable backend error code (e.g. 'EMAIL_NOT_VERIFIED'), when the API
+  // supplied one, so callers can branch without matching on message text.
+  readonly code?: string;
+  constructor(code?: string) {
+    super(code);
+    this.code = code;
+  }
+}

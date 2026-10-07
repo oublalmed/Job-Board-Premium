@@ -148,7 +148,11 @@
       "error": "Incorrect email or password.",
       "noAccount": "Don't have an account?",
       "registerLink": "Create an account",
-      "forgotLink": "Forgot password?"
+      "forgotLink": "Forgot password?",
+        "unverified": "Your account isn’t verified yet. Check your inbox to activate it.",
+        "resendCta": "Resend verification email",
+        "resendSending": "Sending…",
+        "resendSent": "Verification email sent. Check your spam folder too."
     },
     "forgot": {
       "title": "Forgot password",

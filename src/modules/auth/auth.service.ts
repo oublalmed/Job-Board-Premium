@@ -310,7 +310,13 @@ export class AuthService {
     }
 
     if (!user.emailVerified) {
-      throw new UnauthorizedException('Email not verified');
+      // Stable machine-readable code so the client can offer a "resend
+      // verification" path instead of a generic error. (Account existence is
+      // already observable via registration's 409, so this is no new leak.)
+      throw new UnauthorizedException({
+        message: 'Email not verified',
+        code: 'EMAIL_NOT_VERIFIED',
+      });
     }
 
     if (user.status !== UserStatus.ACTIVE) {
