@@ -306,9 +306,11 @@ function CandidateProfile() {
         </Button>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={(e) => void onSubmit(e)} className="grid gap-6 lg:grid-cols-3">
-          <Card className="h-fit overflow-hidden">
+      <div className="grid items-start gap-6 lg:grid-cols-3">
+        {/* Left column — the summary card with CV + school verification
+            stacked directly beneath it. */}
+        <div className="flex flex-col gap-6">
+          <Card className="overflow-hidden">
             <div className="h-16 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
             <CardContent className="relative flex flex-col items-center gap-4 p-6">
               <div className="-mt-14 flex size-24 items-center justify-center rounded-full border-4 border-card bg-gradient-to-br from-primary/20 to-primary/5">
@@ -333,7 +335,156 @@ function CandidateProfile() {
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-2">
+          {/* CV / Resume — directly under the profile card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('profile.cv')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {cv ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+                    <FileText className="size-5 shrink-0 text-primary" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {cv.originalName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {(cv.size / 1024).toFixed(0)} KB
+                      </p>
+                      <CvScanBadge status={cv.scanStatus} />
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2 self-start text-destructive hover:text-destructive"
+                    onClick={handleDeleteCv}
+                    disabled={deleteCv.isPending}
+                  >
+                    {deleteCv.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-4" />
+                    )}
+                    {t('profile.deleteCv')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-muted-foreground">{t('profile.noCv')}</p>
+                  <input
+                    ref={cvInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleCvSelected(file);
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    className="gap-2 self-start"
+                    onClick={() => cvInputRef.current?.click()}
+                    disabled={uploadCv.isPending}
+                  >
+                    {uploadCv.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Upload className="size-4" />
+                    )}
+                    {uploadCv.isPending ? t('common.loading') : t('profile.uploadCv')}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* School verification — under the CV card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex flex-wrap items-center gap-2">
+                {t('profile.schoolVerification.title')}
+                <Badge variant="destructive" className="gap-1">
+                  {t('profile.schoolVerification.requiredBadge')}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!hasSchoolDocument && (
+                <p className="mb-4 text-sm text-destructive">
+                  {t('profile.schoolVerification.requiredHint')}
+                </p>
+              )}
+              {verification && (
+                <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+                  {verification.status === 'verified' && (
+                    <ShieldCheck className="size-5 shrink-0 text-success" />
+                  )}
+                  {verification.status === 'pending' && (
+                    <Clock className="size-5 shrink-0 text-warning" />
+                  )}
+                  {verification.status === 'rejected' && (
+                    <ShieldX className="size-5 shrink-0 text-destructive" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {t(`profile.schoolVerification.status.${verification.status}`)}
+                      {verification.matchedSchool ? ` — ${verification.matchedSchool}` : ''}
+                    </p>
+                    {verification.status === 'rejected' && verification.reviewNote && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {verification.reviewNote}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(!verification || verification.status === 'rejected') && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    {t('profile.schoolVerification.hint')}
+                  </p>
+                  <input
+                    ref={diplomaInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleDiplomaSelected(file);
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    className="gap-2 self-start"
+                    onClick={() => diplomaInputRef.current?.click()}
+                    disabled={uploadDiploma.isPending}
+                  >
+                    {uploadDiploma.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Upload className="size-4" />
+                    )}
+                    {uploadDiploma.isPending
+                      ? t('common.loading')
+                      : t('profile.schoolVerification.upload')}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right column — personal info form */}
+        <Form {...form}>
+          <form
+            onSubmit={(e) => void onSubmit(e)}
+            className="lg:col-span-2"
+          >
+            <Card>
             <CardHeader>
               <CardTitle>{t('profile.personalInfo')}</CardTitle>
             </CardHeader>
@@ -524,9 +675,10 @@ function CandidateProfile() {
                 />
               </div>
             </CardContent>
-          </Card>
-        </form>
-      </Form>
+            </Card>
+          </form>
+        </Form>
+      </div>
 
       {/* Skills + Experiences — each worth 20 pts of completeness (>=5 skills,
           >=1 experience). Previously missing from the page, which capped the
@@ -534,148 +686,6 @@ function CandidateProfile() {
       <SkillsCard />
 
       <ExperienceCard />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('profile.cv')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {cv ? (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
-                <FileText className="size-5 text-primary" aria-hidden="true" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">{cv.originalName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(cv.size / 1024).toFixed(0)} KB
-                  </p>
-                  {/* EF-CAND-03 — antivirus scan outcome. The scan is blocking
-                      server-side; showing its state here tells the candidate
-                      whether their CV is usable, pending, or was rejected. */}
-                  <CvScanBadge status={cv.scanStatus} />
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                className="gap-2 text-destructive hover:text-destructive"
-                onClick={handleDeleteCv}
-                disabled={deleteCv.isPending}
-              >
-                {deleteCv.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Trash2 className="size-4" />
-                )}
-                {t('profile.deleteCv')}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">{t('profile.noCv')}</p>
-              <div>
-                <input
-                  ref={cvInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleCvSelected(file);
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => cvInputRef.current?.click()}
-                  disabled={uploadCv.isPending}
-                >
-                  {uploadCv.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Upload className="size-4" />
-                  )}
-                  {uploadCv.isPending ? t('common.loading') : t('profile.uploadCv')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2">
-            {t('profile.schoolVerification.title')}
-            <Badge variant="destructive" className="gap-1">
-              {t('profile.schoolVerification.requiredBadge')}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!hasSchoolDocument && (
-            <p className="mb-4 text-sm text-destructive">
-              {t('profile.schoolVerification.requiredHint')}
-            </p>
-          )}
-          {verification && (
-            <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
-              {verification.status === 'verified' && (
-                <ShieldCheck className="size-5 shrink-0 text-success" />
-              )}
-              {verification.status === 'pending' && (
-                <Clock className="size-5 shrink-0 text-warning" />
-              )}
-              {verification.status === 'rejected' && (
-                <ShieldX className="size-5 shrink-0 text-destructive" />
-              )}
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {t(`profile.schoolVerification.status.${verification.status}`)}
-                  {verification.matchedSchool ? ` — ${verification.matchedSchool}` : ''}
-                </p>
-                {verification.status === 'rejected' && verification.reviewNote && (
-                  <p className="mt-1 text-xs text-muted-foreground">{verification.reviewNote}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {(!verification || verification.status === 'rejected') && (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">
-                {t('profile.schoolVerification.hint')}
-              </p>
-              <div>
-                <input
-                  ref={diplomaInputRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleDiplomaSelected(file);
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => diplomaInputRef.current?.click()}
-                  disabled={uploadDiploma.isPending}
-                >
-                  {uploadDiploma.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Upload className="size-4" />
-                  )}
-                  {uploadDiploma.isPending
-                    ? t('common.loading')
-                    : t('profile.schoolVerification.upload')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       <ProfileLinksCard />
 
