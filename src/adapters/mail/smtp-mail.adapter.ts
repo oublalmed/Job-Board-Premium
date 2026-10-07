@@ -70,6 +70,16 @@ const TOKEN_TEMPLATES: Record<
     cta: 'Choisir un nouveau mot de passe',
     note: 'Ce lien est valable une heure. Si vous n’êtes pas à l’origine de cette demande, aucune action n’est requise : votre mot de passe reste inchangé.',
   },
+  'recruiter-invitation': {
+    path: '/accept-invite',
+    heading: 'Vous êtes invité(e) à rejoindre une équipe',
+    intro:
+      'Une entreprise vous invite à la rejoindre comme recruteur sur ' +
+      APP_NAME +
+      '. Cliquez ci-dessous pour définir votre mot de passe et activer votre compte recruteur.',
+    cta: 'Activer mon compte',
+    note: 'Ce lien expire dans 7 jours. Si vous n’attendiez pas cette invitation, vous pouvez ignorer cet email.',
+  },
 };
 
 const NOTIFICATION_TEMPLATES: Record<

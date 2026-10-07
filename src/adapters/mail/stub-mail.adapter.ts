@@ -14,6 +14,7 @@ const IS_PROD = process.env['NODE_ENV'] === 'production';
 const TEMPLATE_LINK_PATHS: Record<string, string> = {
   'email-verification': '/verify-email',
   'password-reset': '/reset-password',
+  'recruiter-invitation': '/accept-invite',
 };
 
 @Injectable()

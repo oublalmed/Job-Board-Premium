@@ -57,9 +57,15 @@ vi.mock('@/features/company/queries', () => ({
   useCompany: () => useCompany(),
   useRecruiters: () => useRecruiters(),
   useCreateCompany: () => ({ mutate: createMutate, isPending: false }),
-  useAddRecruiter: () => ({ mutate: addMutate, isPending: false }),
+  useInviteRecruiter: () => ({ mutate: addMutate, isPending: false }),
   useRemoveRecruiter: () => ({
     mutate: removeMutate,
+    isPending: false,
+    variables: undefined,
+  }),
+  useRecruiterInvitations: () => ({ data: [] }),
+  useRevokeInvitation: () => ({
+    mutate: vi.fn(),
     isPending: false,
     variables: undefined,
   }),
@@ -152,7 +158,9 @@ describe('CompanyPage — EF-RECR-02 (multi-user)', () => {
     });
 
     render(<CompanyPage />);
-    expect(screen.queryByText('company.addRecruiter')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('company.inviteRecruiter'),
+    ).not.toBeInTheDocument();
     expect(screen.queryByLabelText('common.delete')).not.toBeInTheDocument();
   });
 });

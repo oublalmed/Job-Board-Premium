@@ -489,7 +489,14 @@
     "recruiterPosition": "Poste",
     "recruiterAdded": "Recruteur ajouté.",
     "recruiterRemoved": "Recruteur retiré.",
-    "noCompany": "Vous n'avez pas encore d'entreprise enregistrée."
+    "noCompany": "Vous n'avez pas encore d'entreprise enregistrée.",
+    "inviteRecruiter": "Inviter un recruteur",
+    "inviteHint": "L'invité recevra un email pour définir son mot de passe. Vous pouvez aussi ajouter un collègue qui a déjà un compte.",
+    "invitationSent": "Invitation envoyée.",
+    "pendingInvitations": "Invitations en attente",
+    "invitePending": "En attente",
+    "invitationRevoked": "Invitation révoquée.",
+    "noRecruiters": "Aucun recruteur pour le moment."
   },
   "settings": {
     "title": "Paramètres",
@@ -1278,5 +1285,14 @@
     "completedAssessments": "{{count}} terminée(s)",
     "subscriptionsByPlan": "Abonnements par pack",
     "applications": "Candidatures"
+  },
+  "acceptInvite": {
+    "title": "Rejoindre {{company}}",
+    "subtitle": "Vous avez été invité(e) comme recruteur pour",
+    "cta": "Activer mon compte",
+    "invalidTitle": "Invitation invalide",
+    "invalidBody": "Ce lien d'invitation est invalide ou a expiré. Demandez à l'entreprise de vous renvoyer une invitation.",
+    "doneTitle": "Compte activé 🎉",
+    "doneBody": "Votre compte recruteur est prêt. Vous allez être redirigé vers la connexion."
   }
 }

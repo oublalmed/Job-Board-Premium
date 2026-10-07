@@ -489,7 +489,14 @@
     "recruiterPosition": "المنصب",
     "recruiterAdded": "تمّت إضافة المُوظِّف.",
     "recruiterRemoved": "تمّت إزالة المُوظِّف.",
-    "noCompany": "ليست لديك بعدُ شركة مسجّلة."
+    "noCompany": "ليست لديك بعدُ شركة مسجّلة.",
+    "inviteRecruiter": "دعوة مشغّل",
+    "inviteHint": "سيتلقّى المدعوّ بريدًا لتعيين كلمة المرور. يمكنك أيضًا إضافة زميل لديه حساب بالفعل.",
+    "invitationSent": "تم إرسال الدعوة.",
+    "pendingInvitations": "دعوات معلّقة",
+    "invitePending": "معلّقة",
+    "invitationRevoked": "تم إلغاء الدعوة.",
+    "noRecruiters": "لا يوجد مشغّلون بعد."
   },
   "settings": {
     "title": "الإعدادات",
@@ -1278,5 +1285,14 @@
     "completedAssessments": "{{count}} مكتملة",
     "subscriptionsByPlan": "الاشتراكات حسب الباقة",
     "applications": "الطلبات"
+  },
+  "acceptInvite": {
+    "title": "انضمّ إلى {{company}}",
+    "subtitle": "تمت دعوتك كمشغّل لدى",
+    "cta": "تفعيل حسابي",
+    "invalidTitle": "دعوة غير صالحة",
+    "invalidBody": "رابط الدعوة غير صالح أو انتهت صلاحيته. اطلب من الشركة إرسال دعوة جديدة.",
+    "doneTitle": "تم تفعيل الحساب 🎉",
+    "doneBody": "حساب المشغّل جاهز. ستتم إعادة توجيهك إلى تسجيل الدخول."
   }
 }

@@ -489,7 +489,14 @@
     "recruiterPosition": "Position",
     "recruiterAdded": "Recruiter added.",
     "recruiterRemoved": "Recruiter removed.",
-    "noCompany": "You don't have a registered company yet."
+    "noCompany": "You don't have a registered company yet.",
+    "inviteRecruiter": "Invite a recruiter",
+    "inviteHint": "The invitee gets an email to set their password. You can also add a colleague who already has an account.",
+    "invitationSent": "Invitation sent.",
+    "pendingInvitations": "Pending invitations",
+    "invitePending": "Pending",
+    "invitationRevoked": "Invitation revoked.",
+    "noRecruiters": "No recruiters yet."
   },
   "settings": {
     "title": "Settings",
@@ -1278,5 +1285,14 @@
     "completedAssessments": "{{count}} completed",
     "subscriptionsByPlan": "Subscriptions by plan",
     "applications": "Applications"
+  },
+  "acceptInvite": {
+    "title": "Join {{company}}",
+    "subtitle": "You were invited as a recruiter for",
+    "cta": "Activate my account",
+    "invalidTitle": "Invalid invitation",
+    "invalidBody": "This invitation link is invalid or has expired. Ask the company to send you a new one.",
+    "doneTitle": "Account activated 🎉",
+    "doneBody": "Your recruiter account is ready. Redirecting you to sign in."
   }
 }
