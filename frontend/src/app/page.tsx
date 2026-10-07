@@ -180,7 +180,7 @@ export default function HomePage() {
           {/* ─────────────── Hero ─────────────── */}
           <section className="relative overflow-hidden">
             <GlowField />
-            <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 pt-16 sm:px-6 lg:grid-cols-[1.08fr_0.92fr] lg:gap-6 lg:pb-28 lg:pt-20">
+            <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-14 pt-14 sm:px-6 lg:grid-cols-[1.08fr_0.92fr] lg:gap-6 lg:pb-20 lg:pt-16">
               {/* Left — message */}
               <motion.div
                 className="max-w-2xl"
@@ -239,7 +239,7 @@ export default function HomePage() {
           </section>
 
           {/* ─────────────── How it works ─────────────── */}
-          <section id="how" className="border-t border-white/5 py-24 sm:py-32">
+          <section id="how" className="border-t border-white/5 py-16 sm:py-24">
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
               <Reveal className="max-w-2xl">
                 <motion.h2
@@ -262,7 +262,7 @@ export default function HomePage() {
           </section>
 
           {/* ─────────────── Audience (dual path) ─────────────── */}
-          <section className="border-t border-white/5 bg-[#0c0d17] py-24 sm:py-32">
+          <section className="border-t border-white/5 bg-[#0c0d17] py-16 sm:py-24">
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
               <Reveal className="max-w-2xl">
                 <motion.h2
@@ -297,7 +297,7 @@ export default function HomePage() {
           </section>
 
           {/* ─────────────── Features (bento) ─────────────── */}
-          <section id="features" className="border-t border-white/5 py-24 sm:py-32">
+          <section id="features" className="border-t border-white/5 py-16 sm:py-24">
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
               <Reveal className="max-w-2xl">
                 <motion.h2
@@ -321,7 +321,7 @@ export default function HomePage() {
           </section>
 
           {/* ─────────────── FAQ ─────────────── */}
-          <section id="faq" className="border-t border-white/5 bg-[#0c0d17] py-24 sm:py-32">
+          <section id="faq" className="border-t border-white/5 bg-[#0c0d17] py-16 sm:py-24">
             <div className="mx-auto max-w-3xl px-4 sm:px-6">
               <Reveal>
                 <motion.h2
@@ -346,7 +346,7 @@ export default function HomePage() {
           </section>
 
           {/* ─────────────── Final CTA ─────────────── */}
-          <section className="border-t border-white/5 py-24 sm:py-32">
+          <section className="border-t border-white/5 py-16 sm:py-24">
             <div className="mx-auto max-w-5xl px-4 sm:px-6">
               <Reveal>
                 <motion.div
