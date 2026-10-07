@@ -44,6 +44,24 @@ describe('CatalogService', () => {
         { id: 's1', name: 'Backend', description: 'desc' },
       ]);
     });
+
+    it('filters out e2e test-fixture specialties that leaked into the DB', async () => {
+      specialtyRepo.find.mockResolvedValue([
+        { id: 's1', name: 'Génie Logiciel', description: 'd1', active: true },
+        {
+          id: 's2',
+          name: 'E2E cooldown specialty 1790727689632-0.223',
+          description: null,
+          active: true,
+        },
+      ]);
+
+      const result = await service.listSpecialties();
+
+      expect(result).toEqual([
+        { id: 's1', name: 'Génie Logiciel', description: 'd1' },
+      ]);
+    });
   });
 
   describe('listTests', () => {

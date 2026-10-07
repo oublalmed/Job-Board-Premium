@@ -164,7 +164,7 @@ export function MobileSidebar() {
           />
           <aside className="fixed inset-y-0 start-0 z-50 flex w-72 flex-col bg-background shadow-xl lg:hidden">
             <div className="flex items-center justify-between border-b border-border p-4">
-              <Logo className="h-9 w-auto" />
+              <Logo className="h-10 w-auto" />
               <button
                 type="button"
                 onClick={close}

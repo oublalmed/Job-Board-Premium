@@ -8,7 +8,7 @@ export const authConfig = registerAs('auth', () => ({
   passwordMinLength: parseInt(process.env['PASSWORD_MIN_LENGTH'] ?? '10', 10),
   // ENF-06 — MFA/TOTP.
   // Issuer label shown in authenticator apps.
-  mfaIssuer: process.env['MFA_ISSUER'] ?? 'Cobalt',
+  mfaIssuer: process.env['MFA_ISSUER'] ?? 'MaySync',
   // Dedicated key for encrypting TOTP secrets at rest. Optional: when unset,
   // the secret-box derives a key from the JWT refresh secret so the feature
   // works out of the box in dev/CI. Set a distinct value in production.

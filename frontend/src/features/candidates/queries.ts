@@ -25,7 +25,10 @@ function buildQuery(
   filters: CandidateFilters,
   cursor?: string,
 ): Record<string, unknown> {
-  const params: Record<string, unknown> = { limit: 20 };
+  // 12 results per page: small enough that pagination actually engages on a
+  // realistic candidate pool (not only past 20 matches), and a cleaner page
+  // length on screen.
+  const params: Record<string, unknown> = { limit: 12 };
   if (filters.q.trim()) params.q = filters.q.trim();
   const skills = filters.skills
     .split(',')

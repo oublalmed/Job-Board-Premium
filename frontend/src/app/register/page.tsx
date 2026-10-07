@@ -3,7 +3,7 @@
 import { Suspense, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Briefcase, Gift } from 'lucide-react';
+import { Gift } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 
@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { Logo } from '@/components/Logo';
+import { AuthBrandPanel } from '@/components/AuthBrandPanel';
 
 export default function RegisterPage() {
   const { t } = useLocale();
@@ -92,38 +92,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-dvh">
-      <div className="relative hidden w-1/2 bg-primary lg:flex lg:flex-col lg:items-center lg:justify-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/80" />
-        <div className="relative z-10 flex flex-col items-center gap-6 px-12 text-center text-primary-foreground">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
-            <Briefcase className="size-8" />
-          </div>
-          <h1 className="text-4xl font-bold">{t('app.name')}</h1>
-          <p className="max-w-md text-lg text-primary-foreground/80">
-            {t('app.description')}
-          </p>
-        </div>
-      </div>
+    <div className="flex h-dvh overflow-hidden">
+      <AuthBrandPanel />
 
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-center justify-between p-6">
-          <Link
-            href="/"
-            className="flex items-center lg:hidden"
-            aria-label={t('app.name')}
-          >
-            <Logo className="h-7 w-auto" />
-          </Link>
-          <div className="ms-auto">
-            <LanguageSwitcher />
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex min-h-full flex-col">
+          <div className="flex items-center p-6">
+            <div className="ms-auto">
+              <LanguageSwitcher />
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-1 items-center justify-center px-6 pb-12">
-          <div className="w-full max-w-sm">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground">
+          <div className="flex flex-1 items-center justify-center px-6 pb-12">
+          <div className="w-full max-w-md">
+            <div className="mb-8 text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground">
                 {t('auth.register.title')}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -151,6 +134,7 @@ export default function RegisterPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  className="h-12"
                   placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -165,6 +149,7 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   required
                   minLength={10}
+                  className="h-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   aria-describedby="register-password-hint"
@@ -209,7 +194,12 @@ export default function RegisterPage() {
                 </p>
               )}
 
-              <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                size="lg"
+                className="h-12 w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+              >
                 {isSubmitting ? t('auth.register.submitting') : t('auth.register.submit')}
               </Button>
             </form>
@@ -224,6 +214,7 @@ export default function RegisterPage() {
               </Link>
             </p>
           </div>
+        </div>
         </div>
       </div>
     </div>

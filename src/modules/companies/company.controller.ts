@@ -1,6 +1,9 @@
 import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { Roles } from '../../common/decorators/roles.decorator.js';
+import { Role } from '../../common/enums/role.enum.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../common/interfaces/request-with-user.interface.js';
 import { CompanyService } from './company.service.js';
@@ -10,7 +13,7 @@ import { CreateCompanyDto } from './dto/create-company.dto.js';
 import { ContactQuotaStatusDto } from './dto/contact-quota-status.dto.js';
 
 @Controller('companies')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CompanyController {
   constructor(
     private readonly companyService: CompanyService,
@@ -27,6 +30,7 @@ export class CompanyController {
   }
 
   @Get('me')
+  @Roles(Role.RECRUITER, Role.COMPANY_ADMIN)
   async getMyCompany(@CurrentUser() user: JwtPayload) {
     return this.companyService.getMyCompany(user.sub);
   }
@@ -34,6 +38,7 @@ export class CompanyController {
   // EF-RECR-05 — the recruiter's current contact-quota snapshot, so the UI
   // can surface "X contacts restants" before the limit blocks an outreach.
   @Get('contact-quota')
+  @Roles(Role.RECRUITER, Role.COMPANY_ADMIN)
   @ApiResponse({ status: 200, type: ContactQuotaStatusDto })
   async getContactQuota(
     @CurrentUser() user: JwtPayload,

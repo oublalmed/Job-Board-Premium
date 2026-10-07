@@ -10,6 +10,7 @@
     "^(\\.\\.?/.*)\\.js$": "$1"
   },
   "transformIgnorePatterns": ["node_modules/(?!(uuid)/)"],
+  "setupFiles": ["<rootDir>/setup-e2e.ts"],
   "maxWorkers": 1,
   "testTimeout": 30000
 }

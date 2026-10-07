@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Cobalt",
+    "name": "MaySync",
     "tagline": "La plateforme de recrutement premium au Maroc",
     "description": "Connectez les meilleurs talents avec les entreprises qui recrutent. Évaluation, scoring et mise en relation intelligente."
   },
@@ -30,7 +30,8 @@
     "subscription": "Abonnement",
     "jobsRecruiter": "Offres d'emploi",
     "jobsCandidate": "Offres d'emploi",
-    "analytics": "Statistiques"
+    "analytics": "Statistiques",
+    "how": "Comment ça marche"
   },
   "layout": {
     "skipToContent": "Aller au contenu principal"
@@ -49,7 +50,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Pourquoi Cobalt ?",
+    "title": "Pourquoi MaySync ?",
     "subtitle": "Une plateforme conçue pour le marché marocain, avec des outils modernes de recrutement.",
     "scoring": {
       "title": "Scoring intelligent",
@@ -79,8 +80,63 @@
       "education": "Éducation"
     }
   },
+  "how": {
+    "badge": "Comment ça marche",
+    "title": "Du profil à l'embauche, en trois étapes",
+    "subtitle": "Un parcours simple et crédible, pensé pour faire gagner du temps aux candidats comme aux recruteurs.",
+    "step1Title": "Créez votre profil",
+    "step1Desc": "Compétences, expériences, école : un profil complet et vérifié, prêt à être remarqué.",
+    "step2Title": "Passez l'évaluation",
+    "step2Desc": "QCM technique et psychotechnique chronométrés, en plein écran et anti-triche. Votre score atteste vos compétences.",
+    "step3Title": "Soyez contacté",
+    "step3Desc": "Les recruteurs découvrent les profils qualifiés dans la CVthèque et vous contactent directement."
+  },
+  "audience": {
+    "title": "Une plateforme, deux usages",
+    "subtitle": "Candidats et recruteurs y trouvent chacun leur compte.",
+    "candidate": {
+      "label": "Pour les candidats",
+      "title": "Faites valoir vos compétences, pas seulement votre CV",
+      "b1": "Un score objectif qui prouve votre niveau",
+      "b2": "De la visibilité auprès d'entreprises qui recrutent",
+      "b3": "Un retour détaillé pour progresser",
+      "cta": "Créer mon profil gratuitement"
+    },
+    "recruiter": {
+      "label": "Pour les recruteurs",
+      "title": "Recrutez sur des compétences vérifiées, pas sur des promesses",
+      "b1": "Une CVthèque de profils complets et évalués",
+      "b2": "Un scoring normalisé pour comparer objectivement",
+      "b3": "Un contact direct, sans intermédiaire",
+      "cta": "Demander une démo"
+    }
+  },
+  "faq": {
+    "title": "Questions fréquentes",
+    "subtitle": "Tout ce qu'il faut savoir avant de commencer.",
+    "q1": "L'inscription est-elle vraiment gratuite pour les candidats ?",
+    "a1": "Oui. Créer un profil, passer les évaluations et être visible auprès des recruteurs est entièrement gratuit pour les candidats.",
+    "q2": "Comment le score est-il calculé ?",
+    "a2": "À partir d'évaluations techniques et psychotechniques chronométrées, corrigées automatiquement et normalisées pour être comparables d'un candidat à l'autre.",
+    "q3": "Comment évitez-vous la triche aux évaluations ?",
+    "a3": "Les évaluations se passent en plein écran, avec un tirage aléatoire des questions, un chronomètre strict côté serveur et une invalidation automatique en cas de sorties répétées de l'écran.",
+    "q4": "Mes données sont-elles protégées ?",
+    "a4": "Les données sont hébergées au Maroc et vous pouvez les exporter ou les supprimer à tout moment, conformément à la CNDP et au RGPD.",
+    "q5": "Les recruteurs peuvent-ils changer de pack ?",
+    "a5": "Oui, à tout moment et sans engagement. Le changement prend effet immédiatement."
+  },
+  "finalCta": {
+    "title": "Prêt à recruter autrement ?",
+    "subtitle": "Rejoignez les entreprises et les talents qui font confiance à MaySync.",
+    "cta": "Commencer gratuitement"
+  },
   "auth": {
     "loading": "Chargement…",
+    "benefits": {
+      "b1": "Des talents évalués et vérifiés",
+      "b2": "Un scoring objectif et transparent",
+      "b3": "Une mise en relation directe"
+    },
     "emailLabel": "Email",
     "emailPlaceholder": "vous@exemple.com",
     "passwordLabel": "Mot de passe",
@@ -92,7 +148,11 @@
       "error": "Email ou mot de passe incorrect.",
       "noAccount": "Pas encore de compte ?",
       "registerLink": "Créer un compte",
-      "forgotLink": "Mot de passe oublié ?"
+      "forgotLink": "Mot de passe oublié ?",
+        "unverified": "Votre compte n’est pas encore vérifié. Consultez votre boîte mail pour l’activer.",
+        "resendCta": "Renvoyer l’email de vérification",
+        "resendSending": "Envoi…",
+        "resendSent": "Email de vérification renvoyé. Pensez à vérifier vos spams."
     },
     "forgot": {
       "title": "Mot de passe oublié",
@@ -117,7 +177,7 @@
     },
     "register": {
       "title": "Créer un compte",
-      "subtitle": "Rejoignez la communauté Cobalt",
+      "subtitle": "Rejoignez la communauté MaySync",
       "roleLabel": "Je suis un(e)",
       "roleCandidate": "Candidat",
       "roleRecruiter": "Recruteur",
@@ -208,7 +268,7 @@
       "hint": "Téléversez votre diplôme ou une attestation pour faire vérifier votre école par un administrateur.",
       "upload": "Téléverser un justificatif",
       "status": {
-        "pending": "En attente de vérification",
+        "pending": "En attente de validation admin",
         "verified": "École vérifiée",
         "rejected": "Vérification refusée"
       }
@@ -235,6 +295,7 @@
     "alreadyInShortlist": "Candidat déjà dans la shortlist.",
     "contact": "Contacter",
     "viewProfile": "Voir le profil",
+    "featured": "À la une",
     "loadMore": "Charger plus",
     "previous": "Précédent",
     "next": "Suivant",
@@ -447,7 +508,11 @@
     "success": "Email vérifié",
     "successDescription": "Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.",
     "error": "Vérification échouée",
-    "errorDescription": "Le lien de vérification est invalide ou a expiré. Veuillez vous réinscrire."
+    "errorDescription": "Le lien de vérification est invalide ou a expiré. Saisissez votre email pour recevoir un nouveau lien.",
+    "emailPlaceholder": "Votre adresse email",
+    "resendCta": "Renvoyer l’email de vérification",
+    "resendSending": "Envoi…",
+    "resendSent": "Si un compte est en attente de vérification, un nouveau lien vient d’être envoyé. Pensez à vérifier vos spams."
   },
   "subscription": {
     "title": "Abonnement",
@@ -535,7 +600,7 @@
     "addTitle": "Ajouter un projet",
     "editTitle": "Modifier le projet",
     "name": "Titre",
-    "namePlaceholder": "Ex. Plateforme de recrutement Cobalt",
+    "namePlaceholder": "Ex. Plateforme de recrutement MaySync",
     "role": "Rôle (facultatif)",
     "rolePlaceholder": "Ex. Lead développeur",
     "descriptionLabel": "Description",
@@ -984,10 +1049,10 @@
     "anonymous": "Candidat vérifié",
     "issuedOn": "Émis le",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Vérifié par Cobalt",
+    "verifiedBy": "Vérifié par MaySync",
     "notFound": "Ce badge est indisponible",
     "notFoundHint": "Le lien est peut-être privé ou n'est plus actif.",
-    "cta": "Rejoindre Cobalt",
+    "cta": "Rejoindre MaySync",
     "level": {
       "expert": "Expert",
       "advanced": "Avancé",
@@ -1003,7 +1068,7 @@
     "copied": "Lien copié",
     "signups": "Inscriptions",
     "conversions": "Conversions",
-    "invited": "Vous avez été invité sur Cobalt 🎉"
+    "invited": "Vous avez été invité sur MaySync 🎉"
   },
   "analytics": {
     "navLabel": "Analytique",
@@ -1030,7 +1095,7 @@
       "navLabel": "Vérifications école",
       "title": "Vérifications d'école en attente",
       "unnamedCandidate": "Candidat sans nom",
-      "noMatch": "Aucune école reconnue",
+      "noMatch": "École non référencée",
       "confidence": "Confiance OCR : {{value}}%",
       "review": "Examiner",
       "empty": "Aucune vérification en attente.",

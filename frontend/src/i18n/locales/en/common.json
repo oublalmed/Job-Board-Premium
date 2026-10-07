@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Cobalt",
+    "name": "MaySync",
     "tagline": "The premium recruitment platform in Morocco",
     "description": "Connect top talent with hiring companies. Assessment, scoring and smart matchmaking."
   },
@@ -30,7 +30,8 @@
     "subscription": "Subscription",
     "jobsRecruiter": "Job offers",
     "jobsCandidate": "Job offers",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "how": "How it works"
   },
   "layout": {
     "skipToContent": "Skip to main content"
@@ -49,7 +50,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Why Cobalt?",
+    "title": "Why MaySync?",
     "subtitle": "A platform built for the Moroccan market, with modern recruitment tools.",
     "scoring": {
       "title": "Smart scoring",
@@ -79,8 +80,63 @@
       "education": "Education"
     }
   },
+  "how": {
+    "badge": "How it works",
+    "title": "From profile to hire, in three steps",
+    "subtitle": "A simple, credible journey designed to save time for candidates and recruiters alike.",
+    "step1Title": "Build your profile",
+    "step1Desc": "Skills, experience, school: a complete, verified profile ready to be noticed.",
+    "step2Title": "Take the assessment",
+    "step2Desc": "Timed technical and aptitude tests, fullscreen and anti-cheat. Your score proves your skills.",
+    "step3Title": "Get contacted",
+    "step3Desc": "Recruiters discover qualified profiles in the candidate pool and reach out to you directly."
+  },
+  "audience": {
+    "title": "One platform, two sides",
+    "subtitle": "Candidates and recruiters each get exactly what they need.",
+    "candidate": {
+      "label": "For candidates",
+      "title": "Be judged on your skills, not just your résumé",
+      "b1": "An objective score that proves your level",
+      "b2": "Visibility with companies that are hiring",
+      "b3": "Detailed feedback to keep improving",
+      "cta": "Create my profile for free"
+    },
+    "recruiter": {
+      "label": "For recruiters",
+      "title": "Hire on verified skills, not on promises",
+      "b1": "A pool of complete, assessed profiles",
+      "b2": "Normalized scoring to compare objectively",
+      "b3": "Direct contact, no middleman",
+      "cta": "Request a demo"
+    }
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "subtitle": "Everything you need to know before getting started.",
+    "q1": "Is sign-up really free for candidates?",
+    "a1": "Yes. Creating a profile, taking assessments and being visible to recruiters is entirely free for candidates.",
+    "q2": "How is the score calculated?",
+    "a2": "From timed technical and aptitude assessments, graded automatically and normalized so candidates can be compared fairly.",
+    "q3": "How do you prevent cheating on assessments?",
+    "a3": "Assessments run fullscreen, with randomized questions, a strict server-side timer and automatic invalidation when the candidate repeatedly leaves the screen.",
+    "q4": "Is my data protected?",
+    "a4": "Data is hosted in Morocco and you can export or delete it at any time, in line with CNDP and GDPR.",
+    "q5": "Can recruiters change plans?",
+    "a5": "Yes, anytime and with no commitment. The change takes effect immediately."
+  },
+  "finalCta": {
+    "title": "Ready to hire differently?",
+    "subtitle": "Join the companies and talent who trust MaySync.",
+    "cta": "Get started for free"
+  },
   "auth": {
     "loading": "Loading…",
+    "benefits": {
+      "b1": "Assessed, verified talent",
+      "b2": "Objective, transparent scoring",
+      "b3": "Direct candidate–recruiter matching"
+    },
     "emailLabel": "Email",
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "Password",
@@ -92,7 +148,11 @@
       "error": "Incorrect email or password.",
       "noAccount": "Don't have an account?",
       "registerLink": "Create an account",
-      "forgotLink": "Forgot password?"
+      "forgotLink": "Forgot password?",
+        "unverified": "Your account isn’t verified yet. Check your inbox to activate it.",
+        "resendCta": "Resend verification email",
+        "resendSending": "Sending…",
+        "resendSent": "Verification email sent. Check your spam folder too."
     },
     "forgot": {
       "title": "Forgot password",
@@ -117,7 +177,7 @@
     },
     "register": {
       "title": "Create an account",
-      "subtitle": "Join the Cobalt community",
+      "subtitle": "Join the MaySync community",
       "roleLabel": "I am a",
       "roleCandidate": "Candidate",
       "roleRecruiter": "Recruiter",
@@ -208,7 +268,7 @@
       "hint": "Upload your diploma or a proof of enrollment to have your school verified by an administrator.",
       "upload": "Upload a document",
       "status": {
-        "pending": "Pending verification",
+        "pending": "Awaiting admin approval",
         "verified": "School verified",
         "rejected": "Verification rejected"
       }
@@ -235,6 +295,7 @@
     "alreadyInShortlist": "Candidate already in shortlist.",
     "contact": "Contact",
     "viewProfile": "View profile",
+    "featured": "Featured",
     "loadMore": "Load more",
     "previous": "Previous",
     "next": "Next",
@@ -447,7 +508,11 @@
     "success": "Email verified",
     "successDescription": "Your email address has been verified successfully. You can now log in.",
     "error": "Verification failed",
-    "errorDescription": "The verification link is invalid or has expired. Please register again."
+    "errorDescription": "The verification link is invalid or has expired. Enter your email to get a new one.",
+    "emailPlaceholder": "Your email address",
+    "resendCta": "Resend verification email",
+    "resendSending": "Sending…",
+    "resendSent": "If an account is awaiting verification, a new link has just been sent. Check your spam folder too."
   },
   "subscription": {
     "title": "Subscription",
@@ -535,7 +600,7 @@
     "addTitle": "Add a project",
     "editTitle": "Edit project",
     "name": "Title",
-    "namePlaceholder": "e.g. Cobalt recruitment platform",
+    "namePlaceholder": "e.g. MaySync recruitment platform",
     "role": "Role (optional)",
     "rolePlaceholder": "e.g. Lead developer",
     "descriptionLabel": "Description",
@@ -984,10 +1049,10 @@
     "anonymous": "Verified candidate",
     "issuedOn": "Issued on",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Verified by Cobalt",
+    "verifiedBy": "Verified by MaySync",
     "notFound": "This badge is unavailable",
     "notFoundHint": "The link may be private or no longer active.",
-    "cta": "Join Cobalt",
+    "cta": "Join MaySync",
     "level": {
       "expert": "Expert",
       "advanced": "Advanced",
@@ -1003,7 +1068,7 @@
     "copied": "Link copied",
     "signups": "Sign-ups",
     "conversions": "Conversions",
-    "invited": "You were invited to Cobalt 🎉"
+    "invited": "You were invited to MaySync 🎉"
   },
   "analytics": {
     "navLabel": "Analytics",
@@ -1030,7 +1095,7 @@
       "navLabel": "School verifications",
       "title": "Pending school verifications",
       "unnamedCandidate": "Unnamed candidate",
-      "noMatch": "No school recognized",
+      "noMatch": "Unreferenced school",
       "confidence": "OCR confidence: {{value}}%",
       "review": "Review",
       "empty": "No pending verifications.",

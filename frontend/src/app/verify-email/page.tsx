@@ -1,13 +1,16 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, MailCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiClient } from '@/api/client';
 import { useLocale } from '@/i18n/locale-context';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -24,18 +27,45 @@ function VerifyEmailContent() {
     token ? 'loading' : 'error',
   );
 
+  // Resend flow (shown on the error state): a lost/expired link is not a dead
+  // end. Always resolves to a generic "sent" confirmation (anti-enumeration).
+  const [resendEmail, setResendEmail] = useState('');
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>(
+    'idle',
+  );
+
+  async function handleResend(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setResendStatus('sending');
+    try {
+      // Plain fetch (like forgot-password): the response is deliberately
+      // generic, so there is nothing typed to consume.
+      await fetch(`${BASE}/api/v1/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resendEmail }),
+      });
+    } catch {
+      // Swallowed on purpose: the confirmation is identical either way.
+    }
+    setResendStatus('sent');
+  }
+
+  // The verification token is single-use: the first POST consumes it. React
+  // StrictMode (and any remount) runs effects twice in dev, which would fire a
+  // second POST against the now-spent token and flip a real success to a false
+  // "failed". This ref makes the request fire exactly once per token.
+  const verifyStarted = useRef(false);
+
   useEffect(() => {
-    if (!token) return;
-    let active = true;
+    if (!token || verifyStarted.current) return;
+    verifyStarted.current = true;
     void (async () => {
       const { error } = await apiClient.POST('/api/v1/auth/verify-email', {
         body: { token },
       });
-      if (active) setStatus(error ? 'error' : 'success');
+      setStatus(error ? 'error' : 'success');
     })();
-    return () => {
-      active = false;
-    };
   }, [token]);
 
   return (
@@ -73,8 +103,35 @@ function VerifyEmailContent() {
           <p className="mt-2 text-sm text-muted-foreground">
             {t('verifyEmail.errorDescription')}
           </p>
-          <Link href="/register" className="mt-6 inline-block">
-            <Button variant="outline">{t('nav.register')}</Button>
+
+          {resendStatus === 'sent' ? (
+            <div className="mt-6 flex items-start gap-2 rounded-lg bg-success/10 p-3 text-start text-sm text-foreground">
+              <MailCheck className="mt-0.5 size-4 shrink-0 text-success" />
+              <span>{t('verifyEmail.resendSent')}</span>
+            </div>
+          ) : (
+            <form onSubmit={(e) => void handleResend(e)} className="mt-6 flex flex-col gap-3">
+              <Input
+                type="email"
+                required
+                autoComplete="email"
+                className="h-11"
+                placeholder={t('verifyEmail.emailPlaceholder')}
+                value={resendEmail}
+                onChange={(e) => setResendEmail(e.target.value)}
+              />
+              <Button type="submit" disabled={resendStatus === 'sending'}>
+                {resendStatus === 'sending'
+                  ? t('verifyEmail.resendSending')
+                  : t('verifyEmail.resendCta')}
+              </Button>
+            </form>
+          )}
+
+          <Link href="/register" className="mt-4 inline-block">
+            <Button variant="ghost" size="sm">
+              {t('nav.register')}
+            </Button>
           </Link>
         </>
       )}

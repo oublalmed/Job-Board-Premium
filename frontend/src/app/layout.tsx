@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Geist } from 'next/font/google';
+import { Geist, Sora } from 'next/font/google';
 import { Providers } from '@/components/Providers';
 import { APP_NAME } from '@/lib/brand';
 import './globals.css';
@@ -23,6 +23,15 @@ const geist = Geist({
   display: 'swap',
 });
 
+// Display grotesk for headlines — a more premium, editorial voice than the
+// body sans. Exposed as --font-sans's sibling (--font-sora) and used via the
+// `font-display` utility. Self-hosted by next/font (no external request).
+const sora = Sora({
+  subsets: ['latin'],
+  variable: '--font-sora',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: `${APP_NAME} — Recrutement au Maroc`,
   description:
@@ -35,7 +44,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" dir="ltr" suppressHydrationWarning className={geist.variable}>
+    <html
+      lang="fr"
+      dir="ltr"
+      suppressHydrationWarning
+      className={`${geist.variable} ${sora.variable}`}
+    >
       <body className="min-h-dvh flex flex-col">
         <Script id="locale-no-flash" strategy="beforeInteractive">
           {LOCALE_NO_FLASH}

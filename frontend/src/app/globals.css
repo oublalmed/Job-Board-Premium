@@ -49,6 +49,11 @@
   --app-font-sans:
     var(--font-geist), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
     Roboto, 'Noto Sans', sans-serif;
+
+  /* Display grotesk for headlines (Sora, via next/font). Falls back to the
+     body sans so copy never loses its shape if the font is slow. */
+  --app-font-display:
+    var(--font-sora), var(--font-geist), ui-sans-serif, system-ui, sans-serif;
 }
 
 .dark {
@@ -118,6 +123,7 @@
   --radius-2xl: calc(var(--radius) + 8px);
 
   --font-sans: var(--app-font-sans);
+  --font-display: var(--app-font-display);
 }
 
 @custom-variant dark (&:is(.dark *));

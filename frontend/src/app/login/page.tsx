@@ -3,14 +3,15 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Briefcase } from 'lucide-react';
-import { useAuth } from '@/auth/auth-context';
+import { useAuth, AuthError } from '@/auth/auth-context';
 import { useLocale } from '@/i18n/locale-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { Logo } from '@/components/Logo';
+import { AuthBrandPanel } from '@/components/AuthBrandPanel';
+
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function LoginPage() {
   const { t } = useLocale();
@@ -21,57 +22,64 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Unverified-account path: login fails with a stable EMAIL_NOT_VERIFIED code;
+  // instead of a dead-end error we invite the user to resend the link.
+  const [unverified, setUnverified] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>(
+    'idle',
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setUnverified(false);
+    setResendState('idle');
     setIsSubmitting(true);
     try {
       await login(email, password);
       router.push('/dashboard');
-    } catch {
-      setError(t('auth.login.error'));
+    } catch (err) {
+      if (err instanceof AuthError && err.code === 'EMAIL_NOT_VERIFIED') {
+        setUnverified(true);
+      } else {
+        setError(t('auth.login.error'));
+      }
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  async function handleResendVerification() {
+    setResendState('sending');
+    try {
+      await fetch(`${BASE}/api/v1/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } catch {
+      // Swallowed: the confirmation is identical either way.
+    }
+    setResendState('sent');
+  }
+
   return (
-    <div className="flex min-h-dvh">
-      {/* Left panel - branding */}
-      <div className="relative hidden w-1/2 bg-primary lg:flex lg:flex-col lg:items-center lg:justify-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/80" />
-        <div className="relative z-10 flex flex-col items-center gap-6 px-12 text-center text-primary-foreground">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
-            <Briefcase className="size-8" />
-          </div>
-          <h1 className="text-4xl font-bold">{t('app.name')}</h1>
-          <p className="max-w-md text-lg text-primary-foreground/80">
-            {t('app.tagline')}
-          </p>
-        </div>
-        <div className="absolute bottom-0 start-0 end-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-      </div>
+    <div className="flex h-dvh overflow-hidden">
+      <AuthBrandPanel />
 
       {/* Right panel - form */}
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-center justify-between p-6">
-          <Link
-            href="/"
-            className="flex items-center lg:hidden"
-            aria-label={t('app.name')}
-          >
-            <Logo className="h-7 w-auto" />
-          </Link>
-          <div className="ms-auto">
-            <LanguageSwitcher />
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex min-h-full flex-col">
+          <div className="flex items-center p-6">
+            <div className="ms-auto">
+              <LanguageSwitcher />
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-1 items-center justify-center px-6 pb-12">
-          <div className="w-full max-w-sm">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground">
+          <div className="flex flex-1 items-center justify-center px-6 pb-12">
+          <div className="w-full max-w-md">
+            <div className="mb-8 text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground">
                 {t('auth.login.title')}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -91,6 +99,7 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  className="h-12"
                   placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -98,26 +107,53 @@ export default function LoginPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="login-password">
-                    {t('auth.passwordLabel')}
-                  </Label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs font-medium text-primary hover:underline underline-offset-4"
-                  >
-                    {t('auth.login.forgotLink')}
-                  </Link>
-                </div>
+                <Label htmlFor="login-password">{t('auth.passwordLabel')}</Label>
                 <Input
                   id="login-password"
                   type="password"
                   autoComplete="current-password"
                   required
+                  className="h-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <div className="flex justify-end">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-semibold text-foreground hover:underline underline-offset-4"
+                  >
+                    {t('auth.login.forgotLink')}
+                  </Link>
+                </div>
               </div>
+
+              {unverified && (
+                <div
+                  role="alert"
+                  className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3"
+                >
+                  <p className="text-sm text-foreground">
+                    {t('auth.login.unverified')}
+                  </p>
+                  {resendState === 'sent' ? (
+                    <p className="text-sm font-medium text-success">
+                      {t('auth.login.resendSent')}
+                    </p>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={resendState === 'sending'}
+                      onClick={() => void handleResendVerification()}
+                    >
+                      {resendState === 'sending'
+                        ? t('auth.login.resendSending')
+                        : t('auth.login.resendCta')}
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {error && (
                 <p role="alert" className="text-sm text-destructive">
@@ -125,7 +161,12 @@ export default function LoginPage() {
                 </p>
               )}
 
-              <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                size="lg"
+                className="h-12 w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+              >
                 {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
               </Button>
             </form>
@@ -140,6 +181,7 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
+        </div>
         </div>
       </div>
     </div>

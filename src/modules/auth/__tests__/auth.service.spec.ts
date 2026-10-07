@@ -233,6 +233,19 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
+    it('tags the unverified-email error with a stable EMAIL_NOT_VERIFIED code', async () => {
+      usersService['findByEmail'].mockResolvedValue({
+        ...mockUser,
+        emailVerified: false,
+      });
+
+      await expect(
+        service.login({ email: 'test@example.com', password: 'Test1234!@' }),
+      ).rejects.toMatchObject({
+        response: { code: 'EMAIL_NOT_VERIFIED' },
+      });
+    });
+
     it('should throw UnauthorizedException if user not found', async () => {
       usersService['findByEmail'].mockResolvedValue(null);
 
@@ -382,6 +395,58 @@ describe('AuthService', () => {
       });
 
       await service.requestPasswordReset('test@example.com');
+
+      expect(usersService['update']).not.toHaveBeenCalled();
+      expect(mailProvider['send']).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resendVerification', () => {
+    const pendingUser = {
+      ...mockUser,
+      emailVerified: false,
+      status: UserStatus.PENDING_VERIFICATION,
+    };
+
+    it('issues a fresh 24h token and re-sends the verification email', async () => {
+      usersService['findByEmail'].mockResolvedValue(pendingUser);
+
+      const result = await service.resendVerification('Test@Example.com');
+
+      expect(result.message).toMatch(/new link has been sent/i);
+      expect(usersService['findByEmail']).toHaveBeenCalledWith(
+        'test@example.com',
+      );
+      const updateArg = usersService['update'].mock.calls[0][1] as {
+        emailVerificationToken: string;
+        emailVerificationExpires: Date;
+      };
+      expect(updateArg.emailVerificationToken).toBeTruthy();
+      expect(updateArg.emailVerificationExpires.getTime()).toBeGreaterThan(
+        Date.now(),
+      );
+      const mailArg = mailProvider['send'].mock.calls[0][0] as {
+        templateId: string;
+        variables: { token: string };
+      };
+      expect(mailArg.templateId).toBe('email-verification');
+      expect(mailArg.variables.token).toBe(updateArg.emailVerificationToken);
+    });
+
+    it('returns the same message and does nothing for an unknown email (no enumeration)', async () => {
+      usersService['findByEmail'].mockResolvedValue(null);
+
+      const result = await service.resendVerification('ghost@example.com');
+
+      expect(result.message).toMatch(/new link has been sent/i);
+      expect(usersService['update']).not.toHaveBeenCalled();
+      expect(mailProvider['send']).not.toHaveBeenCalled();
+    });
+
+    it('does nothing for an already-verified account', async () => {
+      usersService['findByEmail'].mockResolvedValue(mockUser);
+
+      await service.resendVerification('test@example.com');
 
       expect(usersService['update']).not.toHaveBeenCalled();
       expect(mailProvider['send']).not.toHaveBeenCalled();

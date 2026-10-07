@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { SCORING_PROVIDER } from './scoring.port.js';
 import { PAYMENT_PROVIDER } from './payment.port.js';
 import { MAIL_PROVIDER } from './mail.port.js';
-import { MAILER } from './mailer.port.js';
+import { MAILER, type Mailer } from './mailer.port.js';
 import { FILE_SCANNER, type FileScanner } from './file-scanner.port.js';
 import { OBJECT_STORAGE } from './object-storage.port.js';
 import { OCR_PROVIDER } from './ocr.port.js';
@@ -13,6 +13,7 @@ import { StubMailAdapter } from '../adapters/mail/stub-mail.adapter.js';
 import { SmtpMailAdapter } from '../adapters/mail/smtp-mail.adapter.js';
 import type { MailProvider } from './mail.port.js';
 import { LoggingMailerAdapter } from '../adapters/mailer/logging-mailer.adapter.js';
+import { SmtpMailerAdapter } from '../adapters/mailer/smtp-mailer.adapter.js';
 import { StubFileScannerAdapter } from '../adapters/file-scanner/stub-file-scanner.adapter.js';
 import { ClamavFileScannerAdapter } from '../adapters/file-scanner/clamav-file-scanner.adapter.js';
 import { StubObjectStorageAdapter } from '../adapters/object-storage/stub-object-storage.adapter.js';
@@ -41,6 +42,19 @@ export function mailProviderFactory(config: ConfigService): MailProvider {
   return new StubMailAdapter();
 }
 
+// EF-MSG-02 — the notification Mailer follows the same MAIL_DRIVER switch as
+// the template MailProvider. Previously this was hardwired to the logging
+// adapter, so notification emails (profile viewed, cooldown expired, …) were
+// never delivered even with SMTP fully configured; routing it through the same
+// driver closes that gap. Default stays `log` (no network, no credentials).
+export function mailerFactory(config: ConfigService): Mailer {
+  const driver = config.get<string>('notifications.mailDriver', 'log');
+  if (driver === 'smtp') {
+    return new SmtpMailerAdapter();
+  }
+  return new LoggingMailerAdapter();
+}
+
 @Global()
 @Module({
   providers: [
@@ -51,7 +65,11 @@ export function mailProviderFactory(config: ConfigService): MailProvider {
       useFactory: mailProviderFactory,
       inject: [ConfigService],
     },
-    { provide: MAILER, useClass: LoggingMailerAdapter },
+    {
+      provide: MAILER,
+      useFactory: mailerFactory,
+      inject: [ConfigService],
+    },
     {
       provide: FILE_SCANNER,
       useFactory: fileScannerFactory,

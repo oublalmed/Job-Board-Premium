@@ -158,7 +158,7 @@ export default function CandidateDetailPage() {
                 {candidate.featured && (
                   <Badge variant="default" className="gap-1">
                     <Star className="size-3" />
-                    Featured
+                    {t('search.featured')}
                   </Badge>
                 )}
               </div>

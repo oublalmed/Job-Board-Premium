@@ -1,20 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { MailProvider, SendMailRequest } from '../../ports/mail.port.js';
 import { APP_NAME } from '../../common/brand.js';
+import { createSmtpTransport, mailFrom } from './smtp-transport.js';
 
 // Real SMTP delivery via Nodemailer. Selected when MAIL_DRIVER=smtp (see
 // ports.module.ts); the default remains the stub. Configured entirely from the
-// environment so no code change is needed to point it at a local catcher
-// (Mailpit on :1025) in dev or a managed SMTP relay elsewhere. TLS is off for
-// the plain local-catcher case and enabled automatically for port 465.
-const SMTP_HOST = process.env['SMTP_HOST'] ?? 'localhost';
-const SMTP_PORT = parseInt(process.env['SMTP_PORT'] ?? '1025', 10);
-const SMTP_USER = process.env['SMTP_USER'] ?? '';
-const SMTP_PASSWORD = process.env['SMTP_PASSWORD'] ?? '';
-const MAIL_FROM = process.env['MAIL_FROM'] ?? `${APP_NAME} <no-reply@cobalt.local>`;
+// environment (see smtp-transport.ts) so no code change is needed to point it
+// at a local catcher (Mailpit on :1025) in dev or a managed SMTP relay
+// elsewhere.
+const MAIL_FROM = mailFrom();
 const WEB_BASE_URL = (process.env['APP_WEB_URL'] ?? 'http://localhost:3001').replace(
   /\/+$/,
   '',
@@ -99,12 +95,7 @@ const NOTIFICATION_TEMPLATES: Record<
 @Injectable()
 export class SmtpMailAdapter implements MailProvider {
   private readonly logger = new Logger(SmtpMailAdapter.name);
-  private readonly transporter: Transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
-    auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASSWORD } : undefined,
-  });
+  private readonly transporter: Transporter = createSmtpTransport();
 
   async send(request: SendMailRequest): Promise<{ messageId: string }> {
     const content = this.resolveContent(request);

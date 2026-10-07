@@ -36,7 +36,7 @@ export function Navbar() {
           className="flex items-center"
           aria-label={t('app.name')}
         >
-          <Logo className="h-10 w-auto sm:h-11" priority />
+          <Logo className="h-11 w-auto sm:h-12" priority />
         </Link>
 
         {!isDashboard && (
@@ -44,8 +44,8 @@ export function Navbar() {
             aria-label={t('nav.label')}
             className="hidden items-center gap-1 md:flex"
           >
+            <NavLink href="/#how" label={t('nav.how')} active={false} />
             <NavLink href="/#features" label={t('features.title')} active={false} />
-            <NavLink href="/#trust" label={t('trust.title')} active={false} />
           </nav>
         )}
 
