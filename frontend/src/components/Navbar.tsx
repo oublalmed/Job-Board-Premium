@@ -36,7 +36,7 @@ export function Navbar() {
           className="flex items-center"
           aria-label={t('app.name')}
         >
-          <Logo className="h-12 w-auto sm:h-14" priority />
+          <Logo className="h-11 w-auto sm:h-12" priority />
         </Link>
 
         {!isDashboard && (
