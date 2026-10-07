@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Vocatic",
+    "name": "MaySync",
     "tagline": "منصة التوظيف المتميّزة في المغرب",
     "description": "نربط أفضل المواهب بالشركات التي توظّف. تقييم وتنقيط ووصل ذكي."
   },
@@ -50,7 +50,7 @@
     "stat3Value": "94٪"
   },
   "features": {
-    "title": "لماذا Vocatic؟",
+    "title": "لماذا MaySync؟",
     "subtitle": "منصة مصمّمة للسوق المغربية، بأدوات توظيف عصرية.",
     "scoring": {
       "title": "تنقيط ذكي",
@@ -127,7 +127,7 @@
   },
   "finalCta": {
     "title": "جاهز للتوظيف بطريقة مختلفة؟",
-    "subtitle": "انضمّ إلى الشركات والمواهب التي تثق بـ Vocatic.",
+    "subtitle": "انضمّ إلى الشركات والمواهب التي تثق بـ MaySync.",
     "cta": "ابدأ مجّانًا"
   },
   "auth": {
@@ -177,7 +177,7 @@
     },
     "register": {
       "title": "إنشاء حساب",
-      "subtitle": "انضمّ إلى مجتمع Vocatic",
+      "subtitle": "انضمّ إلى مجتمع MaySync",
       "roleLabel": "أنا",
       "roleCandidate": "مرشّح",
       "roleRecruiter": "مُوظِّف",
@@ -600,7 +600,7 @@
     "addTitle": "إضافة مشروع",
     "editTitle": "تعديل المشروع",
     "name": "العنوان",
-    "namePlaceholder": "مثال: منصة التوظيف Vocatic",
+    "namePlaceholder": "مثال: منصة التوظيف MaySync",
     "role": "الدور (اختياري)",
     "rolePlaceholder": "مثال: مطوّر رئيسي",
     "descriptionLabel": "الوصف",
@@ -1049,10 +1049,10 @@
     "anonymous": "مرشّح مُوثَّق",
     "issuedOn": "صدرت في",
     "percentile": "المئين {{value}}",
-    "verifiedBy": "مُوثَّق من Vocatic",
+    "verifiedBy": "مُوثَّق من MaySync",
     "notFound": "هذه الشارة غير متاحة",
     "notFoundHint": "قد يكون الرابط خاصًّا أو لم يعُد نشطًا.",
-    "cta": "انضمّ إلى Vocatic",
+    "cta": "انضمّ إلى MaySync",
     "level": {
       "expert": "خبير",
       "advanced": "متقدّم",
@@ -1068,7 +1068,7 @@
     "copied": "تمّ نسخ الرابط",
     "signups": "التسجيلات",
     "conversions": "التحويلات",
-    "invited": "لقد دُعيت إلى Vocatic 🎉"
+    "invited": "لقد دُعيت إلى MaySync 🎉"
   },
   "analytics": {
     "navLabel": "التحليلات",

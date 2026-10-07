@@ -62,7 +62,7 @@ export class MfaService {
       this.configService.get<string>('auth.mfaEncryptionKey') ||
       this.configService.getOrThrow<string>('auth.jwtRefreshSecret');
     this.encryptionKey = deriveKey(passphrase);
-    this.issuer = this.configService.get<string>('auth.mfaIssuer', 'Vocatic');
+    this.issuer = this.configService.get<string>('auth.mfaIssuer', 'MaySync');
   }
 
   /** Step 1 — provision a secret (persisted encrypted) without enabling MFA yet. */

@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Vocatic",
+    "name": "MaySync",
     "tagline": "The premium recruitment platform in Morocco",
     "description": "Connect top talent with hiring companies. Assessment, scoring and smart matchmaking."
   },
@@ -50,7 +50,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Why Vocatic?",
+    "title": "Why MaySync?",
     "subtitle": "A platform built for the Moroccan market, with modern recruitment tools.",
     "scoring": {
       "title": "Smart scoring",
@@ -127,7 +127,7 @@
   },
   "finalCta": {
     "title": "Ready to hire differently?",
-    "subtitle": "Join the companies and talent who trust Vocatic.",
+    "subtitle": "Join the companies and talent who trust MaySync.",
     "cta": "Get started for free"
   },
   "auth": {
@@ -177,7 +177,7 @@
     },
     "register": {
       "title": "Create an account",
-      "subtitle": "Join the Vocatic community",
+      "subtitle": "Join the MaySync community",
       "roleLabel": "I am a",
       "roleCandidate": "Candidate",
       "roleRecruiter": "Recruiter",
@@ -600,7 +600,7 @@
     "addTitle": "Add a project",
     "editTitle": "Edit project",
     "name": "Title",
-    "namePlaceholder": "e.g. Vocatic recruitment platform",
+    "namePlaceholder": "e.g. MaySync recruitment platform",
     "role": "Role (optional)",
     "rolePlaceholder": "e.g. Lead developer",
     "descriptionLabel": "Description",
@@ -1049,10 +1049,10 @@
     "anonymous": "Verified candidate",
     "issuedOn": "Issued on",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Verified by Vocatic",
+    "verifiedBy": "Verified by MaySync",
     "notFound": "This badge is unavailable",
     "notFoundHint": "The link may be private or no longer active.",
-    "cta": "Join Vocatic",
+    "cta": "Join MaySync",
     "level": {
       "expert": "Expert",
       "advanced": "Advanced",
@@ -1068,7 +1068,7 @@
     "copied": "Link copied",
     "signups": "Sign-ups",
     "conversions": "Conversions",
-    "invited": "You were invited to Vocatic 🎉"
+    "invited": "You were invited to MaySync 🎉"
   },
   "analytics": {
     "navLabel": "Analytics",

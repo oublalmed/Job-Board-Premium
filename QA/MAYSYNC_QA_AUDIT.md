@@ -11,7 +11,7 @@ targeted code review. No source files were modified during this phase.
 
 ## 1. Executive Summary
 
-Vocatic is a **well-architected, genuinely functional** recruitment SaaS, not a
+MaySync is a **well-architected, genuinely functional** recruitment SaaS, not a
 prototype. The core product flows work end-to-end against the real API and
 database, business rules are enforced **server-side** (not just in the UI), and
 the test coverage is substantial.
@@ -85,7 +85,7 @@ profiling in this pass. Render free tier cold-start is the main prod caveat.
 
 ```
 QA/
-├── VOCATIC_QA_AUDIT.md      (this file — summary + scores)
+├── MAYSYNC_QA_AUDIT.md      (this file — summary + scores)
 ├── FUNCTIONAL_TESTS.md
 ├── SECURITY_AUDIT.md
 ├── UX_UI_AUDIT.md

@@ -103,7 +103,7 @@ l'URL Vercel réelle de l'étape 2, puis **Save** (le service redémarre) :
   | `SMTP_PORT` | `587` |
   | `SMTP_USER` | identifiant du relais |
   | `SMTP_PASSWORD` | clé SMTP du relais |
-  | `MAIL_FROM` | ex. `Vocatic <no-reply@tondomaine.ma>` |
+  | `MAIL_FROM` | ex. `MaySync <no-reply@tondomaine.ma>` |
 
   Un fournisseur gratuit (Brevo, ~300 emails/jour) suffit pour une démo. Les deux
   canaux — transactionnel (vérification, réinitialisation) **et** notifications

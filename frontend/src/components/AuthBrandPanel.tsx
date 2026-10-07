@@ -19,7 +19,7 @@ const TESTIMONIALS: Record<SupportedLocale, Testimonial[]> = {
   fr: [
     {
       quote:
-        'Vocatic nous a fait gagner un temps précieux : les candidats sont déjà évalués, on ne rencontre que les bons profils.',
+        'MaySync nous a fait gagner un temps précieux : les candidats sont déjà évalués, on ne rencontre que les bons profils.',
       author: 'Salma Bennani',
       role: 'Responsable RH, Casablanca',
     },
@@ -39,7 +39,7 @@ const TESTIMONIALS: Record<SupportedLocale, Testimonial[]> = {
   en: [
     {
       quote:
-        'Vocatic saved us real time: candidates are pre-assessed, so we only ever meet the right profiles.',
+        'MaySync saved us real time: candidates are pre-assessed, so we only ever meet the right profiles.',
       author: 'Salma Bennani',
       role: 'Head of HR, Casablanca',
     },
@@ -59,7 +59,7 @@ const TESTIMONIALS: Record<SupportedLocale, Testimonial[]> = {
   ar: [
     {
       quote:
-        'وفّر لنا Vocatic وقتًا ثمينًا: المرشّحون مُقيَّمون مسبقًا، فلا نقابل سوى الملفّات المناسبة.',
+        'وفّر لنا MaySync وقتًا ثمينًا: المرشّحون مُقيَّمون مسبقًا، فلا نقابل سوى الملفّات المناسبة.',
       author: 'سلمى بنّاني',
       role: 'مديرة موارد بشرية، الدار البيضاء',
     },

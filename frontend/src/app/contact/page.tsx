@@ -20,10 +20,10 @@ export default function ContactPage() {
         <p>
           Écrivez-nous à{' '}
           <a
-            href="mailto:support@vocatic.ma"
+            href="mailto:support@maysync.ma"
             className="text-primary hover:underline underline-offset-4"
           >
-            support@vocatic.ma
+            support@maysync.ma
           </a>{' '}
           — nous répondons sous 48 heures ouvrées.
         </p>
@@ -41,10 +41,10 @@ export default function ContactPage() {
           </Link>{' '}
           ou écrivez à{' '}
           <a
-            href="mailto:privacy@vocatic.ma"
+            href="mailto:privacy@maysync.ma"
             className="text-primary hover:underline underline-offset-4"
           >
-            privacy@vocatic.ma
+            privacy@maysync.ma
           </a>
           .
         </p>

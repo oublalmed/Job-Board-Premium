@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Vocatic",
+    "name": "MaySync",
     "tagline": "La plateforme de recrutement premium au Maroc",
     "description": "Connectez les meilleurs talents avec les entreprises qui recrutent. Évaluation, scoring et mise en relation intelligente."
   },
@@ -50,7 +50,7 @@
     "stat3Value": "94%"
   },
   "features": {
-    "title": "Pourquoi Vocatic ?",
+    "title": "Pourquoi MaySync ?",
     "subtitle": "Une plateforme conçue pour le marché marocain, avec des outils modernes de recrutement.",
     "scoring": {
       "title": "Scoring intelligent",
@@ -127,7 +127,7 @@
   },
   "finalCta": {
     "title": "Prêt à recruter autrement ?",
-    "subtitle": "Rejoignez les entreprises et les talents qui font confiance à Vocatic.",
+    "subtitle": "Rejoignez les entreprises et les talents qui font confiance à MaySync.",
     "cta": "Commencer gratuitement"
   },
   "auth": {
@@ -177,7 +177,7 @@
     },
     "register": {
       "title": "Créer un compte",
-      "subtitle": "Rejoignez la communauté Vocatic",
+      "subtitle": "Rejoignez la communauté MaySync",
       "roleLabel": "Je suis un(e)",
       "roleCandidate": "Candidat",
       "roleRecruiter": "Recruteur",
@@ -600,7 +600,7 @@
     "addTitle": "Ajouter un projet",
     "editTitle": "Modifier le projet",
     "name": "Titre",
-    "namePlaceholder": "Ex. Plateforme de recrutement Vocatic",
+    "namePlaceholder": "Ex. Plateforme de recrutement MaySync",
     "role": "Rôle (facultatif)",
     "rolePlaceholder": "Ex. Lead développeur",
     "descriptionLabel": "Description",
@@ -1049,10 +1049,10 @@
     "anonymous": "Candidat vérifié",
     "issuedOn": "Émis le",
     "percentile": "Percentile {{value}}",
-    "verifiedBy": "Vérifié par Vocatic",
+    "verifiedBy": "Vérifié par MaySync",
     "notFound": "Ce badge est indisponible",
     "notFoundHint": "Le lien est peut-être privé ou n'est plus actif.",
-    "cta": "Rejoindre Vocatic",
+    "cta": "Rejoindre MaySync",
     "level": {
       "expert": "Expert",
       "advanced": "Avancé",
@@ -1068,7 +1068,7 @@
     "copied": "Lien copié",
     "signups": "Inscriptions",
     "conversions": "Conversions",
-    "invited": "Vous avez été invité sur Vocatic 🎉"
+    "invited": "Vous avez été invité sur MaySync 🎉"
   },
   "analytics": {
     "navLabel": "Analytique",
