@@ -59,8 +59,10 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
+  const rawOrigin = configService.get<string>('CORS_ORIGIN', '*');
+  const allowedOrigins = rawOrigin === '*' ? '*' : rawOrigin.split(',').map((o) => o.trim());
   app.enableCors({
-    origin: configService.get<string>('CORS_ORIGIN', '*'),
+    origin: allowedOrigins,
     credentials: true,
   });
 
