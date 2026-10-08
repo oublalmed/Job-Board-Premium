@@ -100,7 +100,8 @@ export const configValidationSchema = Joi.object({
   // Notifications email channel (EF-MSG-02) — off by default; 'smtp' is a
   // documented extension point, only 'log' is wired today.
   NOTIFICATIONS_EMAIL_ENABLED: Joi.boolean().default(false),
-  MAIL_DRIVER: Joi.string().valid('log', 'smtp').default('log'),
+  MAIL_DRIVER: Joi.string().valid('log', 'smtp', 'brevo').default('log'),
+  BREVO_API_KEY: Joi.string().allow('').default(''),
   // SMTP delivery (used when MAIL_DRIVER=smtp) — points at a local catcher
   // (Mailpit :1025) in dev or a managed relay elsewhere.
   SMTP_HOST: Joi.string().default('localhost'),

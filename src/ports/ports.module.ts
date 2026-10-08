@@ -11,6 +11,7 @@ import { StubScoringAdapter } from '../adapters/scoring/stub-scoring.adapter.js'
 import { StripePaymentProvider } from '../adapters/payment/stripe-payment.adapter.js';
 import { StubMailAdapter } from '../adapters/mail/stub-mail.adapter.js';
 import { SmtpMailAdapter } from '../adapters/mail/smtp-mail.adapter.js';
+import { BrevoMailAdapter } from '../adapters/mail/brevo-mail.adapter.js';
 import type { MailProvider } from './mail.port.js';
 import { LoggingMailerAdapter } from '../adapters/mailer/logging-mailer.adapter.js';
 import { SmtpMailerAdapter } from '../adapters/mailer/smtp-mailer.adapter.js';
@@ -36,6 +37,9 @@ export function fileScannerFactory(config: ConfigService): FileScanner {
 // mail via Nodemailer (local catcher like Mailpit in dev, a relay elsewhere).
 export function mailProviderFactory(config: ConfigService): MailProvider {
   const driver = config.get<string>('notifications.mailDriver', 'log');
+  if (driver === 'brevo') {
+    return new BrevoMailAdapter();
+  }
   if (driver === 'smtp') {
     return new SmtpMailAdapter();
   }
