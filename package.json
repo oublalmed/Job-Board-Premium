@@ -26,7 +26,8 @@
     "seed": "ts-node -r tsconfig-paths/register -r ./scripts/resolve-js-as-ts.js src/database/seed.ts",
     "seed:testcases": "ts-node -r tsconfig-paths/register -r ./scripts/resolve-js-as-ts.js src/database/seed-testcases.ts",
     "make:admin": "ts-node -r tsconfig-paths/register -r ./scripts/resolve-js-as-ts.js src/database/make-admin.ts",
-    "activate:admin": "ts-node -r tsconfig-paths/register -r ./scripts/resolve-js-as-ts.js src/database/activate-admin.ts"
+    "activate:admin": "ts-node -r tsconfig-paths/register -r ./scripts/resolve-js-as-ts.js src/database/activate-admin.ts",
+    "reset:password": "ts-node -r tsconfig-paths/register -r ./scripts/resolve-js-as-ts.js src/database/reset-password.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1147.0",
