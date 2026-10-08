@@ -16,6 +16,8 @@ export function createSmtpTransport(): Transporter {
     host,
     port,
     secure: port === 465,
+    connectionTimeout: 10_000,
+    socketTimeout: 10_000,
     auth: user ? { user, pass: password } : undefined,
   });
 }

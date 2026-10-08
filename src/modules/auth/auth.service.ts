@@ -101,15 +101,23 @@ export class AuthService {
       consentAt: new Date(),
     });
 
-    await this.mailProvider.send({
-      to: user.email,
-      subject: `Vérifiez votre adresse email - ${APP_NAME}`,
-      templateId: 'email-verification',
-      variables: {
-        token: verificationToken,
-        email: user.email,
-      },
-    });
+    // Fire-and-forget: email delivery must not block account creation.
+    // A send failure is logged by the adapter; the user can request a resend.
+    void this.mailProvider
+      .send({
+        to: user.email,
+        subject: `Vérifiez votre adresse email - ${APP_NAME}`,
+        templateId: 'email-verification',
+        variables: {
+          token: verificationToken,
+          email: user.email,
+        },
+      })
+      .catch((err: Error) =>
+        this.logger.error(
+          `Verification email failed for ${user.id}: ${err.message}`,
+        ),
+      );
 
     await this.auditService.log({
       actorId: user.id,
