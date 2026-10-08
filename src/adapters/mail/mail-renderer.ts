@@ -33,29 +33,29 @@ const TOKEN_TEMPLATES: Record<
     path: '/verify-email',
     heading: 'Confirmez votre adresse email',
     intro:
-      'Bienvenue sur ' +
+      "Bienvenue sur " +
       APP_NAME +
-      ' ! Il ne reste qu'une étape : confirmez votre adresse email pour activer votre compte et accéder à la plateforme.',
+      " ! Il ne reste qu’une étape : confirmez votre adresse email pour activer votre compte et accéder à la plateforme.",
     cta: 'Vérifier mon adresse',
-    note: 'Ce lien expire dans 24 heures. Si vous n'êtes pas à l'origine de cette inscription, vous pouvez ignorer cet email.',
+    note: "Ce lien expire dans 24 heures. Si vous n’êtes pas à l’origine de cette inscription, vous pouvez ignorer cet email.",
   },
   'password-reset': {
     path: '/reset-password',
     heading: 'Réinitialisation de votre mot de passe',
     intro:
-      'Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau.',
+      "Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau.",
     cta: 'Choisir un nouveau mot de passe',
-    note: 'Ce lien est valable une heure. Si vous n'êtes pas à l'origine de cette demande, aucune action n'est requise : votre mot de passe reste inchangé.',
+    note: "Ce lien est valable une heure. Si vous n’êtes pas à l’origine de cette demande, aucune action n’est requise : votre mot de passe reste inchangé.",
   },
   'recruiter-invitation': {
     path: '/accept-invite',
-    heading: 'Vous êtes invité(e) à rejoindre une équipe',
+    heading: "Vous êtes invité(e) à rejoindre une équipe",
     intro:
-      'Une entreprise vous invite à la rejoindre comme recruteur sur ' +
+      "Une entreprise vous invite à la rejoindre comme recruteur sur " +
       APP_NAME +
-      '. Cliquez ci-dessous pour définir votre mot de passe et activer votre compte recruteur.',
+      ". Cliquez ci-dessous pour définir votre mot de passe et activer votre compte recruteur.",
     cta: 'Activer mon compte',
-    note: 'Ce lien expire dans 7 jours. Si vous n'attendiez pas cette invitation, vous pouvez ignorer cet email.',
+    note: "Ce lien expire dans 7 jours. Si vous n’attendiez pas cette invitation, vous pouvez ignorer cet email.",
   },
 };
 
@@ -67,14 +67,14 @@ const NOTIFICATION_TEMPLATES: Record<
     path: '/assessments',
     heading: 'Vous pouvez repasser votre évaluation',
     intro:
-      'Bonne nouvelle : le délai d'attente est écoulé. Vous pouvez retenter votre évaluation dès maintenant pour améliorer votre score et votre visibilité auprès des recruteurs.',
+      "Bonne nouvelle : le délai d’attente est écoulé. Vous pouvez retenter votre évaluation dès maintenant pour améliorer votre score et votre visibilité auprès des recruteurs.",
     cta: 'Repasser mon évaluation',
   },
   'profile-viewed': {
     path: '/dashboard',
     heading: 'Un recruteur a consulté votre profil',
     intro:
-      'Votre profil a retenu l'attention d'un recruteur. Gardez-le complet et à jour pour maximiser vos chances d'être contacté.',
+      "Votre profil a retenu l’attention d’un recruteur. Gardez-le complet et à jour pour maximiser vos chances d’être contacté.",
     cta: 'Voir mon tableau de bord',
   },
 };
@@ -108,7 +108,7 @@ export function resolveContent(
       ],
       ctaLabel: 'Définir mon mot de passe',
       ctaUrl: `${WEB_BASE_URL}/reset-password?token=${encodeURIComponent(token)}`,
-      note: "Ce lien d'activation expire dans 7 jours. Connectez-vous ensuite avec l'adresse indiquée ci-dessus.",
+      note: "Ce lien d’activation expire dans 7 jours. Connectez-vous ensuite avec l’adresse indiquée ci-dessus.",
       showLinkFallback: true,
     };
   }
@@ -170,15 +170,11 @@ export function renderHtml(
               <td align="center" bgcolor="${BRAND.primary}" style="border-radius:8px">
                 <!--[if mso]>
                 <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${content.ctaUrl}" style="height:44px;v-text-anchor:middle;width:280px;" arcsize="18%" strokecolor="${BRAND.primary}" fillcolor="${BRAND.primary}">
-                <w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">${escapeHtml(
-                  content.ctaLabel ?? '',
-                )}</center>
+                <w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">${escapeHtml(content.ctaLabel ?? '')}</center>
                 </v:roundrect>
                 <![endif]-->
                 <!--[if !mso]><!-->
-                <a href="${content.ctaUrl}" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;background:${BRAND.primary}">${escapeHtml(
-                  content.ctaLabel ?? '',
-                )}</a>
+                <a href="${content.ctaUrl}" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;background:${BRAND.primary}">${escapeHtml(content.ctaLabel ?? '')}</a>
                 <!--<![endif]-->
               </td>
             </tr>
@@ -216,9 +212,7 @@ export function renderHtml(
           <tr>
             <td style="padding:28px 32px 8px" align="${align}">
               <span style="display:inline-block;font-size:18px;font-weight:700;color:${BRAND.ink};letter-spacing:-0.2px">
-                <span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;background:${BRAND.primary};color:#fff;font-size:13px;vertical-align:middle;margin-${
-                  dir === 'rtl' ? 'left' : 'right'
-                }:8px">${APP_NAME.charAt(0)}</span>${APP_NAME}
+                <span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;background:${BRAND.primary};color:#fff;font-size:13px;vertical-align:middle;margin-${dir === 'rtl' ? 'left' : 'right'}:8px">${APP_NAME.charAt(0)}</span>${APP_NAME}
               </span>
             </td>
           </tr>
@@ -258,7 +252,6 @@ export function renderText(content: EmailContent): string {
 }
 
 export function parseSender(from: string): { name: string; email: string } {
-  // Parses "Name <email@example.com>" or bare "email@example.com"
   const match = from.match(/^(.+?)\s*<([^>]+)>$/);
   if (match) {
     return { name: match[1].trim(), email: match[2].trim() };
