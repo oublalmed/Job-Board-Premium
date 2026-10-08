@@ -38,6 +38,17 @@ export class RecruiterService {
   ): Promise<Recruiter> {
     const companyId = await this.subscriptionGuard.resolveCompanyId(callerId);
 
+    // Seat limit — a company cannot exceed its plan's user count (Starter 1,
+    // Growth 3, Scale 10). Checked before any work so the caller gets a clear
+    // reason instead of silently over-provisioning.
+    const seatLimit = await this.subscriptionGuard.getSeatLimit(companyId);
+    const currentSeats = await this.recruiterRepo.count({ where: { companyId } });
+    if (currentSeats >= seatLimit) {
+      throw new ForbiddenException(
+        `Votre abonnement est limité à ${seatLimit} recruteur(s). Passez à un pack supérieur pour en ajouter davantage.`,
+      );
+    }
+
     const targetUser = await this.usersService.findByEmail(
       dto.email.toLowerCase(),
     );

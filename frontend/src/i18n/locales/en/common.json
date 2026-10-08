@@ -149,10 +149,10 @@
       "noAccount": "Don't have an account?",
       "registerLink": "Create an account",
       "forgotLink": "Forgot password?",
-        "unverified": "Your account isn’t verified yet. Check your inbox to activate it.",
-        "resendCta": "Resend verification email",
-        "resendSending": "Sending…",
-        "resendSent": "Verification email sent. Check your spam folder too."
+      "unverified": "Your account isn’t verified yet. Check your inbox to activate it.",
+      "resendCta": "Resend verification email",
+      "resendSending": "Sending…",
+      "resendSent": "Verification email sent. Check your spam folder too."
     },
     "forgot": {
       "title": "Forgot password",
@@ -191,7 +191,8 @@
       "error": "Unable to create the account. Check the information provided.",
       "success": "Account created — check your email to activate it.",
       "hasAccount": "Already have an account?",
-      "loginLink": "Log in"
+      "loginLink": "Log in",
+      "emailExists": "This email is already in use. Log in or use a different address."
     },
     "logout": "Log out",
     "guard": {
@@ -245,7 +246,14 @@
     "salaryMin": "Min. salary (gross annual)",
     "salaryMax": "Max. salary (gross annual)",
     "salaryVisible": "Show my salary range to recruiters",
-    "skills": "Skills",
+    "skills": {
+      "title": "Skills",
+      "subtitle": "Add at least 5 skills to earn 20% completeness.",
+      "placeholder": "Search a skill…",
+      "add": "Add",
+      "empty": "No skills added yet.",
+      "count": "{{n}}/{{min}}"
+    },
     "experience": "Experience",
     "cv": "Resume",
     "uploadCv": "Upload a resume",
@@ -272,6 +280,30 @@
         "verified": "School verified",
         "rejected": "Verification rejected"
       }
+    },
+    "experiences": {
+      "title": "Experience & education",
+      "subtitle": "Add at least 1 experience or education entry to earn 20% completeness.",
+      "empty": "No experience added yet.",
+      "count": "{{n}} added",
+      "present": "Present",
+      "typeLabel": "Type",
+      "typeWork": "Work experience",
+      "typeEducation": "Education",
+      "titleField": "Title",
+      "titlePlaceholder": "e.g. Full-Stack Developer",
+      "organization": "Organization",
+      "organizationPlaceholder": "e.g. OCP Group",
+      "startDate": "Start",
+      "endDate": "End",
+      "description": "Description",
+      "descriptionPlaceholder": "Responsibilities, achievements…",
+      "add": "Add experience"
+    },
+    "publishNudge": {
+      "title": "Your profile is ready to publish 🎉",
+      "body": "You meet all the requirements. Make your profile visible to appear in the recruiter CV library.",
+      "cta": "Make visible to recruiters"
     }
   },
   "search": {
@@ -457,7 +489,14 @@
     "recruiterPosition": "Position",
     "recruiterAdded": "Recruiter added.",
     "recruiterRemoved": "Recruiter removed.",
-    "noCompany": "You don't have a registered company yet."
+    "noCompany": "You don't have a registered company yet.",
+    "inviteRecruiter": "Invite a recruiter",
+    "inviteHint": "The invitee gets an email to set their password. You can also add a colleague who already has an account.",
+    "invitationSent": "Invitation sent.",
+    "pendingInvitations": "Pending invitations",
+    "invitePending": "Pending",
+    "invitationRevoked": "Invitation revoked.",
+    "noRecruiters": "No recruiters yet."
   },
   "settings": {
     "title": "Settings",
@@ -1246,5 +1285,14 @@
     "completedAssessments": "{{count}} completed",
     "subscriptionsByPlan": "Subscriptions by plan",
     "applications": "Applications"
+  },
+  "acceptInvite": {
+    "title": "Join {{company}}",
+    "subtitle": "You were invited as a recruiter for",
+    "cta": "Activate my account",
+    "invalidTitle": "Invalid invitation",
+    "invalidBody": "This invitation link is invalid or has expired. Ask the company to send you a new one.",
+    "doneTitle": "Account activated 🎉",
+    "doneBody": "Your recruiter account is ready. Redirecting you to sign in."
   }
 }

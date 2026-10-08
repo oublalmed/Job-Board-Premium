@@ -2,10 +2,13 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { IndexationService } from '../assessments/indexation.service.js';
 import {
   CandidateProfile,
   ProfileVisibility,
@@ -57,7 +60,29 @@ export class CandidateProfileService {
     @InjectRepository(Document)
     private readonly documentRepo: Repository<Document>,
     private readonly settingsService: SettingsService,
+    // Resolved lazily (see reindex()) so this module needs no compile-time
+    // dependency on the assessments module — avoids a circular import.
+    private readonly moduleRef: ModuleRef,
   ) {}
+
+  private readonly logger = new Logger(CandidateProfileService.name);
+
+  // Re-evaluate CVthèque indexation for a candidate after their completeness
+  // changed. Without this, a profile completed to >=70% AFTER an assessment
+  // would never get indexed (applyThresholds otherwise only runs on scoring).
+  // Best-effort and lazy: never fails the calling operation.
+  private async reindex(userId: string): Promise<void> {
+    try {
+      const indexation = this.moduleRef.get(IndexationService, {
+        strict: false,
+      });
+      await indexation.applyThresholds(userId);
+    } catch (error) {
+      this.logger.warn(
+        `Re-indexation after profile change failed for ${userId}: ${(error as Error).message}`,
+      );
+    }
+  }
 
   async findByUserId(userId: string): Promise<CandidateProfile | null> {
     return this.profileRepo.findOne({ where: { userId } });
@@ -250,8 +275,16 @@ export class CandidateProfileService {
       });
     }
 
+    const previousCompleteness = Number(profile.completeness);
     profile.completeness = completeness;
     await this.profileRepo.save(profile);
+
+    // Completeness just changed → re-evaluate CVthèque indexation (covers every
+    // mutation path: profile edit, skills, experiences, CV, links…). No-op on
+    // steady-state reads where the value is unchanged.
+    if (previousCompleteness !== completeness) {
+      await this.reindex(profile.userId);
+    }
 
     return {
       completeness,

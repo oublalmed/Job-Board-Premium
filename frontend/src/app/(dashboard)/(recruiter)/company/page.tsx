@@ -31,11 +31,13 @@ import {
   type CreateCompanyValues,
 } from '@/features/company/schema';
 import {
-  useAddRecruiter,
   useCompany,
   useCreateCompany,
   useRecruiters,
   useRemoveRecruiter,
+  useInviteRecruiter,
+  useRecruiterInvitations,
+  useRevokeInvitation,
 } from '@/features/company/queries';
 
 const fadeUp = {
@@ -57,10 +59,15 @@ export default function CompanyPage() {
 
   const recruitersQuery = useRecruiters(hasCompany);
   const recruiters = recruitersQuery.data ?? [];
+  const invitationsQuery = useRecruiterInvitations(
+    hasCompany && !!isCompanyAdmin,
+  );
+  const pendingInvitations = invitationsQuery.data ?? [];
 
   const createCompany = useCreateCompany();
-  const addRecruiter = useAddRecruiter();
   const removeRecruiter = useRemoveRecruiter();
+  const inviteRecruiter = useInviteRecruiter();
+  const revokeInvitation = useRevokeInvitation();
 
   const createForm = useForm<CreateCompanyValues>({
     resolver: zodResolver(createCompanySchema),
@@ -81,13 +88,20 @@ export default function CompanyPage() {
     });
   });
 
-  const onAddRecruiter = recruiterForm.handleSubmit((values) => {
-    addRecruiter.mutate(values, {
-      onSuccess: () => {
-        toast(t('company.recruiterAdded'), 'success');
+  const onInviteRecruiter = recruiterForm.handleSubmit((values) => {
+    inviteRecruiter.mutate(values, {
+      onSuccess: (res) => {
+        toast(
+          res.status === 'attached'
+            ? t('company.recruiterAdded')
+            : t('company.invitationSent'),
+          'success',
+        );
         recruiterForm.reset(EMPTY_RECRUITER);
       },
-      onError: () => toast(t('common.error'), 'error'),
+      // The backend message is user-facing (seat limit, duplicate…) — surface it.
+      onError: (e) =>
+        toast((e as Error).message || t('common.error'), 'error'),
     });
   });
 
@@ -96,6 +110,17 @@ export default function CompanyPage() {
   function handleRemoveRecruiter(id: string) {
     removeRecruiter.mutate(id, {
       onSuccess: () => toast(t('company.recruiterRemoved'), 'success'),
+      onError: () => toast(t('common.error'), 'error'),
+    });
+  }
+
+  const revokingId = revokeInvitation.isPending
+    ? revokeInvitation.variables
+    : null;
+
+  function handleRevokeInvitation(id: string) {
+    revokeInvitation.mutate(id, {
+      onSuccess: () => toast(t('company.invitationRevoked'), 'success'),
       onError: () => toast(t('common.error'), 'error'),
     });
   }
@@ -257,19 +282,63 @@ export default function CompanyPage() {
           ))}
 
           {recruiters.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t('company.noCompany')}</p>
+            <p className="text-sm text-muted-foreground">
+              {t('company.noRecruiters')}
+            </p>
+          )}
+
+          {/* Pending invitations (not yet accepted) */}
+          {isCompanyAdmin && pendingInvitations.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t('company.pendingInvitations')}
+              </p>
+              {pendingInvitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/20 p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <Mail className="size-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{inv.email}</p>
+                      <p className="text-xs text-warning">{t('company.invitePending')}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('common.delete')}
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => handleRevokeInvitation(inv.id)}
+                    disabled={revokingId === inv.id}
+                  >
+                    {revokingId === inv.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-4" />
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
 
           {isCompanyAdmin && (
             <Form {...recruiterForm}>
               <form
-                onSubmit={(e) => void onAddRecruiter(e)}
+                onSubmit={(e) => void onInviteRecruiter(e)}
                 className="mt-2 flex flex-col gap-3 rounded-xl border border-dashed border-border p-4"
               >
-                <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Plus className="size-4 text-primary" />
-                  {t('company.addRecruiter')}
-                </p>
+                <div>
+                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Plus className="size-4 text-primary" />
+                    {t('company.inviteRecruiter')}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t('company.inviteHint')}
+                  </p>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FormField
                     control={recruiterForm.control}
@@ -301,15 +370,15 @@ export default function CompanyPage() {
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={addRecruiter.isPending}
+                  disabled={inviteRecruiter.isPending}
                   className="gap-2 self-start"
                 >
-                  {addRecruiter.isPending ? (
+                  {inviteRecruiter.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
                     <Plus className="size-4" />
                   )}
-                  {t('company.addRecruiter')}
+                  {t('company.inviteRecruiter')}
                 </Button>
               </form>
             </Form>

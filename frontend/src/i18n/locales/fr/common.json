@@ -149,10 +149,10 @@
       "noAccount": "Pas encore de compte ?",
       "registerLink": "Créer un compte",
       "forgotLink": "Mot de passe oublié ?",
-        "unverified": "Votre compte n’est pas encore vérifié. Consultez votre boîte mail pour l’activer.",
-        "resendCta": "Renvoyer l’email de vérification",
-        "resendSending": "Envoi…",
-        "resendSent": "Email de vérification renvoyé. Pensez à vérifier vos spams."
+      "unverified": "Votre compte n’est pas encore vérifié. Consultez votre boîte mail pour l’activer.",
+      "resendCta": "Renvoyer l’email de vérification",
+      "resendSending": "Envoi…",
+      "resendSent": "Email de vérification renvoyé. Pensez à vérifier vos spams."
     },
     "forgot": {
       "title": "Mot de passe oublié",
@@ -191,7 +191,8 @@
       "error": "Impossible de créer le compte. Vérifiez les informations saisies.",
       "success": "Compte créé — vérifiez votre email pour l'activer.",
       "hasAccount": "Déjà un compte ?",
-      "loginLink": "Se connecter"
+      "loginLink": "Se connecter",
+      "emailExists": "Cet email est déjà utilisé. Connectez-vous ou utilisez une autre adresse."
     },
     "logout": "Déconnexion",
     "guard": {
@@ -245,7 +246,14 @@
     "salaryMin": "Salaire min. (brut annuel)",
     "salaryMax": "Salaire max. (brut annuel)",
     "salaryVisible": "Afficher ma fourchette de salaire aux recruteurs",
-    "skills": "Compétences",
+    "skills": {
+      "title": "Compétences",
+      "subtitle": "Ajoutez au moins 5 compétences pour gagner 20% de complétude.",
+      "placeholder": "Rechercher une compétence…",
+      "add": "Ajouter",
+      "empty": "Aucune compétence ajoutée pour l'instant.",
+      "count": "{{n}}/{{min}}"
+    },
     "experience": "Expérience",
     "cv": "CV",
     "uploadCv": "Téléverser un CV",
@@ -272,6 +280,30 @@
         "verified": "École vérifiée",
         "rejected": "Vérification refusée"
       }
+    },
+    "experiences": {
+      "title": "Expériences & formations",
+      "subtitle": "Ajoutez au moins 1 expérience ou formation pour gagner 20% de complétude.",
+      "empty": "Aucune expérience ajoutée pour l'instant.",
+      "count": "{{n}} ajoutée(s)",
+      "present": "En cours",
+      "typeLabel": "Type",
+      "typeWork": "Expérience professionnelle",
+      "typeEducation": "Formation",
+      "titleField": "Intitulé",
+      "titlePlaceholder": "Ex. Développeur Full-Stack",
+      "organization": "Organisation",
+      "organizationPlaceholder": "Ex. OCP Group",
+      "startDate": "Début",
+      "endDate": "Fin",
+      "description": "Description",
+      "descriptionPlaceholder": "Missions, réalisations…",
+      "add": "Ajouter l'expérience"
+    },
+    "publishNudge": {
+      "title": "Votre profil est prêt à être publié 🎉",
+      "body": "Vous remplissez toutes les conditions. Rendez votre profil visible pour apparaître dans la CVthèque des recruteurs.",
+      "cta": "Rendre visible aux recruteurs"
     }
   },
   "search": {
@@ -457,7 +489,14 @@
     "recruiterPosition": "Poste",
     "recruiterAdded": "Recruteur ajouté.",
     "recruiterRemoved": "Recruteur retiré.",
-    "noCompany": "Vous n'avez pas encore d'entreprise enregistrée."
+    "noCompany": "Vous n'avez pas encore d'entreprise enregistrée.",
+    "inviteRecruiter": "Inviter un recruteur",
+    "inviteHint": "L'invité recevra un email pour définir son mot de passe. Vous pouvez aussi ajouter un collègue qui a déjà un compte.",
+    "invitationSent": "Invitation envoyée.",
+    "pendingInvitations": "Invitations en attente",
+    "invitePending": "En attente",
+    "invitationRevoked": "Invitation révoquée.",
+    "noRecruiters": "Aucun recruteur pour le moment."
   },
   "settings": {
     "title": "Paramètres",
@@ -1246,5 +1285,14 @@
     "completedAssessments": "{{count}} terminée(s)",
     "subscriptionsByPlan": "Abonnements par pack",
     "applications": "Candidatures"
+  },
+  "acceptInvite": {
+    "title": "Rejoindre {{company}}",
+    "subtitle": "Vous avez été invité(e) comme recruteur pour",
+    "cta": "Activer mon compte",
+    "invalidTitle": "Invitation invalide",
+    "invalidBody": "Ce lien d'invitation est invalide ou a expiré. Demandez à l'entreprise de vous renvoyer une invitation.",
+    "doneTitle": "Compte activé 🎉",
+    "doneBody": "Votre compte recruteur est prêt. Vous allez être redirigé vers la connexion."
   }
 }

@@ -17,6 +17,7 @@ export enum AuditAction {
   SCORE_CALCULATED = 'score.calculated',
   COMPANY_CREATED = 'company.created',
   RECRUITER_ADDED = 'recruiter.added',
+  RECRUITER_INVITED = 'recruiter.invited',
   RECRUITER_REMOVED = 'recruiter.removed',
   JOB_OFFER_CREATED = 'job_offer.created',
   JOB_OFFER_MODERATED = 'job_offer.moderated',

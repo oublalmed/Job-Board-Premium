@@ -37,6 +37,7 @@ export const configValidationSchema = Joi.object({
   MFA_ENFORCE_STAFF: Joi.boolean().default(false),
 
   // Storage
+  STORAGE_DRIVER: Joi.string().valid('stub', 's3').default('stub'),
   STORAGE_ENDPOINT: Joi.string().uri().required(),
   STORAGE_ACCESS_KEY: Joi.string().required(),
   STORAGE_SECRET_KEY: Joi.string().required(),
@@ -46,8 +47,8 @@ export const configValidationSchema = Joi.object({
 
   // Business rules
   PROFILE_COMPLETENESS_THRESHOLD: Joi.number().min(0).max(100).default(70),
-  INDEXATION_SCORE_THRESHOLD: Joi.number().min(0).max(100).default(40),
-  INDEXATION_PERCENTILE_THRESHOLD: Joi.number().min(0).max(100).default(30),
+  INDEXATION_SCORE_THRESHOLD: Joi.number().min(0).max(100).default(70),
+  INDEXATION_PERCENTILE_THRESHOLD: Joi.number().min(0).max(100).default(85),
   HIGHLIGHT_PERCENTILE_THRESHOLD: Joi.number().min(0).max(100).default(75),
   SCORE_VALIDITY_MONTHS: Joi.number().min(1).default(12),
   RETEST_COOLDOWN_DAYS: Joi.number().min(1).default(90),

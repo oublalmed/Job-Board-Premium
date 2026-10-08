@@ -50,10 +50,12 @@ describe('RecruiterService', () => {
         .fn()
         .mockImplementation((e: Record<string, unknown>) => Promise.resolve(e)),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
+      count: jest.fn().mockResolvedValue(0),
     };
 
     subscriptionGuard = {
       resolveCompanyId: jest.fn().mockResolvedValue(companyId),
+      getSeatLimit: jest.fn().mockResolvedValue(3),
     };
 
     usersService = {
@@ -154,6 +156,16 @@ describe('RecruiterService', () => {
       await expect(
         service.addRecruiter(callerId, { email: 'newrecruiter@acme.ma' }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('rejects 403 when the plan seat limit is already reached', async () => {
+      subscriptionGuard.getSeatLimit.mockResolvedValue(3);
+      recruiterRepo.count.mockResolvedValue(3); // already at the cap
+
+      await expect(
+        service.addRecruiter(callerId, { email: 'newrecruiter@acme.ma' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(recruiterRepo.save).not.toHaveBeenCalled();
     });
 
     it('rejects 404 when the caller has no company', async () => {

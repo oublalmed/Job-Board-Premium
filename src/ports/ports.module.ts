@@ -16,7 +16,7 @@ import { LoggingMailerAdapter } from '../adapters/mailer/logging-mailer.adapter.
 import { SmtpMailerAdapter } from '../adapters/mailer/smtp-mailer.adapter.js';
 import { StubFileScannerAdapter } from '../adapters/file-scanner/stub-file-scanner.adapter.js';
 import { ClamavFileScannerAdapter } from '../adapters/file-scanner/clamav-file-scanner.adapter.js';
-import { StubObjectStorageAdapter } from '../adapters/object-storage/stub-object-storage.adapter.js';
+import { objectStorageFactory } from '../adapters/object-storage/object-storage.factory.js';
 import { ocrProviderFactory } from '../adapters/ocr/ocr.factory.js';
 
 // EF-CAND-03 — select the antivirus adapter by ANTIVIRUS_DRIVER. Default is
@@ -75,7 +75,11 @@ export function mailerFactory(config: ConfigService): Mailer {
       useFactory: fileScannerFactory,
       inject: [ConfigService],
     },
-    { provide: OBJECT_STORAGE, useClass: StubObjectStorageAdapter },
+    {
+      provide: OBJECT_STORAGE,
+      useFactory: objectStorageFactory,
+      inject: [ConfigService],
+    },
     {
       provide: OCR_PROVIDER,
       useFactory: ocrProviderFactory,
