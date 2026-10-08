@@ -89,35 +89,44 @@ export class AuthService {
     // so any elevated role requested here is ignored.
     const roles = [Role.CANDIDATE];
 
+    const skipVerification =
+      this.configService.get<string>('SKIP_EMAIL_VERIFICATION') === 'true';
+
     const user = await this.usersService.create({
       email: dto.email.toLowerCase(),
       passwordHash,
       roles,
-      status: UserStatus.PENDING_VERIFICATION,
-      emailVerified: false,
-      emailVerificationToken: verificationToken,
-      emailVerificationExpires: verificationExpires,
+      status: skipVerification
+        ? UserStatus.ACTIVE
+        : UserStatus.PENDING_VERIFICATION,
+      emailVerified: skipVerification,
+      emailVerificationToken: skipVerification ? undefined : verificationToken,
+      emailVerificationExpires: skipVerification
+        ? undefined
+        : verificationExpires,
       // ENF-12 — record when consent was given (the DTO guarantees it was).
       consentAt: new Date(),
     });
 
-    // Fire-and-forget: email delivery must not block account creation.
-    // A send failure is logged by the adapter; the user can request a resend.
-    void this.mailProvider
-      .send({
-        to: user.email,
-        subject: `Vérifiez votre adresse email - ${APP_NAME}`,
-        templateId: 'email-verification',
-        variables: {
-          token: verificationToken,
-          email: user.email,
-        },
-      })
-      .catch((err: Error) =>
-        this.logger.error(
-          `Verification email failed for ${user.id}: ${err.message}`,
-        ),
-      );
+    if (!skipVerification) {
+      // Fire-and-forget: email delivery must not block account creation.
+      // A send failure is logged by the adapter; the user can request a resend.
+      void this.mailProvider
+        .send({
+          to: user.email,
+          subject: `Vérifiez votre adresse email - ${APP_NAME}`,
+          templateId: 'email-verification',
+          variables: {
+            token: verificationToken,
+            email: user.email,
+          },
+        })
+        .catch((err: Error) =>
+          this.logger.error(
+            `Verification email failed for ${user.id}: ${err.message}`,
+          ),
+        );
+    }
 
     await this.auditService.log({
       actorId: user.id,
