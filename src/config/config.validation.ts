@@ -37,6 +37,7 @@ export const configValidationSchema = Joi.object({
   MFA_ENFORCE_STAFF: Joi.boolean().default(false),
 
   // Storage
+  STORAGE_DRIVER: Joi.string().valid('stub', 's3').default('stub'),
   STORAGE_ENDPOINT: Joi.string().uri().required(),
   STORAGE_ACCESS_KEY: Joi.string().required(),
   STORAGE_SECRET_KEY: Joi.string().required(),

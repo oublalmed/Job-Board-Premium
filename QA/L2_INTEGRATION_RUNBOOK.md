@@ -13,7 +13,7 @@ real third-party integrations switched on.
 | Email (SMTP) | 🟢 Env-only | Relay credentials (e.g. Brevo free tier) |
 | OCR (diploma text extraction) | 🟢 Env-only | `OCR_DRIVER=real` — no external account (tesseract.js runs in-process) |
 | Payments (Stripe) | 🟢 Env-only | Stripe keys + webhook secret |
-| Object storage (CV / diploma files) | 🔴 **Code needed** | No S3 adapter exists yet — see §4 |
+| Object storage (CV / diploma files) | 🟢 Env-only | S3 adapter shipped — set `STORAGE_DRIVER=s3` + creds (§4) |
 
 ---
 
@@ -108,24 +108,17 @@ signature → rejected.
 
 ---
 
-## 4. Object storage — CV & diploma files 🔴 **CODE NEEDED**
+## 4. Object storage — CV & diploma files 🟢 Env-only (adapter shipped)
 
-**Current reality:** `OBJECT_STORAGE` is hardcoded to `StubObjectStorageAdapter`
-(`ports.module.ts` line ~78). There is **no S3 adapter in the codebase** and
-`@aws-sdk/client-s3` is **not installed**. The `STORAGE_*` env vars exist and are
-validated, but nothing consumes them yet. Uploaded files are not persisted to a
-real bucket.
-
-**To enable real storage (small, well-scoped task — needs your go-ahead):**
-1. `npm i @aws-sdk/client-s3` (S3-compatible; works with Cloudflare R2 / Backblaze B2 / MinIO).
-2. Write `src/adapters/object-storage/s3-object-storage.adapter.ts` implementing
-   the existing `ObjectStoragePort` (put/get/presign/delete) against the AWS SDK.
-3. Add a `storageProviderFactory` keyed on a new `STORAGE_DRIVER` (`stub` | `s3`),
-   mirroring the OCR factory, and wire it in `ports.module.ts`.
-4. Keep the stub as the default so CI/tests stay hermetic.
+**Done:** a real `S3ObjectStorageAdapter` now implements `ObjectStorage`
+(upload / presign / delete / exists) over any S3-compatible service, selected by
+`objectStorageFactory` on `STORAGE_DRIVER` (`stub` default | `s3`), wired in
+`ports.module.ts`. `@aws-sdk/client-s3` + `s3-request-presigner` are installed.
+CV/diploma uploads persist once `STORAGE_DRIVER=s3` and the `STORAGE_*`
+credentials are set — no more code needed.
 
 **Recommended free-tier bucket: Cloudflare R2** (10 GB free, no egress fees) or
-Backblaze B2. Once the adapter exists:
+Backblaze B2. To enable:
 
 ```env
 STORAGE_DRIVER=s3
